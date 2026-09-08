@@ -12,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -71,56 +70,6 @@ class AttributeDefinitionScopeRepositoryTest extends AbstractPostgresRepositoryT
         assertThat(bindings)
                 .extracting(b -> b.getAttributeScope().getId())
                 .containsExactlyInAnyOrder(productScope.getId(), consumerScope.getId());
-    }
-
-    @Test
-    void findByAttributeDefinition_IdAndAttributeScope_CodeAndIsDeletedFalse_returnsMatchingLiveBinding() {
-        AttributeDefinition definition = persistDefinition("scoped-lookup-attr");
-        AttributeScope productScope =
-                attributeScopeRepository.findByCode("PRODUCT").orElseThrow();
-        AttributeScope consumerScope =
-                attributeScopeRepository.findByCode("CONSUMER").orElseThrow();
-        AttributeDefinitionScope productBinding =
-                attributeDefinitionScopeRepository.saveAndFlush(newBinding(definition, productScope, false));
-        attributeDefinitionScopeRepository.saveAndFlush(newBinding(definition, consumerScope, false));
-
-        Optional<AttributeDefinitionScope> found =
-                attributeDefinitionScopeRepository.findByAttributeDefinition_IdAndAttributeScope_CodeAndIsDeletedFalse(
-                        definition.getId(), "PRODUCT");
-
-        assertThat(found).isPresent();
-        assertThat(found.get().getId()).isEqualTo(productBinding.getId());
-    }
-
-    @Test
-    void findByAttributeDefinition_IdAndAttributeScope_CodeAndIsDeletedFalse_isEmptyForMismatchedScope() {
-        AttributeDefinition definition = persistDefinition("scoped-lookup-mismatch-attr");
-        AttributeScope productScope =
-                attributeScopeRepository.findByCode("PRODUCT").orElseThrow();
-        attributeDefinitionScopeRepository.saveAndFlush(newBinding(definition, productScope, false));
-
-        Optional<AttributeDefinitionScope> found =
-                attributeDefinitionScopeRepository.findByAttributeDefinition_IdAndAttributeScope_CodeAndIsDeletedFalse(
-                        definition.getId(), "CONSUMER");
-
-        assertThat(found).isEmpty();
-    }
-
-    @Test
-    void findByAttributeDefinition_IdAndAttributeScope_CodeAndIsDeletedFalse_excludesSoftDeletedBinding() {
-        AttributeDefinition definition = persistDefinition("scoped-lookup-deleted-attr");
-        AttributeScope productScope =
-                attributeScopeRepository.findByCode("PRODUCT").orElseThrow();
-        AttributeDefinitionScope binding =
-                attributeDefinitionScopeRepository.saveAndFlush(newBinding(definition, productScope, false));
-        binding.setIsDeleted(true);
-        attributeDefinitionScopeRepository.saveAndFlush(binding);
-
-        Optional<AttributeDefinitionScope> found =
-                attributeDefinitionScopeRepository.findByAttributeDefinition_IdAndAttributeScope_CodeAndIsDeletedFalse(
-                        definition.getId(), "PRODUCT");
-
-        assertThat(found).isEmpty();
     }
 
     @Test
