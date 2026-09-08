@@ -365,5 +365,4 @@ class ConfigurationProviderImplTest {
         assertThat(cfg.getProducers().get(0).getProducts().get(0).getConsumers())
                 .containsExactly(activeOrgConsumer);
     }
-
 }
