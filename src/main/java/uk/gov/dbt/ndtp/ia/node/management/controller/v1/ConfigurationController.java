@@ -21,8 +21,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import uk.gov.dbt.ndtp.ia.node.management.filter.FilterNode;
-import uk.gov.dbt.ndtp.ia.node.management.filter.FilterRequestParser;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.ConsumerConfigDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProducerConfigDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.jwt.EnhancedPrincipal;
@@ -35,12 +33,9 @@ import uk.gov.dbt.ndtp.ia.node.management.service.providers.configuration.Config
 public class ConfigurationController {
 
     private final ConfigurationProvider configurationProvider;
-    private final FilterRequestParser filterRequestParser;
 
-    public ConfigurationController(
-            ConfigurationProvider configurationProvider, FilterRequestParser filterRequestParser) {
+    public ConfigurationController(ConfigurationProvider configurationProvider) {
         this.configurationProvider = configurationProvider;
-        this.filterRequestParser = filterRequestParser;
     }
 
     @GetMapping("/producer")
@@ -66,18 +61,10 @@ public class ConfigurationController {
             @Parameter(hidden = true) @AuthenticationPrincipal EnhancedPrincipal principal,
             @Parameter(name = "producer_id", description = "Optional Producer identifier to filter configuration")
                     @RequestParam(value = "producer_id", required = false)
-                    Long producerId,
-            @Parameter(
-                            name = "filter",
-                            description =
-                                    "Optional JSON-encoded filter (FilterNode: a Comparison or a Group of them) narrowing"
-                                            + " the returned producers, evaluated by the database alongside producer_id")
-                    @RequestParam(value = "filter", required = false)
-                    String filter) {
+                    Long producerId) {
         log.info("Preparing Federator Producer Config for producer {}", producerId);
-        Optional<FilterNode> filterNode = filterRequestParser.parse(filter);
         return configurationProvider.getProducerConfigByClientId(
-                principal.clientId(), producerId != null ? Optional.of(producerId) : Optional.empty(), filterNode);
+                principal.clientId(), producerId != null ? Optional.of(producerId) : Optional.empty());
     }
 
     @GetMapping("/consumer")
@@ -103,18 +90,10 @@ public class ConfigurationController {
             @Parameter(hidden = true) @AuthenticationPrincipal EnhancedPrincipal principal,
             @Parameter(name = "consumer_id", description = "Optional Consumer identifier to filter configuration")
                     @RequestParam(value = "consumer_id", required = false)
-                    Long consumerId,
-            @Parameter(
-                            name = "filter",
-                            description =
-                                    "Optional JSON-encoded filter (FilterNode: a Comparison or a Group of them) narrowing"
-                                            + " the returned consumers, evaluated by the database alongside consumer_id")
-                    @RequestParam(value = "filter", required = false)
-                    String filter) {
+                    Long consumerId) {
         log.info("Preparing Consumer Config for client Id {} and Consumer {}", principal.clientId(), consumerId);
 
-        Optional<FilterNode> filterNode = filterRequestParser.parse(filter);
         return configurationProvider.getConsumerConfigByClientId(
-                principal.clientId(), consumerId != null ? Optional.of(consumerId) : Optional.empty(), filterNode);
+                principal.clientId(), consumerId != null ? Optional.of(consumerId) : Optional.empty());
     }
 }
