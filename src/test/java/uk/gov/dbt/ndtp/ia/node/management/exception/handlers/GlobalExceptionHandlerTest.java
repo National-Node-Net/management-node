@@ -21,8 +21,6 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.AuthenticationProcessingException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.ErrorResponse;
 import uk.gov.dbt.ndtp.ia.node.management.exception.JwtClaimParsingException;
-import uk.gov.dbt.ndtp.ia.node.management.filter.FilterCompilationException;
-import uk.gov.dbt.ndtp.ia.node.management.filter.FilterCompilationException.Origin;
 
 /**
  * Tests for the GlobalExceptionHandler class.
@@ -133,45 +131,6 @@ class GlobalExceptionHandlerTest {
         assertNotNull(errorResponse);
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), errorResponse.getStatus());
         assertEquals("An unexpected error occurred", errorResponse.getMessage());
-        assertNotNull(errorResponse.getErrorId());
-    }
-
-    @Test
-    void handleFilterCompilationException_withRequestOrigin_shouldReturnBadRequestWithExceptionMessage() {
-        // Arrange
-        String message = "Unknown attribute 'nope' for resource type 'PRODUCER'";
-        FilterCompilationException exception = new FilterCompilationException(Origin.REQUEST, message);
-
-        // Act
-        ResponseEntity<ErrorResponse> response =
-                exceptionHandler.handleFilterCompilationException(exception, webRequest);
-
-        // Assert
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ErrorResponse errorResponse = response.getBody();
-        assertNotNull(errorResponse);
-        assertEquals(HttpStatus.BAD_REQUEST.value(), errorResponse.getStatus());
-        assertEquals(message, errorResponse.getMessage());
-        assertNotNull(errorResponse.getErrorId());
-    }
-
-    @Test
-    void handleFilterCompilationException_withPolicyOrigin_shouldReturnInternalServerErrorWithGenericMessage() {
-        // Arrange
-        String internalMessage = "Attribute definition declares unsupported data_type 'XML'";
-        FilterCompilationException exception = new FilterCompilationException(Origin.POLICY, internalMessage);
-
-        // Act
-        ResponseEntity<ErrorResponse> response =
-                exceptionHandler.handleFilterCompilationException(exception, webRequest);
-
-        // Assert
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        ErrorResponse errorResponse = response.getBody();
-        assertNotNull(errorResponse);
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), errorResponse.getStatus());
-        // The config-defect detail stays server-side (in the log), never in the response body.
-        assertEquals("An internal server error occurred", errorResponse.getMessage());
         assertNotNull(errorResponse.getErrorId());
     }
 

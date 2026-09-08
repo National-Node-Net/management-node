@@ -19,7 +19,6 @@ import uk.gov.dbt.ndtp.ia.node.management.exception.AuthenticationProcessingExce
 import uk.gov.dbt.ndtp.ia.node.management.exception.CertificateSigningException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.ErrorResponse;
 import uk.gov.dbt.ndtp.ia.node.management.exception.PkiException;
-import uk.gov.dbt.ndtp.ia.node.management.filter.FilterCompilationException;
 
 /**
  * Global exception handler for the application.
@@ -134,47 +133,6 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(), "PKI/Certificate error: " + ex.getMessage(), errorId);
 
-        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-    /**
-     * Handles FilterCompilationException raised while validating/compiling a caller-supplied
-     * configuration filter. {@code Origin.REQUEST} - a malformed or unknown-attribute filter -
-     * maps to 400 with the exception's own message, which by construction names only the
-     * caller-supplied attribute, never an internal table/column name. {@code Origin.POLICY} - an
-     * attribute definition or stored value this system's own configuration cannot honour - maps
-     * to 500 with a generic message, consistent with the other 500 handlers below: the detail
-     * stays server-side, in the log.
-     *
-     * @param ex      the exception
-     * @param request the current request
-     * @return a ResponseEntity with a 400 or 500 error message depending on {@link
-     *     FilterCompilationException#origin()}
-     */
-    @ExceptionHandler(FilterCompilationException.class)
-    public ResponseEntity<ErrorResponse> handleFilterCompilationException(
-            FilterCompilationException ex, WebRequest request) {
-
-        String errorId = generateErrorId();
-
-        if (ex.origin() == FilterCompilationException.Origin.REQUEST) {
-            log.debug(
-                    "Rejected caller filter, error_id={}, path={}: {}",
-                    errorId,
-                    request.getDescription(false),
-                    ex.getMessage());
-            ErrorResponse errorResponse = new ErrorResponse(HttpStatus.BAD_REQUEST.value(), ex.getMessage(), errorId);
-            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
-        }
-
-        log.error(
-                "Filter attribute configuration defect, error_id={}, path={}: {}",
-                errorId,
-                request.getDescription(false),
-                ex.getMessage(),
-                ex);
-        ErrorResponse errorResponse = new ErrorResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(), "An internal server error occurred", errorId);
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
