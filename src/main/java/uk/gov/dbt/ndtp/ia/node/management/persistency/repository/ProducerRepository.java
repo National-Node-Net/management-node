@@ -7,10 +7,7 @@
 package uk.gov.dbt.ndtp.ia.node.management.persistency.repository;
 
 import java.util.List;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Producer;
@@ -25,19 +22,7 @@ import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Product;
  * entity with the identifier type {@link Long}.
  */
 @Repository
-public interface ProducerRepository extends JpaRepository<Producer, Long>, JpaSpecificationExecutor<Producer> {
-
-    /**
-     * {@inheritDoc}
-     *
-     * <p>Fetches {@code products} alongside each match so the filtered configuration path does
-     * not lazily N+1-load them the way {@link #findByIdpClientId} avoids it via {@code JOIN
-     * FETCH} - {@link JpaSpecificationExecutor}'s base implementation does not fetch-join by
-     * default.
-     */
-    @Override
-    @EntityGraph(attributePaths = {"products", "products.productType"})
-    List<Producer> findAll(Specification<Producer> spec);
+public interface ProducerRepository extends JpaRepository<Producer, Long> {
 
     /**
      * Retrieves a list of {@link Producer} entities, including their associated {@link Product} entities

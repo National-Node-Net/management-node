@@ -14,11 +14,9 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.jpa.domain.Specification;
 import uk.gov.dbt.ndtp.ia.node.management.converter.impl.OrganisationProducerConverter;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProducerDTO;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Producer;
@@ -151,37 +149,5 @@ class ProducerServiceImplTest {
         // Verify
         verify(producerRepository).findByIdpClientId(nonExistingClientId);
         verify(organisationProducerConverter).toDtoList(emptyProducers);
-    }
-
-    @Test
-    void getProducersByClientId_withFilter_combinesClientScopingAndFilterViaAnd() {
-        Specification<Producer> callerFilter = mock(Specification.class);
-        List<Producer> producers = List.of(producer);
-        List<ProducerDTO> producerDTOs = List.of(producerDTO);
-
-        when(producerRepository.findAll(any(Specification.class))).thenReturn(producers);
-        when(organisationProducerConverter.toDtoList(producers)).thenReturn(producerDTOs);
-
-        List<ProducerDTO> result = producerService.getProducersByClientId(clientId, callerFilter);
-
-        assertEquals(producerDTOs, result);
-        ArgumentCaptor<Specification<Producer>> captor = ArgumentCaptor.forClass(Specification.class);
-        verify(producerRepository).findAll(captor.capture());
-        // The combined specification must AND the caller filter with client scoping, not replace it.
-        assertNotEquals(callerFilter, captor.getValue());
-    }
-
-    @Test
-    void getProducersByClientId_withNullFilter_stillScopesByClient() {
-        List<Producer> producers = List.of(producer);
-        List<ProducerDTO> producerDTOs = List.of(producerDTO);
-
-        when(producerRepository.findAll(any(Specification.class))).thenReturn(producers);
-        when(organisationProducerConverter.toDtoList(producers)).thenReturn(producerDTOs);
-
-        List<ProducerDTO> result = producerService.getProducersByClientId(clientId, null);
-
-        assertEquals(producerDTOs, result);
-        verify(producerRepository).findAll(any(Specification.class));
     }
 }

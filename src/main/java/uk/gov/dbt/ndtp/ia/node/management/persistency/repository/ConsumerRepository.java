@@ -7,29 +7,15 @@
 package uk.gov.dbt.ndtp.ia.node.management.persistency.repository;
 
 import java.util.List;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Consumer;
 
 @Repository
-public interface ConsumerRepository extends JpaRepository<Consumer, Long>, JpaSpecificationExecutor<Consumer> {
+public interface ConsumerRepository extends JpaRepository<Consumer, Long> {
 
     List<Consumer> findByIdpClientId(String clientId);
-
-    /**
-     * {@inheritDoc}
-     *
-     * <p>Fetches {@code productConsumers} alongside each match, mirroring the {@code JOIN FETCH}
-     * the plain {@code @Query} methods use - {@link JpaSpecificationExecutor}'s base
-     * implementation does not fetch-join by default.
-     */
-    @Override
-    @EntityGraph(attributePaths = {"productConsumers"})
-    List<Consumer> findAll(Specification<Consumer> spec);
 
     /**
      * Retrieves a list of {@link Consumer} entities associated with the specified provider IDs.

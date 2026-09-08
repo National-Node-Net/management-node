@@ -7,9 +7,7 @@
 package uk.gov.dbt.ndtp.ia.node.management.service.data;
 
 import java.util.List;
-import org.springframework.data.jpa.domain.Specification;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProducerDTO;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Producer;
 
 /**
  * Service interface for managing OrganisationProducer entities.
@@ -25,13 +23,4 @@ public interface ProducerService {
     List<ProducerDTO> getProducersByConsumerIds(List<Long> producerIds);
 
     List<ProducerDTO> getProducersByClientId(String clientId);
-
-    /**
-     * Retrieves producers for a client, additionally constrained by a compiled caller filter.
-     *
-     * @param clientId the IDP client ID to scope by
-     * @param filter an additional predicate, AND-ed with the client scoping; {@code null} for none
-     * @return producers matching both the client scope and the filter
-     */
-    List<ProducerDTO> getProducersByClientId(String clientId, Specification<Producer> filter);
 }

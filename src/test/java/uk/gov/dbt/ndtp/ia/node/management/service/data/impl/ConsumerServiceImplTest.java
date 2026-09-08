@@ -16,11 +16,9 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.jpa.domain.Specification;
 import uk.gov.dbt.ndtp.ia.node.management.converter.impl.ConsumerConverter;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.ConsumerDTO;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Consumer;
@@ -157,37 +155,6 @@ class ConsumerServiceImplTest {
         // Verify
         verify(consumerRepository).findConsumersByProviderIds(providerIds);
         verify(consumerConverter).toDto(consumer);
-    }
-
-    @Test
-    void findByIdpClientId_withFilter_combinesClientScopingAndFilterViaAnd() {
-        Specification<Consumer> callerFilter = mock(Specification.class);
-        List<Consumer> consumers = List.of(consumer);
-        List<ConsumerDTO> consumerDTOs = List.of(consumerDTO);
-
-        when(consumerRepository.findAll(any(Specification.class))).thenReturn(consumers);
-        when(consumerConverter.toDtoList(consumers)).thenReturn(consumerDTOs);
-
-        List<ConsumerDTO> result = consumerService.findByIdpClientId(idpClientId, callerFilter);
-
-        assertEquals(consumerDTOs, result);
-        ArgumentCaptor<Specification<Consumer>> captor = ArgumentCaptor.forClass(Specification.class);
-        verify(consumerRepository).findAll(captor.capture());
-        assertNotEquals(callerFilter, captor.getValue());
-    }
-
-    @Test
-    void findByIdpClientId_withNullFilter_stillScopesByClient() {
-        List<Consumer> consumers = List.of(consumer);
-        List<ConsumerDTO> consumerDTOs = List.of(consumerDTO);
-
-        when(consumerRepository.findAll(any(Specification.class))).thenReturn(consumers);
-        when(consumerConverter.toDtoList(consumers)).thenReturn(consumerDTOs);
-
-        List<ConsumerDTO> result = consumerService.findByIdpClientId(idpClientId, null);
-
-        assertEquals(consumerDTOs, result);
-        verify(consumerRepository).findAll(any(Specification.class));
     }
 
     @Test

@@ -9,9 +9,7 @@ package uk.gov.dbt.ndtp.ia.node.management.service.data;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.springframework.data.jpa.domain.Specification;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.ConsumerDTO;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Consumer;
 
 /**
  * Service interface for managing ConsumerId entities.
@@ -32,15 +30,6 @@ public interface ConsumerService {
      * @return a list of ConsumerIdDTO objects matching the IDP client ID
      */
     List<ConsumerDTO> findByIdpClientId(String idpClientId);
-
-    /**
-     * Retrieves consumers for a client, additionally constrained by a compiled caller filter.
-     *
-     * @param idpClientId the IDP client ID to scope by
-     * @param filter an additional predicate, AND-ed with the client scoping; {@code null} for none
-     * @return consumers matching both the client scope and the filter
-     */
-    List<ConsumerDTO> findByIdpClientId(String idpClientId, Specification<Consumer> filter);
 
     /**
      * Retrieves a map of consumers identified by their client_id
