@@ -18,15 +18,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-import uk.gov.dbt.ndtp.ia.node.management.filter.FilterNode;
-import uk.gov.dbt.ndtp.ia.node.management.filter.Specifications;
-import uk.gov.dbt.ndtp.ia.node.management.filter.compiler.SpecificationPredicateCompiler;
-import uk.gov.dbt.ndtp.ia.node.management.filter.registry.ResourceType;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.*;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Consumer;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Producer;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ConsumerService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProducerService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductConsumerService;
@@ -46,8 +39,6 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
 
     private final CertificateValidationProvider certificateValidationProvider;
 
-    private final SpecificationPredicateCompiler specificationPredicateCompiler;
-
     /**
      * Constructs a new ConfigurationProviderImpl with required services.
      *
@@ -55,20 +46,17 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
      * @param consumerAllowedDataProviders the product consumer service
      * @param producerService the producer service
      * @param certificateValidationProvider the certificate validation provider
-     * @param specificationPredicateCompiler compiles a caller filter into a database predicate
      */
     public ConfigurationProviderImpl(
             ConsumerService consumerService,
             ProductConsumerService consumerAllowedDataProviders,
             ProducerService producerService,
-            CertificateValidationProvider certificateValidationProvider,
-            SpecificationPredicateCompiler specificationPredicateCompiler) {
+            CertificateValidationProvider certificateValidationProvider) {
 
         this.consumerService = consumerService;
         this.productConsumerService = consumerAllowedDataProviders;
         this.producerService = producerService;
         this.certificateValidationProvider = certificateValidationProvider;
-        this.specificationPredicateCompiler = specificationPredicateCompiler;
     }
 
     /**
@@ -88,13 +76,12 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
 
     @Override
     public ConsumerConfigDTO getConsumerConfigByClientId(String clientId, Optional<Long> consumerId) {
-        return getConsumerConfigByClientId(clientId, consumerId, Optional.empty());
-    }
-
-    @Override
-    public ConsumerConfigDTO getConsumerConfigByClientId(
-            String clientId, Optional<Long> consumerId, Optional<FilterNode> filter) {
-        List<ConsumerDTO> consumers = getFilteredConsumers(clientId, consumerId, filter);
+        List<ConsumerDTO> consumers = consumerService.findByIdpClientId(clientId);
+        if (consumerId.isPresent()) {
+            consumers = consumers.stream()
+                    .filter(consumer -> consumer.getId().equals(consumerId.get()))
+                    .toList();
+        }
         List<Long> consumerIds = consumers.stream().map(ConsumerDTO::getId).toList();
 
         List<ProductConsumerDTO> validProductConsumers = getValidProductConsumers(consumers);
@@ -162,13 +149,14 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
 
     @Override
     public ProducerConfigDTO getProducerConfigByClientId(String clientId, Optional<Long> producerId) {
-        return getProducerConfigByClientId(clientId, producerId, Optional.empty());
-    }
-
-    @Override
-    public ProducerConfigDTO getProducerConfigByClientId(
-            String clientId, Optional<Long> producerId, Optional<FilterNode> filter) {
-        List<ProducerDTO> producers = getFilteredActiveProducers(clientId, producerId, filter);
+        List<ProducerDTO> producers = producerService.getProducersByClientId(clientId).stream()
+                .filter(ProducerDTO::getActive)
+                .toList();
+        if (producerId.isPresent()) {
+            producers = producers.stream()
+                    .filter(producer -> producerId.get().equals(producer.getId()))
+                    .toList();
+        }
         List<Long> dataProviderIds = collectDataProviderIds(producers);
 
         // Get allowed consumers (not directly used but might be needed for side effects)
@@ -180,93 +168,6 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
                 .clientId(clientId)
                 .producers(producers)
                 .build();
-    }
-
-    /**
-     * Filters consumers by client ID, optional consumer ID, and an optional caller filter.
-     *
-     * <p>When no caller {@code filter} is supplied, this deliberately keeps calling the
-     * pre-existing unfiltered {@code consumerService.findByIdpClientId(clientId)} path (with
-     * {@code consumerId} narrowed in Java, exactly as before this change) rather than the new
-     * {@link Specification}-based overload - see {@link #getFilteredActiveProducers} for why
-     * this matters: the two paths are not equivalent once a fetch-joined to-many association is
-     * involved, and the "no filter" case must stay byte-identical to pre-existing behaviour.
-     *
-     * @param clientId the client ID
-     * @param consumerId the optional consumer ID
-     * @param filter an optional validated caller filter
-     * @return a list of filtered consumers
-     */
-    private List<ConsumerDTO> getFilteredConsumers(
-            String clientId, Optional<Long> consumerId, Optional<FilterNode> filter) {
-        if (filter.isEmpty()) {
-            List<ConsumerDTO> consumers = consumerService.findByIdpClientId(clientId);
-            if (consumerId.isPresent()) {
-                consumers = consumers.stream()
-                        .filter(consumer -> consumer.getId().equals(consumerId.get()))
-                        .toList();
-            }
-            return consumers;
-        }
-        Specification<Consumer> idAndFilterSpec = idAndFilterSpecification(consumerId, filter, ResourceType.CONSUMER);
-        return consumerService.findByIdpClientId(clientId, idAndFilterSpec);
-    }
-
-    /**
-     * Filters active producers by client ID, optional producer ID, and an optional caller filter.
-     *
-     * <p>When no caller {@code filter} is supplied, this deliberately keeps calling the
-     * pre-existing unfiltered {@code producerService.getProducersByClientId(clientId)} path
-     * (with {@code producerId} narrowed in Java, exactly as before this change) rather than the
-     * new {@link Specification}-based overload. The two are NOT equivalent: the pre-existing
-     * repository query fetch-joins {@code products}/{@code productType} with {@code JOIN FETCH}
-     * (an implicit inner join, silently excluding a producer with zero products or a product
-     * with no {@code productType}), while the new {@code @EntityGraph}-based overload fetches
-     * the same associations via an outer join and would start including those producers - a
-     * real behaviour change for every caller, not just ones using the new filter. Routing
-     * through the pre-existing path whenever {@code filter} is absent keeps that case
-     * byte-identical to before this change, confining the new join semantics to genuinely new
-     * filter usage.
-     *
-     * @param clientId the client ID
-     * @param producerId the optional producer ID
-     * @param filter an optional validated caller filter
-     * @return a list of filtered active producers
-     */
-    private List<ProducerDTO> getFilteredActiveProducers(
-            String clientId, Optional<Long> producerId, Optional<FilterNode> filter) {
-        if (filter.isEmpty()) {
-            List<ProducerDTO> producers = producerService.getProducersByClientId(clientId).stream()
-                    .filter(ProducerDTO::getActive)
-                    .toList();
-            if (producerId.isPresent()) {
-                producers = producers.stream()
-                        .filter(producer -> producerId.get().equals(producer.getId()))
-                        .toList();
-            }
-            return producers;
-        }
-        Specification<Producer> idAndFilterSpec = idAndFilterSpecification(producerId, filter, ResourceType.PRODUCER);
-        return producerService.getProducersByClientId(clientId, idAndFilterSpec).stream()
-                .filter(ProducerDTO::getActive)
-                .toList();
-    }
-
-    /**
-     * Builds the id-equality predicate and/or the compiled caller-filter predicate, AND-ed
-     * together. Only called once {@code filter} is known to be present (see the two callers
-     * above); returns just the id predicate, or {@code null}, if {@code id} is absent too - the
-     * service layer still applies client scoping in that case.
-     */
-    private <T> Specification<T> idAndFilterSpecification(
-            Optional<Long> id, Optional<FilterNode> filter, ResourceType resourceType) {
-        Specification<T> spec =
-                id.map(value -> Specifications.<T>fieldEquals("id", value)).orElse(null);
-        if (filter.isPresent()) {
-            Specification<T> filterSpec = specificationPredicateCompiler.compile(resourceType, filter.get());
-            spec = spec == null ? filterSpec : spec.and(filterSpec);
-        }
-        return spec;
     }
 
     /**

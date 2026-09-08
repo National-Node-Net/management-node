@@ -7,7 +7,6 @@
 package uk.gov.dbt.ndtp.ia.node.management.service.providers.configuration;
 
 import java.util.Optional;
-import uk.gov.dbt.ndtp.ia.node.management.filter.FilterNode;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.ConsumerConfigDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProducerConfigDTO;
 
@@ -35,18 +34,6 @@ public interface ConfigurationProvider {
     ConsumerConfigDTO getConsumerConfigByClientId(String clientId, Optional<Long> consumerId);
 
     /**
-     * Retrieves the configuration for a consumer organization, additionally constrained by a
-     * caller-supplied filter conjoined with the existing {@code clientId}/{@code consumerId} scoping.
-     *
-     * @param clientId The unique identifier for the consumer organization. Must not be null or blank.
-     * @param consumerId An optional identifier for the consumer.
-     * @param filter An optional validated caller filter, compiled and applied at the database level.
-     * @return The configuration settings for the specified consumer organization.
-     */
-    ConsumerConfigDTO getConsumerConfigByClientId(
-            String clientId, Optional<Long> consumerId, Optional<FilterNode> filter);
-
-    /**
      * Retrieves the configuration for a producer organization identified by the given client ID.
      *
      * @param clientId   The unique identifier for the producer organization. Must not be null or blank.
@@ -56,16 +43,4 @@ public interface ConfigurationProvider {
      * @throws RuntimeException         if the configuration cannot be retrieved due to system errors.
      */
     ProducerConfigDTO getProducerConfigByClientId(String clientId, Optional<Long> producerId);
-
-    /**
-     * Retrieves the configuration for a producer organization, additionally constrained by a
-     * caller-supplied filter conjoined with the existing {@code clientId}/{@code producerId} scoping.
-     *
-     * @param clientId The unique identifier for the producer organization. Must not be null or blank.
-     * @param producerId An optional identifier for the producer.
-     * @param filter An optional validated caller filter, compiled and applied at the database level.
-     * @return The configuration settings for the specified producer organization.
-     */
-    ProducerConfigDTO getProducerConfigByClientId(
-            String clientId, Optional<Long> producerId, Optional<FilterNode> filter);
 }

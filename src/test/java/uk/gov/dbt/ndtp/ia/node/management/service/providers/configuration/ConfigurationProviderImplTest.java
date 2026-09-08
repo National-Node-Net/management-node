@@ -25,14 +25,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.data.jpa.domain.Specification;
-import uk.gov.dbt.ndtp.ia.node.management.filter.ComparisonOperator;
-import uk.gov.dbt.ndtp.ia.node.management.filter.FilterNode;
-import uk.gov.dbt.ndtp.ia.node.management.filter.compiler.SpecificationPredicateCompiler;
-import uk.gov.dbt.ndtp.ia.node.management.filter.registry.ResourceType;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.*;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Consumer;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Producer;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ConsumerService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProducerService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductConsumerService;
@@ -52,9 +45,6 @@ class ConfigurationProviderImplTest {
     @Mock
     private CertificateValidationProvider certificateValidationProvider;
 
-    @Mock
-    private SpecificationPredicateCompiler specificationPredicateCompiler;
-
     @InjectMocks
     private ConfigurationProviderImpl configurationProvider;
 
@@ -62,11 +52,7 @@ class ConfigurationProviderImplTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         configurationProvider = new ConfigurationProviderImpl(
-                consumerService,
-                productConsumerService,
-                producerService,
-                certificateValidationProvider,
-                specificationPredicateCompiler);
+                consumerService, productConsumerService, producerService, certificateValidationProvider);
         // Default: treat all orgs as having active certificates, override in specific
         // tests to simulate inactive/missing certs.
         when(certificateValidationProvider.findActiveOrganisationIds(any())).thenAnswer(invocation -> {
@@ -380,75 +366,4 @@ class ConfigurationProviderImplTest {
                 .containsExactly(activeOrgConsumer);
     }
 
-    // Regression guards for the routing decision fixed after code review: the pre-existing
-    // JOIN-FETCH-based methods (inner join - excludes a producer with zero products, or a
-    // consumer path with no equivalent issue) must stay in use whenever no caller filter is
-    // supplied, even when producer_id/consumer_id is. Only an actual filter should route
-    // through the new Specification/@EntityGraph (outer join) path - see
-    // ConfigurationProviderImpl.getFilteredActiveProducers/getFilteredConsumers.
-
-    @Test
-    void getProducerConfigByClientId_noFilterNoId_usesPreExistingUnfilteredMethod_notSpecification() {
-        String clientId = "routing-client-1";
-        when(producerService.getProducersByClientId(clientId)).thenReturn(List.of());
-
-        configurationProvider.getProducerConfigByClientId(clientId, Optional.empty());
-
-        verify(producerService).getProducersByClientId(clientId);
-        verify(producerService, never()).getProducersByClientId(eq(clientId), any());
-    }
-
-    @Test
-    void getProducerConfigByClientId_idOnlyNoFilter_stillUsesPreExistingUnfilteredMethod() {
-        String clientId = "routing-client-2";
-        ProducerDTO pr1 = producer(1L, true);
-        when(producerService.getProducersByClientId(clientId)).thenReturn(List.of(pr1));
-
-        ProducerConfigDTO cfg = configurationProvider.getProducerConfigByClientId(clientId, Optional.of(1L));
-
-        verify(producerService).getProducersByClientId(clientId);
-        verify(producerService, never()).getProducersByClientId(eq(clientId), any());
-        assertThat(cfg.getProducers()).extracting(ProducerDTO::getId).containsExactly(1L);
-    }
-
-    @Test
-    void getProducerConfigByClientId_withFilter_usesSpecificationOverload_notPreExistingMethod() {
-        String clientId = "routing-client-3";
-        when(producerService.getProducersByClientId(eq(clientId), any())).thenReturn(List.of());
-        FilterNode.Comparison filter = FilterNode.Comparison.of("active", ComparisonOperator.EQ, true);
-        Specification<Producer> compiledSpec = mock(Specification.class);
-        when(specificationPredicateCompiler.<Producer>compile(ResourceType.PRODUCER, filter))
-                .thenReturn(compiledSpec);
-
-        configurationProvider.getProducerConfigByClientId(clientId, Optional.empty(), Optional.of(filter));
-
-        verify(producerService).getProducersByClientId(eq(clientId), any());
-        verify(producerService, never()).getProducersByClientId(clientId);
-    }
-
-    @Test
-    void getConsumerConfigByClientId_noFilterNoId_usesPreExistingUnfilteredMethod_notSpecification() {
-        String clientId = "routing-client-4";
-        when(consumerService.findByIdpClientId(clientId)).thenReturn(List.of());
-
-        configurationProvider.getConsumerConfigByClientId(clientId, Optional.empty());
-
-        verify(consumerService).findByIdpClientId(clientId);
-        verify(consumerService, never()).findByIdpClientId(eq(clientId), any());
-    }
-
-    @Test
-    void getConsumerConfigByClientId_withFilter_usesSpecificationOverload_notPreExistingMethod() {
-        String clientId = "routing-client-5";
-        when(consumerService.findByIdpClientId(eq(clientId), any())).thenReturn(List.of());
-        FilterNode.Comparison filter = FilterNode.Comparison.of("name", ComparisonOperator.EQ, "c1");
-        Specification<Consumer> compiledSpec = mock(Specification.class);
-        when(specificationPredicateCompiler.<Consumer>compile(ResourceType.CONSUMER, filter))
-                .thenReturn(compiledSpec);
-
-        configurationProvider.getConsumerConfigByClientId(clientId, Optional.empty(), Optional.of(filter));
-
-        verify(consumerService).findByIdpClientId(eq(clientId), any());
-        verify(consumerService, never()).findByIdpClientId(clientId);
-    }
 }
