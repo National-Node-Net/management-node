@@ -42,8 +42,10 @@ public class ConfigurationController {
     @PreAuthorize("hasAuthority('ROLE_management-node:access_producer_configurations')")
     @Operation(
             summary = "Get Federator Producer configuration",
-            description =
-                    "Returns configuration for the authenticated client, optionally scoped to a specific producer.",
+            description = "Returns configuration for the authenticated client, optionally scoped to a specific"
+                    + " producer. Each producer, its allowed consumers, their organisations, and each"
+                    + " subscription carry their live policy attributes (policyAttributes /"
+                    + " organisationPolicyAttributes), returned as an empty array when none are set.",
             security = {@SecurityRequirement(name = "bearerAuth")})
     @ApiResponse(
             responseCode = "200",
