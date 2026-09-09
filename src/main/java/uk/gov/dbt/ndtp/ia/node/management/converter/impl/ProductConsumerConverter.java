@@ -35,6 +35,7 @@ public class ProductConsumerConverter implements EntityDtoConverter<ProductConsu
         }
 
         ProductConsumerDTO dto = ProductConsumerDTO.builder()
+                .id(entity.getId())
                 .productId(entity.getProduct() != null ? entity.getProduct().getId() : null)
                 .consumerId(entity.getConsumer() != null ? entity.getConsumer().getId() : null)
                 .grantedTs(entity.getGrantedTs())

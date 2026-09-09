@@ -39,4 +39,7 @@ public class ConsumerDTO {
     private String scheduleExpression;
 
     private final List<AttributesDTO> attributes = new ArrayList<>();
+
+    private final List<PolicyAttributeDTO> policyAttributes = new ArrayList<>();
+    private final List<PolicyAttributeDTO> organisationPolicyAttributes = new ArrayList<>();
 }

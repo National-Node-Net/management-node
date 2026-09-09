@@ -8,6 +8,8 @@ package uk.gov.dbt.ndtp.ia.node.management.persistency.repository;
 
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.AttributeValue;
 
@@ -24,4 +26,22 @@ public interface AttributeValueRepository extends JpaRepository<AttributeValue, 
 
     List<AttributeValue> findByAttributeDefinitionScopeIdAndEntityIdAndIsDeletedFalse(
             Long attributeDefinitionScopeId, Long entityId);
+
+    /**
+     * Every live (non-soft-deleted) attribute value recorded against one entity within one
+     * {@code attribute_scope.code}, with its defining {@code attribute_definition_scope}/
+     * {@code attribute_definition} eagerly fetched so callers can read {@code namespace}/
+     * {@code name}/{@code data_type} without a second query per row.
+     *
+     * @param entityId the polymorphic entity id (e.g. a {@code producer.id} or {@code consumer.id})
+     * @param scopeCode the {@code attribute_scope.code} to filter to (e.g. {@code "PRODUCER"})
+     */
+    @Query("SELECT av FROM AttributeValue av "
+            + "JOIN FETCH av.attributeDefinitionScope ads "
+            + "JOIN FETCH ads.attributeDefinition ad "
+            + "WHERE av.entityId = :entityId "
+            + "AND ads.attributeScope.code = :scopeCode "
+            + "AND av.isDeleted = false")
+    List<AttributeValue> findLiveByEntityIdAndScopeCode(
+            @Param("entityId") Long entityId, @Param("scopeCode") String scopeCode);
 }
