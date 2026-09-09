@@ -76,7 +76,12 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
 
     @Override
     public ConsumerConfigDTO getConsumerConfigByClientId(String clientId, Optional<Long> consumerId) {
-        List<ConsumerDTO> consumers = getFilteredConsumers(clientId, consumerId);
+        List<ConsumerDTO> consumers = consumerService.findByIdpClientId(clientId);
+        if (consumerId.isPresent()) {
+            consumers = consumers.stream()
+                    .filter(consumer -> consumer.getId().equals(consumerId.get()))
+                    .toList();
+        }
         List<Long> consumerIds = consumers.stream().map(ConsumerDTO::getId).toList();
 
         List<ProductConsumerDTO> validProductConsumers = getValidProductConsumers(consumers);
@@ -144,7 +149,14 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
 
     @Override
     public ProducerConfigDTO getProducerConfigByClientId(String clientId, Optional<Long> producerId) {
-        List<ProducerDTO> producers = getFilteredActiveProducers(clientId, producerId);
+        List<ProducerDTO> producers = producerService.getProducersByClientId(clientId).stream()
+                .filter(ProducerDTO::getActive)
+                .toList();
+        if (producerId.isPresent()) {
+            producers = producers.stream()
+                    .filter(producer -> producerId.get().equals(producer.getId()))
+                    .toList();
+        }
         List<Long> dataProviderIds = collectDataProviderIds(producers);
 
         // Get allowed consumers (not directly used but might be needed for side effects)
@@ -156,46 +168,6 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
                 .clientId(clientId)
                 .producers(producers)
                 .build();
-    }
-
-    /**
-     * Filters consumers by client ID and optional consumer ID.
-     *
-     * @param clientId the client ID
-     * @param consumerId the optional consumer ID
-     * @return a list of filtered consumers
-     */
-    private List<ConsumerDTO> getFilteredConsumers(String clientId, Optional<Long> consumerId) {
-        List<ConsumerDTO> consumers = consumerService.findByIdpClientId(clientId);
-
-        if (consumerId.isPresent()) {
-            consumers = consumers.stream()
-                    .filter(consumer -> consumer.getId().equals(consumerId.get()))
-                    .toList();
-        }
-
-        return consumers;
-    }
-
-    /**
-     * Filters active producers by client ID and optional producer ID.
-     *
-     * @param clientId the client ID
-     * @param producerId the optional producer ID
-     * @return a list of filtered active producers
-     */
-    private List<ProducerDTO> getFilteredActiveProducers(String clientId, Optional<Long> producerId) {
-        List<ProducerDTO> producers = producerService.getProducersByClientId(clientId).stream()
-                .filter(ProducerDTO::getActive)
-                .toList();
-
-        if (producerId.isPresent()) {
-            producers = producers.stream()
-                    .filter(producer -> producerId.get().equals(producer.getId()))
-                    .toList();
-        }
-
-        return producers;
     }
 
     /**
@@ -265,7 +237,7 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
      */
     private boolean isValidProvider(ProductConsumerDTO provider) {
 
-        if (provider.getValidity() == null || provider.getValidity().equals(BigDecimal.ZERO)) return true;
+        if (provider.getValidity() == null || provider.getValidity().compareTo(BigDecimal.ZERO) == 0) return true;
 
         return isValidGrantedTs(provider.getGrantedTs(), provider.getValidity());
     }

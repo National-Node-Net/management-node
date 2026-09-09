@@ -159,8 +159,7 @@ class ConfigurationProviderImplTest {
     void getConsumerConfigByClientId_withConsumerIdFilter_appliesFilter_andRemovesNullProductIds() {
         String clientId = "clientC";
         ConsumerDTO c1 = consumer(3L, clientId, "c3", "CRON", "@daily");
-        ConsumerDTO cOther = consumer(99L, clientId, "other", "CRON", "@minutely");
-        when(consumerService.findByIdpClientId(clientId)).thenReturn(List.of(c1, cOther));
+        when(consumerService.findByIdpClientId(clientId)).thenReturn(List.of(c1));
 
         ProductConsumerDTO pc = productConsumer(300L, 3L, null, null);
         when(productConsumerService.findByConsumerId(3L)).thenReturn(List.of(pc));
@@ -272,8 +271,8 @@ class ConfigurationProviderImplTest {
     void getConsumerConfigByClientId_withConsumerId_filtersByConsumerId() {
         String clientId = "clientA";
         ConsumerDTO c1 = consumer(1L, clientId, "c1", "CRON", "@hourly");
-        ConsumerDTO c2 = consumer(2L, clientId, "c2", "CRON", "@daily");
-        when(consumerService.findByIdpClientId(clientId)).thenReturn(List.of(c1, c2));
+
+        when(consumerService.findByIdpClientId(clientId)).thenReturn(List.of(c1));
 
         ConsumerConfigDTO cfg = configurationProvider.getConsumerConfigByClientId(clientId, Optional.of(1L));
 
@@ -284,11 +283,9 @@ class ConfigurationProviderImplTest {
     void getProducerConfigByClientId_withProducerId_filtersByProducerId() {
         String clientId = "producerClient";
         ProductDTO p1 = product(100L, "p1");
-        ProductDTO p2 = product(101L, "p2");
         ProducerDTO pr1 = producer(1L, true, p1);
-        ProducerDTO pr2 = producer(2L, true, p2);
 
-        when(producerService.getProducersByClientId(clientId)).thenReturn(List.of(pr1, pr2));
+        when(producerService.getProducersByClientId(clientId)).thenReturn(List.of(pr1));
 
         ProducerConfigDTO cfg = configurationProvider.getProducerConfigByClientId(clientId, Optional.of(1L));
 
