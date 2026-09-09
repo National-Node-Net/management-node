@@ -9,18 +9,27 @@ package uk.gov.dbt.ndtp.ia.node.management.persistency.repository;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import jakarta.persistence.EntityManagerFactory;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
+import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.AttributeDefinition;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.AttributeDefinitionScope;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.AttributeScope;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.AttributeValue;
 
 class AttributeValueRepositoryTest extends AbstractPostgresRepositoryTest {
+
+    @DynamicPropertySource
+    static void statisticsProperty(DynamicPropertyRegistry registry) {
+        registry.add("spring.jpa.properties.hibernate.generate_statistics", () -> "true");
+    }
 
     @Autowired
     private AttributeDefinitionRepository attributeDefinitionRepository;
@@ -34,7 +43,14 @@ class AttributeValueRepositoryTest extends AbstractPostgresRepositoryTest {
     @Autowired
     private AttributeValueRepository attributeValueRepository;
 
+    @Autowired
+    private EntityManagerFactory entityManagerFactory;
+
     private AttributeDefinitionScope persistProductScopedBinding(String attributeName) {
+        return persistScopedBinding(attributeName, "PRODUCT");
+    }
+
+    private AttributeDefinitionScope persistScopedBinding(String attributeName, String scopeCode) {
         AttributeDefinition definition = new AttributeDefinition();
         definition.setNamespace("policy");
         definition.setName(attributeName);
@@ -44,12 +60,11 @@ class AttributeValueRepositoryTest extends AbstractPostgresRepositoryTest {
         definition.setCreatedBy("test");
         definition = attributeDefinitionRepository.saveAndFlush(definition);
 
-        AttributeScope productScope =
-                attributeScopeRepository.findByCode("PRODUCT").orElseThrow();
+        AttributeScope scope = attributeScopeRepository.findByCode(scopeCode).orElseThrow();
 
         AttributeDefinitionScope binding = new AttributeDefinitionScope();
         binding.setAttributeDefinition(definition);
-        binding.setAttributeScope(productScope);
+        binding.setAttributeScope(scope);
         binding.setRequired(false);
         binding.setCreatedAt(Timestamp.from(Instant.now()));
         binding.setCreatedBy("test");
@@ -137,5 +152,55 @@ class AttributeValueRepositoryTest extends AbstractPostgresRepositoryTest {
                         binding.getId(), 1005L);
         assertThat(live).hasSize(1);
         assertThat(live.get(0).getValue()).isEqualTo("\"gold\"");
+    }
+
+    // findLiveByEntityIdAndScopeCode - task 1.1
+
+    @Test
+    void findLiveByEntityIdAndScopeCode_returnsMatchWithDefinitionEagerlyFetched() {
+        AttributeDefinitionScope binding = persistScopedBinding("producer-tier", "PRODUCER");
+        attributeValueRepository.saveAndFlush(newValue(binding, 2001L, "\"gold\""));
+
+        SessionFactory sessionFactory = entityManagerFactory.unwrap(SessionFactory.class);
+        sessionFactory.getStatistics().clear();
+
+        List<AttributeValue> live = attributeValueRepository.findLiveByEntityIdAndScopeCode(2001L, "PRODUCER");
+
+        assertThat(live).hasSize(1);
+        AttributeValue found = live.get(0);
+        // Accessing the definition must not trigger an additional query - proves the JOIN FETCH,
+        // not lazy N+1 loading, populated it.
+        assertThat(found.getAttributeDefinitionScope().getAttributeDefinition().getName())
+                .isEqualTo("producer-tier");
+        assertThat(sessionFactory.getStatistics().getQueryExecutionCount()).isEqualTo(1);
+    }
+
+    @Test
+    void findLiveByEntityIdAndScopeCode_excludesSoftDeletedValue() {
+        AttributeDefinitionScope binding = persistScopedBinding("producer-tier-deleted", "PRODUCER");
+        AttributeValue value = newValue(binding, 2002L, "\"gold\"");
+        value.setIsDeleted(true);
+        attributeValueRepository.saveAndFlush(value);
+
+        List<AttributeValue> live = attributeValueRepository.findLiveByEntityIdAndScopeCode(2002L, "PRODUCER");
+
+        assertThat(live).isEmpty();
+    }
+
+    @Test
+    void findLiveByEntityIdAndScopeCode_excludesValueUnderDifferentScope() {
+        AttributeDefinitionScope binding = persistScopedBinding("consumer-only-tier", "CONSUMER");
+        attributeValueRepository.saveAndFlush(newValue(binding, 2003L, "\"gold\""));
+
+        List<AttributeValue> live = attributeValueRepository.findLiveByEntityIdAndScopeCode(2003L, "PRODUCER");
+
+        assertThat(live).isEmpty();
+    }
+
+    @Test
+    void findLiveByEntityIdAndScopeCode_returnsEmptyForUnknownEntity() {
+        List<AttributeValue> live = attributeValueRepository.findLiveByEntityIdAndScopeCode(999999L, "PRODUCER");
+
+        assertThat(live).isEmpty();
     }
 }
