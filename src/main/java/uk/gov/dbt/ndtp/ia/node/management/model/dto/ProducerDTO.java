@@ -41,4 +41,6 @@ public class ProducerDTO {
     private BigDecimal port;
     private Boolean tls;
     private String idpClientId;
+
+    private final List<PolicyAttributeDTO> policyAttributes = new ArrayList<>();
 }

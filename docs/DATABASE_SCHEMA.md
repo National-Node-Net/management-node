@@ -39,6 +39,9 @@ erDiagram
   CONSUMER ||--o{ PRODUCT_CONSUMER : consumes
   PRODUCT_CONSUMER ||--o{ PRODUCT_CONSUMER_ATTRIBUTE : has
   PRODUCT_TYPE ||--o{ PRODUCT : categorizes
+  POLICY_ATTRIBUTE_DEFINITION ||--o{ POLICY_ATTRIBUTE_DEFINITION_SCOPE : "bound via"
+  POLICY_ATTRIBUTE_SCOPE ||--o{ POLICY_ATTRIBUTE_DEFINITION_SCOPE : "bound via"
+  POLICY_ATTRIBUTE_DEFINITION_SCOPE ||--o{ POLICY_ATTRIBUTE_VALUE : has
 
   ORGANISATION {
     BIGSERIAL id PK
@@ -115,6 +118,53 @@ erDiagram
     VARCHAR event_type
     TIMESTAMP event_time
     VARCHAR performed_by
+  }
+  POLICY_ATTRIBUTE_SCOPE {
+    BIGSERIAL id PK
+    VARCHAR code
+    VARCHAR table_name
+    VARCHAR description
+  }
+  POLICY_ATTRIBUTE_DEFINITION {
+    BIGSERIAL id PK
+    VARCHAR namespace
+    VARCHAR name
+    VARCHAR display_name
+    TEXT description
+    VARCHAR data_type
+    BOOLEAN multi_valued
+    JSONB allowed_values
+    VARCHAR validation_pattern
+    JSONB classification
+    BOOLEAN sensitive
+    BOOLEAN is_deleted
+    TIMESTAMP created_at
+    VARCHAR created_by
+    TIMESTAMP updated_at
+    VARCHAR updated_by
+  }
+  POLICY_ATTRIBUTE_DEFINITION_SCOPE {
+    BIGSERIAL id PK
+    BIGINT attribute_definition_id FK
+    BIGINT attribute_scope_id FK
+    BOOLEAN required
+    JSONB default_value
+    BOOLEAN is_deleted
+    TIMESTAMP created_at
+    VARCHAR created_by
+    TIMESTAMP updated_at
+    VARCHAR updated_by
+  }
+  POLICY_ATTRIBUTE_VALUE {
+    BIGSERIAL id PK
+    BIGINT attribute_definition_scope_id FK
+    BIGINT entity_id
+    JSONB value
+    BOOLEAN is_deleted
+    TIMESTAMP created_at
+    VARCHAR created_by
+    TIMESTAMP updated_at
+    VARCHAR updated_by
   }
 ```
 
@@ -281,6 +331,104 @@ Constraints:
 
 Usage:
 - Provides an audit log of all certificate lifecycle transitions. Each event captures what happened, when, and who performed the action.
+
+---
+
+### policy_attribute_scope
+Which core entity types may carry dynamic policy attributes, and the table `policy_attribute_value.entity_id` resolves against for that scope.
+
+Columns:
+- `id` BIGSERIAL, primary key
+- `code` VARCHAR(50), not null — unique scope identifier (e.g. `PRODUCT`)
+- `table_name` VARCHAR(150), not null — the table `policy_attribute_value.entity_id` is a row id in, for this scope
+- `description` VARCHAR(500), nullable
+
+Constraints:
+- UNIQUE on `code` (`uq_policy_attribute_scope__code`)
+
+Usage:
+- Seeded by migration with one row per core entity type: `ORGANISATION` (`organisation`), `CONSUMER` (`consumer`), `PRODUCER` (`producer`), `PRODUCT` (`product`), `SUBSCRIPTION` (`product_consumer`).
+- Referenced by `policy_attribute_definition_scope` to say which scopes an attribute definition applies to.
+
+---
+
+### policy_attribute_definition
+Vocabulary of policy attributes: name, type, and validation metadata, independent of which scope(s) it applies to.
+
+Columns:
+- `id` BIGSERIAL, primary key
+- `namespace` VARCHAR(150), not null
+- `name` VARCHAR(150), not null
+- `display_name` VARCHAR(255), nullable
+- `description` TEXT, not null
+- `data_type` VARCHAR(50), not null
+- `multi_valued` BOOLEAN, not null, default FALSE
+- `allowed_values` JSONB, nullable
+- `validation_pattern` VARCHAR(500), nullable
+- `classification` JSONB, nullable
+- `sensitive` BOOLEAN, not null, default FALSE
+- `is_deleted` BOOLEAN, not null, default FALSE
+- `created_at` TIMESTAMP, not null, default `now()`
+- `created_by` VARCHAR(255), not null
+- `updated_at` TIMESTAMP, nullable
+- `updated_by` VARCHAR(255), nullable
+
+Constraints:
+- UNIQUE on (`namespace`, `name`) (`uq_policy_attribute_definition__namespace_name`)
+
+Usage:
+- Defines the shape of a policy attribute (e.g. data type, whether it can hold multiple values, allowed values, sensitivity) independently of where it can be attached.
+
+---
+
+### policy_attribute_definition_scope
+Which scopes a `policy_attribute_definition` is valid on, whether required there, and its default value.
+
+Columns:
+- `id` BIGSERIAL, primary key
+- `attribute_definition_id` BIGINT, not null, foreign key → `policy_attribute_definition(id)`
+- `attribute_scope_id` BIGINT, not null, foreign key → `policy_attribute_scope(id)`
+- `required` BOOLEAN, not null, default FALSE
+- `default_value` JSONB, nullable
+- `is_deleted` BOOLEAN, not null, default FALSE
+- `created_at` TIMESTAMP, not null, default `now()`
+- `created_by` VARCHAR(255), not null
+- `updated_at` TIMESTAMP, nullable
+- `updated_by` VARCHAR(255), nullable
+
+Constraints:
+- UNIQUE on (`attribute_definition_id`, `attribute_scope_id`) (`uq_policy_attribute_definition_scope__definition_scope`)
+- Index on `attribute_definition_id` (`idx_policy_attribute_definition_scope__attribute_definition_id`)
+- Index on `attribute_scope_id` (`idx_policy_attribute_definition_scope__attribute_scope_id`)
+
+Usage:
+- Binds a definition to one or more scopes, controlling per-scope requiredness and default.
+
+---
+
+### policy_attribute_value
+Actual policy attribute values recorded against a specific entity.
+
+Columns:
+- `id` BIGSERIAL, primary key
+- `attribute_definition_scope_id` BIGINT, not null, foreign key → `policy_attribute_definition_scope(id)`
+- `entity_id` BIGINT, not null — polymorphic reference: the primary key of the row in the table named by the value's `policy_attribute_scope.table_name`. Not a declared foreign key, since the target table varies by scope.
+- `value` JSONB, not null
+- `is_deleted` BOOLEAN, not null, default FALSE
+- `created_at` TIMESTAMP, not null, default `now()`
+- `created_by` VARCHAR(255), not null
+- `updated_at` TIMESTAMP, nullable
+- `updated_by` VARCHAR(255), nullable
+
+Constraints:
+- Index on `entity_id` (`idx_policy_attribute_value__entity_id`)
+- Partial UNIQUE index on (`attribute_definition_scope_id`, `entity_id`, `value`) WHERE `is_deleted = FALSE` (`uq_policy_attr_value_live`) — an idempotency guard against persisting an exact-duplicate live value; it does not by itself enforce "one live value per entity" for single-valued attributes (that check spans `policy_attribute_definition.multi_valued` and is left to the service layer that writes these rows)
+
+Soft-delete triggers:
+- `trg_organisation_policy_attribute_value_soft_delete`, `trg_consumer_policy_attribute_value_soft_delete`, `trg_producer_policy_attribute_value_soft_delete`, `trg_product_policy_attribute_value_soft_delete`, `trg_product_consumer_policy_attribute_value_soft_delete` — one `AFTER DELETE` trigger per owning table (`organisation`, `consumer`, `producer`, `product`, `product_consumer`), all calling the shared function `fn_policy_attribute_value_soft_delete_on_entity_delete()`. When a row in one of those tables is deleted, every live (`is_deleted = FALSE`) `policy_attribute_value` row scoped to that table and entity id is set `is_deleted = TRUE` rather than deleted or left orphaned.
+
+Usage:
+- Stores the actual attribute values used to build the OPA data bundle for policy decisions, keyed by which entity (organisation, consumer, producer, product, or subscription) they describe.
 
 ---
 

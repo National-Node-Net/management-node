@@ -21,6 +21,8 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.*;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ConsumerService;
+import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeScope;
+import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProducerService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductConsumerService;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.CertificateValidationProvider;
@@ -39,6 +41,8 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
 
     private final CertificateValidationProvider certificateValidationProvider;
 
+    private final PolicyAttributeService policyAttributeService;
+
     /**
      * Constructs a new ConfigurationProviderImpl with required services.
      *
@@ -46,17 +50,20 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
      * @param consumerAllowedDataProviders the product consumer service
      * @param producerService the producer service
      * @param certificateValidationProvider the certificate validation provider
+     * @param policyAttributeService resolves policy attributes for the producer config response
      */
     public ConfigurationProviderImpl(
             ConsumerService consumerService,
             ProductConsumerService consumerAllowedDataProviders,
             ProducerService producerService,
-            CertificateValidationProvider certificateValidationProvider) {
+            CertificateValidationProvider certificateValidationProvider,
+            PolicyAttributeService policyAttributeService) {
 
         this.consumerService = consumerService;
         this.productConsumerService = consumerAllowedDataProviders;
         this.producerService = producerService;
         this.certificateValidationProvider = certificateValidationProvider;
+        this.policyAttributeService = policyAttributeService;
     }
 
     /**
@@ -76,7 +83,12 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
 
     @Override
     public ConsumerConfigDTO getConsumerConfigByClientId(String clientId, Optional<Long> consumerId) {
-        List<ConsumerDTO> consumers = getFilteredConsumers(clientId, consumerId);
+        List<ConsumerDTO> consumers = consumerService.findByIdpClientId(clientId);
+        if (consumerId.isPresent()) {
+            consumers = consumers.stream()
+                    .filter(consumer -> consumer.getId().equals(consumerId.get()))
+                    .toList();
+        }
         List<Long> consumerIds = consumers.stream().map(ConsumerDTO::getId).toList();
 
         List<ProductConsumerDTO> validProductConsumers = getValidProductConsumers(consumers);
@@ -144,58 +156,26 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
 
     @Override
     public ProducerConfigDTO getProducerConfigByClientId(String clientId, Optional<Long> producerId) {
-        List<ProducerDTO> producers = getFilteredActiveProducers(clientId, producerId);
+        List<ProducerDTO> producers = producerService.getProducersByClientId(clientId).stream()
+                .filter(ProducerDTO::getActive)
+                .toList();
+        if (producerId.isPresent()) {
+            producers = producers.stream()
+                    .filter(producer -> producerId.get().equals(producer.getId()))
+                    .toList();
+        }
         List<Long> dataProviderIds = collectDataProviderIds(producers);
 
         // Get allowed consumers (not directly used but might be needed for side effects)
         consumerService.getConsumersOfProviders(dataProviderIds);
 
         populateConsumersForProducers(producers);
+        populatePolicyAttributes(producers);
 
         return ProducerConfigDTO.builder()
                 .clientId(clientId)
                 .producers(producers)
                 .build();
-    }
-
-    /**
-     * Filters consumers by client ID and optional consumer ID.
-     *
-     * @param clientId the client ID
-     * @param consumerId the optional consumer ID
-     * @return a list of filtered consumers
-     */
-    private List<ConsumerDTO> getFilteredConsumers(String clientId, Optional<Long> consumerId) {
-        List<ConsumerDTO> consumers = consumerService.findByIdpClientId(clientId);
-
-        if (consumerId.isPresent()) {
-            consumers = consumers.stream()
-                    .filter(consumer -> consumer.getId().equals(consumerId.get()))
-                    .toList();
-        }
-
-        return consumers;
-    }
-
-    /**
-     * Filters active producers by client ID and optional producer ID.
-     *
-     * @param clientId the client ID
-     * @param producerId the optional producer ID
-     * @return a list of filtered active producers
-     */
-    private List<ProducerDTO> getFilteredActiveProducers(String clientId, Optional<Long> producerId) {
-        List<ProducerDTO> producers = producerService.getProducersByClientId(clientId).stream()
-                .filter(ProducerDTO::getActive)
-                .toList();
-
-        if (producerId.isPresent()) {
-            producers = producers.stream()
-                    .filter(producer -> producerId.get().equals(producer.getId()))
-                    .toList();
-        }
-
-        return producers;
     }
 
     /**
@@ -218,7 +198,11 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
 
     /**
      * Resolves consumers for each product and populates them onto the product DTOs,
-     * filtering out consumers whose organisations have inactive certificates.
+     * filtering out consumers whose organisations have inactive certificates. Also attaches
+     * each product's live subscriptions ({@code product_consumer} rows) as {@code
+     * configurations} - previously never populated on this path - since {@link
+     * #populatePolicyAttributes} needs a {@link ProductConsumerDTO} instance per subscription to
+     * attach {@code SUBSCRIPTION}-scope policy attributes to.
      *
      * @param producers the list of producers whose products need consumer resolution
      */
@@ -227,8 +211,13 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
         Map<ProductDTO, List<ConsumerDTO>> consumersByProduct = new LinkedHashMap<>();
         for (ProducerDTO producer : producers) {
             for (ProductDTO product : producer.getProducts()) {
-                List<ConsumerDTO> resolved = productConsumerService.findByDataProviderId(product.getId()).stream()
-                        .filter(this::isValidProvider)
+                List<ProductConsumerDTO> validConfigurations =
+                        productConsumerService.findByDataProviderId(product.getId()).stream()
+                                .filter(this::isValidProvider)
+                                .toList();
+                product.setConfigurations(validConfigurations);
+
+                List<ConsumerDTO> resolved = validConfigurations.stream()
                         .map(cp -> consumerService.findById(cp.getConsumerId()))
                         .filter(Optional::isPresent)
                         .map(Optional::get)
@@ -258,6 +247,37 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
     }
 
     /**
+     * Attaches live policy attributes to every producer, allowed consumer, consumer organisation,
+     * and subscription in the (already assembled) producer config DTO graph - DPAV-3162.
+     *
+     * @param producers the fully assembled producer DTO graph ({@link #populateConsumersForProducers}
+     *     must have already run, so each product's {@code consumers}/{@code configurations} are populated)
+     */
+    private void populatePolicyAttributes(List<ProducerDTO> producers) {
+        for (ProducerDTO producer : producers) {
+            producer.getPolicyAttributes()
+                    .addAll(policyAttributeService.findAttributes(producer.getId(), PolicyAttributeScope.PRODUCER));
+
+            for (ProductDTO product : producer.getProducts()) {
+                for (ConsumerDTO consumer : product.getConsumers()) {
+                    consumer.getPolicyAttributes()
+                            .addAll(policyAttributeService.findAttributes(
+                                    consumer.getId(), PolicyAttributeScope.CONSUMER));
+                    consumer.getOrganisationPolicyAttributes()
+                            .addAll(policyAttributeService.findAttributes(
+                                    consumer.getOrgId(), PolicyAttributeScope.ORGANISATION));
+                }
+                for (ProductConsumerDTO configuration : product.getConfigurations()) {
+                    configuration
+                            .getPolicyAttributes()
+                            .addAll(policyAttributeService.findAttributes(
+                                    configuration.getId(), PolicyAttributeScope.SUBSCRIPTION));
+                }
+            }
+        }
+    }
+
+    /**
      * Checks if a provider (product consumer) is valid based on its granted date and validity period.
      *
      * @param provider the product consumer DTO
@@ -265,7 +285,7 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
      */
     private boolean isValidProvider(ProductConsumerDTO provider) {
 
-        if (provider.getValidity() == null || provider.getValidity().equals(BigDecimal.ZERO)) return true;
+        if (provider.getValidity() == null || provider.getValidity().compareTo(BigDecimal.ZERO) == 0) return true;
 
         return isValidGrantedTs(provider.getGrantedTs(), provider.getValidity());
     }

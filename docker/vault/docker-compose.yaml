@@ -16,9 +16,28 @@ services:
 
     volumes:
       - vault-data:/vault/file
-      - ./config:/vault/config:ro
+      - ./vault/config:/vault/config:ro
 
     command: vault server -config=/vault/config/vault.hcl
+
+  vault-unseal:
+    image: hashicorp/vault:1.16
+    container_name: vault-unseal
+    restart: unless-stopped
+    depends_on:
+      - vault
+
+    environment:
+      VAULT_ADDR: "http://vault:8200"
+
+    # Shamir keys on disk - local dev only. Copy vault-keys.env.example.
+    env_file:
+      - vault-keys.env
+
+    volumes:
+      - ./unseal.sh:/usr/local/bin/unseal.sh:ro
+
+    entrypoint: ["/usr/local/bin/unseal.sh"]
 
 volumes:
   vault-data:

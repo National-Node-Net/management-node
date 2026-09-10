@@ -59,6 +59,7 @@
     <bouncycastle.version>1.84</bouncycastle.version>
     <spring-security.version>6.5.9</spring-security.version>
     <httpcore5.version>5.4.3</httpcore5.version>
+    <tomcat.version>10.1.59</tomcat.version>
     <sonar.coverage.exclusions>**/config/**,
             **/dto/**,
             **/entity/**,
@@ -196,6 +197,16 @@
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
       <version>3.18.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 

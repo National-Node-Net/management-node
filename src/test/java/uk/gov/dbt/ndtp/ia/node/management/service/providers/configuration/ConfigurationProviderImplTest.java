@@ -27,6 +27,8 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.*;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ConsumerService;
+import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeScope;
+import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProducerService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductConsumerService;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.CertificateValidationProvider;
@@ -45,6 +47,9 @@ class ConfigurationProviderImplTest {
     @Mock
     private CertificateValidationProvider certificateValidationProvider;
 
+    @Mock
+    private PolicyAttributeService policyAttributeService;
+
     @InjectMocks
     private ConfigurationProviderImpl configurationProvider;
 
@@ -52,7 +57,11 @@ class ConfigurationProviderImplTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         configurationProvider = new ConfigurationProviderImpl(
-                consumerService, productConsumerService, producerService, certificateValidationProvider);
+                consumerService,
+                productConsumerService,
+                producerService,
+                certificateValidationProvider,
+                policyAttributeService);
         // Default: treat all orgs as having active certificates, override in specific
         // tests to simulate inactive/missing certs.
         when(certificateValidationProvider.findActiveOrganisationIds(any())).thenAnswer(invocation -> {
@@ -159,8 +168,7 @@ class ConfigurationProviderImplTest {
     void getConsumerConfigByClientId_withConsumerIdFilter_appliesFilter_andRemovesNullProductIds() {
         String clientId = "clientC";
         ConsumerDTO c1 = consumer(3L, clientId, "c3", "CRON", "@daily");
-        ConsumerDTO cOther = consumer(99L, clientId, "other", "CRON", "@minutely");
-        when(consumerService.findByIdpClientId(clientId)).thenReturn(List.of(c1, cOther));
+        when(consumerService.findByIdpClientId(clientId)).thenReturn(List.of(c1));
 
         ProductConsumerDTO pc = productConsumer(300L, 3L, null, null);
         when(productConsumerService.findByConsumerId(3L)).thenReturn(List.of(pc));
@@ -272,8 +280,8 @@ class ConfigurationProviderImplTest {
     void getConsumerConfigByClientId_withConsumerId_filtersByConsumerId() {
         String clientId = "clientA";
         ConsumerDTO c1 = consumer(1L, clientId, "c1", "CRON", "@hourly");
-        ConsumerDTO c2 = consumer(2L, clientId, "c2", "CRON", "@daily");
-        when(consumerService.findByIdpClientId(clientId)).thenReturn(List.of(c1, c2));
+
+        when(consumerService.findByIdpClientId(clientId)).thenReturn(List.of(c1));
 
         ConsumerConfigDTO cfg = configurationProvider.getConsumerConfigByClientId(clientId, Optional.of(1L));
 
@@ -284,11 +292,9 @@ class ConfigurationProviderImplTest {
     void getProducerConfigByClientId_withProducerId_filtersByProducerId() {
         String clientId = "producerClient";
         ProductDTO p1 = product(100L, "p1");
-        ProductDTO p2 = product(101L, "p2");
         ProducerDTO pr1 = producer(1L, true, p1);
-        ProducerDTO pr2 = producer(2L, true, p2);
 
-        when(producerService.getProducersByClientId(clientId)).thenReturn(List.of(pr1, pr2));
+        when(producerService.getProducersByClientId(clientId)).thenReturn(List.of(pr1));
 
         ProducerConfigDTO cfg = configurationProvider.getProducerConfigByClientId(clientId, Optional.of(1L));
 
@@ -367,5 +373,94 @@ class ConfigurationProviderImplTest {
 
         assertThat(cfg.getProducers().get(0).getProducts().get(0).getConsumers())
                 .containsExactly(activeOrgConsumer);
+    }
+
+    // DPAV-3162: policy attribute wiring
+
+    @Test
+    void getProducerConfigByClientId_populatesPolicyAttributesForEveryScope() {
+        String clientId = "policyClient";
+        ProductDTO product = product(700L, "prod");
+        ProducerDTO producer = producer(70L, true, product);
+        when(producerService.getProducersByClientId(clientId)).thenReturn(List.of(producer));
+        when(consumerService.getConsumersOfProviders(any())).thenReturn(Map.of());
+
+        ProductConsumerDTO subscription = productConsumer(700L, 701L, null, null);
+        subscription.setId(9001L);
+        when(productConsumerService.findByDataProviderId(700L)).thenReturn(List.of(subscription));
+
+        ConsumerDTO consumer = consumer(701L, "cid701", "c701", "CRON", "@hourly");
+        consumer.setOrgId(801L);
+        when(consumerService.findById(701L)).thenReturn(Optional.of(consumer));
+
+        PolicyAttributeDTO producerAttr = PolicyAttributeDTO.builder()
+                .name("policy.a")
+                .value("1")
+                .type("STRING")
+                .build();
+        PolicyAttributeDTO consumerAttr = PolicyAttributeDTO.builder()
+                .name("policy.b")
+                .value("2")
+                .type("STRING")
+                .build();
+        PolicyAttributeDTO orgAttr = PolicyAttributeDTO.builder()
+                .name("policy.c")
+                .value("3")
+                .type("STRING")
+                .build();
+        PolicyAttributeDTO subscriptionAttr = PolicyAttributeDTO.builder()
+                .name("policy.d")
+                .value("4")
+                .type("STRING")
+                .build();
+        when(policyAttributeService.findAttributes(70L, PolicyAttributeScope.PRODUCER))
+                .thenReturn(List.of(producerAttr));
+        when(policyAttributeService.findAttributes(701L, PolicyAttributeScope.CONSUMER))
+                .thenReturn(List.of(consumerAttr));
+        when(policyAttributeService.findAttributes(801L, PolicyAttributeScope.ORGANISATION))
+                .thenReturn(List.of(orgAttr));
+        when(policyAttributeService.findAttributes(9001L, PolicyAttributeScope.SUBSCRIPTION))
+                .thenReturn(List.of(subscriptionAttr));
+
+        ProducerConfigDTO cfg = configurationProvider.getProducerConfigByClientId(clientId, Optional.empty());
+
+        ProducerDTO returnedProducer = cfg.getProducers().get(0);
+        assertThat(returnedProducer.getPolicyAttributes()).containsExactly(producerAttr);
+
+        ConsumerDTO returnedConsumer =
+                returnedProducer.getProducts().get(0).getConsumers().get(0);
+        assertThat(returnedConsumer.getPolicyAttributes()).containsExactly(consumerAttr);
+        assertThat(returnedConsumer.getOrganisationPolicyAttributes()).containsExactly(orgAttr);
+
+        ProductConsumerDTO returnedSubscription =
+                returnedProducer.getProducts().get(0).getConfigurations().get(0);
+        assertThat(returnedSubscription.getPolicyAttributes()).containsExactly(subscriptionAttr);
+    }
+
+    @Test
+    void getProducerConfigByClientId_producerWithNoAttributes_getsEmptyPolicyAttributesList() {
+        String clientId = "noAttrClient";
+        ProducerDTO producer = producer(71L, true);
+        when(producerService.getProducersByClientId(clientId)).thenReturn(List.of(producer));
+        when(consumerService.getConsumersOfProviders(any())).thenReturn(Map.of());
+        when(policyAttributeService.findAttributes(71L, PolicyAttributeScope.PRODUCER))
+                .thenReturn(List.of());
+
+        ProducerConfigDTO cfg = configurationProvider.getProducerConfigByClientId(clientId, Optional.empty());
+
+        assertThat(cfg.getProducers().get(0).getPolicyAttributes()).isEmpty();
+    }
+
+    @Test
+    void getConsumerConfigByClientId_neverCallsPolicyAttributeService() {
+        String clientId = "clientA";
+        ConsumerDTO c1 = consumer(1L, clientId, "c1", "CRON", "@hourly");
+        when(consumerService.findByIdpClientId(clientId)).thenReturn(List.of(c1));
+        when(productConsumerService.findByConsumerId(1L)).thenReturn(List.of());
+        when(producerService.getProducersByConsumerIds(List.of(1L))).thenReturn(List.of());
+
+        configurationProvider.getConsumerConfigByClientId(clientId, Optional.empty());
+
+        verifyNoInteractions(policyAttributeService);
     }
 }

@@ -26,6 +26,11 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProductConsumerDTO {
+    /** The underlying {@code product_consumer.id} - not exposed to callers, only needed
+     * internally to key {@code SUBSCRIPTION}-scope policy attribute lookups. */
+    @JsonIgnore
+    private Long id;
+
     @JsonIgnore
     private Long productId;
 
@@ -42,4 +47,5 @@ public class ProductConsumerDTO {
     private String scheduleExpression;
     private String destination;
     private final List<AttributesDTO> attributes = new ArrayList<>();
+    private final List<PolicyAttributeDTO> policyAttributes = new ArrayList<>();
 }
