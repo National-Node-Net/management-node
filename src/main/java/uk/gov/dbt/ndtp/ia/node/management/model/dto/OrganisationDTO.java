@@ -6,8 +6,6 @@
 
 package uk.gov.dbt.ndtp.ia.node.management.model.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -17,33 +15,24 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * DTO for OrganisationProducer entity.
+ * The organisation a producer or consumer belongs to, as exposed on the configuration APIs.
+ *
+ * <p>Carries {@code key} rather than the database id: the key is stable, readable, and unique,
+ * so a federator can match on it without depending on ids that differ between environments.
  */
 @Builder
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProducerDTO {
-    private final List<ProductDTO> products = new ArrayList<>();
+public class OrganisationDTO {
 
-    @JsonIgnore
-    private Long id;
-
+    /** The organisation's display name (e.g. {@code "Environment Agency (ENV)"}). */
     private String name;
-    private String description;
 
-    @JsonIgnore
-    private Long orgId;
+    /** The organisation's unique key (e.g. {@code "ENV"}). */
+    private String key;
 
-    private Boolean active;
-    private String host;
-    private BigDecimal port;
-    private Boolean tls;
-    private String idpClientId;
-
-    /** The organisation this producer belongs to, including its key and policy attributes. */
-    private OrganisationDTO organisation;
-
+    /** Live {@code ORGANISATION}-scope policy attributes for this organisation. */
     private final List<PolicyAttributeDTO> policyAttributes = new ArrayList<>();
 }

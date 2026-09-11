@@ -7,14 +7,16 @@
 package uk.gov.dbt.ndtp.ia.node.management.service.data;
 
 /**
- * The {@code policy_attribute_scope.code} values this change resolves policy attributes for, on {@code
- * GET /api/v1/configuration/producer}: the producer itself, each allowed consumer, each of those
- * consumers' organisations, and each subscription ({@code product_consumer}). Not a general
- * registry of every {@code policy_attribute_scope} row (e.g. {@code PRODUCT} is seeded but out of scope
- * for this change - see design.md).
+ * The {@code policy_attribute_scope.code} values policy attributes are resolved for on {@code
+ * GET /api/v1/configuration/producer}: the producer itself, each of its products, each allowed
+ * consumer, the organisations those belong to, and each subscription ({@code product_consumer}).
+ *
+ * <p>This now covers every seeded {@code policy_attribute_scope} row; {@link #code()} is verified
+ * against the seeded codes in {@code PolicyAttributeScopeTest}.
  */
 public enum PolicyAttributeScope {
     PRODUCER("PRODUCER"),
+    PRODUCT("PRODUCT"),
     CONSUMER("CONSUMER"),
     ORGANISATION("ORGANISATION"),
     SUBSCRIPTION("SUBSCRIPTION");

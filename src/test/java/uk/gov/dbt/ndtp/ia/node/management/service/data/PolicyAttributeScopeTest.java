@@ -32,9 +32,14 @@ class PolicyAttributeScopeTest extends AbstractPostgresRepositoryTest {
     }
 
     @Test
-    void doesNotIncludeProductScope() {
+    void coversEverySeededScopeCode() {
         assertThat(PolicyAttributeScope.values())
                 .extracting(PolicyAttributeScope::code)
-                .doesNotContain("PRODUCT");
+                .containsExactlyInAnyOrder("PRODUCER", "PRODUCT", "CONSUMER", "ORGANISATION", "SUBSCRIPTION");
+        assertThat(attributeScopeRepository.findAll())
+                .extracting(scope -> scope.getCode())
+                .containsExactlyInAnyOrderElementsOf(java.util.Arrays.stream(PolicyAttributeScope.values())
+                        .map(PolicyAttributeScope::code)
+                        .toList());
     }
 }

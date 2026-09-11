@@ -46,6 +46,7 @@ erDiagram
   ORGANISATION {
     BIGSERIAL id PK
     VARCHAR name
+    VARCHAR organisation_key UK
     BOOLEAN certificate_automation_enabled
   }
   PRODUCER {
@@ -178,10 +179,15 @@ Represents an organisation that owns Producers and Consumers.
 Columns:
 - `id` BIGSERIAL, primary key
 - `name` VARCHAR(150), not null
+- `organisation_key` VARCHAR(50), not null — stable, human-readable identifier for the organisation (e.g. `ENV`, `BCC`, `HEG`), so callers can address an organisation without depending on ids that differ between environments
 - `certificate_automation_enabled` BOOLEAN, not null, default TRUE
+
+Indexes and constraints:
+- UNIQUE on `organisation_key` (`uq_organisation__organisation_key`)
 
 Usage:
 - Parent entity for `producer`, `consumer`, and `organisation_certificate`.
+- `organisation_key` is exposed as `organisation.key` on the producer and consumer configuration APIs.
 
 ---
 

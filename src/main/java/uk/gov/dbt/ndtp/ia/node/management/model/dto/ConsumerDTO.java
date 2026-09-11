@@ -41,5 +41,11 @@ public class ConsumerDTO {
     private final List<AttributesDTO> attributes = new ArrayList<>();
 
     private final List<PolicyAttributeDTO> policyAttributes = new ArrayList<>();
-    private final List<PolicyAttributeDTO> organisationPolicyAttributes = new ArrayList<>();
+
+    /**
+     * The organisation this consumer belongs to, including its key and policy attributes. Replaces
+     * the former flat {@code organisationPolicyAttributes} list, which carried the same attributes
+     * with no way to tell which organisation they described.
+     */
+    private OrganisationDTO organisation;
 }

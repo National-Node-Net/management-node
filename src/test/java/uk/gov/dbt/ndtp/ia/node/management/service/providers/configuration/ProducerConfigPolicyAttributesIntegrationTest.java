@@ -18,12 +18,14 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.dbt.ndtp.ia.node.management.converter.impl.ConsumerConverter;
+import uk.gov.dbt.ndtp.ia.node.management.converter.impl.OrganisationConverter;
 import uk.gov.dbt.ndtp.ia.node.management.converter.impl.OrganisationProducerConverter;
 import uk.gov.dbt.ndtp.ia.node.management.converter.impl.ProductConsumerConverter;
 import uk.gov.dbt.ndtp.ia.node.management.converter.impl.ProductConverter;
@@ -48,11 +50,13 @@ import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.AttributeDefini
 import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.AttributeDefinitionScopeRepository;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.AttributeScopeRepository;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.AttributeValueRepository;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.OrganisationRepository;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ConsumerService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProducerService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductConsumerService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.impl.ConsumerServiceImpl;
+import uk.gov.dbt.ndtp.ia.node.management.service.data.impl.OrganisationServiceImpl;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.impl.PolicyAttributeServiceImpl;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.impl.ProducerServiceImpl;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.impl.ProductConsumerServiceImpl;
@@ -102,6 +106,9 @@ class ProducerConfigPolicyAttributesIntegrationTest extends AbstractPostgresRepo
     @Autowired
     private AttributeScopeRepository attributeScopeRepository;
 
+    @Autowired
+    private OrganisationRepository organisationRepository;
+
     private ConfigurationProviderImpl configurationProvider() {
         CertificateValidationProvider certificateValidationProvider = mock(CertificateValidationProvider.class);
         when(certificateValidationProvider.findActiveOrganisationIds(any()))
@@ -113,12 +120,14 @@ class ProducerConfigPolicyAttributesIntegrationTest extends AbstractPostgresRepo
                 productConsumerService,
                 producerService,
                 certificateValidationProvider,
-                policyAttributeService);
+                policyAttributeService,
+                new OrganisationServiceImpl(organisationRepository, new OrganisationConverter()));
     }
 
     private Organisation persistOrganisation(String name) {
         Organisation org = new Organisation();
         org.setName(name);
+        org.setOrganisationKey(name.toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9]+", "_"));
         entityManager.persist(org);
         return org;
     }
@@ -216,6 +225,8 @@ class ProducerConfigPolicyAttributesIntegrationTest extends AbstractPostgresRepo
         persistAttribute("PRODUCER", producer.getId(), "producer-tier", "\"gold\"");
         persistAttribute("CONSUMER", consumer.getId(), "consumer-tier", "\"silver\"");
         persistAttribute("ORGANISATION", consumerOrg.getId(), "org-region", "\"uk\"");
+        persistAttribute("ORGANISATION", producerOrg.getId(), "producer-org-region", "\"north\"");
+        persistAttribute("PRODUCT", product.getId(), "record-unit", "\"property\"");
         persistAttribute("SUBSCRIPTION", subscription.getId(), "sub-priority", "1");
 
         // A sibling producer with no attributes at all, for the empty-array assertion. It still
@@ -237,12 +248,28 @@ class ProducerConfigPolicyAttributesIntegrationTest extends AbstractPostgresRepo
                 .extracting(PolicyAttributeDTO::getNamespace, PolicyAttributeDTO::getName, PolicyAttributeDTO::getValue)
                 .containsExactly(tuple("policy", "producer-tier", "gold"));
 
+        assertThat(producerDto.getOrganisation()).isNotNull();
+        assertThat(producerDto.getOrganisation().getName()).isEqualTo("producer-org");
+        assertThat(producerDto.getOrganisation().getKey()).isEqualTo("PRODUCER_ORG");
+
+        assertThat(cfg.getOrganisation()).isNotNull();
+        assertThat(cfg.getOrganisation().getName()).isEqualTo("producer-org");
+        assertThat(cfg.getOrganisation().getKey()).isEqualTo("PRODUCER_ORG");
+        assertThat(cfg.getOrganisation().getPolicyAttributes())
+                .extracting(PolicyAttributeDTO::getNamespace, PolicyAttributeDTO::getName, PolicyAttributeDTO::getValue)
+                .containsExactly(tuple("policy", "producer-org-region", "north"));
+
         ProductDTO productDto = producerDto.getProducts().get(0);
+        assertThat(productDto.getPolicyAttributes())
+                .extracting(PolicyAttributeDTO::getNamespace, PolicyAttributeDTO::getName, PolicyAttributeDTO::getValue)
+                .containsExactly(tuple("policy", "record-unit", "property"));
         ConsumerDTO consumerDto = productDto.getConsumers().get(0);
         assertThat(consumerDto.getPolicyAttributes())
                 .extracting(PolicyAttributeDTO::getNamespace, PolicyAttributeDTO::getName, PolicyAttributeDTO::getValue)
                 .containsExactly(tuple("policy", "consumer-tier", "silver"));
-        assertThat(consumerDto.getOrganisationPolicyAttributes())
+        assertThat(consumerDto.getOrganisation().getName()).isEqualTo("consumer-org");
+        assertThat(consumerDto.getOrganisation().getKey()).isEqualTo("CONSUMER_ORG");
+        assertThat(consumerDto.getOrganisation().getPolicyAttributes())
                 .extracting(PolicyAttributeDTO::getNamespace, PolicyAttributeDTO::getName, PolicyAttributeDTO::getValue)
                 .containsExactly(tuple("policy", "org-region", "uk"));
 
