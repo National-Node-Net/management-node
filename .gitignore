@@ -56,3 +56,6 @@ build/
 
 ### local-only openspec workspace
 /openspec/
+
+### vault unseal keys (local dev)
+docker/vault/vault-keys.env
