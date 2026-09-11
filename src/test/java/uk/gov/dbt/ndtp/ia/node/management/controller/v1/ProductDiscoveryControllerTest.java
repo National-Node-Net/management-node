@@ -135,11 +135,7 @@ class ProductDiscoveryControllerTest {
                 .andExpect(jsonPath("$.products").isEmpty());
 
         verify(productDiscoveryService)
-                .discover(
-                        eq(new PolicyRequester("client-1", "test-organisation", null)),
-                        eq("Alpha"),
-                        eq("topic-1"),
-                        eq("TypeA"));
+                .discover(new PolicyRequester("client-1", "test-organisation", null), "Alpha", "topic-1", "TypeA");
     }
 
     @Test

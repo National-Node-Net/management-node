@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.AttributeScope;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.AbstractPostgresRepositoryTest;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.AttributeScopeRepository;
 
@@ -37,7 +38,7 @@ class PolicyAttributeScopeTest extends AbstractPostgresRepositoryTest {
                 .extracting(PolicyAttributeScope::code)
                 .containsExactlyInAnyOrder("PRODUCER", "PRODUCT", "CONSUMER", "ORGANISATION", "SUBSCRIPTION");
         assertThat(attributeScopeRepository.findAll())
-                .extracting(scope -> scope.getCode())
+                .extracting(AttributeScope::getCode)
                 .containsExactlyInAnyOrderElementsOf(java.util.Arrays.stream(PolicyAttributeScope.values())
                         .map(PolicyAttributeScope::code)
                         .toList());
