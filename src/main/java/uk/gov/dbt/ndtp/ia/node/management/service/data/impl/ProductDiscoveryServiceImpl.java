@@ -16,6 +16,7 @@ import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductService;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecision;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecisionClient;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInput;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyRequester;
 
 /**
  * Reuses {@link PolicyDecisionClient} (built for the whole-request PEP on
@@ -41,28 +42,26 @@ public class ProductDiscoveryServiceImpl implements ProductDiscoveryService {
     }
 
     @Override
-    public ProductDiscoveryResponseDTO discover(
-            String clientId, String organisation, String name, String topic, String type) {
+    public ProductDiscoveryResponseDTO discover(PolicyRequester requester, String name, String topic, String type) {
         List<ProductDTO> candidates = productService.findDiscoveryCandidates(name, topic, type);
-        List<ProductDTO> authorised = filterAuthorised(clientId, organisation, candidates);
+        List<ProductDTO> authorised = filterAuthorised(requester, candidates);
         return ProductDiscoveryResponseDTO.builder().products(authorised).build();
     }
 
     @Override
-    public List<ProductDTO> filterAuthorised(String clientId, String organisation, List<ProductDTO> candidates) {
+    public List<ProductDTO> filterAuthorised(PolicyRequester requester, List<ProductDTO> candidates) {
         return candidates.stream()
-                .filter(candidate -> isAuthorised(clientId, organisation, candidate))
+                .filter(candidate -> isAuthorised(requester, candidate))
                 .toList();
     }
 
-    private boolean isAuthorised(String clientId, String organisation, ProductDTO candidate) {
-        PolicyInput input =
-                new PolicyInput(clientId, organisation, PRODUCT_RESOURCE_PREFIX + candidate.getId(), DISCOVER_ACTION);
+    private boolean isAuthorised(PolicyRequester requester, ProductDTO candidate) {
+        PolicyInput input = PolicyInput.of(requester, PRODUCT_RESOURCE_PREFIX + candidate.getId(), DISCOVER_ACTION);
         PolicyDecision decision = policyDecisionClient.evaluate(input);
         if (decision == PolicyDecision.DENY) {
             log.debug(
                     "Policy decision DENY clientId={} resource={} action={}",
-                    clientId,
+                    requester.clientId(),
                     input.resource(),
                     DISCOVER_ACTION);
         }

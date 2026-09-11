@@ -234,22 +234,22 @@ class ProducerConfigPolicyAttributesIntegrationTest extends AbstractPostgresRepo
 
         ProducerDTO producerDto = cfg.getProducers().get(0);
         assertThat(producerDto.getPolicyAttributes())
-                .extracting(PolicyAttributeDTO::getName, PolicyAttributeDTO::getValue, PolicyAttributeDTO::getType)
-                .containsExactly(tuple("policy.producer-tier", "gold", "STRING"));
+                .extracting(PolicyAttributeDTO::getNamespace, PolicyAttributeDTO::getName, PolicyAttributeDTO::getValue)
+                .containsExactly(tuple("policy", "producer-tier", "gold"));
 
         ProductDTO productDto = producerDto.getProducts().get(0);
         ConsumerDTO consumerDto = productDto.getConsumers().get(0);
         assertThat(consumerDto.getPolicyAttributes())
-                .extracting(PolicyAttributeDTO::getName, PolicyAttributeDTO::getValue, PolicyAttributeDTO::getType)
-                .containsExactly(tuple("policy.consumer-tier", "silver", "STRING"));
+                .extracting(PolicyAttributeDTO::getNamespace, PolicyAttributeDTO::getName, PolicyAttributeDTO::getValue)
+                .containsExactly(tuple("policy", "consumer-tier", "silver"));
         assertThat(consumerDto.getOrganisationPolicyAttributes())
-                .extracting(PolicyAttributeDTO::getName, PolicyAttributeDTO::getValue, PolicyAttributeDTO::getType)
-                .containsExactly(tuple("policy.org-region", "uk", "STRING"));
+                .extracting(PolicyAttributeDTO::getNamespace, PolicyAttributeDTO::getName, PolicyAttributeDTO::getValue)
+                .containsExactly(tuple("policy", "org-region", "uk"));
 
         ProductConsumerDTO subscriptionDto = productDto.getConfigurations().get(0);
         assertThat(subscriptionDto.getPolicyAttributes())
-                .extracting(PolicyAttributeDTO::getName, PolicyAttributeDTO::getValue, PolicyAttributeDTO::getType)
-                .containsExactly(tuple("policy.sub-priority", "1", "STRING"));
+                .extracting(PolicyAttributeDTO::getNamespace, PolicyAttributeDTO::getName, PolicyAttributeDTO::getValue)
+                .containsExactly(tuple("policy", "sub-priority", "1"));
 
         ProducerConfigDTO bareCfg =
                 configurationProvider().getProducerConfigByClientId("client-no-attrs", Optional.empty());

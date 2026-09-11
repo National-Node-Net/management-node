@@ -52,7 +52,7 @@ class PolicyAttributeServiceImplTest {
     }
 
     @Test
-    void findAttributes_mapsNamespaceDotNameValueAndType() {
+    void findAttributes_mapsNamespaceNameAndValueAsSeparateFields() {
         when(attributeValueRepository.findLiveByEntityIdAndScopeCode(10L, "PRODUCER"))
                 .thenReturn(List.of(attributeValue("policy", "risk-tier", "STRING", "\"gold\"")));
 
@@ -60,9 +60,9 @@ class PolicyAttributeServiceImplTest {
 
         assertThat(result).hasSize(1);
         PolicyAttributeDTO dto = result.get(0);
-        assertThat(dto.getName()).isEqualTo("policy.risk-tier");
+        assertThat(dto.getNamespace()).isEqualTo("policy");
+        assertThat(dto.getName()).isEqualTo("risk-tier");
         assertThat(dto.getValue()).isEqualTo("gold");
-        assertThat(dto.getType()).isEqualTo("STRING");
     }
 
     @Test

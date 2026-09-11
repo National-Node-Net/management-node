@@ -80,7 +80,7 @@ class PolicyEnforcementInterceptorTest {
     }
 
     private void setupAuthentication(String clientId) {
-        EnhancedPrincipal principal = new EnhancedPrincipal("subject", clientId);
+        EnhancedPrincipal principal = new EnhancedPrincipal("subject", clientId, "test-organisation");
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(principal);
     }
@@ -151,11 +151,12 @@ class PolicyEnforcementInterceptorTest {
         interceptor.preHandle(request, response, handlerMethod);
 
         verify(policyDecisionClient)
-                .evaluate(new PolicyInput("client-1", null, "/api/v1/configuration/consumer", "GET"));
+                .evaluate(new PolicyInput(
+                        "client-1", "test-organisation", null, "/api/v1/configuration/consumer", "GET"));
     }
 
     @Test
-    void policyInput_includesOrganisationResolvedByCertificateValidation() throws Exception {
+    void policyInput_includesBothTokenOrganisationAndCertificateOrganisationId() throws Exception {
         setupAuthentication("client-1");
         when(request.getRequestURI()).thenReturn("/api/v1/configuration/consumer");
         when(request.getMethod()).thenReturn("GET");
@@ -165,7 +166,8 @@ class PolicyEnforcementInterceptorTest {
         interceptor.preHandle(request, response, handlerMethod);
 
         verify(policyDecisionClient)
-                .evaluate(new PolicyInput("client-1", "42", "/api/v1/configuration/consumer", "GET"));
+                .evaluate(new PolicyInput(
+                        "client-1", "test-organisation", "42", "/api/v1/configuration/consumer", "GET"));
     }
 
     @Test

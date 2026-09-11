@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.function.Function;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -39,12 +40,27 @@ public final class RequestRejectionSupport {
     }
 
     static String extractClientId() {
+        return fromPrincipal(EnhancedPrincipal::clientId);
+    }
+
+    /**
+     * The {@code organisation} claim carried on the authenticated principal. Distinct from
+     * {@link #getOrganisationId}, which is the organisation row id resolved from the client
+     * certificate - see {@code PolicyRequester}.
+     *
+     * @return the token's organisation, or null when there is no authenticated principal
+     */
+    static String extractOrganisation() {
+        return fromPrincipal(EnhancedPrincipal::organisation);
+    }
+
+    private static String fromPrincipal(Function<EnhancedPrincipal, String> accessor) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !(auth.getPrincipal() instanceof EnhancedPrincipal principal)) {
             return null;
         }
-        String clientId = principal.clientId();
-        return (clientId == null || clientId.isEmpty()) ? null : clientId;
+        String value = accessor.apply(principal);
+        return (value == null || value.isEmpty()) ? null : value;
     }
 
     static void writeError(

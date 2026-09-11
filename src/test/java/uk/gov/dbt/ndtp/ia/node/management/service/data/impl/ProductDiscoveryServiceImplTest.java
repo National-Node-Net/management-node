@@ -24,6 +24,7 @@ import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductService;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecision;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecisionClient;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInput;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyRequester;
 
 /**
  * Verifies {@link ProductDiscoveryServiceImpl} queries candidates then evaluates one PDP
@@ -33,6 +34,8 @@ import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInput;
  */
 @ExtendWith(MockitoExtension.class)
 class ProductDiscoveryServiceImplTest {
+
+    private static final PolicyRequester REQUESTER = new PolicyRequester("client-1", "FEDERATOR_ENV", "org-1");
 
     @Mock
     private ProductService productService;
@@ -57,7 +60,7 @@ class ProductDiscoveryServiceImplTest {
         when(policyDecisionClient.evaluate(any())).thenReturn(PolicyDecision.ALLOW);
 
         List<ProductDTO> result =
-                productDiscoveryService.filterAuthorised("client-1", "org-1", List.of(allowedProduct, deniedProduct));
+                productDiscoveryService.filterAuthorised(REQUESTER, List.of(allowedProduct, deniedProduct));
 
         assertThat(result).containsExactlyInAnyOrder(allowedProduct, deniedProduct);
     }
@@ -71,7 +74,7 @@ class ProductDiscoveryServiceImplTest {
         when(policyDecisionClient.evaluate(argThatResource("product:2"))).thenReturn(PolicyDecision.DENY);
 
         List<ProductDTO> result =
-                productDiscoveryService.filterAuthorised("client-1", "org-1", List.of(allowedProduct, deniedProduct));
+                productDiscoveryService.filterAuthorised(REQUESTER, List.of(allowedProduct, deniedProduct));
 
         assertThat(result).containsExactly(allowedProduct);
         assertThat(result).extracting(ProductDTO::getId).doesNotContain(2L);
@@ -83,7 +86,7 @@ class ProductDiscoveryServiceImplTest {
         when(policyDecisionClient.evaluate(any())).thenReturn(PolicyDecision.DENY);
 
         List<ProductDTO> result =
-                productDiscoveryService.filterAuthorised("client-1", "org-1", List.of(allowedProduct, deniedProduct));
+                productDiscoveryService.filterAuthorised(REQUESTER, List.of(allowedProduct, deniedProduct));
 
         assertThat(result).isEmpty();
     }
@@ -92,9 +95,10 @@ class ProductDiscoveryServiceImplTest {
     void filterAuthorised_buildsPolicyInputWithDiscoverActionAndProductResource() {
         when(policyDecisionClient.evaluate(any())).thenReturn(PolicyDecision.ALLOW);
 
-        productDiscoveryService.filterAuthorised("client-1", "org-1", List.of(allowedProduct));
+        productDiscoveryService.filterAuthorised(REQUESTER, List.of(allowedProduct));
 
-        verify(policyDecisionClient).evaluate(new PolicyInput("client-1", "org-1", "product:1", "discover"));
+        verify(policyDecisionClient)
+                .evaluate(new PolicyInput("client-1", "FEDERATOR_ENV", "org-1", "product:1", "discover"));
     }
 
     @Test
@@ -104,8 +108,7 @@ class ProductDiscoveryServiceImplTest {
         when(policyDecisionClient.evaluate(argThatResource("product:1"))).thenReturn(PolicyDecision.ALLOW);
         when(policyDecisionClient.evaluate(argThatResource("product:2"))).thenReturn(PolicyDecision.DENY);
 
-        ProductDiscoveryResponseDTO result =
-                productDiscoveryService.discover("client-1", "org-1", "Alpha", "topic-1", "TypeA");
+        ProductDiscoveryResponseDTO result = productDiscoveryService.discover(REQUESTER, "Alpha", "topic-1", "TypeA");
 
         assertThat(result.products()).containsExactly(allowedProduct);
     }
@@ -114,7 +117,7 @@ class ProductDiscoveryServiceImplTest {
     void discover_noCandidates_returnsEmptyResponse() {
         when(productService.findDiscoveryCandidates(any(), any(), any())).thenReturn(List.of());
 
-        ProductDiscoveryResponseDTO result = productDiscoveryService.discover("client-1", "org-1", null, null, null);
+        ProductDiscoveryResponseDTO result = productDiscoveryService.discover(REQUESTER, null, null, null);
 
         assertThat(result.products()).isEmpty();
     }

@@ -27,6 +27,7 @@ import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProductDiscoveryRequestDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProductDiscoveryResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.jwt.EnhancedPrincipal;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductDiscoveryService;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyRequester;
 
 @RestController
 @RequestMapping("/api/v1/product")
@@ -68,21 +69,19 @@ public class ProductDiscoveryController {
         ProductDiscoveryRequestDTO effectiveCriteria = criteria != null
                 ? criteria
                 : ProductDiscoveryRequestDTO.builder().build();
-        String organisation = RequestRejectionSupport.getOrganisationId(request);
+        PolicyRequester requester = new PolicyRequester(
+                principal.clientId(), principal.organisation(), RequestRejectionSupport.getOrganisationId(request));
 
         log.info(
-                "Product discovery request clientId={} organisation={} name={} topic={} type={}",
-                principal.clientId(),
-                organisation,
+                "Product discovery request clientId={} organisation={} organisationId={} name={} topic={} type={}",
+                requester.clientId(),
+                requester.organisation(),
+                requester.organisationId(),
                 effectiveCriteria.name(),
                 effectiveCriteria.topic(),
                 effectiveCriteria.type());
 
         return productDiscoveryService.discover(
-                principal.clientId(),
-                organisation,
-                effectiveCriteria.name(),
-                effectiveCriteria.topic(),
-                effectiveCriteria.type());
+                requester, effectiveCriteria.name(), effectiveCriteria.topic(), effectiveCriteria.type());
     }
 }

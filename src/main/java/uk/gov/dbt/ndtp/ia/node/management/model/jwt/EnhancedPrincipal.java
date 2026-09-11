@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
- * © Crown Copyright 2025. This work has been developed by the National Digital Twin Programme and is legally
+ * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
  * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 
@@ -10,19 +10,26 @@ import java.io.Serial;
 import java.io.Serializable;
 
 /**
- * Custom Principal object that includes clientId information from the JWT.
+ * Custom Principal object that includes clientId and organisation information from the JWT.
  *
- * @param subject  -- GETTER --
- *                 Get the subject (user identifier)
- * @param clientId -- GETTER --
- *                 Get the client ID
+ * @param subject      -- GETTER --
+ *                     Get the subject (user identifier)
+ * @param clientId     -- GETTER --
+ *                     Get the client ID
+ * @param organisation -- GETTER --
+ *                     Get the organisation the token was issued for, taken from the
+ *                     {@code organisation} claim. Never null: falls back to
+ *                     {@code unknown_organisation} when the claim is absent, so callers
+ *                     do not have to null-check a value that is always present in the
+ *                     token shape this node expects.
  */
-public record EnhancedPrincipal(String subject, String clientId) implements Serializable {
+public record EnhancedPrincipal(String subject, String clientId, String organisation) implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
     @Override
     public String toString() {
-        return "CustomPrincipal{" + "subject='" + subject + '\'' + ", clientId='" + clientId + '\'' + '}';
+        return "CustomPrincipal{" + "subject='" + subject + '\'' + ", clientId='" + clientId + '\'' + ", organisation='"
+                + organisation + '\'' + '}';
     }
 }

@@ -22,6 +22,17 @@ class PolicyAttributeFieldsSerializationTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
+    void policyAttribute_serialisesNamespaceNameAndValueOnly() throws Exception {
+        String json = objectMapper.writeValueAsString(PolicyAttributeDTO.builder()
+                .namespace("policy")
+                .name("risk-tier")
+                .value("gold")
+                .build());
+
+        assertThat(json).isEqualTo("{\"namespace\":\"policy\",\"name\":\"risk-tier\",\"value\":\"gold\"}");
+    }
+
+    @Test
     void producerDto_policyAttributesSerialisesAsEmptyArray() throws Exception {
         JsonNode json = objectMapper.readTree(
                 objectMapper.writeValueAsString(ProducerDTO.builder().build()));

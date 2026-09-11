@@ -185,6 +185,7 @@ class KeycloakJwtAuthenticationConverterTest {
                 .allowedOrigins((List<String>) map.get("allowed-origins"))
                 .resourceAccess(resourceAccess)
                 .scope((String) map.get("scope"))
+                .organisation((String) map.get("organisation"))
                 .username((String) map.get("username"))
                 .tokenType((String) map.get("token_type"))
                 .build();

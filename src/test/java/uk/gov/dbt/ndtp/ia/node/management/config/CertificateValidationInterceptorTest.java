@@ -76,7 +76,7 @@ class CertificateValidationInterceptorTest {
     }
 
     private void setupAuthentication(String clientId) {
-        EnhancedPrincipal principal = new EnhancedPrincipal("subject", clientId);
+        EnhancedPrincipal principal = new EnhancedPrincipal("subject", clientId, "test-organisation");
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(principal);
     }

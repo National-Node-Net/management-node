@@ -32,7 +32,7 @@ class CustomJwtAuthenticationTokenTest {
         Map<String, Object> claims = new HashMap<>();
         claims.put("sub", "test-subject");
         jwt = new Jwt("token-value", Instant.now(), Instant.now().plusSeconds(3600), headers, claims);
-        principal = new EnhancedPrincipal("test-subject", "test-client");
+        principal = new EnhancedPrincipal("test-subject", "test-client", "test-organisation");
         authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
     }
 
@@ -49,7 +49,7 @@ class CustomJwtAuthenticationTokenTest {
         CustomJwtAuthenticationToken token1 = new CustomJwtAuthenticationToken(jwt, authorities, principal);
         CustomJwtAuthenticationToken token2 = new CustomJwtAuthenticationToken(jwt, authorities, principal);
 
-        EnhancedPrincipal principal2 = new EnhancedPrincipal("other-subject", "test-client");
+        EnhancedPrincipal principal2 = new EnhancedPrincipal("other-subject", "test-client", "test-organisation");
         CustomJwtAuthenticationToken token3 = new CustomJwtAuthenticationToken(jwt, authorities, principal2);
 
         // Equals

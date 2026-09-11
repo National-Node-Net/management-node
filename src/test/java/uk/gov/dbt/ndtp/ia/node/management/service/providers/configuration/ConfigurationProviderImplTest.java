@@ -394,24 +394,24 @@ class ConfigurationProviderImplTest {
         when(consumerService.findById(701L)).thenReturn(Optional.of(consumer));
 
         PolicyAttributeDTO producerAttr = PolicyAttributeDTO.builder()
-                .name("policy.a")
+                .namespace("policy")
+                .name("a")
                 .value("1")
-                .type("STRING")
                 .build();
         PolicyAttributeDTO consumerAttr = PolicyAttributeDTO.builder()
-                .name("policy.b")
+                .namespace("policy")
+                .name("b")
                 .value("2")
-                .type("STRING")
                 .build();
         PolicyAttributeDTO orgAttr = PolicyAttributeDTO.builder()
-                .name("policy.c")
+                .namespace("policy")
+                .name("c")
                 .value("3")
-                .type("STRING")
                 .build();
         PolicyAttributeDTO subscriptionAttr = PolicyAttributeDTO.builder()
-                .name("policy.d")
+                .namespace("policy")
+                .name("d")
                 .value("4")
-                .type("STRING")
                 .build();
         when(policyAttributeService.findAttributes(70L, PolicyAttributeScope.PRODUCER))
                 .thenReturn(List.of(producerAttr));

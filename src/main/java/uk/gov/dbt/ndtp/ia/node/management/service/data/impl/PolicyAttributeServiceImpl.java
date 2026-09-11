@@ -39,9 +39,9 @@ public class PolicyAttributeServiceImpl implements PolicyAttributeService {
         AttributeDefinition definition =
                 attributeValue.getAttributeDefinitionScope().getAttributeDefinition();
         return PolicyAttributeDTO.builder()
-                .name(definition.getNamespace() + "." + definition.getName())
+                .namespace(definition.getNamespace())
+                .name(definition.getName())
                 .value(renderValue(attributeValue.getValue()))
-                .type(definition.getDataType())
                 .build();
     }
 

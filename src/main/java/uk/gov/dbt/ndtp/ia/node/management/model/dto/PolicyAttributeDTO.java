@@ -14,9 +14,12 @@ import lombok.Setter;
 
 /**
  * A policy attribute resolved from the {@code policy_attribute_scope}/{@code policy_attribute_definition}/
- * {@code policy_attribute_value} schema (added by PR #69) - the same three fields as {@link
- * AttributesDTO} (the legacy {@code product_consumer_attribute}-backed representation), so it
- * reads as a drop-in "policy" counterpart rather than a new shape to learn.
+ * {@code policy_attribute_value} schema.
+ *
+ * <p>{@code namespace} is carried as its own field rather than folded into {@code name} as a
+ * dotted prefix: consumers of this payload (policy rules, in particular) match on the namespace
+ * and the name separately, and splitting a dotted string back apart is both needless work and
+ * ambiguous once a name itself contains a dot.
  */
 @Builder
 @Getter
@@ -25,9 +28,11 @@ import lombok.Setter;
 @AllArgsConstructor
 public class PolicyAttributeDTO {
 
-    /** The attribute's dotted {@code namespace.name} logical identifier (e.g. {@code "policy.risk-tier"}). */
+    /** The namespace the attribute is defined in (e.g. {@code "policy"}). */
+    private String namespace;
+
+    /** The attribute's name within its namespace (e.g. {@code "risk-tier"}). */
     private String name;
 
     private String value;
-    private String type;
 }

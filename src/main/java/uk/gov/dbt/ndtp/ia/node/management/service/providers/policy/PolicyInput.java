@@ -16,10 +16,28 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * the request URI and HTTP method; per-candidate callers (e.g. product discovery) may use a
  * different convention, such as a stable resource id and a named action.
  *
+ * <p>{@code organisation} and {@code organisationId} are separate fields on purpose - see
+ * {@link PolicyRequester} for why - so a policy can read either, or require both to agree.
+ *
  * @param clientId identity of the calling client
- * @param organisation organisation the client belongs to, if known
+ * @param organisation the token's {@code organisation} claim, if known
+ * @param organisationId organisation row id resolved from the client certificate, if known
  * @param resource the resource being evaluated, in whatever convention the caller uses
  * @param action the action being evaluated, in whatever convention the caller uses
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public record PolicyInput(String clientId, String organisation, String resource, String action) {}
+public record PolicyInput(String clientId, String organisation, String organisationId, String resource, String action) {
+
+    /**
+     * Builds an input for one decision about {@code resource}/{@code action} by {@code requester}.
+     *
+     * @param requester who is asking
+     * @param resource the resource being evaluated
+     * @param action the action being evaluated
+     * @return the PDP input
+     */
+    public static PolicyInput of(PolicyRequester requester, String resource, String action) {
+        return new PolicyInput(
+                requester.clientId(), requester.organisation(), requester.organisationId(), resource, action);
+    }
+}

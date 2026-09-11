@@ -7,7 +7,6 @@
 package uk.gov.dbt.ndtp.ia.node.management.controller.v1;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.lenient;
@@ -38,6 +37,7 @@ import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProductDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProductDiscoveryResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.jwt.EnhancedPrincipal;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductDiscoveryService;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyRequester;
 
 /**
  * Integration test for {@code POST /api/v1/product/discovery} wiring
@@ -71,7 +71,7 @@ class ProductDiscoveryControllerTest {
     private void authenticateAs(String clientId) {
         // lenient: not every test (e.g. request-validation-failure tests) reaches argument
         // resolution far enough to consult these mocks
-        EnhancedPrincipal principal = new EnhancedPrincipal("subject", clientId);
+        EnhancedPrincipal principal = new EnhancedPrincipal("subject", clientId, "test-organisation");
         Authentication authentication = mock(Authentication.class);
         lenient().when(authentication.getPrincipal()).thenReturn(principal);
         SecurityContext context = mock(SecurityContext.class);
@@ -86,7 +86,7 @@ class ProductDiscoveryControllerTest {
     @Test
     void fullyPermitted_returnsAllCandidates() throws Exception {
         ProductDTO product = ProductDTO.builder().id(1L).name("Alpha").build();
-        when(productDiscoveryService.discover(anyString(), any(), any(), any(), any()))
+        when(productDiscoveryService.discover(any(PolicyRequester.class), any(), any(), any()))
                 .thenReturn(responseWith(product));
 
         mockMvc.perform(post("/api/v1/product/discovery")
@@ -100,7 +100,7 @@ class ProductDiscoveryControllerTest {
     @Test
     void partiallyFiltered_returnsOnlyAuthorisedSubset() throws Exception {
         ProductDTO allowed = ProductDTO.builder().id(1L).name("Allowed").build();
-        when(productDiscoveryService.discover(anyString(), any(), any(), any(), any()))
+        when(productDiscoveryService.discover(any(PolicyRequester.class), any(), any(), any()))
                 .thenReturn(responseWith(allowed));
 
         mockMvc.perform(post("/api/v1/product/discovery")
@@ -113,7 +113,7 @@ class ProductDiscoveryControllerTest {
 
     @Test
     void noCandidates_returnsEmptyListNotError() throws Exception {
-        when(productDiscoveryService.discover(anyString(), any(), any(), any(), any()))
+        when(productDiscoveryService.discover(any(PolicyRequester.class), any(), any(), any()))
                 .thenReturn(responseWith());
 
         mockMvc.perform(post("/api/v1/product/discovery")
@@ -125,7 +125,7 @@ class ProductDiscoveryControllerTest {
 
     @Test
     void noAuthorisedProducts_returnsEmptyListNotErrorAndPassesCriteriaThrough() throws Exception {
-        when(productDiscoveryService.discover(anyString(), any(), any(), any(), any()))
+        when(productDiscoveryService.discover(any(PolicyRequester.class), any(), any(), any()))
                 .thenReturn(responseWith());
 
         mockMvc.perform(post("/api/v1/product/discovery")
@@ -134,7 +134,12 @@ class ProductDiscoveryControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.products").isEmpty());
 
-        verify(productDiscoveryService).discover(eq("client-1"), any(), eq("Alpha"), eq("topic-1"), eq("TypeA"));
+        verify(productDiscoveryService)
+                .discover(
+                        eq(new PolicyRequester("client-1", "test-organisation", null)),
+                        eq("Alpha"),
+                        eq("topic-1"),
+                        eq("TypeA"));
     }
 
     @Test
@@ -142,7 +147,7 @@ class ProductDiscoveryControllerTest {
         // A search filter matching a product does not widen what the PDP authorises: the
         // candidate query narrows by filter, but the PDP filter (mocked here as denying it)
         // still wins.
-        when(productDiscoveryService.discover(anyString(), any(), eq("Restricted"), any(), any()))
+        when(productDiscoveryService.discover(any(PolicyRequester.class), eq("Restricted"), any(), any()))
                 .thenReturn(responseWith());
 
         mockMvc.perform(post("/api/v1/product/discovery")
@@ -176,7 +181,7 @@ class ProductDiscoveryControllerTest {
 
     @Test
     void emptyBody_treatedAsNoFilter() throws Exception {
-        when(productDiscoveryService.discover(anyString(), any(), isNull(), isNull(), isNull()))
+        when(productDiscoveryService.discover(any(PolicyRequester.class), isNull(), isNull(), isNull()))
                 .thenReturn(responseWith());
 
         mockMvc.perform(post("/api/v1/product/discovery").contentType(MediaType.APPLICATION_JSON))
