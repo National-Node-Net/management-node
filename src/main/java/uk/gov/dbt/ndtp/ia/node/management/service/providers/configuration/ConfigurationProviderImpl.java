@@ -19,7 +19,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.*;
@@ -310,43 +312,76 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
      *     false, no attribute lookup is performed at all.
      */
     private void populateOrganisations(List<ProducerDTO> producers, boolean includePolicyAttributes) {
-        Set<Long> orgIds = new LinkedHashSet<>();
-        for (ProducerDTO producer : producers) {
-            if (producer.getOrgId() != null) {
-                orgIds.add(producer.getOrgId());
-            }
-            for (ProductDTO product : producer.getProducts()) {
-                // The consumer-config path never resolves consumers onto its products, so this is
-                // null there rather than an empty list.
-                for (ConsumerDTO consumer : consumersOf(product)) {
-                    if (consumer.getOrgId() != null) {
-                        orgIds.add(consumer.getOrgId());
-                    }
-                }
-            }
-        }
+        List<OrganisationHolder> holders = organisationHolders(producers);
 
+        Set<Long> orgIds = holders.stream()
+                .map(OrganisationHolder::orgId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
         if (orgIds.isEmpty()) {
             return;
         }
 
         Map<Long, OrganisationDTO> organisationsById = organisationService.findByIds(orgIds);
-        Map<Long, List<PolicyAttributeDTO>> attributesByOrgId = new LinkedHashMap<>();
-        if (includePolicyAttributes) {
-            for (Long orgId : organisationsById.keySet()) {
-                attributesByOrgId.put(
-                        orgId, policyAttributeService.findAttributes(orgId, PolicyAttributeScope.ORGANISATION));
-            }
+        Map<Long, List<PolicyAttributeDTO>> attributesByOrgId =
+                organisationPolicyAttributes(organisationsById.keySet(), includePolicyAttributes);
+
+        holders.forEach(holder -> holder.assign(organisationFor(holder.orgId(), organisationsById, attributesByOrgId)));
+    }
+
+    /**
+     * Every place in the assembled graph that carries an organisation: each producer, then the
+     * consumers nested under its products, in that order.
+     *
+     * @param producers the assembled producer graph
+     * @return one holder per producer and per nested consumer
+     */
+    private List<OrganisationHolder> organisationHolders(List<ProducerDTO> producers) {
+        return producers.stream().flatMap(this::organisationHoldersOf).toList();
+    }
+
+    private Stream<OrganisationHolder> organisationHoldersOf(ProducerDTO producer) {
+        Stream<OrganisationHolder> consumers = producer.getProducts().stream()
+                // The consumer-config path never resolves consumers onto its products, so this is
+                // null there rather than an empty list.
+                .flatMap(product -> consumersOf(product).stream())
+                .map(consumer -> new OrganisationHolder(consumer.getOrgId(), consumer::setOrganisation));
+
+        return Stream.concat(
+                Stream.of(new OrganisationHolder(producer.getOrgId(), producer::setOrganisation)), consumers);
+    }
+
+    /**
+     * Resolves the {@code ORGANISATION}-scope policy attributes of each organisation, once per
+     * organisation.
+     *
+     * @param orgIds the distinct organisations that were resolved
+     * @param includePolicyAttributes when false no lookup is performed at all and the map is empty
+     * @return attributes keyed by organisation id
+     */
+    private Map<Long, List<PolicyAttributeDTO>> organisationPolicyAttributes(
+            Set<Long> orgIds, boolean includePolicyAttributes) {
+        if (!includePolicyAttributes) {
+            return Map.of();
         }
 
-        for (ProducerDTO producer : producers) {
-            producer.setOrganisation(organisationFor(producer.getOrgId(), organisationsById, attributesByOrgId));
-            for (ProductDTO product : producer.getProducts()) {
-                for (ConsumerDTO consumer : consumersOf(product)) {
-                    consumer.setOrganisation(
-                            organisationFor(consumer.getOrgId(), organisationsById, attributesByOrgId));
-                }
-            }
+        Map<Long, List<PolicyAttributeDTO>> attributesByOrgId = new LinkedHashMap<>();
+        for (Long orgId : orgIds) {
+            attributesByOrgId.put(
+                    orgId, policyAttributeService.findAttributes(orgId, PolicyAttributeScope.ORGANISATION));
+        }
+        return attributesByOrgId;
+    }
+
+    /**
+     * One slot in the response graph that an {@link OrganisationDTO} has to be attached to: the
+     * organisation id to resolve (null when the owner has none) and where the resulting DTO goes.
+     * Lets the graph be walked once to collect ids and once to assign, without repeating the nested
+     * producer/product/consumer traversal.
+     */
+    private record OrganisationHolder(Long orgId, Consumer<OrganisationDTO> setter) {
+        void assign(OrganisationDTO organisation) {
+            setter.accept(organisation);
         }
     }
 
