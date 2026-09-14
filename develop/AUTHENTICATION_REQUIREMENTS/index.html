@@ -779,7 +779,13 @@
 <li>
 <p>Bootstrap Certificate API: The onboarding service account may request bootstrap certificate packages when its token contains the role <code>request_bootstrap_certificate</code>. The request body contains the target <code>organisationId</code> and a CSR. If no certificate record exists for the organisation, one is created automatically. This role is typically assigned only to the website backend service account, not to individual federator clients.</p>
 </li>
-<li>Enforcement in code: <code>@PreAuthorize("hasAuthority('ROLE_management-node:request_bootstrap_certificate')")</code> on <code>POST /api/v1/certificate/bootstrap</code>.</li>
+<li>
+<p>Enforcement in code: <code>@PreAuthorize("hasAuthority('ROLE_management-node:request_bootstrap_certificate')")</code> on <code>POST /api/v1/certificate/bootstrap</code>.</p>
+</li>
+<li>
+<p>Product Discovery API: Clients may discover the products they are authorised to see when their token contains the role <code>discover_products</code>. Even with the role, results are further filtered per-product by the PDP (see <code>docs/POLICY_ENFORCEMENT_TESTING.md</code>) - the role only gates access to the endpoint itself.</p>
+</li>
+<li>Enforcement in code: <code>@PreAuthorize("hasAuthority('ROLE_management-node:discover_products')")</code> on <code>POST /api/v1/product/discovery</code>.</li>
 </ul>
 <h2 id="how-this-maps-to-keycloak">How this maps to Keycloak</h2>
 <ul>
@@ -794,6 +800,7 @@
 <li><code>sign_certificate</code></li>
 <li><code>access_public_certificates</code></li>
 <li><code>request_bootstrap_certificate</code></li>
+<li><code>discover_products</code></li>
 <li>Assign configuration roles to the appropriate Producer or Consumer Federator clients or service accounts.</li>
 <li>Assign certificate roles (<code>create_keys</code>, <code>sign_certificate</code>, <code>access_public_certificates</code>) to federator service accounts that manage their own certificates.</li>
 <li>Assign <code>request_bootstrap_certificate</code> only to the website/onboarding backend service account.</li>
@@ -821,6 +828,7 @@
 <li>CSR Signing API requires role: <code>sign_certificate</code>.</li>
 <li>Intermediate Certificate API requires role: <code>access_public_certificates</code>.</li>
 <li>Bootstrap Certificate API requires role: <code>request_bootstrap_certificate</code>.</li>
+<li>Product Discovery API requires role: <code>discover_products</code> (plus per-product PDP authorisation).</li>
 <li>Swagger/OpenAPI: Use Swagger UI at <code>/swagger-ui.html</code> to explore and test with a valid token.</li>
 </ul>
 
@@ -843,7 +851,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="March 26, 2026 13:33:35 UTC">March 26, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="August 31, 2026 14:18:59 UTC">August 31, 2026</span>
   </span>
 
     
