@@ -69,6 +69,10 @@ application:
     read-timeout: ${OPA_READ_TIMEOUT:3s} # max time to wait for an OPA decision response
     protected-paths: # API path patterns the Policy Enforcement Point intercepts
       - /api/v1/configuration/**
+  product-discovery:
+    # upper bound on candidates fetched per discovery request, before per-candidate PDP
+    # evaluation - keeps the synchronous PDP call loop bounded
+    max-candidates: ${PRODUCT_DISCOVERY_MAX_CANDIDATES:200}
 
 # Actuator Configuration
 management:

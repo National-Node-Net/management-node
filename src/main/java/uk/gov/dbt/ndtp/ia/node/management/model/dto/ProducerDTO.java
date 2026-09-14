@@ -42,5 +42,8 @@ public class ProducerDTO {
     private Boolean tls;
     private String idpClientId;
 
+    /** The organisation this producer belongs to, including its key and policy attributes. */
+    private OrganisationDTO organisation;
+
     private final List<PolicyAttributeDTO> policyAttributes = new ArrayList<>();
 }

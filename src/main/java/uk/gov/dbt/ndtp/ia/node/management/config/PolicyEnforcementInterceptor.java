@@ -17,6 +17,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecision;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecisionClient;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInput;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyRequester;
 
 /**
  * Policy Enforcement Point: intercepts requests to policy-aware APIs, enriches them
@@ -50,8 +51,11 @@ public class PolicyEnforcementInterceptor implements HandlerInterceptor {
 
         String resource = request.getRequestURI();
         String action = request.getMethod();
-        String organisation = RequestRejectionSupport.getOrganisationId(request);
-        PolicyInput input = new PolicyInput(clientId, organisation, resource, action);
+        PolicyRequester requester = new PolicyRequester(
+                clientId,
+                RequestRejectionSupport.extractOrganisation(),
+                RequestRejectionSupport.getOrganisationId(request));
+        PolicyInput input = PolicyInput.of(requester, resource, action);
 
         PolicyDecision decision = policyDecisionClient.evaluate(input);
 

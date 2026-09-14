@@ -11,6 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
@@ -26,7 +27,7 @@ import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.ProductConsumer;
 
 /**
  * Verifies the migration's five {@code AFTER DELETE} triggers, which soft-delete
- * {@code attribute_value} rows scoped to the deleted owning entity rather than
+ * {@code policy_attribute_value} rows scoped to the deleted owning entity rather than
  * leaving them orphaned.
  */
 class AttributeValueSoftDeleteTriggerTest extends AbstractPostgresRepositoryTest {
@@ -95,6 +96,9 @@ class AttributeValueSoftDeleteTriggerTest extends AbstractPostgresRepositoryTest
     private Organisation persistOrganisation() {
         Organisation organisation = new Organisation();
         organisation.setName("Trigger Test Org");
+        // organisation_key is NOT NULL and unique; each test persists its own organisation, so the
+        // key has to be unique per call rather than a fixed literal.
+        organisation.setOrganisationKey("TRIG_" + UUID.randomUUID().toString().substring(0, 8));
         return organisationRepository.saveAndFlush(organisation);
     }
 

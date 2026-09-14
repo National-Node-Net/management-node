@@ -16,7 +16,7 @@ import org.hibernate.type.SqlTypes;
 @Getter
 @Setter
 @Entity
-@Table(name = "attribute_value")
+@Table(name = "policy_attribute_value")
 public class AttributeValue extends AttributeAuditFields {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

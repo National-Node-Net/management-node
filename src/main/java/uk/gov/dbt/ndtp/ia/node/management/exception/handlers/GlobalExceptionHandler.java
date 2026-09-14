@@ -10,7 +10,9 @@ import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
@@ -134,6 +136,56 @@ public class GlobalExceptionHandler {
                 HttpStatus.INTERNAL_SERVER_ERROR.value(), "PKI/Certificate error: " + ex.getMessage(), errorId);
 
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    /**
+     * Handles {@code @Valid} request body validation failures (e.g. field size/blank
+     * constraints) with a 400, rather than falling through to the 500 handler below.
+     *
+     * @param ex      the exception
+     * @param request the current request
+     * @return a ResponseEntity with a 400 error message
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(
+            MethodArgumentNotValidException ex, WebRequest request) {
+
+        String errorId = generateErrorId();
+        log.debug(
+                "Request validation failed, error_id={}, path={}: {}",
+                errorId,
+                request.getDescription(false),
+                ex.getMessage());
+
+        ErrorResponse errorResponse =
+                new ErrorResponse(HttpStatus.BAD_REQUEST.value(), "Invalid request: " + ex.getMessage(), errorId);
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Handles malformed/unreadable request bodies (e.g. invalid JSON, wrong field types)
+     * with a 400, rather than falling through to the 500 handler below.
+     *
+     * @param ex      the exception
+     * @param request the current request
+     * @return a ResponseEntity with a 400 error message
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(
+            HttpMessageNotReadableException ex, WebRequest request) {
+
+        String errorId = generateErrorId();
+        log.debug(
+                "Malformed request body, error_id={}, path={}: {}",
+                errorId,
+                request.getDescription(false),
+                ex.getMessage());
+
+        ErrorResponse errorResponse =
+                new ErrorResponse(HttpStatus.BAD_REQUEST.value(), "Invalid request body", errorId);
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
     /**

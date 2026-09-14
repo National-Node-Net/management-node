@@ -22,6 +22,48 @@ class PolicyAttributeFieldsSerializationTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
+    void policyAttribute_serialisesNamespaceNameAndValueOnly() throws Exception {
+        String json = objectMapper.writeValueAsString(PolicyAttributeDTO.builder()
+                .namespace("policy")
+                .name("risk-tier")
+                .value("gold")
+                .build());
+
+        assertThat(json).isEqualTo("{\"namespace\":\"policy\",\"name\":\"risk-tier\",\"value\":\"gold\"}");
+    }
+
+    @Test
+    void organisationDto_serialisesNameKeyAndPolicyAttributes() throws Exception {
+        OrganisationDTO organisation = OrganisationDTO.builder()
+                .name("Environment Agency (ENV)")
+                .key("ENV")
+                .build();
+        organisation
+                .getPolicyAttributes()
+                .add(PolicyAttributeDTO.builder()
+                        .namespace("policy")
+                        .name("jurisdictions")
+                        .value("England")
+                        .build());
+
+        JsonNode json = objectMapper.readTree(objectMapper.writeValueAsString(organisation));
+
+        assertThat(json.get("name").asText()).isEqualTo("Environment Agency (ENV)");
+        assertThat(json.get("key").asText()).isEqualTo("ENV");
+        assertThat(json.get("policyAttributes")).hasSize(1);
+        assertThat(json.get("policyAttributes").get(0).get("name").asText()).isEqualTo("jurisdictions");
+    }
+
+    @Test
+    void organisationDto_policyAttributesSerialisesAsEmptyArrayWhenUnpopulated() throws Exception {
+        JsonNode json = objectMapper.readTree(
+                objectMapper.writeValueAsString(OrganisationDTO.builder().build()));
+
+        assertThat(json.get("policyAttributes").isArray()).isTrue();
+        assertThat(json.get("policyAttributes")).isEmpty();
+    }
+
+    @Test
     void producerDto_policyAttributesSerialisesAsEmptyArray() throws Exception {
         JsonNode json = objectMapper.readTree(
                 objectMapper.writeValueAsString(ProducerDTO.builder().build()));
@@ -38,8 +80,35 @@ class PolicyAttributeFieldsSerializationTest {
 
         assertThat(json.get("policyAttributes").isArray()).isTrue();
         assertThat(json.get("policyAttributes")).isEmpty();
-        assertThat(json.get("organisationPolicyAttributes").isArray()).isTrue();
-        assertThat(json.get("organisationPolicyAttributes")).isEmpty();
+        // organisation is a whole DTO now, not a flat attribute list, and is null until resolved
+        assertThat(json.has("organisation")).isTrue();
+        assertThat(json.get("organisation").isNull()).isTrue();
+    }
+
+    @Test
+    void productDto_policyAttributesSerialisesAsEmptyArray() throws Exception {
+        JsonNode json = objectMapper.readTree(objectMapper.writeValueAsString(new ProductDTO()));
+
+        assertThat(json.has("policyAttributes")).isTrue();
+        assertThat(json.get("policyAttributes").isArray()).isTrue();
+        assertThat(json.get("policyAttributes")).isEmpty();
+    }
+
+    @Test
+    void producerConfigDto_carriesOrganisation() throws Exception {
+        ProducerConfigDTO config = ProducerConfigDTO.builder()
+                .clientId("FEDERATOR_ENV")
+                .organisation(OrganisationDTO.builder()
+                        .name("Environment Agency (ENV)")
+                        .key("ENV")
+                        .build())
+                .build();
+
+        JsonNode json = objectMapper.readTree(objectMapper.writeValueAsString(config));
+
+        assertThat(json.get("organisation").get("key").asText()).isEqualTo("ENV");
+        assertThat(json.get("organisation").get("name").asText()).isEqualTo("Environment Agency (ENV)");
+        assertThat(json.get("organisation").get("policyAttributes").isArray()).isTrue();
     }
 
     @Test

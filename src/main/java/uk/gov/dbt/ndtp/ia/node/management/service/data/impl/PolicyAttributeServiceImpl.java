@@ -39,14 +39,14 @@ public class PolicyAttributeServiceImpl implements PolicyAttributeService {
         AttributeDefinition definition =
                 attributeValue.getAttributeDefinitionScope().getAttributeDefinition();
         return PolicyAttributeDTO.builder()
-                .name(definition.getNamespace() + "." + definition.getName())
+                .namespace(definition.getNamespace())
+                .name(definition.getName())
                 .value(renderValue(attributeValue.getValue()))
-                .type(definition.getDataType())
                 .build();
     }
 
     /**
-     * Renders a stored {@code attribute_value.value} (JSON text) as plain text - a JSON string's
+     * Renders a stored {@code policy_attribute_value.value} (JSON text) as plain text - a JSON string's
      * quotes are stripped, a number/boolean is rendered as-is. Falls back to the raw stored text
      * on a parse failure rather than throwing: this is a display-layer concern, not a policy
      * decision to compile a predicate against, so failing softly here is the right trade-off (see

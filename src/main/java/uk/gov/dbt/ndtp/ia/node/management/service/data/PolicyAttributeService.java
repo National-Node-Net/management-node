@@ -18,7 +18,7 @@ public interface PolicyAttributeService {
     /**
      * @param entityId the polymorphic entity id (e.g. a {@code producer.id} or {@code
      *     consumer.id})
-     * @param scope which {@code attribute_scope} to resolve attributes for
+     * @param scope which {@code policy_attribute_scope} to resolve attributes for
      * @return the entity's live policy attributes for that scope, or an empty list (never
      *     {@code null}) if it has none
      */

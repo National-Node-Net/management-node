@@ -12,12 +12,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.AttributeScope;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.AbstractPostgresRepositoryTest;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.AttributeScopeRepository;
 
 /**
  * Verifies every {@link PolicyAttributeScope} constant's code names a real, seeded {@code
- * attribute_scope.code} row - against real Postgres, so a future rename of a seeded code would
+ * policy_attribute_scope.code} row - against real Postgres, so a future rename of a seeded code would
  * be caught here rather than only surfacing as an always-empty result at runtime.
  */
 class PolicyAttributeScopeTest extends AbstractPostgresRepositoryTest {
@@ -32,9 +33,14 @@ class PolicyAttributeScopeTest extends AbstractPostgresRepositoryTest {
     }
 
     @Test
-    void doesNotIncludeProductScope() {
+    void coversEverySeededScopeCode() {
         assertThat(PolicyAttributeScope.values())
                 .extracting(PolicyAttributeScope::code)
-                .doesNotContain("PRODUCT");
+                .containsExactlyInAnyOrder("PRODUCER", "PRODUCT", "CONSUMER", "ORGANISATION", "SUBSCRIPTION");
+        assertThat(attributeScopeRepository.findAll())
+                .extracting(AttributeScope::getCode)
+                .containsExactlyInAnyOrderElementsOf(java.util.Arrays.stream(PolicyAttributeScope.values())
+                        .map(PolicyAttributeScope::code)
+                        .toList());
     }
 }

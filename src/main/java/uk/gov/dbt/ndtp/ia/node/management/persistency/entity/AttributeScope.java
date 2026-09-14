@@ -15,7 +15,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@Table(name = "attribute_scope")
+@Table(name = "policy_attribute_scope")
 public class AttributeScope {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

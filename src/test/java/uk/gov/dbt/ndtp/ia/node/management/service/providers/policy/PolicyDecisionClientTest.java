@@ -26,7 +26,8 @@ import uk.gov.dbt.ndtp.ia.node.management.config.OpaProperties;
 
 class PolicyDecisionClientTest {
 
-    private static final PolicyInput INPUT = new PolicyInput("client-1", null, "/api/v1/configuration/producer", "GET");
+    private static final PolicyInput INPUT =
+            new PolicyInput("client-1", null, null, "/api/v1/configuration/producer", "GET");
     private static final OpaProperties PROPERTIES = new OpaProperties(
             "https://opa.example.internal",
             "/v1/data/management_node/allow",

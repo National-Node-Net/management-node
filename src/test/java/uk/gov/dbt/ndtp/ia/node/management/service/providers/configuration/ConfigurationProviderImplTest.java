@@ -27,6 +27,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.*;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ConsumerService;
+import uk.gov.dbt.ndtp.ia.node.management.service.data.OrganisationService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeScope;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProducerService;
@@ -50,6 +51,9 @@ class ConfigurationProviderImplTest {
     @Mock
     private PolicyAttributeService policyAttributeService;
 
+    @Mock
+    private OrganisationService organisationService;
+
     @InjectMocks
     private ConfigurationProviderImpl configurationProvider;
 
@@ -61,7 +65,8 @@ class ConfigurationProviderImplTest {
                 productConsumerService,
                 producerService,
                 certificateValidationProvider,
-                policyAttributeService);
+                policyAttributeService,
+                organisationService);
         // Default: treat all orgs as having active certificates, override in specific
         // tests to simulate inactive/missing certs.
         when(certificateValidationProvider.findActiveOrganisationIds(any())).thenAnswer(invocation -> {
@@ -378,6 +383,42 @@ class ConfigurationProviderImplTest {
     // DPAV-3162: policy attribute wiring
 
     @Test
+    void getConsumerConfigByClientId_namesTheProducersOrganisationButWithoutItsPolicyAttributes() {
+        String clientId = "consumerClient";
+        ConsumerDTO consumer = consumer(500L, clientId, "c500", "CRON", "@daily");
+        when(consumerService.findByIdpClientId(clientId)).thenReturn(List.of(consumer));
+
+        ProductConsumerDTO subscription = productConsumer(700L, 500L, null, null);
+        subscription.setId(9100L);
+        when(productConsumerService.findByConsumerId(500L)).thenReturn(List.of(subscription));
+
+        ProductDTO product = product(700L, "prod");
+        ProducerDTO producer = producer(80L, true, product);
+        when(producerService.getProducersByConsumerIds(List.of(500L))).thenReturn(List.of(producer));
+        when(organisationService.findByIds(any()))
+                .thenReturn(Map.of(
+                        1L,
+                        OrganisationDTO.builder()
+                                .name("Producer Org")
+                                .key("PROD_ORG")
+                                .build()));
+
+        ConsumerConfigDTO cfg = configurationProvider.getConsumerConfigByClientId(clientId, Optional.empty());
+
+        ProducerDTO returned = cfg.getProducers().get(0);
+        // the consumer is told which organisation publishes to it...
+        assertThat(returned.getOrganisation()).isNotNull();
+        assertThat(returned.getOrganisation().getName()).isEqualTo("Producer Org");
+        assertThat(returned.getOrganisation().getKey()).isEqualTo("PROD_ORG");
+        // ...but never what that organisation is entitled to hold
+        assertThat(returned.getOrganisation().getPolicyAttributes()).isEmpty();
+        assertThat(returned.getPolicyAttributes()).isEmpty();
+        assertThat(returned.getProducts().get(0).getPolicyAttributes()).isEmpty();
+        // no policy attribute lookup happens at all on this path
+        verifyNoInteractions(policyAttributeService);
+    }
+
+    @Test
     void getProducerConfigByClientId_populatesPolicyAttributesForEveryScope() {
         String clientId = "policyClient";
         ProductDTO product = product(700L, "prod");
@@ -394,24 +435,36 @@ class ConfigurationProviderImplTest {
         when(consumerService.findById(701L)).thenReturn(Optional.of(consumer));
 
         PolicyAttributeDTO producerAttr = PolicyAttributeDTO.builder()
-                .name("policy.a")
+                .namespace("policy")
+                .name("a")
                 .value("1")
-                .type("STRING")
                 .build();
         PolicyAttributeDTO consumerAttr = PolicyAttributeDTO.builder()
-                .name("policy.b")
+                .namespace("policy")
+                .name("b")
                 .value("2")
-                .type("STRING")
                 .build();
         PolicyAttributeDTO orgAttr = PolicyAttributeDTO.builder()
-                .name("policy.c")
+                .namespace("policy")
+                .name("c")
                 .value("3")
-                .type("STRING")
                 .build();
         PolicyAttributeDTO subscriptionAttr = PolicyAttributeDTO.builder()
-                .name("policy.d")
+                .namespace("policy")
+                .name("d")
                 .value("4")
-                .type("STRING")
+                .build();
+        PolicyAttributeDTO productAttr = PolicyAttributeDTO.builder()
+                .namespace("policy")
+                .name("e")
+                .value("5")
+                .build();
+        // the producer's own organisation (id 1) - distinct from the consumer's organisation (801),
+        // so the assertions below prove which one the config-level organisation reports
+        PolicyAttributeDTO producerOrgAttr = PolicyAttributeDTO.builder()
+                .namespace("policy")
+                .name("f")
+                .value("6")
                 .build();
         when(policyAttributeService.findAttributes(70L, PolicyAttributeScope.PRODUCER))
                 .thenReturn(List.of(producerAttr));
@@ -421,6 +474,22 @@ class ConfigurationProviderImplTest {
                 .thenReturn(List.of(orgAttr));
         when(policyAttributeService.findAttributes(9001L, PolicyAttributeScope.SUBSCRIPTION))
                 .thenReturn(List.of(subscriptionAttr));
+        when(policyAttributeService.findAttributes(700L, PolicyAttributeScope.PRODUCT))
+                .thenReturn(List.of(productAttr));
+        when(policyAttributeService.findAttributes(1L, PolicyAttributeScope.ORGANISATION))
+                .thenReturn(List.of(producerOrgAttr));
+        when(organisationService.findByIds(any()))
+                .thenReturn(Map.of(
+                        1L,
+                        OrganisationDTO.builder()
+                                .name("Producer Org")
+                                .key("PROD_ORG")
+                                .build(),
+                        801L,
+                        OrganisationDTO.builder()
+                                .name("Consumer Org")
+                                .key("CONS_ORG")
+                                .build()));
 
         ProducerConfigDTO cfg = configurationProvider.getProducerConfigByClientId(clientId, Optional.empty());
 
@@ -430,11 +499,157 @@ class ConfigurationProviderImplTest {
         ConsumerDTO returnedConsumer =
                 returnedProducer.getProducts().get(0).getConsumers().get(0);
         assertThat(returnedConsumer.getPolicyAttributes()).containsExactly(consumerAttr);
-        assertThat(returnedConsumer.getOrganisationPolicyAttributes()).containsExactly(orgAttr);
+        assertThat(returnedConsumer.getOrganisation()).isNotNull();
+        assertThat(returnedConsumer.getOrganisation().getPolicyAttributes()).containsExactly(orgAttr);
 
         ProductConsumerDTO returnedSubscription =
                 returnedProducer.getProducts().get(0).getConfigurations().get(0);
         assertThat(returnedSubscription.getPolicyAttributes()).containsExactly(subscriptionAttr);
+
+        assertThat(returnedProducer.getProducts().get(0).getPolicyAttributes()).containsExactly(productAttr);
+
+        // the response itself reports the organisation its producers belong to
+        assertThat(cfg.getOrganisation()).isNotNull();
+        assertThat(cfg.getOrganisation().getKey()).isEqualTo("PROD_ORG");
+        assertThat(cfg.getOrganisation().getName()).isEqualTo("Producer Org");
+        assertThat(cfg.getOrganisation().getPolicyAttributes()).containsExactly(producerOrgAttr);
+        // and the producer carries the same organisation as the response header
+        assertThat(returnedProducer.getOrganisation().getKey()).isEqualTo("PROD_ORG");
+    }
+
+    @Test
+    void getProducerConfigByClientId_configOrganisationIsNullWhenNoProducerResolvesOne() {
+        String clientId = "noConfigOrgClient";
+        ProductDTO product = product(700L, "prod");
+        ProducerDTO producer = producer(75L, true, product);
+        when(producerService.getProducersByClientId(clientId)).thenReturn(List.of(producer));
+        when(consumerService.getConsumersOfProviders(any())).thenReturn(Map.of());
+        when(productConsumerService.findByDataProviderId(700L)).thenReturn(List.of());
+        when(organisationService.findByIds(any())).thenReturn(Map.of());
+
+        ProducerConfigDTO cfg = configurationProvider.getProducerConfigByClientId(clientId, Optional.empty());
+
+        assertThat(cfg.getOrganisation()).isNull();
+    }
+
+    @Test
+    void getProducerConfigByClientId_producersSpanningTwoOrganisations_reportsTheFirstAndWarns() {
+        String clientId = "multiOrgClient";
+        ProducerDTO first = producer(77L, true, product(700L, "prodA"));
+        ProducerDTO second = producer(78L, true, product(701L, "prodB"));
+        second.setOrgId(2L);
+        when(producerService.getProducersByClientId(clientId)).thenReturn(List.of(first, second));
+        when(consumerService.getConsumersOfProviders(any())).thenReturn(Map.of());
+        when(productConsumerService.findByDataProviderId(any())).thenReturn(List.of());
+        when(organisationService.findByIds(any()))
+                .thenReturn(Map.of(
+                        1L,
+                        OrganisationDTO.builder().name("First Org").key("FIRST").build(),
+                        2L,
+                        OrganisationDTO.builder()
+                                .name("Second Org")
+                                .key("SECOND")
+                                .build()));
+
+        ProducerConfigDTO cfg = configurationProvider.getProducerConfigByClientId(clientId, Optional.empty());
+
+        assertThat(cfg.getOrganisation().getKey()).isEqualTo("FIRST");
+        // each producer still reports its own organisation
+        assertThat(cfg.getProducers())
+                .extracting(p -> p.getOrganisation().getKey())
+                .containsExactly("FIRST", "SECOND");
+    }
+
+    @Test
+    void getProducerConfigByClientId_configOrganisationIsACopyNotTheProducersInstance() {
+        String clientId = "copyOrgClient";
+        ProductDTO product = product(700L, "prod");
+        ProducerDTO producer = producer(76L, true, product);
+        when(producerService.getProducersByClientId(clientId)).thenReturn(List.of(producer));
+        when(consumerService.getConsumersOfProviders(any())).thenReturn(Map.of());
+        when(productConsumerService.findByDataProviderId(700L)).thenReturn(List.of());
+        when(organisationService.findByIds(any()))
+                .thenReturn(Map.of(
+                        1L,
+                        OrganisationDTO.builder()
+                                .name("Producer Org")
+                                .key("PROD_ORG")
+                                .build()));
+
+        ProducerConfigDTO cfg = configurationProvider.getProducerConfigByClientId(clientId, Optional.empty());
+
+        assertThat(cfg.getOrganisation()).isNotSameAs(cfg.getProducers().get(0).getOrganisation());
+        assertThat(cfg.getOrganisation().getKey())
+                .isEqualTo(cfg.getProducers().get(0).getOrganisation().getKey());
+    }
+
+    @Test
+    void getProducerConfigByClientId_leavesOrganisationNullWhenNothingHasAnOrgId() {
+        String clientId = "noOrgClient";
+        ProductDTO product = product(700L, "prod");
+        ProducerDTO producer = ProducerDTO.builder()
+                .id(72L)
+                .active(true)
+                .idpClientId("cid")
+                .name("p")
+                .build();
+        producer.getProducts().add(product);
+        when(producerService.getProducersByClientId(clientId)).thenReturn(List.of(producer));
+        when(consumerService.getConsumersOfProviders(any())).thenReturn(Map.of());
+        when(productConsumerService.findByDataProviderId(700L)).thenReturn(List.of());
+
+        ProducerConfigDTO cfg = configurationProvider.getProducerConfigByClientId(clientId, Optional.empty());
+
+        assertThat(cfg.getProducers().get(0).getOrganisation()).isNull();
+        // nothing to look up, so the organisation lookup is skipped entirely
+        verify(organisationService, never()).findByIds(any());
+    }
+
+    @Test
+    void getProducerConfigByClientId_leavesOrganisationNullWhenTheOrgIdResolvesToNothing() {
+        String clientId = "orphanOrgClient";
+        ProductDTO product = product(700L, "prod");
+        ProducerDTO producer = producer(73L, true, product);
+        when(producerService.getProducersByClientId(clientId)).thenReturn(List.of(producer));
+        when(consumerService.getConsumersOfProviders(any())).thenReturn(Map.of());
+        when(productConsumerService.findByDataProviderId(700L)).thenReturn(List.of());
+        // producer.orgId is 1L, but no organisation row comes back for it
+        when(organisationService.findByIds(any())).thenReturn(Map.of());
+
+        ProducerConfigDTO cfg = configurationProvider.getProducerConfigByClientId(clientId, Optional.empty());
+
+        assertThat(cfg.getProducers().get(0).getOrganisation()).isNull();
+    }
+
+    @Test
+    void getProducerConfigByClientId_consumerWithNoOrgId_getsNullOrganisation() {
+        String clientId = "consumerNoOrgClient";
+        ProductDTO product = product(700L, "prod");
+        ProducerDTO producer = producer(74L, true, product);
+        when(producerService.getProducersByClientId(clientId)).thenReturn(List.of(producer));
+        when(consumerService.getConsumersOfProviders(any())).thenReturn(Map.of());
+
+        ProductConsumerDTO subscription = productConsumer(700L, 705L, null, null);
+        subscription.setId(9005L);
+        when(productConsumerService.findByDataProviderId(700L)).thenReturn(List.of(subscription));
+
+        ConsumerDTO consumer = ConsumerDTO.builder().name("c705").build();
+        consumer.setId(705L);
+        when(consumerService.findById(705L)).thenReturn(Optional.of(consumer));
+        when(organisationService.findByIds(any()))
+                .thenReturn(Map.of(
+                        1L,
+                        OrganisationDTO.builder()
+                                .name("Producer Org")
+                                .key("PROD_ORG")
+                                .build()));
+
+        ProducerConfigDTO cfg = configurationProvider.getProducerConfigByClientId(clientId, Optional.empty());
+
+        ConsumerDTO returned =
+                cfg.getProducers().get(0).getProducts().get(0).getConsumers().get(0);
+        assertThat(returned.getOrganisation()).isNull();
+        assertThat(cfg.getProducers().get(0).getOrganisation().getKey()).isEqualTo("PROD_ORG");
     }
 
     @Test
@@ -462,5 +677,118 @@ class ConfigurationProviderImplTest {
         configurationProvider.getConsumerConfigByClientId(clientId, Optional.empty());
 
         verifyNoInteractions(policyAttributeService);
+    }
+
+    @Test
+    void getProducerConfigByClientId_producerWithNoOrgId_getsNullOrganisationWhileItsConsumersResolveTheirs() {
+        String clientId = "producerNoOrgClient";
+        ProductDTO product = product(700L, "prod");
+        // no orgId on the producer, unlike the producer(..) helper
+        ProducerDTO producer = ProducerDTO.builder()
+                .id(75L)
+                .active(true)
+                .idpClientId("cid")
+                .name("p")
+                .build();
+        producer.getProducts().add(product);
+        when(producerService.getProducersByClientId(clientId)).thenReturn(List.of(producer));
+        when(consumerService.getConsumersOfProviders(any())).thenReturn(Map.of());
+
+        ProductConsumerDTO subscription = productConsumer(700L, 706L, null, null);
+        subscription.setId(9006L);
+        when(productConsumerService.findByDataProviderId(700L)).thenReturn(List.of(subscription));
+
+        ConsumerDTO consumer = ConsumerDTO.builder().name("c706").orgId(801L).build();
+        consumer.setId(706L);
+        when(consumerService.findById(706L)).thenReturn(Optional.of(consumer));
+        when(organisationService.findByIds(any()))
+                .thenReturn(Map.of(
+                        801L,
+                        OrganisationDTO.builder()
+                                .name("Consumer Org")
+                                .key("CONS_ORG")
+                                .build()));
+
+        ProducerConfigDTO cfg = configurationProvider.getProducerConfigByClientId(clientId, Optional.empty());
+
+        ProducerDTO returnedProducer = cfg.getProducers().get(0);
+        // the lookup does happen - a consumer needs it - but the producer has nothing to resolve
+        verify(organisationService).findByIds(Set.of(801L));
+        assertThat(returnedProducer.getOrganisation()).isNull();
+        assertThat(cfg.getOrganisation()).isNull();
+        assertThat(returnedProducer.getProducts().get(0).getConsumers().get(0).getOrganisation())
+                .isNotNull();
+        assertThat(returnedProducer
+                        .getProducts()
+                        .get(0)
+                        .getConsumers()
+                        .get(0)
+                        .getOrganisation()
+                        .getKey())
+                .isEqualTo("CONS_ORG");
+    }
+
+    @Test
+    void getProducerConfigByClientId_organisationSharedByTwoConsumers_isResolvedOnceButNotSharedByReference() {
+        String clientId = "sharedOrgClient";
+        ProductDTO productA = product(700L, "prodA");
+        ProductDTO productB = product(701L, "prodB");
+        ProducerDTO producer = producer(76L, true, productA, productB);
+        when(producerService.getProducersByClientId(clientId)).thenReturn(List.of(producer));
+        when(consumerService.getConsumersOfProviders(any())).thenReturn(Map.of());
+
+        ProductConsumerDTO subscriptionA = productConsumer(700L, 707L, null, null);
+        subscriptionA.setId(9007L);
+        ProductConsumerDTO subscriptionB = productConsumer(701L, 708L, null, null);
+        subscriptionB.setId(9008L);
+        when(productConsumerService.findByDataProviderId(700L)).thenReturn(List.of(subscriptionA));
+        when(productConsumerService.findByDataProviderId(701L)).thenReturn(List.of(subscriptionB));
+
+        // two different consumers under two different products, both in organisation 801
+        ConsumerDTO consumerA = ConsumerDTO.builder().name("c707").orgId(801L).build();
+        consumerA.setId(707L);
+        ConsumerDTO consumerB = ConsumerDTO.builder().name("c708").orgId(801L).build();
+        consumerB.setId(708L);
+        when(consumerService.findById(707L)).thenReturn(Optional.of(consumerA));
+        when(consumerService.findById(708L)).thenReturn(Optional.of(consumerB));
+
+        PolicyAttributeDTO orgAttr = PolicyAttributeDTO.builder()
+                .name("classification")
+                .value("OFFICIAL")
+                .build();
+        when(policyAttributeService.findAttributes(801L, PolicyAttributeScope.ORGANISATION))
+                .thenReturn(List.of(orgAttr));
+        when(organisationService.findByIds(any()))
+                .thenReturn(Map.of(
+                        1L,
+                        OrganisationDTO.builder()
+                                .name("Producer Org")
+                                .key("PROD_ORG")
+                                .build(),
+                        801L,
+                        OrganisationDTO.builder()
+                                .name("Consumer Org")
+                                .key("CONS_ORG")
+                                .build()));
+
+        ProducerConfigDTO cfg = configurationProvider.getProducerConfigByClientId(clientId, Optional.empty());
+
+        // the duplicate org id is collapsed before the lookup, and resolved exactly once
+        verify(organisationService, times(1)).findByIds(Set.of(1L, 801L));
+        verify(policyAttributeService, times(1)).findAttributes(801L, PolicyAttributeScope.ORGANISATION);
+
+        ProducerDTO returnedProducer = cfg.getProducers().get(0);
+        OrganisationDTO orgOfA =
+                returnedProducer.getProducts().get(0).getConsumers().get(0).getOrganisation();
+        OrganisationDTO orgOfB =
+                returnedProducer.getProducts().get(1).getConsumers().get(0).getOrganisation();
+
+        assertThat(orgOfA.getKey()).isEqualTo("CONS_ORG");
+        assertThat(orgOfB.getKey()).isEqualTo("CONS_ORG");
+        assertThat(orgOfA.getPolicyAttributes()).containsExactly(orgAttr);
+        assertThat(orgOfB.getPolicyAttributes()).containsExactly(orgAttr);
+        // each owner gets its own instance, so mutating one cannot leak into the other
+        assertThat(orgOfA).isNotSameAs(orgOfB);
+        assertThat(returnedProducer.getOrganisation()).isNotSameAs(orgOfA);
     }
 }

@@ -7,6 +7,10 @@
 package uk.gov.dbt.ndtp.ia.node.management.service.data.impl;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
 
 import java.util.Collections;
@@ -14,9 +18,9 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
 import uk.gov.dbt.ndtp.ia.node.management.converter.impl.ProductConverter;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProductDTO;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Producer;
@@ -32,7 +36,6 @@ class ProductServiceImplTest {
     @Mock
     private ProductConverter productConverter;
 
-    @InjectMocks
     private ProductServiceImpl productService;
 
     private Product product;
@@ -43,6 +46,10 @@ class ProductServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        // Constructed manually (not @InjectMocks) - the constructor's int max-candidates
+        // parameter has no mock to inject
+        productService = new ProductServiceImpl(productRepository, productConverter, 200);
+
         // Set up test data
         Producer producer = new Producer();
         producer.setId(producerId);
@@ -196,5 +203,57 @@ class ProductServiceImplTest {
         // Verify
         verify(productRepository).findByProducerIds(producerIds);
         verify(productConverter, never()).toDtoList(any());
+    }
+
+    @Test
+    void findDiscoveryCandidates_delegatesFiltersAndLimitToRepository() {
+        // Arrange: constructed directly (not @InjectMocks) so the max-candidates limit is explicit
+        ProductServiceImpl service = new ProductServiceImpl(productRepository, productConverter, 5);
+        List<Product> products = List.of(product);
+        List<ProductDTO> productDTOs = List.of(productDTO);
+
+        when(productRepository.findDiscoveryCandidates(eq("Alpha"), eq("topic-1"), eq("TypeA"), any(Pageable.class)))
+                .thenReturn(products);
+        when(productConverter.toDtoList(products)).thenReturn(productDTOs);
+
+        // Act
+        List<ProductDTO> result = service.findDiscoveryCandidates("Alpha", "topic-1", "TypeA");
+
+        // Assert
+        assertEquals(productDTOs, result);
+        verify(productRepository)
+                .findDiscoveryCandidates(
+                        eq("Alpha"),
+                        eq("topic-1"),
+                        eq("TypeA"),
+                        argThat(pageable -> pageable.getPageSize() == 5 && pageable.getPageNumber() == 0));
+    }
+
+    @Test
+    void findDiscoveryCandidates_blankFilters_passedAsNullToRepository() {
+        // Arrange
+        ProductServiceImpl service = new ProductServiceImpl(productRepository, productConverter, 5);
+        when(productRepository.findDiscoveryCandidates(isNull(), isNull(), isNull(), any(Pageable.class)))
+                .thenReturn(Collections.emptyList());
+        when(productConverter.toDtoList(Collections.emptyList())).thenReturn(Collections.emptyList());
+
+        // Act
+        List<ProductDTO> result = service.findDiscoveryCandidates("", null, "  ");
+
+        // Assert
+        assertTrue(result.isEmpty());
+        verify(productRepository).findDiscoveryCandidates(isNull(), isNull(), isNull(), any(Pageable.class));
+    }
+
+    @Test
+    void constructor_rejectsZeroMaxCandidates() {
+        assertThrows(
+                IllegalArgumentException.class, () -> new ProductServiceImpl(productRepository, productConverter, 0));
+    }
+
+    @Test
+    void constructor_rejectsNegativeMaxCandidates() {
+        assertThrows(
+                IllegalArgumentException.class, () -> new ProductServiceImpl(productRepository, productConverter, -1));
     }
 }

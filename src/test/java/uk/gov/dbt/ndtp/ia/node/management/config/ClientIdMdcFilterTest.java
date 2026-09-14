@@ -65,7 +65,7 @@ class ClientIdMdcFilterTest {
     @Test
     void doFilterInternal_withEnhancedPrincipal_shouldSetMdc() throws ServletException, IOException {
         // Arrange
-        EnhancedPrincipal principal = new EnhancedPrincipal("subject", "test-client-id");
+        EnhancedPrincipal principal = new EnhancedPrincipal("subject", "test-client-id", "test-organisation");
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(principal);
         when(authentication.getName()).thenReturn("test-user");
@@ -109,7 +109,7 @@ class ClientIdMdcFilterTest {
     void doFilterInternal_withEnhancedPrincipalButEmptyClientId_shouldSetEmptyMdc()
             throws ServletException, IOException {
         // Arrange
-        EnhancedPrincipal principal = new EnhancedPrincipal("subject", "");
+        EnhancedPrincipal principal = new EnhancedPrincipal("subject", "", "test-organisation");
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(principal);
 
@@ -125,7 +125,7 @@ class ClientIdMdcFilterTest {
     void doFilterInternal_withEnhancedPrincipalButNullClientId_shouldSetEmptyMdc()
             throws ServletException, IOException {
         // Arrange
-        EnhancedPrincipal principal = new EnhancedPrincipal("subject", null);
+        EnhancedPrincipal principal = new EnhancedPrincipal("subject", null, "test-organisation");
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(principal);
 
@@ -154,7 +154,7 @@ class ClientIdMdcFilterTest {
     @Test
     void doFilterInternal_shouldClearMdcEvenOnException() throws ServletException, IOException {
         // Arrange
-        EnhancedPrincipal principal = new EnhancedPrincipal("subject", "test-client-id");
+        EnhancedPrincipal principal = new EnhancedPrincipal("subject", "test-client-id", "test-organisation");
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(principal);
         doThrow(new RuntimeException("Test exception")).when(filterChain).doFilter(request, response);

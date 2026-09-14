@@ -29,12 +29,12 @@ public interface AttributeValueRepository extends JpaRepository<AttributeValue, 
 
     /**
      * Every live (non-soft-deleted) attribute value recorded against one entity within one
-     * {@code attribute_scope.code}, with its defining {@code attribute_definition_scope}/
-     * {@code attribute_definition} eagerly fetched so callers can read {@code namespace}/
+     * {@code policy_attribute_scope.code}, with its defining {@code policy_attribute_definition_scope}/
+     * {@code policy_attribute_definition} eagerly fetched so callers can read {@code namespace}/
      * {@code name}/{@code data_type} without a second query per row.
      *
      * @param entityId the polymorphic entity id (e.g. a {@code producer.id} or {@code consumer.id})
-     * @param scopeCode the {@code attribute_scope.code} to filter to (e.g. {@code "PRODUCER"})
+     * @param scopeCode the {@code policy_attribute_scope.code} to filter to (e.g. {@code "PRODUCER"})
      */
     @Query("SELECT av FROM AttributeValue av "
             + "JOIN FETCH av.attributeDefinitionScope ads "

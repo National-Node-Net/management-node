@@ -29,4 +29,17 @@ public interface ProductService {
      * @return a list of DataProviderDTO objects corresponding to the given producer IDs
      */
     List<ProductDTO> getProductsByProducerIds(List<Long> producerIds);
+
+    /**
+     * Retrieves discovery candidate products across all organisations matching the optional
+     * search filters, bounded by the configured max-candidate limit. This is the pre-policy
+     * candidate set for {@code POST /v1/product/discovery}; authorisation is applied
+     * separately, per candidate, by the PDP.
+     *
+     * @param name optional case-insensitive contains filter on product name
+     * @param topic optional case-insensitive contains filter on product topic
+     * @param type optional case-insensitive exact filter on product type name
+     * @return candidate products matching the filters, bounded by the max-candidate limit
+     */
+    List<ProductDTO> findDiscoveryCandidates(String name, String topic, String type);
 }

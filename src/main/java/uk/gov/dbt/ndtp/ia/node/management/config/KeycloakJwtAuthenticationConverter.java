@@ -60,11 +60,13 @@ public class KeycloakJwtAuthenticationConverter implements Converter<Jwt, Abstra
     private static final String CLAIM_AZP = "azp";
     private static final String CLAIM_CLIENT_ID = "client_id";
     private static final String CLAIM_RESOURCE_ACCESS = "resource_access";
+    private static final String CLAIM_ORGANISATION = "organisation";
     private static final String CLAIM_ROLES = "roles";
 
     // Constants for role prefixes and default values
     private static final String ROLE_PREFIX = "ROLE_";
     private static final String UNKNOWN_CLIENT = "unknown";
+    private static final String UNKNOWN_ORGANISATION = "unknown_organisation";
     private static final String RESOURCE_ROLE_SEPARATOR = ":";
 
     // Form data keys
@@ -144,8 +146,11 @@ public class KeycloakJwtAuthenticationConverter implements Converter<Jwt, Abstra
                 subject = jwt.getSubject(); // Fallback to JWT subject if not in introspection data
             }
 
-            // Create custom principal with subject and clientId
-            EnhancedPrincipal principal = new EnhancedPrincipal(subject, tokenClientId);
+            // Extract the organisation the token was issued for
+            String organisation = extractOrganisationFromIntrospection(introspectionData, jwt);
+
+            // Create custom principal with subject, clientId and organisation
+            EnhancedPrincipal principal = new EnhancedPrincipal(subject, tokenClientId, organisation);
 
             log.debug("Successfully created authentication token for client ID: {}", tokenClientId);
 
@@ -160,7 +165,8 @@ public class KeycloakJwtAuthenticationConverter implements Converter<Jwt, Abstra
                     e.getMessage());
 
             Collection<GrantedAuthority> authorities = extractAuthorities(jwt);
-            EnhancedPrincipal principal = new EnhancedPrincipal(jwt.getSubject(), tokenClientId);
+            EnhancedPrincipal principal =
+                    new EnhancedPrincipal(jwt.getSubject(), tokenClientId, extractOrganisation(jwt));
             return new CustomJwtAuthenticationToken(jwt, authorities, principal);
         } catch (ResourceAccessParsingException e) {
             // If resource access parsing fails, log the error and fall back to JWT parsing
@@ -171,7 +177,8 @@ public class KeycloakJwtAuthenticationConverter implements Converter<Jwt, Abstra
                     e.getMessage());
 
             Collection<GrantedAuthority> authorities = extractAuthorities(jwt);
-            EnhancedPrincipal principal = new EnhancedPrincipal(jwt.getSubject(), tokenClientId);
+            EnhancedPrincipal principal =
+                    new EnhancedPrincipal(jwt.getSubject(), tokenClientId, extractOrganisation(jwt));
             return new CustomJwtAuthenticationToken(jwt, authorities, principal);
         } catch (Exception e) {
             // For any other unexpected exceptions
@@ -179,7 +186,8 @@ public class KeycloakJwtAuthenticationConverter implements Converter<Jwt, Abstra
             log.error("Unexpected error during JWT conversion for client ID: {}", tokenClientId, e);
 
             Collection<GrantedAuthority> authorities = extractAuthorities(jwt);
-            EnhancedPrincipal principal = new EnhancedPrincipal(jwt.getSubject(), tokenClientId);
+            EnhancedPrincipal principal =
+                    new EnhancedPrincipal(jwt.getSubject(), tokenClientId, extractOrganisation(jwt));
             return new CustomJwtAuthenticationToken(jwt, authorities, principal);
         }
     }
@@ -192,15 +200,51 @@ public class KeycloakJwtAuthenticationConverter implements Converter<Jwt, Abstra
      * @return A non-null client ID (either primary, fallback, or "unknown")
      */
     private String getEffectiveClientId(String primaryId, String fallbackId) {
-        if (primaryId != null && !primaryId.isEmpty()) {
-            return primaryId;
+        return getEffectiveValue(primaryId, fallbackId, UNKNOWN_CLIENT);
+    }
+
+    /**
+     * Returns the first of two candidate values that is neither null nor empty, or the
+     * supplied default when neither is usable.
+     *
+     * @param primary      The preferred value
+     * @param fallback     The value to use when primary is null or empty
+     * @param defaultValue The value to use when neither candidate is usable
+     * @return A non-null value
+     */
+    private String getEffectiveValue(String primary, String fallback, String defaultValue) {
+        if (primary != null && !primary.isEmpty()) {
+            return primary;
         }
 
-        if (fallbackId != null && !fallbackId.isEmpty()) {
-            return fallbackId;
+        if (fallback != null && !fallback.isEmpty()) {
+            return fallback;
         }
 
-        return UNKNOWN_CLIENT;
+        return defaultValue;
+    }
+
+    /**
+     * Extract the organisation from the JWT's "organisation" claim.
+     * Returns "unknown_organisation" when the claim is absent or empty, so the principal
+     * always carries a usable value.
+     */
+    private String extractOrganisation(Jwt jwt) {
+        return getEffectiveValue(jwt.getClaimAsString(CLAIM_ORGANISATION), null, UNKNOWN_ORGANISATION);
+    }
+
+    /**
+     * Extract the organisation from introspection data, falling back to the JWT's own
+     * "organisation" claim when introspection does not carry one - introspection is the more
+     * authoritative source, but an older authorisation server may not echo the claim back.
+     *
+     * @param jwtToken The data from the introspection endpoint
+     * @param jwt      The JWT the introspection was performed for
+     * @return The organisation, or "unknown_organisation" when neither source has one
+     */
+    private String extractOrganisationFromIntrospection(JwtToken jwtToken, Jwt jwt) {
+        return getEffectiveValue(
+                jwtToken.getOrganisation(), jwt.getClaimAsString(CLAIM_ORGANISATION), UNKNOWN_ORGANISATION);
     }
 
     /**

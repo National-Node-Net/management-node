@@ -18,26 +18,38 @@ class PolicyDecisionSerializationTest {
     @Test
     void request_serializesWithAllAttributes() throws Exception {
         PolicyDecisionRequest request = new PolicyDecisionRequest(
-                new PolicyInput("client-1", "org-1", "/api/v1/configuration/producer", "GET"));
+                new PolicyInput("client-1", "FEDERATOR_ENV", "42", "/api/v1/configuration/producer", "GET"));
 
         String json = objectMapper.writeValueAsString(request);
 
         assertThat(json)
                 .isEqualTo(
-                        "{\"input\":{\"clientId\":\"client-1\",\"organisation\":\"org-1\",\"resource\":\"/api/v1/configuration/producer\",\"action\":\"GET\"}}");
+                        "{\"input\":{\"clientId\":\"client-1\",\"organisation\":\"FEDERATOR_ENV\",\"organisationId\":\"42\","
+                                + "\"resource\":\"/api/v1/configuration/producer\",\"action\":\"GET\"}}");
     }
 
     @Test
-    void request_omitsOrganisationWhenNull() throws Exception {
-        PolicyDecisionRequest request =
-                new PolicyDecisionRequest(new PolicyInput("client-1", null, "/api/v1/configuration/producer", "GET"));
+    void request_omitsOrganisationFieldsWhenNull() throws Exception {
+        PolicyDecisionRequest request = new PolicyDecisionRequest(
+                new PolicyInput("client-1", null, null, "/api/v1/configuration/producer", "GET"));
 
         String json = objectMapper.writeValueAsString(request);
 
         assertThat(json)
                 .doesNotContain("organisation")
+                .doesNotContain("organisationId")
                 .isEqualTo(
                         "{\"input\":{\"clientId\":\"client-1\",\"resource\":\"/api/v1/configuration/producer\",\"action\":\"GET\"}}");
+    }
+
+    @Test
+    void request_keepsTokenOrganisationWhenCertificateIdAbsent() throws Exception {
+        PolicyDecisionRequest request = new PolicyDecisionRequest(
+                new PolicyInput("client-1", "FEDERATOR_ENV", null, "/api/v1/configuration/producer", "GET"));
+
+        String json = objectMapper.writeValueAsString(request);
+
+        assertThat(json).contains("\"organisation\":\"FEDERATOR_ENV\"").doesNotContain("organisationId");
     }
 
     @Test

@@ -52,7 +52,8 @@ class CertificateControllerTest {
     @InjectMocks
     private CertificateController certificateController;
 
-    private static final EnhancedPrincipal TEST_PRINCIPAL = new EnhancedPrincipal("subject", "client-1");
+    private static final EnhancedPrincipal TEST_PRINCIPAL =
+            new EnhancedPrincipal("subject", "client-1", "test-organisation");
 
     @BeforeEach
     void setUp() {

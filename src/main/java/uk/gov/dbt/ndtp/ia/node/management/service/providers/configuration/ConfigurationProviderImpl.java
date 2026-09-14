@@ -13,14 +13,21 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.*;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.OrganisationDTO;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ConsumerService;
+import uk.gov.dbt.ndtp.ia.node.management.service.data.OrganisationService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeScope;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProducerService;
@@ -31,6 +38,7 @@ import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.Certific
  * Implementation of {@link ConfigurationProvider} that retrieves configuration from database services.
  */
 @Service
+@Slf4j
 public class ConfigurationProviderImpl implements ConfigurationProvider {
 
     private final ConsumerService consumerService;
@@ -43,6 +51,8 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
 
     private final PolicyAttributeService policyAttributeService;
 
+    private final OrganisationService organisationService;
+
     /**
      * Constructs a new ConfigurationProviderImpl with required services.
      *
@@ -51,19 +61,22 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
      * @param producerService the producer service
      * @param certificateValidationProvider the certificate validation provider
      * @param policyAttributeService resolves policy attributes for the producer config response
+     * @param organisationService resolves the organisation carried by each producer and consumer
      */
     public ConfigurationProviderImpl(
             ConsumerService consumerService,
             ProductConsumerService consumerAllowedDataProviders,
             ProducerService producerService,
             CertificateValidationProvider certificateValidationProvider,
-            PolicyAttributeService policyAttributeService) {
+            PolicyAttributeService policyAttributeService,
+            OrganisationService organisationService) {
 
         this.consumerService = consumerService;
         this.productConsumerService = consumerAllowedDataProviders;
         this.producerService = producerService;
         this.certificateValidationProvider = certificateValidationProvider;
         this.policyAttributeService = policyAttributeService;
+        this.organisationService = organisationService;
     }
 
     /**
@@ -125,6 +138,10 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
                     .producers(List.of())
                     .build();
         }
+        // Identity only: a consumer must not be handed the producer's organisation's policy
+        // attributes, which describe what the publishing side is entitled to hold.
+        populateOrganisations(producers, false);
+
         ConsumerDTO firstConsumer = consumers.getFirst();
         return ConsumerConfigDTO.builder()
                 .scheduleExpression(firstConsumer.getScheduleExpression())
@@ -171,9 +188,11 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
 
         populateConsumersForProducers(producers);
         populatePolicyAttributes(producers);
+        populateOrganisations(producers, true);
 
         return ProducerConfigDTO.builder()
                 .clientId(clientId)
+                .organisation(configOrganisation(producers))
                 .producers(producers)
                 .build();
     }
@@ -259,13 +278,13 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
                     .addAll(policyAttributeService.findAttributes(producer.getId(), PolicyAttributeScope.PRODUCER));
 
             for (ProductDTO product : producer.getProducts()) {
+                product.getPolicyAttributes()
+                        .addAll(policyAttributeService.findAttributes(product.getId(), PolicyAttributeScope.PRODUCT));
+
                 for (ConsumerDTO consumer : product.getConsumers()) {
                     consumer.getPolicyAttributes()
                             .addAll(policyAttributeService.findAttributes(
                                     consumer.getId(), PolicyAttributeScope.CONSUMER));
-                    consumer.getOrganisationPolicyAttributes()
-                            .addAll(policyAttributeService.findAttributes(
-                                    consumer.getOrgId(), PolicyAttributeScope.ORGANISATION));
                 }
                 for (ProductConsumerDTO configuration : product.getConfigurations()) {
                     configuration
@@ -275,6 +294,157 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
                 }
             }
         }
+    }
+
+    /**
+     * Attaches an {@link OrganisationDTO} - name, unique key, and {@code ORGANISATION}-scope policy
+     * attributes - to every producer and to every consumer nested under their products.
+     *
+     * <p>Organisations are read through {@link OrganisationService} rather than off the entity: the
+     * {@code producer.org}/{@code consumer.org} associations are lazy and this runs outside a
+     * transaction. Each distinct organisation is fetched once and its attributes resolved once, then
+     * a separate DTO instance is handed to each producer/consumer so nothing is shared by reference.
+     *
+     * @param producers the assembled producer graph
+     * @param includePolicyAttributes whether to attach each organisation's {@code ORGANISATION}-scope
+     *     policy attributes. False on the consumer config response, which names the producers'
+     *     organisations but must not disclose what those organisations are entitled to hold; when
+     *     false, no attribute lookup is performed at all.
+     */
+    private void populateOrganisations(List<ProducerDTO> producers, boolean includePolicyAttributes) {
+        List<OrganisationHolder> holders = organisationHolders(producers);
+
+        Set<Long> orgIds = holders.stream()
+                .map(OrganisationHolder::orgId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        if (orgIds.isEmpty()) {
+            return;
+        }
+
+        Map<Long, OrganisationDTO> organisationsById = organisationService.findByIds(orgIds);
+        Map<Long, List<PolicyAttributeDTO>> attributesByOrgId =
+                organisationPolicyAttributes(organisationsById.keySet(), includePolicyAttributes);
+
+        holders.forEach(holder -> holder.assign(organisationFor(holder.orgId(), organisationsById, attributesByOrgId)));
+    }
+
+    /**
+     * Every place in the assembled graph that carries an organisation: each producer, then the
+     * consumers nested under its products, in that order.
+     *
+     * @param producers the assembled producer graph
+     * @return one holder per producer and per nested consumer
+     */
+    private List<OrganisationHolder> organisationHolders(List<ProducerDTO> producers) {
+        return producers.stream().flatMap(this::organisationHoldersOf).toList();
+    }
+
+    private Stream<OrganisationHolder> organisationHoldersOf(ProducerDTO producer) {
+        Stream<OrganisationHolder> consumers = producer.getProducts().stream()
+                // The consumer-config path never resolves consumers onto its products, so this is
+                // null there rather than an empty list.
+                .flatMap(product -> consumersOf(product).stream())
+                .map(consumer -> new OrganisationHolder(consumer.getOrgId(), consumer::setOrganisation));
+
+        return Stream.concat(
+                Stream.of(new OrganisationHolder(producer.getOrgId(), producer::setOrganisation)), consumers);
+    }
+
+    /**
+     * Resolves the {@code ORGANISATION}-scope policy attributes of each organisation, once per
+     * organisation.
+     *
+     * @param orgIds the distinct organisations that were resolved
+     * @param includePolicyAttributes when false no lookup is performed at all and the map is empty
+     * @return attributes keyed by organisation id
+     */
+    private Map<Long, List<PolicyAttributeDTO>> organisationPolicyAttributes(
+            Set<Long> orgIds, boolean includePolicyAttributes) {
+        if (!includePolicyAttributes) {
+            return Map.of();
+        }
+
+        Map<Long, List<PolicyAttributeDTO>> attributesByOrgId = new LinkedHashMap<>();
+        for (Long orgId : orgIds) {
+            attributesByOrgId.put(
+                    orgId, policyAttributeService.findAttributes(orgId, PolicyAttributeScope.ORGANISATION));
+        }
+        return attributesByOrgId;
+    }
+
+    /**
+     * One slot in the response graph that an {@link OrganisationDTO} has to be attached to: the
+     * organisation id to resolve (null when the owner has none) and where the resulting DTO goes.
+     * Lets the graph be walked once to collect ids and once to assign, without repeating the nested
+     * producer/product/consumer traversal.
+     */
+    private record OrganisationHolder(Long orgId, Consumer<OrganisationDTO> setter) {
+        void assign(OrganisationDTO organisation) {
+            setter.accept(organisation);
+        }
+    }
+
+    /**
+     * The organisation to report at the top of a producer config response: the one its producers
+     * belong to. They are all the requesting client's producers, so in practice they share an
+     * organisation; if they ever do not, the first is used and the disagreement logged rather than
+     * silently picking one.
+     *
+     * @param producers the assembled producer graph, after {@link #populateOrganisations}
+     * @return a copy of the organisation, or null when no producer resolved one
+     */
+    private OrganisationDTO configOrganisation(List<ProducerDTO> producers) {
+        List<OrganisationDTO> resolved = producers.stream()
+                .map(ProducerDTO::getOrganisation)
+                .filter(Objects::nonNull)
+                .toList();
+
+        if (resolved.isEmpty()) {
+            return null;
+        }
+
+        long distinctKeys =
+                resolved.stream().map(OrganisationDTO::getKey).distinct().count();
+        if (distinctKeys > 1) {
+            log.warn(
+                    "Producers for one client span {} organisations; reporting {} on the config response",
+                    distinctKeys,
+                    resolved.getFirst().getKey());
+        }
+
+        OrganisationDTO first = resolved.getFirst();
+        OrganisationDTO organisation = OrganisationDTO.builder()
+                .name(first.getName())
+                .key(first.getKey())
+                .build();
+        organisation.getPolicyAttributes().addAll(first.getPolicyAttributes());
+        return organisation;
+    }
+
+    private List<ConsumerDTO> consumersOf(ProductDTO product) {
+        return product.getConsumers() == null ? List.of() : product.getConsumers();
+    }
+
+    /**
+     * Builds a fresh {@link OrganisationDTO} for one owner, or null when the organisation could not
+     * be resolved (an orphaned {@code org_id}, which the response should simply omit).
+     */
+    private OrganisationDTO organisationFor(
+            Long orgId,
+            Map<Long, OrganisationDTO> organisationsById,
+            Map<Long, List<PolicyAttributeDTO>> attributesByOrgId) {
+        OrganisationDTO resolved = orgId == null ? null : organisationsById.get(orgId);
+        if (resolved == null) {
+            return null;
+        }
+
+        OrganisationDTO organisation = OrganisationDTO.builder()
+                .name(resolved.getName())
+                .key(resolved.getKey())
+                .build();
+        organisation.getPolicyAttributes().addAll(attributesByOrgId.getOrDefault(orgId, List.of()));
+        return organisation;
     }
 
     /**

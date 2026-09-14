@@ -65,7 +65,7 @@ class ConfigurationPolicyEnforcementIntegrationTest {
     }
 
     private void authenticateAs(String clientId) {
-        EnhancedPrincipal principal = new EnhancedPrincipal("subject", clientId);
+        EnhancedPrincipal principal = new EnhancedPrincipal("subject", clientId, "test-organisation");
         Authentication authentication = mock(Authentication.class);
         when(authentication.getPrincipal()).thenReturn(principal);
         SecurityContext context = mock(SecurityContext.class);

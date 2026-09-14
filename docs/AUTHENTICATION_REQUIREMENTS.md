@@ -78,6 +78,9 @@ Notes:
 - Bootstrap Certificate API: The onboarding service account may request bootstrap certificate packages when its token contains the role `request_bootstrap_certificate`. The request body contains the target `organisationId` and a CSR. If no certificate record exists for the organisation, one is created automatically. This role is typically assigned only to the website backend service account, not to individual federator clients.
   - Enforcement in code: `@PreAuthorize("hasAuthority('ROLE_management-node:request_bootstrap_certificate')")` on `POST /api/v1/certificate/bootstrap`.
 
+- Product Discovery API: Clients may discover the products they are authorised to see when their token contains the role `discover_products`. Even with the role, results are further filtered per-product by the PDP (see `docs/POLICY_ENFORCEMENT_TESTING.md`) - the role only gates access to the endpoint itself.
+  - Enforcement in code: `@PreAuthorize("hasAuthority('ROLE_management-node:discover_products')")` on `POST /api/v1/product/discovery`.
+
 ## How this maps to Keycloak
 
 - In Keycloak, roles are typically assigned to a client (here conceptually the `management-node` client) and appear in tokens under `resource_access["management-node"].roles`.
@@ -91,6 +94,7 @@ Notes:
   - `sign_certificate`
   - `access_public_certificates`
   - `request_bootstrap_certificate`
+  - `discover_products`
 - Assign configuration roles to the appropriate Producer or Consumer Federator clients or service accounts.
 - Assign certificate roles (`create_keys`, `sign_certificate`, `access_public_certificates`) to federator service accounts that manage their own certificates.
 - Assign `request_bootstrap_certificate` only to the website/onboarding backend service account.
@@ -123,4 +127,5 @@ curl -k 'https://localhost:8090/api/v1/configuration/producer' \
   - CSR Signing API requires role: `sign_certificate`.
   - Intermediate Certificate API requires role: `access_public_certificates`.
   - Bootstrap Certificate API requires role: `request_bootstrap_certificate`.
+  - Product Discovery API requires role: `discover_products` (plus per-product PDP authorisation).
 - Swagger/OpenAPI: Use Swagger UI at `/swagger-ui.html` to explore and test with a valid token.

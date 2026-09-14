@@ -18,12 +18,14 @@ class JwtModelTest {
 
     @Test
     void testEnhancedPrincipal() {
-        EnhancedPrincipal principal = new EnhancedPrincipal("user123", "client456");
+        EnhancedPrincipal principal = new EnhancedPrincipal("user123", "client456", "test-organisation");
         assertEquals("user123", principal.subject());
         assertEquals("client456", principal.clientId());
+        assertEquals("test-organisation", principal.organisation());
         String toString = principal.toString();
         assertTrue(toString.contains("user123"));
         assertTrue(toString.contains("client456"));
+        assertTrue(toString.contains("test-organisation"));
     }
 
     @Test
@@ -31,6 +33,7 @@ class JwtModelTest {
         JwtToken token = JwtToken.builder()
                 .sub("subject")
                 .clientId("client")
+                .organisation("FEDERATOR_ENV")
                 .active(true)
                 .aud(List.of("aud1"))
                 .resourceAccess(Map.of(
@@ -42,6 +45,7 @@ class JwtModelTest {
 
         assertEquals("subject", token.getSub());
         assertEquals("client", token.getClientId());
+        assertEquals("FEDERATOR_ENV", token.getOrganisation());
         assertTrue(token.getActive());
         assertEquals(List.of("aud1"), token.getAud());
         assertNotNull(token.getResourceAccess());
@@ -52,6 +56,7 @@ class JwtModelTest {
         JwtToken token2 = JwtToken.builder()
                 .sub("subject")
                 .clientId("client")
+                .organisation("FEDERATOR_ENV")
                 .active(true)
                 .aud(List.of("aud1"))
                 .resourceAccess(Map.of(

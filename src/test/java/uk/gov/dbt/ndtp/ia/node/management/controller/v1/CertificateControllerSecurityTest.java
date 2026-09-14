@@ -64,7 +64,8 @@ class CertificateControllerSecurityTest {
     @Autowired
     private CertificateController controller;
 
-    private static final EnhancedPrincipal TEST_PRINCIPAL = new EnhancedPrincipal("sub", "client-1");
+    private static final EnhancedPrincipal TEST_PRINCIPAL =
+            new EnhancedPrincipal("sub", "client-1", "test-organisation");
     private static final SignCertRequestDTO SIGN_REQUEST =
             SignCertRequestDTO.builder().csr("CSR").build();
     private static final CreateCsrRequestDTO CSR_REQUEST = new CreateCsrRequestDTO();

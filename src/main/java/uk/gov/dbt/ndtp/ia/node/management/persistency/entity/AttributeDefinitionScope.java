@@ -16,7 +16,7 @@ import org.hibernate.type.SqlTypes;
 @Getter
 @Setter
 @Entity
-@Table(name = "attribute_definition_scope")
+@Table(name = "policy_attribute_definition_scope")
 public class AttributeDefinitionScope extends AttributeAuditFields {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
