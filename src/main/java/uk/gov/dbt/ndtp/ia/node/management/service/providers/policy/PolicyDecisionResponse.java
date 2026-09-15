@@ -7,10 +7,11 @@
 package uk.gov.dbt.ndtp.ia.node.management.service.providers.policy;
 
 /**
- * Decision response returned by the PDP (OPA), following OPA's standard REST API
- * shape of {@code {"result": ...}}. Any value other than {@code true} (including a
- * missing or non-boolean result) is treated as DENY by {@link PolicyDecisionClient}.
+ * Decision response returned by the PDP (OPA), following OPA's standard REST API shape of
+ * {@code {"result": ...}}. The result is the policy's decision document; a missing result
+ * (an undefined rule) or one that cannot be read as a decision is treated as DENY by
+ * {@link PolicyDecisionClient}.
  *
  * @param result the PDP's decision result
  */
-public record PolicyDecisionResponse(Boolean result) {}
+public record PolicyDecisionResponse(DefaultPolicyDecisionOutput result) {}

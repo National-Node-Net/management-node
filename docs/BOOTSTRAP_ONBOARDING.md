@@ -70,8 +70,8 @@ sequenceDiagram
 
 | Property | Value | Description |
 |----------|-------|-------------|
-| TTL | Short (e.g., 2 hours) | Limits the window of exposure before automatic renewal |
-| OID marker | `1.3.6.1.4.1.32473.1.1` (configurable) | Embedded in an `otherName` SAN entry, used by Certificate Manager to detect bootstrap certificates |
+| TTL | `2h` — `application.bootstrap.ttl`, env `BOOTSTRAP_CERT_TTL` | Limits the window of exposure before automatic renewal |
+| OID marker | `1.3.6.1.4.1.32473.1.1` — `application.bootstrap.oid`, env `BOOTSTRAP_OID` | Embedded in an `otherName` SAN entry, used by Certificate Manager to detect bootstrap certificates. Overriding it means updating the Vault role's `allowed_other_sans` to match (see README, PKI setup) |
 | Certificate type | `BOOTSTRAP` | Recorded in `organisation_certificate.type`; changes to `AUTOMATED` after renewal |
 | `other_sans` format | `<OID>;UTF8:bootstrap` | Vault PKI parameter used when signing the bootstrap CSR |
 
