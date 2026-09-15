@@ -30,8 +30,11 @@ import uk.gov.dbt.ndtp.ia.node.management.model.dto.ConsumerConfigDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProducerConfigDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.jwt.EnhancedPrincipal;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.configuration.ConfigurationProvider;
-import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecision;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.DefaultPolicyDecisionOutput;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecisionClient;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInputFactory;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInputFixture;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyRequestBodyReader;
 
 /**
  * Integration test wiring {@link PolicyEnforcementInterceptor} in front of
@@ -47,13 +50,26 @@ class ConfigurationPolicyEnforcementIntegrationTest {
     @Mock
     private PolicyDecisionClient policyDecisionClient;
 
+    @Mock
+    private PolicyInputFactory policyInputFactory;
+
+    @Mock
+    private PolicyRequestBodyReader policyRequestBodyReader;
+
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         ConfigurationController controller = new ConfigurationController(configurationProvider);
-        PolicyEnforcementInterceptor interceptor =
-                new PolicyEnforcementInterceptor(policyDecisionClient, new ObjectMapper());
+        PolicyEnforcementInterceptor interceptor = new PolicyEnforcementInterceptor(
+                policyDecisionClient, policyInputFactory, policyRequestBodyReader, new ObjectMapper());
+        lenient()
+                .when(policyInputFactory.create(any(), any()))
+                .thenAnswer(invocation -> PolicyInputFixture.of(
+                        "client-1",
+                        "configuration",
+                        "producer",
+                        ((jakarta.servlet.http.HttpServletRequest) invocation.getArgument(0)).getRequestURI()));
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .addInterceptors(interceptor)
                 .build();
@@ -76,7 +92,7 @@ class ConfigurationPolicyEnforcementIntegrationTest {
     @Test
     void allowedRequest_reachesControllerAndReturnsConfig() throws Exception {
         authenticateAs("client-1");
-        when(policyDecisionClient.evaluate(any())).thenReturn(PolicyDecision.ALLOW);
+        when(policyDecisionClient.evaluate(any())).thenReturn(DefaultPolicyDecisionOutput.ALLOW);
         when(configurationProvider.getProducerConfigByClientId(any(), any()))
                 .thenReturn(ProducerConfigDTO.builder()
                         .clientId("client-1")
@@ -93,7 +109,7 @@ class ConfigurationPolicyEnforcementIntegrationTest {
     @Test
     void deniedRequest_rejectedBeforeReachingController() throws Exception {
         authenticateAs("client-1");
-        when(policyDecisionClient.evaluate(any())).thenReturn(PolicyDecision.DENY);
+        when(policyDecisionClient.evaluate(any())).thenReturn(DefaultPolicyDecisionOutput.DENY);
 
         mockMvc.perform(get("/api/v1/configuration/consumer")).andExpect(status().isForbidden());
 
@@ -103,7 +119,7 @@ class ConfigurationPolicyEnforcementIntegrationTest {
     @Test
     void deniedRequest_onProducerEndpoint_rejectedBeforeReachingController() throws Exception {
         authenticateAs("client-1");
-        when(policyDecisionClient.evaluate(any())).thenReturn(PolicyDecision.DENY);
+        when(policyDecisionClient.evaluate(any())).thenReturn(DefaultPolicyDecisionOutput.DENY);
 
         mockMvc.perform(get("/api/v1/configuration/producer")).andExpect(status().isForbidden());
 
@@ -113,7 +129,7 @@ class ConfigurationPolicyEnforcementIntegrationTest {
     @Test
     void allowedRequest_onConsumerEndpoint_reachesControllerAndReturnsConfig() throws Exception {
         authenticateAs("client-1");
-        when(policyDecisionClient.evaluate(any())).thenReturn(PolicyDecision.ALLOW);
+        when(policyDecisionClient.evaluate(any())).thenReturn(DefaultPolicyDecisionOutput.ALLOW);
         when(configurationProvider.getConsumerConfigByClientId(any(), any()))
                 .thenReturn(ConsumerConfigDTO.builder()
                         .clientId("client-1")

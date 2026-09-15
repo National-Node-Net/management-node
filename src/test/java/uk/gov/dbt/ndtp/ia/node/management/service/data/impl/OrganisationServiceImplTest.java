@@ -132,4 +132,27 @@ class OrganisationServiceImplTest {
 
         verifyNoInteractions(organisationRepository);
     }
+
+    @Test
+    void findIdByKey_returnsTheRowIdForAKnownKey() {
+        when(organisationRepository.findByOrganisationKey("ENV"))
+                .thenReturn(Optional.of(organisation(42L, "Environment Agency (ENV)", "ENV")));
+
+        assertThat(service.findIdByKey("ENV")).contains(42L);
+    }
+
+    @Test
+    void findIdByKey_returnsEmptyForAnUnknownKey() {
+        when(organisationRepository.findByOrganisationKey("NOPE")).thenReturn(Optional.empty());
+
+        assertThat(service.findIdByKey("NOPE")).isEmpty();
+    }
+
+    @Test
+    void findIdByKey_doesNotQueryForANullOrBlankKey() {
+        assertThat(service.findIdByKey(null)).isEmpty();
+        assertThat(service.findIdByKey("  ")).isEmpty();
+
+        verify(organisationRepository, never()).findByOrganisationKey(any());
+    }
 }

@@ -11,7 +11,7 @@ import java.util.List;
 import lombok.Builder;
 
 /**
- * Response for {@code POST /v1/product/discovery}: the products the requester is authorised
+ * Response for {@code POST /v1/product/discover}: the products the requester is authorised
  * to discover, after policy filtering and search criteria are both applied. Empty (never
  * null) when no products are authorised or none match the search criteria.
  */

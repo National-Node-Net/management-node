@@ -8,7 +8,11 @@ package uk.gov.dbt.ndtp.ia.node.management.service.providers.policy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class PolicyDecisionSerializationTest {
@@ -16,54 +20,89 @@ class PolicyDecisionSerializationTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
-    void request_serializesWithAllAttributes() throws Exception {
-        PolicyDecisionRequest request = new PolicyDecisionRequest(
-                new PolicyInput("client-1", "FEDERATOR_ENV", "42", "/api/v1/configuration/producer", "GET"));
+    void request_serializesTheFullInputDocument() throws Exception {
+        PolicySubject subject = new PolicySubject(
+                PolicySubject.KIND_USER,
+                "j.okafor@nhsengland.nhs.uk",
+                "catalogue-ui",
+                new LinkedHashMap<>(Map.of("azp", "catalogue-ui")),
+                new PolicyOrganisation("FEDERATOR_ENV", new LinkedHashMap<>(Map.of("nationality", "GB"))));
+        PolicyHttpRequest httpRequest = new PolicyHttpRequest(
+                new LinkedHashMap<>(Map.of("content-type", "application/json")),
+                new LinkedHashMap<>(),
+                "/api/v1/product/discover",
+                "POST",
+                null);
+        PolicyInput input = new PolicyInput(
+                subject,
+                "discover",
+                new PolicyResource("product", "42", new LinkedHashMap<>(Map.of("tier", 3))),
+                httpRequest);
 
-        String json = objectMapper.writeValueAsString(request);
+        JsonNode json = objectMapper.readTree(objectMapper.writeValueAsString(new PolicyDecisionRequest(input)));
 
-        assertThat(json)
-                .isEqualTo(
-                        "{\"input\":{\"clientId\":\"client-1\",\"organisation\":\"FEDERATOR_ENV\",\"organisationId\":\"42\","
-                                + "\"resource\":\"/api/v1/configuration/producer\",\"action\":\"GET\"}}");
+        JsonNode in = json.get("input");
+        assertThat(in.get("action").asText()).isEqualTo("discover");
+        assertThat(in.get("subject").get("kind").asText()).isEqualTo("user");
+        assertThat(in.get("subject").get("user_id").asText()).isEqualTo("j.okafor@nhsengland.nhs.uk");
+        assertThat(in.get("subject").get("token").get("azp").asText()).isEqualTo("catalogue-ui");
+        assertThat(in.get("subject").get("clientId").asText()).isEqualTo("catalogue-ui");
+        assertThat(in.get("subject").get("organisation").get("key").asText()).isEqualTo("FEDERATOR_ENV");
+        assertThat(in.get("subject")
+                        .get("organisation")
+                        .get("attributes")
+                        .get("nationality")
+                        .asText())
+                .isEqualTo("GB");
+        assertThat(in.get("resource").get("kind").asText()).isEqualTo("product");
+        assertThat(in.get("resource").get("id").asText()).isEqualTo("42");
+        assertThat(in.get("request").get("path").asText()).isEqualTo("/api/v1/product/discover");
+        assertThat(in.get("request").get("method").asText()).isEqualTo("POST");
     }
 
     @Test
-    void request_omitsOrganisationFieldsWhenNull() throws Exception {
-        PolicyDecisionRequest request = new PolicyDecisionRequest(
-                new PolicyInput("client-1", null, null, "/api/v1/configuration/producer", "GET"));
+    void request_preservesAttributeJsonTypesRatherThanStringifyingThem() throws Exception {
+        PolicyInput input = PolicyInputFixture.of("client-1", "product", "discover")
+                .withResource("42", new LinkedHashMap<>(Map.of("tier", 3, "regions", List.of("UK", "EU"))));
 
-        String json = objectMapper.writeValueAsString(request);
+        JsonNode attributes = objectMapper
+                .readTree(objectMapper.writeValueAsString(new PolicyDecisionRequest(input)))
+                .get("input")
+                .get("resource")
+                .get("attributes");
 
-        assertThat(json)
-                .doesNotContain("organisation")
-                .doesNotContain("organisationId")
-                .isEqualTo(
-                        "{\"input\":{\"clientId\":\"client-1\",\"resource\":\"/api/v1/configuration/producer\",\"action\":\"GET\"}}");
+        assertThat(attributes.get("tier").isInt()).isTrue();
+        assertThat(attributes.get("regions").isArray()).isTrue();
+        assertThat(attributes.get("regions")).hasSize(2);
     }
 
     @Test
-    void request_keepsTokenOrganisationWhenCertificateIdAbsent() throws Exception {
-        PolicyDecisionRequest request = new PolicyDecisionRequest(
-                new PolicyInput("client-1", "FEDERATOR_ENV", null, "/api/v1/configuration/producer", "GET"));
+    void request_omitsNullFieldsRatherThanEmittingNulls() throws Exception {
+        PolicyInput input = PolicyInputFixture.of("client-1", "product", "discover");
 
-        String json = objectMapper.writeValueAsString(request);
+        String json = objectMapper.writeValueAsString(new PolicyDecisionRequest(input));
 
-        assertThat(json).contains("\"organisation\":\"FEDERATOR_ENV\"").doesNotContain("organisationId");
+        // resource.id and request.body are unset for a whole-endpoint decision
+        assertThat(json).doesNotContain("\"id\"").doesNotContain("\"body\"");
     }
 
     @Test
     void response_deserializesAllowResult() throws Exception {
-        PolicyDecisionResponse response = objectMapper.readValue("{\"result\":true}", PolicyDecisionResponse.class);
+        PolicyDecisionResponse response = objectMapper.readValue(
+                """
+                {"result": {"allow": true, "allowed_filtered_attributes": ["name"]}}""",
+                PolicyDecisionResponse.class);
 
-        assertThat(response.result()).isTrue();
+        assertThat(response.result().allow()).isTrue();
+        assertThat(response.result().allowedFilteredAttributes()).containsExactly("name");
     }
 
     @Test
     void response_deserializesDenyResult() throws Exception {
-        PolicyDecisionResponse response = objectMapper.readValue("{\"result\":false}", PolicyDecisionResponse.class);
+        PolicyDecisionResponse response =
+                objectMapper.readValue("{\"result\": {\"allow\": false}}", PolicyDecisionResponse.class);
 
-        assertThat(response.result()).isFalse();
+        assertThat(response.result().allow()).isFalse();
     }
 
     @Test

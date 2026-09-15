@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,7 +38,15 @@ class PolicyAttributeServiceImplTest {
     }
 
     private static AttributeValue attributeValue(String namespace, String name, String dataType, String rawJson) {
+        return attributeValue(namespace, name, dataType, rawJson, 1L, false);
+    }
+
+    /** As above, with an explicit definition id and {@code multi_valued} flag. */
+    private static AttributeValue attributeValue(
+            String namespace, String name, String dataType, String rawJson, Long definitionId, boolean multiValued) {
         AttributeDefinition definition = new AttributeDefinition();
+        definition.setId(definitionId);
+        definition.setMultiValued(multiValued);
         definition.setNamespace(namespace);
         definition.setName(name);
         definition.setDataType(dataType);
@@ -96,5 +105,99 @@ class PolicyAttributeServiceImplTest {
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getValue()).isEqualTo("not-valid-json{");
+    }
+
+    @Test
+    void findAttributeMap_collectsEveryValueOfAMultiValuedAttribute() {
+        when(attributeValueRepository.findLiveByEntityIdAndScopeCode(10L, "PRODUCT"))
+                .thenReturn(List.of(
+                        attributeValue("policy", "regions", "STRING", "\"UK\"", 1L, true),
+                        attributeValue("policy", "regions", "STRING", "\"EU\"", 1L, true),
+                        attributeValue("policy", "regions", "STRING", "\"US\"", 1L, true)));
+
+        Map<String, Object> result = service.findAttributeMap(10L, PolicyAttributeScope.PRODUCT);
+
+        assertThat(result).containsEntry("regions", List.of("UK", "EU", "US"));
+    }
+
+    @Test
+    void findAttributeMap_multiValuedWithOneValueIsStillAList() {
+        when(attributeValueRepository.findLiveByEntityIdAndScopeCode(10L, "PRODUCT"))
+                .thenReturn(List.of(attributeValue("policy", "regions", "STRING", "\"UK\"", 1L, true)));
+
+        Map<String, Object> result = service.findAttributeMap(10L, PolicyAttributeScope.PRODUCT);
+
+        // The shape follows the definition, not the row count, so a policy can always index it.
+        assertThat(result).containsEntry("regions", List.of("UK"));
+    }
+
+    @Test
+    void findAttributeMap_singleValuedStaysAScalar() {
+        when(attributeValueRepository.findLiveByEntityIdAndScopeCode(10L, "PRODUCT"))
+                .thenReturn(List.of(attributeValue("policy", "classification", "STRING", "\"OFFICIAL\"", 1L, false)));
+
+        Map<String, Object> result = service.findAttributeMap(10L, PolicyAttributeScope.PRODUCT);
+
+        assertThat(result).containsEntry("classification", "OFFICIAL");
+    }
+
+    @Test
+    void findAttributeMap_doesNotNestWhenOneRowAlreadyHoldsAnArray() {
+        when(attributeValueRepository.findLiveByEntityIdAndScopeCode(10L, "PRODUCT"))
+                .thenReturn(List.of(
+                        attributeValue("policy", "regions", "STRING", "[\"UK\",\"EU\"]", 1L, true),
+                        attributeValue("policy", "regions", "STRING", "\"US\"", 1L, true)));
+
+        Map<String, Object> result = service.findAttributeMap(10L, PolicyAttributeScope.PRODUCT);
+
+        assertThat(result).containsEntry("regions", List.of("UK", "EU", "US"));
+    }
+
+    @Test
+    void findAttributeMap_keepsJsonTypesForNumbersAndBooleans() {
+        when(attributeValueRepository.findLiveByEntityIdAndScopeCode(10L, "PRODUCT"))
+                .thenReturn(List.of(
+                        attributeValue("policy", "tier", "INTEGER", "3", 1L, false),
+                        attributeValue("policy", "sensitive", "BOOLEAN", "true", 2L, false),
+                        attributeValue("policy", "scores", "INTEGER", "1", 3L, true),
+                        attributeValue("policy", "scores", "INTEGER", "2", 3L, true)));
+
+        Map<String, Object> result = service.findAttributeMap(10L, PolicyAttributeScope.PRODUCT);
+
+        assertThat(result).containsEntry("tier", 3).containsEntry("sensitive", true);
+        assertThat(result).containsEntry("scores", List.of(1, 2));
+    }
+
+    @Test
+    void findAttributeMap_singleValuedWithSeveralLiveValuesKeepsTheFirst() {
+        when(attributeValueRepository.findLiveByEntityIdAndScopeCode(10L, "PRODUCT"))
+                .thenReturn(List.of(
+                        attributeValue("policy", "classification", "STRING", "\"OFFICIAL\"", 1L, false),
+                        attributeValue("policy", "classification", "STRING", "\"SECRET\"", 1L, false)));
+
+        Map<String, Object> result = service.findAttributeMap(10L, PolicyAttributeScope.PRODUCT);
+
+        // A data anomaly: the declared shape is scalar, so it stays scalar.
+        assertThat(result).containsEntry("classification", "OFFICIAL");
+    }
+
+    @Test
+    void findAttributeMap_sameNameInTwoNamespacesKeepsTheFirstDefinition() {
+        when(attributeValueRepository.findLiveByEntityIdAndScopeCode(10L, "PRODUCT"))
+                .thenReturn(List.of(
+                        attributeValue("policy", "tier", "STRING", "\"gold\"", 1L, false),
+                        attributeValue("other", "tier", "STRING", "\"bronze\"", 2L, false)));
+
+        Map<String, Object> result = service.findAttributeMap(10L, PolicyAttributeScope.PRODUCT);
+
+        assertThat(result).containsEntry("tier", "gold").hasSize(1);
+    }
+
+    @Test
+    void findAttributeMap_returnsEmptyMapWhenRepositoryFindsNothing() {
+        when(attributeValueRepository.findLiveByEntityIdAndScopeCode(10L, "PRODUCT"))
+                .thenReturn(List.of());
+
+        assertThat(service.findAttributeMap(10L, PolicyAttributeScope.PRODUCT)).isEmpty();
     }
 }
