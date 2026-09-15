@@ -51,6 +51,14 @@ public class OrganisationServiceImpl implements OrganisationService {
     }
 
     @Override
+    public Optional<Long> findIdByKey(String organisationKey) {
+        if (organisationKey == null || organisationKey.isBlank()) {
+            return Optional.empty();
+        }
+        return organisationRepository.findByOrganisationKey(organisationKey).map(Organisation::getId);
+    }
+
+    @Override
     public Map<Long, OrganisationDTO> findByIds(Collection<Long> ids) {
         if (ids == null || ids.isEmpty()) {
             return Map.of();

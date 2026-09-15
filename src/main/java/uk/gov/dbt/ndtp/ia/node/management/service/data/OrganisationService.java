@@ -33,6 +33,16 @@ public interface OrganisationService {
     Optional<OrganisationDTO> findByKey(String organisationKey);
 
     /**
+     * The row id of the organisation with {@code organisationKey}, for callers that need to key
+     * a scoped lookup (such as {@code ORGANISATION} policy attributes) rather than read the
+     * organisation itself. {@link OrganisationDTO} deliberately does not expose the id.
+     *
+     * @param organisationKey the organisation's stable key (e.g. {@code ENV})
+     * @return the row id, or empty when the key is null, blank or matches no organisation
+     */
+    Optional<Long> findIdByKey(String organisationKey);
+
+    /**
      * Finds several organisations at once, keyed by id - one query rather than one per id, for
      * callers assembling a response that mentions the same organisations repeatedly.
      *

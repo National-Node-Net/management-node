@@ -8,7 +8,13 @@ package uk.gov.dbt.ndtp.ia.node.management.service.data.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.PolicyAttributeDTO;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.AttributeDefinition;
@@ -18,6 +24,7 @@ import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeScope;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeService;
 
 @Service
+@Slf4j
 public class PolicyAttributeServiceImpl implements PolicyAttributeService {
 
     private final AttributeValueRepository attributeValueRepository;
@@ -33,6 +40,89 @@ public class PolicyAttributeServiceImpl implements PolicyAttributeService {
         return attributeValueRepository.findLiveByEntityIdAndScopeCode(entityId, scope.code()).stream()
                 .map(this::toDto)
                 .toList();
+    }
+
+    @Override
+    public Map<String, Object> findAttributeMap(Long entityId, PolicyAttributeScope scope) {
+        Map<String, Long> definitionIdByName = new LinkedHashMap<>();
+        Map<String, Boolean> multiValuedByName = new LinkedHashMap<>();
+        Map<String, List<Object>> valuesByName = new LinkedHashMap<>();
+
+        for (AttributeValue attributeValue :
+                attributeValueRepository.findLiveByEntityIdAndScopeCode(entityId, scope.code())) {
+            AttributeDefinition definition =
+                    attributeValue.getAttributeDefinitionScope().getAttributeDefinition();
+            String name = definition.getName();
+
+            Long firstDefinitionId = definitionIdByName.putIfAbsent(name, definition.getId());
+            if (firstDefinitionId != null && !firstDefinitionId.equals(definition.getId())) {
+                log.warn(
+                        "Duplicate policy attribute name {} for {} {} across namespaces; keeping the first definition",
+                        name,
+                        scope.code(),
+                        entityId);
+                continue;
+            }
+
+            Object value = readValue(attributeValue.getValue());
+            if (value == null) {
+                continue;
+            }
+            multiValuedByName.putIfAbsent(name, Boolean.TRUE.equals(definition.getMultiValued()));
+            valuesByName.computeIfAbsent(name, key -> new ArrayList<>()).addAll(flatten(value));
+        }
+
+        Map<String, Object> attributes = new LinkedHashMap<>();
+        valuesByName.forEach((name, values) -> {
+            if (values.isEmpty()) {
+                return;
+            }
+            if (Boolean.TRUE.equals(multiValuedByName.get(name))) {
+                attributes.put(name, Collections.unmodifiableList(values));
+                return;
+            }
+            if (values.size() > 1) {
+                log.warn(
+                        "Single-valued policy attribute {} has {} live values for {} {}; using the first. "
+                                + "Either mark the definition multi_valued or remove the extra values",
+                        name,
+                        values.size(),
+                        scope.code(),
+                        entityId);
+            }
+            attributes.put(name, values.get(0));
+        });
+        return attributes;
+    }
+
+    /**
+     * Flattens one stored value into the values it contributes. A multi-valued attribute is held
+     * as one row per value, but a single row may itself hold a JSON array; both conventions are
+     * accepted, and neither produces a nested array.
+     */
+    private List<Object> flatten(Object value) {
+        if (!(value instanceof List<?> list)) {
+            return List.of(value);
+        }
+        return list.stream()
+                .filter(Objects::nonNull)
+                .map(element -> (Object) element)
+                .toList();
+    }
+
+    /**
+     * Parses a stored JSONB value back into its natural Java type, so numbers, booleans and
+     * arrays survive into the PDP input instead of being flattened to text.
+     */
+    private Object readValue(String rawJson) {
+        if (rawJson == null) {
+            return null;
+        }
+        try {
+            return objectMapper.readValue(rawJson, Object.class);
+        } catch (JsonProcessingException e) {
+            return rawJson;
+        }
     }
 
     private PolicyAttributeDTO toDto(AttributeValue attributeValue) {
