@@ -6,7 +6,7 @@
 
 package uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate;
 
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificates.SignCertResponseDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.SignCertResponseDTO;
 
 /**
  * Provides certificate signing orchestration, including record updates and audit events.

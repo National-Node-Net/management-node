@@ -9,7 +9,7 @@ package uk.gov.dbt.ndtp.ia.node.management.service.data;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.OrganisationDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.organisation.OrganisationDTO;
 
 /**
  * Service interface for managing Organisation entities.

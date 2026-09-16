@@ -20,8 +20,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProductDiscoveryRequestDTO;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProductDiscoveryResponseDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductDiscoveryRequestDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductDiscoveryResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.DefaultPolicyDecisionOutput;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInput;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInputFactory;
@@ -58,7 +58,7 @@ public class ProductController {
                             schema = @Schema(implementation = ProductDiscoveryResponseDTO.class)))
     @ApiResponse(responseCode = "400", description = "Invalid request body")
     @ApiResponse(responseCode = "401", description = "Unauthorized")
-    @ApiResponse(responseCode = "403", description = "Forbidden")
+    @ApiResponse(responseCode = "403", description = "policyDecision = {DefaultPolicyDecisionOutput@24571} \"DefaultPolicyDecisionOutput[allow=true, allowedFilteredAttributes=[], deniedFilteredAttributes=[], maskedFilteredAttributes=[]]\"Forbidden")
     @ApiResponse(responseCode = "500", description = "Internal server error")
     public ProductDiscoveryResponseDTO discoverProducts(
             HttpServletRequest request,

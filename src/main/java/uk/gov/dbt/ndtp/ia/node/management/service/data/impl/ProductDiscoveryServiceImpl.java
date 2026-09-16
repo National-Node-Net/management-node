@@ -9,9 +9,9 @@ package uk.gov.dbt.ndtp.ia.node.management.service.data.impl;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProductDTO;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProductDiscoveryResponseDTO;
-import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeScope;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProductDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductDiscoveryResponseDTO;
+import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeScopeCode;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductDiscoveryService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductService;
@@ -72,7 +72,8 @@ public class ProductDiscoveryServiceImpl implements ProductDiscoveryService {
             PolicyInput input, DefaultPolicyDecisionOutput requestDecision, ProductDTO candidate) {
         String productId = String.valueOf(candidate.getId());
         PolicyInput candidateInput = input.withResource(
-                productId, policyAttributeService.findAttributeMap(candidate.getId(), PolicyAttributeScope.PRODUCT));
+                productId,
+                policyAttributeService.findAttributeMap(candidate.getId(), PolicyAttributeScopeCode.PRODUCT));
         DefaultPolicyDecisionOutput decision = policyDecisionClient.evaluate(candidateInput);
         DefaultPolicyDecisionOutput effective =
                 requestDecision == null ? decision : requestDecision.combinedWith(decision);

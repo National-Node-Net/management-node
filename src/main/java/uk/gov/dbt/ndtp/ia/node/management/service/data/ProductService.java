@@ -7,7 +7,7 @@
 package uk.gov.dbt.ndtp.ia.node.management.service.data;
 
 import java.util.List;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProductDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProductDTO;
 
 /**
  * Service interface for managing OrganisationDataProvider entities.

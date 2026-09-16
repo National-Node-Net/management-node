@@ -23,10 +23,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Pageable;
 import uk.gov.dbt.ndtp.ia.node.management.converter.impl.ProductConverter;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProductDTO;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Producer;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Product;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.ProductRepository;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProductDTO;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.Producer;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.Product;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.configuration.ProductRepository;
 
 @ExtendWith(MockitoExtension.class)
 class ProductServiceImplTest {

@@ -8,8 +8,8 @@ package uk.gov.dbt.ndtp.ia.node.management.converter.impl;
 
 import org.springframework.stereotype.Component;
 import uk.gov.dbt.ndtp.ia.node.management.converter.EntityDtoConverter;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.OrganisationDTO;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Organisation;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.organisation.OrganisationDTO;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.organisation.Organisation;
 
 /**
  * Converter for {@link Organisation} entity and {@link OrganisationDTO}.

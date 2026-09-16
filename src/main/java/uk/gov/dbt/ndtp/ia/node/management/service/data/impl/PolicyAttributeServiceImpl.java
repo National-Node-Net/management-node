@@ -16,41 +16,42 @@ import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.PolicyAttributeDTO;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.AttributeDefinition;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.AttributeValue;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.AttributeValueRepository;
-import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeScope;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.policy.PolicyAttributeDTO;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.policy.PolicyAttributeDefinition;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.policy.PolicyAttributeValue;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.policy.PolicyAttributeValueRepository;
+import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeScopeCode;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeService;
 
 @Service
 @Slf4j
 public class PolicyAttributeServiceImpl implements PolicyAttributeService {
 
-    private final AttributeValueRepository attributeValueRepository;
+    private final PolicyAttributeValueRepository policyAttributeValueRepository;
     private final ObjectMapper objectMapper;
 
-    public PolicyAttributeServiceImpl(AttributeValueRepository attributeValueRepository, ObjectMapper objectMapper) {
-        this.attributeValueRepository = attributeValueRepository;
+    public PolicyAttributeServiceImpl(
+            PolicyAttributeValueRepository policyAttributeValueRepository, ObjectMapper objectMapper) {
+        this.policyAttributeValueRepository = policyAttributeValueRepository;
         this.objectMapper = objectMapper;
     }
 
     @Override
-    public List<PolicyAttributeDTO> findAttributes(Long entityId, PolicyAttributeScope scope) {
-        return attributeValueRepository.findLiveByEntityIdAndScopeCode(entityId, scope.code()).stream()
+    public List<PolicyAttributeDTO> findAttributes(Long entityId, PolicyAttributeScopeCode scope) {
+        return policyAttributeValueRepository.findLiveByEntityIdAndScopeCode(entityId, scope.code()).stream()
                 .map(this::toDto)
                 .toList();
     }
 
     @Override
-    public Map<String, Object> findAttributeMap(Long entityId, PolicyAttributeScope scope) {
+    public Map<String, Object> findAttributeMap(Long entityId, PolicyAttributeScopeCode scope) {
         Map<String, Long> definitionIdByName = new LinkedHashMap<>();
         Map<String, Boolean> multiValuedByName = new LinkedHashMap<>();
         Map<String, List<Object>> valuesByName = new LinkedHashMap<>();
 
-        for (AttributeValue attributeValue :
-                attributeValueRepository.findLiveByEntityIdAndScopeCode(entityId, scope.code())) {
-            AttributeDefinition definition =
+        for (PolicyAttributeValue attributeValue :
+                policyAttributeValueRepository.findLiveByEntityIdAndScopeCode(entityId, scope.code())) {
+            PolicyAttributeDefinition definition =
                     attributeValue.getAttributeDefinitionScope().getAttributeDefinition();
             String name = definition.getName();
 
@@ -125,8 +126,8 @@ public class PolicyAttributeServiceImpl implements PolicyAttributeService {
         }
     }
 
-    private PolicyAttributeDTO toDto(AttributeValue attributeValue) {
-        AttributeDefinition definition =
+    private PolicyAttributeDTO toDto(PolicyAttributeValue attributeValue) {
+        PolicyAttributeDefinition definition =
                 attributeValue.getAttributeDefinitionScope().getAttributeDefinition();
         return PolicyAttributeDTO.builder()
                 .namespace(definition.getNamespace())

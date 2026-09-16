@@ -34,9 +34,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.method.HandlerMethod;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.OrganisationCertificateDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.OrganisationCertificateDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.jwt.EnhancedPrincipal;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.CertificateType;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.CertificateType;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.CertificateValidationProvider;
 
 class CertificateValidationInterceptorTest {

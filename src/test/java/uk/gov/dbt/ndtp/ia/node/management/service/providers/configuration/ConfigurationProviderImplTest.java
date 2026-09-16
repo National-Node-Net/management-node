@@ -25,10 +25,17 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.*;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ConsumerConfigDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ConsumerDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProducerConfigDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProducerDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProductConsumerDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProductDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.organisation.OrganisationDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.policy.PolicyAttributeDTO;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ConsumerService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.OrganisationService;
-import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeScope;
+import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeScopeCode;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProducerService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductConsumerService;
@@ -466,17 +473,17 @@ class ConfigurationProviderImplTest {
                 .name("f")
                 .value("6")
                 .build();
-        when(policyAttributeService.findAttributes(70L, PolicyAttributeScope.PRODUCER))
+        when(policyAttributeService.findAttributes(70L, PolicyAttributeScopeCode.PRODUCER))
                 .thenReturn(List.of(producerAttr));
-        when(policyAttributeService.findAttributes(701L, PolicyAttributeScope.CONSUMER))
+        when(policyAttributeService.findAttributes(701L, PolicyAttributeScopeCode.CONSUMER))
                 .thenReturn(List.of(consumerAttr));
-        when(policyAttributeService.findAttributes(801L, PolicyAttributeScope.ORGANISATION))
+        when(policyAttributeService.findAttributes(801L, PolicyAttributeScopeCode.ORGANISATION))
                 .thenReturn(List.of(orgAttr));
-        when(policyAttributeService.findAttributes(9001L, PolicyAttributeScope.SUBSCRIPTION))
+        when(policyAttributeService.findAttributes(9001L, PolicyAttributeScopeCode.SUBSCRIPTION))
                 .thenReturn(List.of(subscriptionAttr));
-        when(policyAttributeService.findAttributes(700L, PolicyAttributeScope.PRODUCT))
+        when(policyAttributeService.findAttributes(700L, PolicyAttributeScopeCode.PRODUCT))
                 .thenReturn(List.of(productAttr));
-        when(policyAttributeService.findAttributes(1L, PolicyAttributeScope.ORGANISATION))
+        when(policyAttributeService.findAttributes(1L, PolicyAttributeScopeCode.ORGANISATION))
                 .thenReturn(List.of(producerOrgAttr));
         when(organisationService.findByIds(any()))
                 .thenReturn(Map.of(
@@ -658,7 +665,7 @@ class ConfigurationProviderImplTest {
         ProducerDTO producer = producer(71L, true);
         when(producerService.getProducersByClientId(clientId)).thenReturn(List.of(producer));
         when(consumerService.getConsumersOfProviders(any())).thenReturn(Map.of());
-        when(policyAttributeService.findAttributes(71L, PolicyAttributeScope.PRODUCER))
+        when(policyAttributeService.findAttributes(71L, PolicyAttributeScopeCode.PRODUCER))
                 .thenReturn(List.of());
 
         ProducerConfigDTO cfg = configurationProvider.getProducerConfigByClientId(clientId, Optional.empty());
@@ -756,7 +763,7 @@ class ConfigurationProviderImplTest {
                 .name("classification")
                 .value("OFFICIAL")
                 .build();
-        when(policyAttributeService.findAttributes(801L, PolicyAttributeScope.ORGANISATION))
+        when(policyAttributeService.findAttributes(801L, PolicyAttributeScopeCode.ORGANISATION))
                 .thenReturn(List.of(orgAttr));
         when(organisationService.findByIds(any()))
                 .thenReturn(Map.of(
@@ -775,7 +782,7 @@ class ConfigurationProviderImplTest {
 
         // the duplicate org id is collapsed before the lookup, and resolved exactly once
         verify(organisationService, times(1)).findByIds(Set.of(1L, 801L));
-        verify(policyAttributeService, times(1)).findAttributes(801L, PolicyAttributeScope.ORGANISATION);
+        verify(policyAttributeService, times(1)).findAttributes(801L, PolicyAttributeScopeCode.ORGANISATION);
 
         ProducerDTO returnedProducer = cfg.getProducers().get(0);
         OrganisationDTO orgOfA =

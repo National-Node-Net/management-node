@@ -15,8 +15,8 @@ import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.OrganisationCertificateDTO;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.CertificateType;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.OrganisationCertificateDTO;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.CertificateType;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.CertificateValidationProvider;
 import uk.gov.dbt.ndtp.ia.node.management.web.RequestRejectionSupport;
 

@@ -8,11 +8,11 @@ package uk.gov.dbt.ndtp.ia.node.management.service.data;
 
 import java.util.List;
 import java.util.Map;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.PolicyAttributeDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.policy.PolicyAttributeDTO;
 
 /**
  * Resolves every live policy attribute recorded against one entity within one {@link
- * PolicyAttributeScope}.
+ * PolicyAttributeScopeCode}.
  */
 public interface PolicyAttributeService {
 
@@ -23,7 +23,7 @@ public interface PolicyAttributeService {
      * @return the entity's live policy attributes for that scope, or an empty list (never
      *     {@code null}) if it has none
      */
-    List<PolicyAttributeDTO> findAttributes(Long entityId, PolicyAttributeScope scope);
+    List<PolicyAttributeDTO> findAttributes(Long entityId, PolicyAttributeScopeCode scope);
 
     /**
      * The same live attribute values as {@link #findAttributes}, keyed by attribute name with
@@ -48,5 +48,5 @@ public interface PolicyAttributeService {
      * @return attribute name to JSON-typed value - a list for multi-valued attributes, a scalar
      *     otherwise. Never null and never containing null values
      */
-    Map<String, Object> findAttributeMap(Long entityId, PolicyAttributeScope scope);
+    Map<String, Object> findAttributeMap(Long entityId, PolicyAttributeScopeCode scope);
 }

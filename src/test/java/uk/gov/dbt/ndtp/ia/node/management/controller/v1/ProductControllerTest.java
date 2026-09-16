@@ -33,7 +33,7 @@ import org.springframework.security.web.method.annotation.AuthenticationPrincipa
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import uk.gov.dbt.ndtp.ia.node.management.exception.handlers.GlobalExceptionHandler;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProductDiscoveryRequestDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductDiscoveryRequestDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.jwt.EnhancedPrincipal;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductDiscoveryService;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInput;

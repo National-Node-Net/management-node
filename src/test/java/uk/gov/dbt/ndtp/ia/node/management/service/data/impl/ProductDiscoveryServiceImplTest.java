@@ -19,9 +19,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProductDTO;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProductDiscoveryResponseDTO;
-import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeScope;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProductDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductDiscoveryResponseDTO;
+import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeScopeCode;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductService;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.DefaultPolicyDecisionOutput;
@@ -103,7 +103,7 @@ class ProductDiscoveryServiceImplTest {
     @Test
     void filterAuthorised_variesOnlyTheResourcePerCandidate() {
         when(policyDecisionClient.evaluate(any())).thenReturn(DefaultPolicyDecisionOutput.ALLOW);
-        when(policyAttributeService.findAttributeMap(1L, PolicyAttributeScope.PRODUCT))
+        when(policyAttributeService.findAttributeMap(1L, PolicyAttributeScopeCode.PRODUCT))
                 .thenReturn(Map.of("classification", "OFFICIAL"));
 
         productDiscoveryService.filterAuthorised(INPUT, REQUEST_DECISION, List.of(allowedProduct));
@@ -114,9 +114,9 @@ class ProductDiscoveryServiceImplTest {
     @Test
     void filterAuthorised_attachesEachCandidatesOwnProductAttributes() {
         when(policyDecisionClient.evaluate(any())).thenReturn(DefaultPolicyDecisionOutput.ALLOW);
-        when(policyAttributeService.findAttributeMap(1L, PolicyAttributeScope.PRODUCT))
+        when(policyAttributeService.findAttributeMap(1L, PolicyAttributeScopeCode.PRODUCT))
                 .thenReturn(Map.of("tier", 1));
-        when(policyAttributeService.findAttributeMap(2L, PolicyAttributeScope.PRODUCT))
+        when(policyAttributeService.findAttributeMap(2L, PolicyAttributeScopeCode.PRODUCT))
                 .thenReturn(Map.of("tier", 2));
 
         productDiscoveryService.filterAuthorised(INPUT, REQUEST_DECISION, List.of(allowedProduct, deniedProduct));

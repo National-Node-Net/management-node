@@ -7,8 +7,8 @@
 package uk.gov.dbt.ndtp.ia.node.management.service.data;
 
 import java.util.List;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProductDTO;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProductDiscoveryResponseDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProductDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductDiscoveryResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.DefaultPolicyDecisionOutput;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInput;
 

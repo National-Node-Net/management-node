@@ -22,7 +22,7 @@ import uk.gov.dbt.ndtp.ia.node.management.config.OpaProperties;
 import uk.gov.dbt.ndtp.ia.node.management.model.UnknownIdentifiers;
 import uk.gov.dbt.ndtp.ia.node.management.model.jwt.EnhancedPrincipal;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.OrganisationService;
-import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeScope;
+import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeScopeCode;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeService;
 
 /**
@@ -138,7 +138,7 @@ public class PolicyInputFactory {
         }
         Map<String, Object> attributes = organisationService
                 .findIdByKey(key)
-                .map(id -> policyAttributeService.findAttributeMap(id, PolicyAttributeScope.ORGANISATION))
+                .map(id -> policyAttributeService.findAttributeMap(id, PolicyAttributeScopeCode.ORGANISATION))
                 .orElseGet(Map::of);
         return new PolicyOrganisation(key, attributes);
     }

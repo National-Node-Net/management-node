@@ -204,7 +204,7 @@ The organisation is resolved in two steps:
 Two cases are handled deliberately rather than by failing:
 
 - **Key matches no organisation row** — the key still reaches the PDP, with empty attributes. The policy decides what an unknown organisation means; the decision does not error.
-- **Token carries no organisation claim** — `EnhancedPrincipal` substitutes the sentinel `unknown_organisation`. That sentinel is *not* forwarded: `organisation` is emitted with a null key and empty attributes, so a policy cannot come to depend on a magic string that only means "the claim was missing".
+- **Token carries no organisation claim** — `EnhancedPrincipal` substitutes the sentinel `UNKNOWN_ORG` (`UnknownIdentifiers.UNKNOWN_ORG`). That sentinel is *not* forwarded: `organisation` is emitted with a null key and empty attributes, so a policy cannot come to depend on a magic string that only means "the claim was missing".
 
 > **Note:** the organisation claim is matched against `organisation.organisation_key`. If the claim values your IdP issues (e.g. `FEDERATOR_ENV`) differ from the keys held in the database (e.g. `ENV`), no row will match and attributes will always be empty. Keep the two aligned, or map between them before the lookup.
 

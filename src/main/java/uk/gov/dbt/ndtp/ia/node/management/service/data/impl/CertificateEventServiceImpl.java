@@ -9,12 +9,12 @@ package uk.gov.dbt.ndtp.ia.node.management.service.data.impl;
 import java.sql.Timestamp;
 import java.time.Instant;
 import org.springframework.stereotype.Service;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.CertificateEvent;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.CertificateEventType;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.CertificateType;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.OrganisationCertificate;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.CertificateEventRepository;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.OrganisationCertificateRepository;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.CertificateEvent;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.CertificateEventType;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.CertificateType;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.OrganisationCertificate;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.certificate.CertificateEventRepository;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.certificate.OrganisationCertificateRepository;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.CertificateEventService;
 
 /**

@@ -28,7 +28,7 @@ import uk.gov.dbt.ndtp.ia.node.management.config.OpaProperties;
 import uk.gov.dbt.ndtp.ia.node.management.model.UnknownIdentifiers;
 import uk.gov.dbt.ndtp.ia.node.management.model.jwt.EnhancedPrincipal;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.OrganisationService;
-import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeScope;
+import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeScopeCode;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeService;
 
 /** Covers how each PDP input fact is sourced: token claims, certificate, database and request. */
@@ -100,7 +100,7 @@ class PolicyInputFactoryTest {
     void organisation_comesFromThePrincipalWithItsDatabaseAttributes() {
         authenticate("service-account-catalogue-ui", "catalogue-ui", Map.of());
         when(organisationService.findIdByKey("FEDERATOR_ENV")).thenReturn(Optional.of(42L));
-        when(policyAttributeService.findAttributeMap(42L, PolicyAttributeScope.ORGANISATION))
+        when(policyAttributeService.findAttributeMap(42L, PolicyAttributeScopeCode.ORGANISATION))
                 .thenReturn(Map.of("nationality", "GB"));
 
         PolicyOrganisation organisation = factory.create(request("/api/v1/product/discover"), null)

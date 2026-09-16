@@ -11,8 +11,8 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
 import uk.gov.dbt.ndtp.ia.node.management.converter.impl.OrganisationCertificateConverter;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.OrganisationCertificateDTO;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.OrganisationCertificateRepository;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.OrganisationCertificateDTO;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.certificate.OrganisationCertificateRepository;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.OrganisationCertificateService;
 
 @Service
