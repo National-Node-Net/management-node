@@ -25,6 +25,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import uk.gov.dbt.ndtp.ia.node.management.exception.ResourceAccessParsingException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.TokenIntrospectionException;
+import uk.gov.dbt.ndtp.ia.node.management.model.UnknownIdentifiers;
 import uk.gov.dbt.ndtp.ia.node.management.model.jwt.EnhancedPrincipal;
 import uk.gov.dbt.ndtp.ia.node.management.model.jwt.JwtToken;
 
@@ -65,8 +66,6 @@ public class KeycloakJwtAuthenticationConverter implements Converter<Jwt, Abstra
 
     // Constants for role prefixes and default values
     private static final String ROLE_PREFIX = "ROLE_";
-    private static final String UNKNOWN_CLIENT = "unknown";
-    private static final String UNKNOWN_ORGANISATION = "unknown_organisation";
     private static final String RESOURCE_ROLE_SEPARATOR = ":";
 
     // Form data keys
@@ -197,10 +196,10 @@ public class KeycloakJwtAuthenticationConverter implements Converter<Jwt, Abstra
      *
      * @param primaryId  The primary client ID to check
      * @param fallbackId The fallback client ID to use if primary is null or empty
-     * @return A non-null client ID (either primary, fallback, or "unknown")
+     * @return A non-null client ID (either primary, fallback, or UNKNOWN_CLIENT)
      */
     private String getEffectiveClientId(String primaryId, String fallbackId) {
-        return getEffectiveValue(primaryId, fallbackId, UNKNOWN_CLIENT);
+        return getEffectiveValue(primaryId, fallbackId, UnknownIdentifiers.UNKNOWN_CLIENT);
     }
 
     /**
@@ -226,11 +225,11 @@ public class KeycloakJwtAuthenticationConverter implements Converter<Jwt, Abstra
 
     /**
      * Extract the organisation from the JWT's "organisation" claim.
-     * Returns "unknown_organisation" when the claim is absent or empty, so the principal
+     * Returns {@code UNKNOWN_ORG} when the claim is absent or empty, so the principal
      * always carries a usable value.
      */
     private String extractOrganisation(Jwt jwt) {
-        return getEffectiveValue(jwt.getClaimAsString(CLAIM_ORGANISATION), null, UNKNOWN_ORGANISATION);
+        return getEffectiveValue(jwt.getClaimAsString(CLAIM_ORGANISATION), null, UnknownIdentifiers.UNKNOWN_ORG);
     }
 
     /**
@@ -240,17 +239,17 @@ public class KeycloakJwtAuthenticationConverter implements Converter<Jwt, Abstra
      *
      * @param jwtToken The data from the introspection endpoint
      * @param jwt      The JWT the introspection was performed for
-     * @return The organisation, or "unknown_organisation" when neither source has one
+     * @return The organisation, or {@code UNKNOWN_ORG} when neither source has one
      */
     private String extractOrganisationFromIntrospection(JwtToken jwtToken, Jwt jwt) {
         return getEffectiveValue(
-                jwtToken.getOrganisation(), jwt.getClaimAsString(CLAIM_ORGANISATION), UNKNOWN_ORGANISATION);
+                jwtToken.getOrganisation(), jwt.getClaimAsString(CLAIM_ORGANISATION), UnknownIdentifiers.UNKNOWN_ORG);
     }
 
     /**
      * Extract client_id from JWT token.
      * Tries to get it from "azp" claim first, then from "client_id" claim.
-     * If neither is present, returns "unknown".
+     * If neither is present, returns {@code UNKNOWN_CLIENT}.
      */
     private String extractClientId(Jwt jwt) {
         String azpClientId = jwt.getClaimAsString(CLAIM_AZP);
@@ -297,7 +296,7 @@ public class KeycloakJwtAuthenticationConverter implements Converter<Jwt, Abstra
     /**
      * Extract client_id from introspection data.
      * Tries to get it from "azp" claim first, then from "client_id" claim.
-     * If neither is present, returns "unknown".
+     * If neither is present, returns {@code UNKNOWN_CLIENT}.
      *
      * @param jwtToken The data from the introspection endpoint
      * @return The client ID

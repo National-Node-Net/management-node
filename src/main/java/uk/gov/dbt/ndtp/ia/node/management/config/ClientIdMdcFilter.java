@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
- * © Crown Copyright 2025. This work has been developed by the National Digital Twin Programme and is legally
+ * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
  * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 
@@ -17,6 +17,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import uk.gov.dbt.ndtp.ia.node.management.model.UnknownIdentifiers;
 import uk.gov.dbt.ndtp.ia.node.management.model.jwt.EnhancedPrincipal;
 
 /**
@@ -25,14 +26,13 @@ import uk.gov.dbt.ndtp.ia.node.management.model.jwt.EnhancedPrincipal;
  * This filter should be registered to run after the BearerTokenAuthenticationFilter
  * to ensure that the Authentication object is already set in the SecurityContext.
  * If the Authentication object is null or does not contain an EnhancedPrincipal,
- * the filter will use "unknown" as the clientId.
+ * the filter logs the clientId as {@code UNKNOWN_CLIENT}.
  */
 @Component
 @Slf4j
 public class ClientIdMdcFilter extends OncePerRequestFilter {
 
     public static final String CLIENT_ID_MDC_KEY = "clientId";
-    private static final String UNKNOWN_CLIENT = "";
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -76,13 +76,13 @@ public class ClientIdMdcFilter extends OncePerRequestFilter {
      * <p>
      * This method checks if the Authentication object is not null and if its principal
      * is an instance of EnhancedPrincipal. If so, it extracts the clientId from the
-     * EnhancedPrincipal. Otherwise, it returns "unknown".
+     * EnhancedPrincipal. Otherwise, it returns {@code UNKNOWN_CLIENT}.
      * <p>
      * Debug logging is included to help diagnose issues with the Authentication object
      * and its principal.
      *
      * @param authentication the Authentication object
-     * @return the clientId, or "unknown" if it cannot be determined
+     * @return the clientId, or {@code UNKNOWN_CLIENT} if it cannot be determined
      */
     private String extractClientId(Authentication authentication) {
         if (authentication != null) {
@@ -97,7 +97,7 @@ public class ClientIdMdcFilter extends OncePerRequestFilter {
 
             if (principal instanceof EnhancedPrincipal enhancedPrincipal) {
                 String clientId = enhancedPrincipal.clientId();
-                return clientId != null && !clientId.isEmpty() ? clientId : UNKNOWN_CLIENT;
+                return clientId != null && !clientId.isEmpty() ? clientId : UnknownIdentifiers.UNKNOWN_CLIENT;
             } else {
                 log.warn(
                         "Principal is not an instance of EnhancedPrincipal: {}",
@@ -106,6 +106,6 @@ public class ClientIdMdcFilter extends OncePerRequestFilter {
         } else {
             log.trace("Authentication is null in SecurityContextHolder");
         }
-        return UNKNOWN_CLIENT;
+        return UnknownIdentifiers.UNKNOWN_CLIENT;
     }
 }

@@ -29,6 +29,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import uk.gov.dbt.ndtp.ia.node.management.model.UnknownIdentifiers;
 import uk.gov.dbt.ndtp.ia.node.management.model.jwt.EnhancedPrincipal;
 import uk.gov.dbt.ndtp.ia.node.management.model.jwt.JwtToken;
 
@@ -43,7 +44,7 @@ import uk.gov.dbt.ndtp.ia.node.management.model.jwt.JwtToken;
 class KeycloakJwtAuthenticationConverterOrganisationTest {
 
     private static final String ORGANISATION = "FEDERATOR_ENV";
-    private static final String UNKNOWN_ORGANISATION = "unknown_organisation";
+    private static final String UNKNOWN_ORGANISATION = UnknownIdentifiers.UNKNOWN_ORG;
     private static final String SUBJECT = "d17e51cf-ef3c-4adf-b51a-34a5f8b6c4f7";
 
     @Mock

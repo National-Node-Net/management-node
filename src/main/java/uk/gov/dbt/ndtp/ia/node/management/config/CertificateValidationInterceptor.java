@@ -37,7 +37,7 @@ public class CertificateValidationInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
             throws Exception {
-        String clientId = extractClientId();
+        String clientId = RequestRejectionSupport.extractClientId();
         if (clientId == null) {
             log.warn("No client ID found for request to {}", request.getRequestURI());
             writeError(response, HttpServletResponse.SC_FORBIDDEN, "Client ID required");
@@ -73,13 +73,8 @@ public class CertificateValidationInterceptor implements HandlerInterceptor {
             return false;
         }
 
-        RequestRejectionSupport.setOrganisationId(request, cert.getOrganisationId());
         log.debug("Certificate validation successful for client {} on {}", clientId, request.getRequestURI());
         return true;
-    }
-
-    private String extractClientId() {
-        return RequestRejectionSupport.extractClientId();
     }
 
     private String validateSerialNumber(HttpServletRequest request, OrganisationCertificateDTO cert, String clientId) {

@@ -29,6 +29,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 import uk.gov.dbt.ndtp.ia.node.management.exception.TokenIntrospectionException;
+import uk.gov.dbt.ndtp.ia.node.management.model.UnknownIdentifiers;
 import uk.gov.dbt.ndtp.ia.node.management.model.jwt.EnhancedPrincipal;
 import uk.gov.dbt.ndtp.ia.node.management.model.jwt.JwtToken;
 
@@ -256,7 +257,7 @@ class KeycloakJwtAuthenticationConverterTest {
         EnhancedPrincipal principal = ((CustomJwtAuthenticationToken) token).getPrincipal();
         assertNotNull(principal);
         assertEquals("test-subject", principal.subject());
-        assertEquals("unknown", principal.clientId()); // Should default to "unknown"
+        assertEquals(UnknownIdentifiers.UNKNOWN_CLIENT, principal.clientId());
 
         // Should not throw exception and return token with default authorities
     }
@@ -295,7 +296,7 @@ class KeycloakJwtAuthenticationConverterTest {
         EnhancedPrincipal principal = ((CustomJwtAuthenticationToken) token).getPrincipal();
         assertNotNull(principal);
         assertEquals("test-subject", principal.subject());
-        assertEquals("unknown", principal.clientId()); // Should default to "unknown"
+        assertEquals(UnknownIdentifiers.UNKNOWN_CLIENT, principal.clientId());
 
         // Should not add any authorities for the empty roles list
         assertEquals(0, token.getAuthorities().size());
@@ -331,7 +332,7 @@ class KeycloakJwtAuthenticationConverterTest {
         EnhancedPrincipal principal = ((CustomJwtAuthenticationToken) token).getPrincipal();
         assertNotNull(principal);
         assertEquals("test-subject", principal.subject());
-        assertEquals("unknown", principal.clientId()); // Should default to "unknown"
+        assertEquals(UnknownIdentifiers.UNKNOWN_CLIENT, principal.clientId());
     }
 
     @Test
@@ -477,7 +478,7 @@ class KeycloakJwtAuthenticationConverterTest {
                 new Jwt("v", Instant.now(), Instant.now().plusSeconds(30), Collections.singletonMap("a", "b"), claims3);
         AbstractAuthenticationToken token3 = converter.convert(jwt3);
         assertEquals(
-                "unknown",
+                UnknownIdentifiers.UNKNOWN_CLIENT,
                 ((CustomJwtAuthenticationToken) token3).getPrincipal().clientId());
     }
 

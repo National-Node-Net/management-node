@@ -24,7 +24,7 @@ public class Organisation {
     private String name;
 
     /**
-     * Stable, human-readable identifier for the organisation (e.g. {@code ENV}), unique across
+     * Stable, human-readable identifier for the organisation (e.g. {@code ORG_A}), unique across
      * organisations and indexed, so callers can address an organisation without knowing its id.
      */
     @Column(name = "organisation_key", nullable = false, unique = true, length = 50)
