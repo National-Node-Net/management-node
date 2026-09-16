@@ -12,13 +12,10 @@ package lib.decision
 # Bumped only when the document's shape changes incompatibly.
 contract := "management-node.decision/1"
 
-# Every field closed: no access, nothing disclosed, no reasons, no details. Rules start from
+# Every field closed: no access, no reasons, no details. Rules start from
 # this and state what they grant, so a field a rule forgets to set stays denied.
 deny_shape := {
 	"allow": false,
-	"allowed_filtered_attributes": [],
-	"denied_filtered_attributes": [],
-	"masked_filtered_attributes": [],
 	"reasons": [],
 	"details": {},
 }

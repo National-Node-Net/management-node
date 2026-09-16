@@ -30,6 +30,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 import uk.gov.dbt.ndtp.ia.node.management.config.OpaProperties;
+import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductDiscoveryPolicyDecisionDetails;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductSubscriptionPolicyDecisionDetails;
 
 class PolicyDecisionClientTest {
@@ -90,28 +91,56 @@ class PolicyDecisionClientTest {
                 .andRespond(withSuccess(
                         """
                         {"result": {"allow": true,
-                                    "allowed_filtered_attributes": ["name"],
-                                    "denied_filtered_attributes": ["internal_owner"],
-                                    "masked_filtered_attributes": ["contact_email"]}}""",
+                                    "reasons": ["dispatch.resource_fallback"],
+                                    "policy": {"id": "product.fallback",
+                                               "version": "policies.product.fallback/1.0.0",
+                                               "resolution": "resource_fallback"},
+                                    "details": {"access_level": "read"}}}""",
                         MediaType.APPLICATION_JSON));
 
         assertThat(client.evaluate(INPUT))
-                .isEqualTo(
-                        PolicyDecision.of(true, List.of("name"), List.of("internal_owner"), List.of("contact_email")));
+                .isEqualTo(new PolicyDecision<>(
+                        true,
+                        List.of("dispatch.resource_fallback"),
+                        new PolicyProvenance(
+                                "product.fallback", "policies.product.fallback/1.0.0", "resource_fallback"),
+                        new PolicyDecisionDetails(Map.of("access_level", "read"))));
     }
 
     @Test
-    void objectResult_denying_stillCarriesItsAttributeLists() {
+    void objectResult_denying_stillCarriesItsReasons() {
         mockServer
                 .expect(requestTo(PROPERTIES.url() + PROPERTIES.decisionPath()))
                 .andRespond(withSuccess(
-                        "{\"result\": {\"allow\": false, \"denied_filtered_attributes\": [\"name\"]}}",
+                        "{\"result\": {\"allow\": false, \"reasons\": [\"organisation.missing\"]}}",
                         MediaType.APPLICATION_JSON));
 
         PolicyDecision<PolicyDecisionDetails> output = client.evaluate(INPUT);
 
         assertThat(output.allow()).isFalse();
-        assertThat(output.deniedFilteredAttributes()).containsExactly("name");
+        assertThat(output.reasons()).containsExactly("organisation.missing");
+    }
+
+    @Test
+    void discoveryDetails_carryTheAttributeLists() {
+        mockServer
+                .expect(requestTo(PROPERTIES.url() + PROPERTIES.decisionPath()))
+                .andRespond(withSuccess(
+                        """
+                        {"result": {"allow": true,
+                                    "details": {"evaluation": "candidate",
+                                                "allowed_filtered_attributes": ["name"],
+                                                "denied_filtered_attributes": ["internal_owner"],
+                                                "masked_filtered_attributes": ["contact_email"]}}}""",
+                        MediaType.APPLICATION_JSON));
+
+        ProductDiscoveryPolicyDecisionDetails details = client.evaluate(
+                        INPUT, ProductDiscoveryPolicyDecisionDetails.class)
+                .details();
+
+        assertThat(details.allowedFilteredAttributes()).containsExactly("name");
+        assertThat(details.deniedFilteredAttributes()).containsExactly("internal_owner");
+        assertThat(details.maskedFilteredAttributes()).containsExactly("contact_email");
     }
 
     @Test

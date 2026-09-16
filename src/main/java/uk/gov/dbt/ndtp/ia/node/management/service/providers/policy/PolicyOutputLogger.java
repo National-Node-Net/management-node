@@ -77,9 +77,6 @@ public class PolicyOutputLogger {
                 PDP decision response <- {}
                   action               : {}
                   resource             : {} id={}
-                  allowed_attributes   : {}
-                  denied_attributes    : {}
-                  masked_attributes    : {}
                   reasons              : {}
                   policy               : id={} version={} resolution={}
                   details              : {}
@@ -89,9 +86,6 @@ public class PolicyOutputLogger {
                 value(input.action()),
                 resource == null ? NONE : value(resource.kind()),
                 resource == null ? NONE : value(resource.id()),
-                output.allowedFilteredAttributes(),
-                output.deniedFilteredAttributes(),
-                output.maskedFilteredAttributes(),
                 output.reasons(),
                 output.policy().id(),
                 output.policy().version(),

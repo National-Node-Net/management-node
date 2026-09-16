@@ -25,8 +25,10 @@ test_permitted_nationality_may_discover if {
 
 	decision.allow == true
 	decision.reasons == []
-	decision.masked_filtered_attributes == []
 	decision.details.evaluation == "request"
+	decision.details.allowed_filtered_attributes == []
+	decision.details.denied_filtered_attributes == []
+	decision.details.masked_filtered_attributes == []
 }
 
 test_other_nationality_is_refused_and_masked if {
@@ -34,7 +36,16 @@ test_other_nationality_is_refused_and_masked if {
 
 	decision.allow == false
 	decision.reasons == ["organisation.nationality_not_permitted"]
-	decision.masked_filtered_attributes == ["contact_email"]
+	decision.details.masked_filtered_attributes == ["contact_email"]
+}
+
+# The lists belong to discovery's details; the envelope carries none of them.
+test_attribute_lists_are_not_in_the_envelope if {
+	decision := discover.decision with input as request_level({"nationality": "FR"})
+
+	not "allowed_filtered_attributes" in object.keys(decision)
+	not "denied_filtered_attributes" in object.keys(decision)
+	not "masked_filtered_attributes" in object.keys(decision)
 }
 
 test_missing_nationality_is_refused if {
@@ -92,4 +103,13 @@ test_dispatch_resolves_discover_exactly if {
 	result.allow == true
 	result.policy.id == "product.discover"
 	result.policy.resolution == "exact"
+	result.details.masked_filtered_attributes == []
+}
+
+test_dispatch_carries_masking_in_details if {
+	result := data.dispatch.decision with input as candidate({"nationality": "FR"}, {"classification": "OFFICIAL"})
+
+	result.allow == false
+	result.details.masked_filtered_attributes == ["contact_email"]
+	not "masked_filtered_attributes" in object.keys(result)
 }

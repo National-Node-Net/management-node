@@ -45,12 +45,17 @@ class PolicyDecisionDetailsTest {
         ProductDiscoveryPolicyDecisionDetails details = objectMapper.readValue(
                 """
                 {"evaluation": "candidate", "permitted_nationalities": ["GB"],
-                 "excluded_classifications": ["SECRET"], "added_later": true}""",
+                 "excluded_classifications": ["SECRET"],
+                 "allowed_filtered_attributes": ["name"], "denied_filtered_attributes": ["internal_owner"],
+                 "masked_filtered_attributes": ["contact_email"], "added_later": true}""",
                 ProductDiscoveryPolicyDecisionDetails.class);
 
         assertThat(details.evaluation()).isEqualTo(ProductDiscoveryPolicyDecisionDetails.EVALUATION_CANDIDATE);
         assertThat(details.permittedNationalities()).containsExactly("GB");
         assertThat(details.excludedClassifications()).containsExactly("SECRET");
+        assertThat(details.allowedFilteredAttributes()).containsExactly("name");
+        assertThat(details.deniedFilteredAttributes()).containsExactly("internal_owner");
+        assertThat(details.maskedFilteredAttributes()).containsExactly("contact_email");
         assertThat(details.additional()).isEqualTo(Map.of("added_later", true));
     }
 
@@ -79,6 +84,90 @@ class PolicyDecisionDetailsTest {
         assertThat(details.evaluation()).isNull();
         assertThat(details.permittedNationalities()).isEmpty();
         assertThat(details.excludedClassifications()).isEmpty();
+        assertThat(details.allowedFilteredAttributes()).isEmpty();
+        assertThat(details.deniedFilteredAttributes()).isEmpty();
+        assertThat(details.maskedFilteredAttributes()).isEmpty();
+    }
+
+    @Test
+    void generic_narrowedBy_takesTheNarrowerDetailsWhenTheyCarryAnything() {
+        PolicyDecisionDetails request = new PolicyDecisionDetails(Map.of("access_level", "read"));
+        PolicyDecisionDetails candidate = new PolicyDecisionDetails(Map.of("requires_approval", true));
+
+        assertThat(request.narrowedBy(candidate)).isSameAs(candidate);
+        assertThat(request.narrowedBy(new PolicyDecisionDetails())).isSameAs(request);
+        assertThat(request.narrowedBy(null)).isSameAs(request);
+    }
+
+    @Test
+    void discover_narrowedBy_mergesAttributeListsLettingWithholdingWinOverDisclosure() {
+        ProductDiscoveryPolicyDecisionDetails request = new ProductDiscoveryPolicyDecisionDetails(
+                ProductDiscoveryPolicyDecisionDetails.EVALUATION_REQUEST,
+                List.of("GB"),
+                List.of("SECRET"),
+                List.of("name", "topic"),
+                List.of("internal_owner"),
+                List.of());
+        ProductDiscoveryPolicyDecisionDetails candidate = new ProductDiscoveryPolicyDecisionDetails(
+                ProductDiscoveryPolicyDecisionDetails.EVALUATION_CANDIDATE,
+                List.of("GB"),
+                List.of("SECRET"),
+                List.of("name", "source"),
+                List.of(),
+                List.of("topic"));
+
+        ProductDiscoveryPolicyDecisionDetails combined = request.narrowedBy(candidate);
+
+        // "topic" is allowed by the request but masked by the candidate, so it is not left in the
+        // allowed list; the same holds for anything either denies.
+        assertThat(combined.allowedFilteredAttributes()).containsExactly("name", "source");
+        assertThat(combined.deniedFilteredAttributes()).containsExactly("internal_owner");
+        assertThat(combined.maskedFilteredAttributes()).containsExactly("topic");
+        assertThat(combined.evaluation()).isEqualTo(ProductDiscoveryPolicyDecisionDetails.EVALUATION_CANDIDATE);
+    }
+
+    @Test
+    void discover_narrowedBy_emptyDetails_keepsThese() {
+        ProductDiscoveryPolicyDecisionDetails request = new ProductDiscoveryPolicyDecisionDetails(
+                ProductDiscoveryPolicyDecisionDetails.EVALUATION_REQUEST,
+                List.of("GB"),
+                List.of("SECRET"),
+                List.of(),
+                List.of(),
+                List.of("contact_email"));
+
+        assertThat(request.narrowedBy(new ProductDiscoveryPolicyDecisionDetails()))
+                .isSameAs(request);
+        assertThat(request.narrowedBy(null)).isSameAs(request);
+    }
+
+    @Test
+    void discover_combinedDecision_keepsTheRequestMaskingWhenTheCandidateHasItsOwnDetails() {
+        PolicyDecision<ProductDiscoveryPolicyDecisionDetails> request = PolicyDecision.of(
+                        true, ProductDiscoveryPolicyDecisionDetails.class)
+                .withDetails(new ProductDiscoveryPolicyDecisionDetails(
+                        ProductDiscoveryPolicyDecisionDetails.EVALUATION_REQUEST,
+                        List.of("GB"),
+                        List.of("SECRET"),
+                        List.of(),
+                        List.of(),
+                        List.of("contact_email")));
+        PolicyDecision<ProductDiscoveryPolicyDecisionDetails> candidate = PolicyDecision.of(
+                        true, ProductDiscoveryPolicyDecisionDetails.class)
+                .withDetails(new ProductDiscoveryPolicyDecisionDetails(
+                        ProductDiscoveryPolicyDecisionDetails.EVALUATION_CANDIDATE,
+                        List.of("GB"),
+                        List.of("SECRET"),
+                        List.of("name"),
+                        List.of(),
+                        List.of()));
+
+        ProductDiscoveryPolicyDecisionDetails details =
+                request.combinedWith(candidate).details();
+
+        assertThat(details.evaluation()).isEqualTo(ProductDiscoveryPolicyDecisionDetails.EVALUATION_CANDIDATE);
+        assertThat(details.allowedFilteredAttributes()).containsExactly("name");
+        assertThat(details.maskedFilteredAttributes()).containsExactly("contact_email");
     }
 
     @Test

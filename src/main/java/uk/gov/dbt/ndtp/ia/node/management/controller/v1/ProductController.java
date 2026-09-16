@@ -77,16 +77,19 @@ public class ProductController {
         // the discovery service narrows once candidate lookup is wired up.
         policyDecision.ifPresentOrElse(
                 decision -> log.info(
-                        "Product discover policy decision allow={} policy={} resolution={} reasons={} masked={} "
-                                + "evaluation={} permittedNationalities={} excludedClassifications={}",
+                        "Product discover policy decision allow={} policy={} resolution={} reasons={} "
+                                + "evaluation={} permittedNationalities={} excludedClassifications={} "
+                                + "allowed={} denied={} masked={}",
                         decision.allow(),
                         decision.policy().id(),
                         decision.policy().resolution(),
                         decision.reasons(),
-                        decision.maskedFilteredAttributes(),
                         decision.details().evaluation(),
                         decision.details().permittedNationalities(),
-                        decision.details().excludedClassifications()),
+                        decision.details().excludedClassifications(),
+                        decision.details().allowedFilteredAttributes(),
+                        decision.details().deniedFilteredAttributes(),
+                        decision.details().maskedFilteredAttributes()),
                 () -> log.info("Product discover served without a policy decision (policy enforcement is off)"));
         return ProductDiscoveryResponseDTO.builder().build();
     }

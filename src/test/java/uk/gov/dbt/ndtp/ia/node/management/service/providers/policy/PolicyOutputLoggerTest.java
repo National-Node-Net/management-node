@@ -93,29 +93,10 @@ class PolicyOutputLoggerTest {
     }
 
     @Test
-    void enabled_logsAllThreeAttributeLists() {
-        PolicyOutputLogger outputLogger = loggerWith(true);
-        PolicyDecision<PolicyDecisionDetails> output =
-                PolicyDecision.of(true, List.of("name"), List.of("internal_owner"), List.of("contact_email"));
-        PolicyInput input = PolicyInputFixture.of("client-1", "product", "discover");
-
-        outputLogger.logOutput(input, output);
-
-        assertThat(onlyMessage())
-                .contains("allowed_attributes   : [name]")
-                .contains("denied_attributes    : [internal_owner]")
-                .contains("masked_attributes    : [contact_email]")
-                .contains("\"allowed_filtered_attributes\" : [ \"name\" ]");
-    }
-
-    @Test
     void enabled_logsReasonsProvenanceAndDetails() {
         PolicyOutputLogger outputLogger = loggerWith(true);
         PolicyDecision<PolicyDecisionDetails> output = new PolicyDecision<>(
                 true,
-                List.of(),
-                List.of(),
-                List.of(),
                 List.of("dispatch.resource_fallback"),
                 new PolicyProvenance("product.fallback", "policies.product.fallback/1.0.0", "resource_fallback"),
                 new PolicyDecisionDetails(Map.of("access_level", "read")));

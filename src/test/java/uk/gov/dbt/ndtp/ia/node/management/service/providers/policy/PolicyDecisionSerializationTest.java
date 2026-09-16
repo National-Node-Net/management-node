@@ -90,11 +90,11 @@ class PolicyDecisionSerializationTest {
     void response_deserializesAllowResult() throws Exception {
         PolicyDecisionResponse response = objectMapper.readValue(
                 """
-                {"result": {"allow": true, "allowed_filtered_attributes": ["name"]}}""",
+                {"result": {"allow": true, "reasons": ["dispatch.resource_fallback"]}}""",
                 PolicyDecisionResponse.class);
 
         assertThat(response.result().allow()).isTrue();
-        assertThat(response.result().allowedFilteredAttributes()).containsExactly("name");
+        assertThat(response.result().reasons()).containsExactly("dispatch.resource_fallback");
     }
 
     @Test

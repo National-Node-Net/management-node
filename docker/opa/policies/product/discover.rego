@@ -11,6 +11,9 @@
 #                   service. The product's classification is judged as well.
 #   A candidate that carries no classification is refused rather than assumed unclassified, so
 #   a missing attribute can never widen what a caller sees.
+#
+#   Attribute filtering is discovery's own concern, not part of the generic envelope, so the
+#   allowed, denied and masked attribute lists travel in `details` with the rest of its terms.
 package policies.product.discover
 
 import data.lib.decision.deny_shape
@@ -26,12 +29,14 @@ excluded_classifications := ["SECRET"]
 
 decision := object.union(deny_shape, {
 	"allow": allow,
-	"masked_filtered_attributes": masked_filtered_attributes,
 	"reasons": reasons,
 	"details": {
 		"evaluation": evaluation,
 		"permitted_nationalities": permitted_nationalities,
 		"excluded_classifications": excluded_classifications,
+		"allowed_filtered_attributes": allowed_filtered_attributes,
+		"denied_filtered_attributes": denied_filtered_attributes,
+		"masked_filtered_attributes": masked_filtered_attributes,
 	},
 })
 
@@ -59,6 +64,12 @@ classification_permitted if {
 	is_string(classification)
 	not classification in excluded_classifications
 }
+
+# Nothing is disclosed or withheld by name yet; the lists are always present so the service
+# never has to tell "none" from "not said".
+allowed_filtered_attributes := []
+
+denied_filtered_attributes := []
 
 default masked_filtered_attributes := []
 

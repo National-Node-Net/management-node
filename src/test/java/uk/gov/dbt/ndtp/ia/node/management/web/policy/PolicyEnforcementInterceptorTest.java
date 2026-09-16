@@ -220,9 +220,11 @@ class PolicyEnforcementInterceptorTest {
     @Test
     void allow_handsTheDecisionToTheHandlerArgumentAndPublishesIt() throws Throwable {
         Object[] arguments = invoking("subscribe", "{}", Optional.empty());
-        PolicyDecision<SubscriptionDetails> decision = PolicyDecision.of(
-                        true, List.of("name"), List.of("internal_owner"), List.of("email"))
-                .withDetails(new SubscriptionDetails());
+        PolicyDecision<SubscriptionDetails> decision = new PolicyDecision<>(
+                true,
+                List.of("dispatch.resource_fallback"),
+                new PolicyProvenance("product.fallback", "policies.product.fallback/1.0.0", "resource_fallback"),
+                new SubscriptionDetails());
         when(policyDecisionClient.evaluate(any(), eq(SubscriptionDetails.class)))
                 .thenReturn(decision);
 
@@ -252,9 +254,6 @@ class PolicyEnforcementInterceptorTest {
         Object[] arguments = invoking("subscribe", "{}", Optional.empty());
         PolicyDecision<SubscriptionDetails> decision = new PolicyDecision<>(
                 false,
-                List.of(),
-                List.of(),
-                List.of(),
                 List.of("organisation.missing", "request.product_missing"),
                 new PolicyProvenance("product.subscribe", "policies.product.subscribe/1.0.0", "exact"),
                 new SubscriptionDetails());

@@ -11,6 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.MethodParameter;
@@ -27,7 +28,7 @@ import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecisio
 class PolicyDecisionArgumentResolverTest {
 
     private static final PolicyDecision<PolicyDecisionDetails> PUBLISHED =
-            PolicyDecision.of(true, List.of("name"), List.of("internal_owner"), List.of("email"));
+            PolicyDecision.of(true, PolicyDecisionDetails.class).withDetails(new PolicyDecisionDetails(Map.of("a", 1)));
 
     /** A details subclass a handler might declare. */
     static class ViewDetails extends PolicyDecisionDetails {}

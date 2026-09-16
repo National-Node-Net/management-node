@@ -29,7 +29,7 @@ import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInput;
  *
  * <p>The caller also supplies the decision already taken for the request as a whole. Each
  * per-candidate decision is narrowed by it, so a product survives only if both permit it and the
- * attribute lists a caller acts on are the two merged.
+ * attribute lists in {@link ProductDiscoveryPolicyDecisionDetails} are the two merged.
  */
 @Service
 @Slf4j

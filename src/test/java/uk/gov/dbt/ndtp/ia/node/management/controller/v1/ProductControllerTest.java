@@ -227,21 +227,25 @@ class ProductControllerTest {
         PolicyDecision<ProductDiscoveryPolicyDecisionDetails> published = new PolicyDecision<>(
                 true,
                 List.of(),
-                List.of(),
-                List.of("contact_email"),
-                List.of(),
                 new PolicyProvenance("product.discover", "policies.product.discover/1.0.0", "exact"),
                 new ProductDiscoveryPolicyDecisionDetails(
-                        ProductDiscoveryPolicyDecisionDetails.EVALUATION_REQUEST, List.of("GB"), List.of("SECRET")));
+                        ProductDiscoveryPolicyDecisionDetails.EVALUATION_REQUEST,
+                        List.of("GB"),
+                        List.of("SECRET"),
+                        List.of("name"),
+                        List.of("internal_owner"),
+                        List.of("contact_email")));
 
         assertThat(discoverLogAfter(mockMvc, published))
                 .contains("allow=true")
                 .contains("policy=product.discover")
                 .contains("resolution=exact")
-                .contains("masked=[contact_email]")
                 .contains("evaluation=request")
                 .contains("permittedNationalities=[GB]")
-                .contains("excludedClassifications=[SECRET]");
+                .contains("excludedClassifications=[SECRET]")
+                .contains("allowed=[name]")
+                .contains("denied=[internal_owner]")
+                .contains("masked=[contact_email]");
     }
 
     @Test

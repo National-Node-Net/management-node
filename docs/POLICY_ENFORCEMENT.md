@@ -191,9 +191,9 @@ The caller builds the input with `PolicyInputFactory.create(request, body, Polic
 Each candidate decision is narrowed by the request decision, when there is one, via `combinedWith`:
 
 - the action is permitted only if both permit it;
-- attribute lists are merged, withholding winning over disclosure — anything denied or masked by either decision is not left in the allowed list;
 - reasons are the union of both, de-duplicated and sorted;
-- provenance and details are the candidate decision's when it has them (it is the more specific answer), otherwise the request decision's. Both decisions carry the same details type, so they combine without casting; details count as absent when they equal empty details of their type.
+- provenance is the candidate decision's when it has one (it is the more specific answer), otherwise the request decision's;
+- details are combined by `PolicyDecisionDetails.narrowedBy`. By default the candidate's details win when they carry anything (details count as absent when they equal empty details of their type). `ProductDiscoveryPolicyDecisionDetails` overrides it so its attribute lists are merged, withholding winning over disclosure — anything denied or masked by either decision is not left in the allowed list — while its other fields are the candidate's. Both decisions carry the same details type, so they combine without casting at the call site.
 
 > **Status:** `ProductController`'s discovery handler is policy-enforced and receives the request decision as `Optional<PolicyDecision<ProductDiscoveryPolicyDecisionDetails>>`, which it logs. It is currently **not wired to `ProductDiscoveryService`**, while how `filters` should narrow the candidate query is settled, so it returns an empty product list without asking for per-candidate decisions. The per-candidate behaviour above is what `ProductDiscoveryServiceImpl` does once the controller calls it, passing that request decision to be narrowed.
 
@@ -230,14 +230,15 @@ A matched route is final: if its module is missing the request is denied, not pa
 
 > **Note:** a module counts as present when it declares any of `contract`, `version` or `decision`. A rule whose `decision` is *undefined* for a given input — for example `decision := {...} if { ... }` with a condition that fails — still declares its contract and version, so it is found and denied with `dispatch.decision_undefined`. It is never handed to a fallback, which could allow what the dedicated rule never decided.
 
-Each of these deny documents is fully shaped: `allow: false`, empty attribute lists, `details: {}`, the reason above, and provenance.
+Each of these deny documents is fully shaped: `allow: false`, `details: {}`, the reason above, and provenance.
 
 ### What is copied from a rule
 
 The dispatcher does not return a rule's `decision` verbatim. It copies only the contract's fields, each type-checked against its deny default:
 
 - `allow` is true only if the rule's value is literally `true`;
-- an attribute list or `reasons` that is not an array becomes `[]`;
+- `reasons` that is not an array becomes `[]`;
+- no other top-level field is copied, so a rule that returns attribute lists outside `details` has them dropped;
 - `details` that are not an object become `{}`;
 - the dispatch reason, if any, is merged into `reasons`, which are then de-duplicated and sorted;
 - `policy` is always the dispatcher's own provenance — a rule cannot set or forge it.
@@ -304,9 +305,6 @@ Every decision has the same envelope, whichever rule answered, plus a rule-speci
 {
   "result": {
     "allow": true,
-    "allowed_filtered_attributes": ["name", "topic"],
-    "denied_filtered_attributes": ["internal_owner"],
-    "masked_filtered_attributes": ["contact_email"],
     "reasons": ["dispatch.resource_fallback"],
     "policy": {"id": "product.fallback", "version": "policies.product.fallback/1.0.0", "resolution": "resource_fallback"},
     "details": {"access_level": "read"}
@@ -323,13 +321,12 @@ Every rule fills these the same way, and Java reads them into typed fields:
 | Field | Java | Meaning |
 |---|---|---|
 | `allow` | `allow()` | whether the action is permitted |
-| `allowed_filtered_attributes` | `allowedFilteredAttributes()` | attributes the subject may see in full |
-| `denied_filtered_attributes` | `deniedFilteredAttributes()` | attributes that must be withheld entirely |
-| `masked_filtered_attributes` | `maskedFilteredAttributes()` | attributes that may be returned only in masked form |
 | `reasons` | `reasons()` | sorted, stable codes explaining the decision, e.g. `organisation.missing` |
 | `policy` | `policy()` | provenance — see [Provenance](#provenance) |
 
-Nothing is null in Java: absent lists are empty and immutable, absent `policy` is `PolicyProvenance.NONE`, absent `details` are empty details of the declared type. A policy that decides only allow/deny returns empty lists.
+Nothing is null in Java: absent `reasons` are empty and immutable, absent `policy` is `PolicyProvenance.NONE`, absent `details` are empty details of the declared type. A policy that decides only allow/deny returns no reasons and `details: {}`.
+
+Attribute filtering is **not** part of the envelope. Which attributes a caller may see, must not see, or may see only masked is a term of the rule that needs it, so it travels in that rule's `details` — today only discovery's (see the table below).
 
 ### Dynamic `details`
 
@@ -340,7 +337,7 @@ Nothing is null in Java: absent lists are empty and immutable, absent `policy` i
 
 | Details type | Rule | Fields |
 |---|---|---|
-| `ProductDiscoveryPolicyDecisionDetails` | `policies.product.discover` | `evaluation()`, `permittedNationalities()`, `excludedClassifications()` |
+| `ProductDiscoveryPolicyDecisionDetails` | `policies.product.discover` | `evaluation()`, `permittedNationalities()`, `excludedClassifications()`, `allowedFilteredAttributes()`, `deniedFilteredAttributes()`, `maskedFilteredAttributes()` |
 | `ProductSubscriptionPolicyDecisionDetails` | `policies.product.subscribe` | `requiresApproval()`, `maxValidityDays()`, `permittedScheduleTypes()` |
 | `ProductViewPolicyDecisionDetails` | `policies.product.fallback` (no `view` rule yet) | `accessLevel()` |
 
@@ -366,7 +363,7 @@ A details subclass must be concrete, have a no-argument constructor (checked at 
 | `result` is a string, number, array or null | `DENY` |
 | `details` present but not an object | `DENY`, reason `policy.details_unreadable`, provenance kept |
 | `details` cannot be converted to the declared type | `DENY`, reason `policy.details_unreadable`, provenance kept, empty details of the declared type, logged at `WARN` with the rule's id and version |
-| `result` is a bare boolean (`{"result": true}`) | read as the verdict, with empty lists, no reasons, `NONE` provenance and empty details |
+| `result` is a bare boolean (`{"result": true}`) | read as the verdict, with no reasons, `NONE` provenance and empty details |
 
 `PolicyDecisionClient` catches every exception and returns DENY, so the PDP fails closed. A caller acting on typed details must never be handed a permission whose conditions it cannot read, which is why unreadable details deny rather than allow with empty terms. Provenance is kept so the broken rule can be found. The bare boolean form is accepted so a policy that has not been moved to the envelope keeps working.
 
@@ -585,7 +582,7 @@ application:
 ```
 
 Unlike `log-input`, the decision document carries none of the caller's token claims — only the
-verdict, the attribute lists, reasons, provenance and the rule's details — so switching it on does
+verdict, reasons, provenance and the rule's details — so switching it on does
 not expose anything `log-input` doesn't already. Switching it on still emits a `WARN` at startup,
 and per-candidate evaluation still asks for one decision per candidate, so it is just as noisy a
 bring-up aid. Provenance in this log is the quickest way to see which rule actually answered.
@@ -611,7 +608,7 @@ Each rule is its own module. The dispatcher selects it; the rule only answers.
 | package | `policies.<resource>.<action>`; `policies.<resource>.fallback` for a resource fallback |
 | `contract` | exactly `"management-node.decision/1"`; anything else, or none, is `dispatch.contract_mismatch` |
 | `version` | `"policies.<resource>.<action>/<semver>"`; reported in provenance |
-| `decision` | an object with `allow`, the three attribute lists, `reasons` and `details`. **No `policy` key** — the dispatcher adds provenance and ignores any a rule sets |
+| `decision` | an object with `allow`, `reasons` and `details`. **No `policy` key** — the dispatcher adds provenance and ignores any a rule sets |
 | totality | `decision` must be defined for every input, with every field present |
 
 Totality matters twice over: a field a rule forgets must still be present and denied, and a `decision` that is undefined for some input is refused with `dispatch.decision_undefined` — so a non-total rule turns into denials rather than into the answer the rule would have given. Start from the shared deny shape in `lib/decision.rego`, which also provides `organisation_known` and `organisation_attributes` so "is the caller's organisation known" means one thing in every rule:
@@ -664,7 +661,7 @@ Three endpoints on `ProductController` exercise the mechanism end to end.
 ### `POST /api/v1/product/discover` — one rule at request and candidate level
 
 - Role: `product_discovery`.
-- `@Policy(resource = "product", action = "discover", details = ProductDiscoveryPolicyDecisionDetails.class)`; the handler receives the decision as `Optional<PolicyDecision<ProductDiscoveryPolicyDecisionDetails>>` and logs its verdict, provenance, reasons, masked attributes and details.
+- `@Policy(resource = "product", action = "discover", details = ProductDiscoveryPolicyDecisionDetails.class)`; the handler receives the decision as `Optional<PolicyDecision<ProductDiscoveryPolicyDecisionDetails>>` and logs its verdict, provenance, reasons and details, including the attribute lists.
 - Answered by `policies.product.discover` (resolution `exact`). `POST` is not a read for the product fallback, so without this rule discovery would be refused.
 
 | Condition | Applies at | Deny reason |
@@ -672,7 +669,20 @@ Three endpoints on `ProductController` exercise the mechanism end to end.
 | organisation attribute `nationality` is one of `["GB"]` | request and candidate | `organisation.nationality_not_permitted` |
 | product attribute `classification` is present and not one of `["SECRET"]` | candidate only (`input.resource.id` set) | `product.classification_not_permitted` |
 
-A candidate with no `classification` is refused rather than assumed unclassified, so a missing attribute never widens what a caller sees. Callers of a non-permitted nationality have `contact_email` in `masked_filtered_attributes`. `details` are `{"evaluation": "request"|"candidate", "permitted_nationalities": ["GB"], "excluded_classifications": ["SECRET"]}`.
+A candidate with no `classification` is refused rather than assumed unclassified, so a missing attribute never widens what a caller sees. Callers of a non-permitted nationality have `contact_email` in `details.masked_filtered_attributes`. `details` are:
+
+```json
+{
+  "evaluation": "request" | "candidate",
+  "permitted_nationalities": ["GB"],
+  "excluded_classifications": ["SECRET"],
+  "allowed_filtered_attributes": [],
+  "denied_filtered_attributes": [],
+  "masked_filtered_attributes": ["contact_email"]
+}
+```
+
+The three attribute lists are always present (empty when nothing is filtered) and are read through `ProductDiscoveryPolicyDecisionDetails`.
 
 > **Note:** nationality is read from the organisation's `ORGANISATION`-scoped attributes, which are found by matching the token's `organisation` claim against `organisation.organisation_key`. If the claim (e.g. `FEDERATOR_ENV`) does not match a key in the database (e.g. `ENV`), the attributes are empty and discovery is refused with `organisation.nationality_not_permitted`.
 
@@ -718,9 +728,9 @@ Every rule has a `*_test.rego` beside it (ignored by the OPA server):
 
 | File | Covers |
 |---|---|
-| `dispatch_test.rego` | each resolution kind; each refusal (`dispatch.no_policy`, `dispatch.route_policy_missing`, `dispatch.contract_mismatch`, including a module with no contract); the reserved `fallback` name; route priority; that a rule cannot forge provenance or widen access through malformed fields |
+| `dispatch_test.rego` | each resolution kind; each refusal (`dispatch.no_policy`, `dispatch.route_policy_missing`, `dispatch.contract_mismatch`, including a module with no contract); the reserved `fallback` name; route priority; that a rule cannot forge provenance, widen access through malformed fields, or add top-level attribute lists |
 | `product/fallback_test.rego` | read-only access for a known organisation, `HEAD`, non-read methods, missing, null and empty organisation keys, and that every failing condition is reported |
-| `product/discover_test.rego` | request-level and candidate-level decisions, masking for other nationalities, a missing nationality, `SECRET` and unclassified candidates, every failing condition reported, and exact resolution through the dispatcher |
+| `product/discover_test.rego` | request-level and candidate-level decisions, masking for other nationalities (in `details`, never the envelope), a missing nationality, `SECRET` and unclassified candidates, every failing condition reported, and exact resolution through the dispatcher |
 | `product/subscribe_test.rego` | default and attribute-driven terms, attribute type strictness, optional schedule type, each deny reason, and terms on a denial |
 
 The OPA image has no shell, so run the binary against the host tree from `docker/opa`:
@@ -736,8 +746,8 @@ docker run --rm -v "$P" openpolicyagent/opa:1.20.2 fmt --diff /p   # no output =
 
 Plain JUnit 5 and Mockito unit tests, run by `./mvnw test`:
 
-- `PolicyDecisionTest` — how each shape of PDP result is read (envelope, reasons, provenance, details, bare boolean, non-object details as `policy.details_unreadable`), `deny`, `of`, `withDetails`, and how two decisions combine, typed details included.
-- `PolicyDecisionDetailsTest` — the generic form, each endpoint's details subclass bound from its rule's shape, and `empty`.
+- `PolicyDecisionTest` — how each shape of PDP result is read (envelope, reasons, provenance, details, bare boolean, non-object details as `policy.details_unreadable`), `deny`, `of`, `withDetails`, and how two decisions combine, typed details included; that top-level attribute lists are ignored.
+- `PolicyDecisionDetailsTest` — the generic form, each endpoint's details subclass bound from its rule's shape (discovery's attribute lists included), `narrowedBy` (discovery merging its lists), and `empty`.
 - `PolicyDecisionClientTest` — the request body, fail-closed behaviour, the switched-off path, and reading details into a declared type, including DENY with provenance kept when they cannot be read.
 - `PolicyDecisionSerializationTest` — the wire format, including that attribute JSON types survive and that unset fields are omitted.
 - `PolicyInputFactoryTest` — how each field is sourced, including resource and action from the target, and that a configured `Authorization` header is never forwarded.

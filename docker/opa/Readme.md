@@ -64,9 +64,6 @@ Every decision, whichever rule answered, has this shape:
 ```json
 {
   "allow": true,
-  "allowed_filtered_attributes": [],
-  "denied_filtered_attributes": [],
-  "masked_filtered_attributes": [],
   "reasons": ["dispatch.resource_fallback"],
   "policy": {"id": "product.fallback", "version": "policies.product.fallback/1.0.0", "resolution": "resource_fallback"},
   "details": {"access_level": "read"}
@@ -75,7 +72,10 @@ Every decision, whichever rule answered, has this shape:
 
 `reasons` are sorted, stable codes. `policy` is provenance added by the
 dispatcher — a rule cannot set it. `details` is rule-specific and is read into
-the type named by `@Policy(details = ...)`.
+the type named by `@Policy(details = ...)`. Attribute filtering
+(`allowed_filtered_attributes`, `denied_filtered_attributes`,
+`masked_filtered_attributes`) is not part of the envelope: a rule that needs it
+returns the lists inside its `details`, as `product/discover.rego` does.
 
 ## How resolution works
 

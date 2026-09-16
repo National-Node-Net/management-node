@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Covers the decision document every policy returns: how each shape of PDP result is read into
- * it, that its attribute lists are never null, and how a whole-request decision and a
+ * it, that its parts are never null, and how a whole-request decision and a
  * per-candidate one combine.
  */
 class PolicyDecisionTest {
@@ -30,36 +30,30 @@ class PolicyDecisionTest {
     }
 
     @Test
-    void objectResult_readsVerdictAndEveryAttributeList() throws Exception {
+    void objectResult_readsTheVerdict() throws Exception {
+        PolicyDecision<PolicyDecisionDetails> output = parseResult("{\"result\": {\"allow\": true}}");
+
+        assertThat(output.allow()).isTrue();
+        assertThat(output.verdict()).isEqualTo(PolicyVerdict.ALLOW);
+        assertThat(output).isEqualTo(PolicyDecision.ALLOW);
+    }
+
+    /** Attribute filtering is a rule's own term, so a top-level list is not part of the envelope. */
+    @Test
+    void objectResult_withTopLevelAttributeLists_ignoresThem() throws Exception {
         PolicyDecision<PolicyDecisionDetails> output = parseResult(
                 """
                 {"result": {"allow": true,
                             "allowed_filtered_attributes": ["name", "topic"],
-                            "denied_filtered_attributes": ["internal_owner"],
                             "masked_filtered_attributes": ["contact_email"]}}""");
 
-        assertThat(output.allow()).isTrue();
-        assertThat(output.verdict()).isEqualTo(PolicyVerdict.ALLOW);
-        assertThat(output.allowedFilteredAttributes()).containsExactly("name", "topic");
-        assertThat(output.deniedFilteredAttributes()).containsExactly("internal_owner");
-        assertThat(output.maskedFilteredAttributes()).containsExactly("contact_email");
-    }
-
-    @Test
-    void objectResult_withoutLists_yieldsEmptyListsRatherThanNulls() throws Exception {
-        PolicyDecision<PolicyDecisionDetails> output = parseResult("{\"result\": {\"allow\": true}}");
-
         assertThat(output).isEqualTo(PolicyDecision.ALLOW);
-        assertThat(output.allowedFilteredAttributes()).isEmpty();
-        assertThat(output.deniedFilteredAttributes()).isEmpty();
-        assertThat(output.maskedFilteredAttributes()).isEmpty();
+        assertThat(output.details().additional()).isEmpty();
     }
 
     @Test
     void objectResult_withoutAllow_isDeny() throws Exception {
-        assertThat(parseResult("{\"result\": {\"denied_filtered_attributes\": [\"a\"]}}")
-                        .allow())
-                .isFalse();
+        assertThat(parseResult("{\"result\": {\"reasons\": [\"a\"]}}").allow()).isFalse();
     }
 
     @Test
@@ -70,7 +64,7 @@ class PolicyDecisionTest {
 
     /** A policy still answering with OPA's plain boolean result keeps working. */
     @Test
-    void booleanResult_isReadAsTheVerdictWithNothingFiltered() throws Exception {
+    void booleanResult_isReadAsTheVerdictWithNothingElse() throws Exception {
         assertThat(parseResult("{\"result\": true}")).isEqualTo(PolicyDecision.ALLOW);
         assertThat(parseResult("{\"result\": false}")).isEqualTo(PolicyDecision.DENY);
     }
@@ -85,21 +79,11 @@ class PolicyDecisionTest {
     }
 
     @Test
-    void nullLists_areNormalisedToEmpty() {
-        PolicyDecision<PolicyDecisionDetails> output = PolicyDecision.of(true, null, null, null);
-
-        assertThat(output).isEqualTo(PolicyDecision.ALLOW);
-    }
-
-    @Test
     void serialisedShape_usesTheSnakeCaseNamesThePolicyReturns() throws Exception {
-        String json = objectMapper.writeValueAsString(
-                PolicyDecision.of(true, List.of("name"), List.of("internal_owner"), List.of("contact_email")));
+        String json = objectMapper.writeValueAsString(PolicyDecision.ALLOW);
 
         assertThat(json)
-                .isEqualTo("{\"allow\":true,\"allowed_filtered_attributes\":[\"name\"],"
-                        + "\"denied_filtered_attributes\":[\"internal_owner\"],"
-                        + "\"masked_filtered_attributes\":[\"contact_email\"],"
+                .isEqualTo("{\"allow\":true,"
                         + "\"reasons\":[],"
                         + "\"policy\":{\"id\":\"none\",\"version\":\"none\",\"resolution\":\"none\"},"
                         + "\"details\":{}}");
@@ -116,34 +100,19 @@ class PolicyDecisionTest {
     }
 
     @Test
-    void combinedWith_mergesListsAndLetsWithholdingWinOverDisclosure() {
-        PolicyDecision<PolicyDecisionDetails> request =
-                PolicyDecision.of(true, List.of("name", "topic"), List.of("internal_owner"), List.of());
-        PolicyDecision<PolicyDecisionDetails> candidate =
-                PolicyDecision.of(true, List.of("name", "source"), List.of(), List.of("topic"));
-
-        PolicyDecision<PolicyDecisionDetails> combined = request.combinedWith(candidate);
-
-        // "topic" is allowed by the request decision but masked by the candidate's, so it is not
-        // left in the allowed list; the same holds for anything either decision denies.
-        assertThat(combined.allowedFilteredAttributes()).containsExactly("name", "source");
-        assertThat(combined.deniedFilteredAttributes()).containsExactly("internal_owner");
-        assertThat(combined.maskedFilteredAttributes()).containsExactly("topic");
-    }
-
-    @Test
     void combinedWith_null_leavesTheDecisionUnchanged() {
-        PolicyDecision<PolicyDecisionDetails> decision = PolicyDecision.of(true, List.of("name"), List.of(), List.of());
+        PolicyDecision<PolicyDecisionDetails> decision =
+                new PolicyDecision<>(true, List.of("r"), SUBSCRIBE, new PolicyDecisionDetails(Map.of("a", 1)));
 
         assertThat(decision.combinedWith(null)).isEqualTo(decision);
     }
 
     @Test
-    void attributeLists_areImmutable() {
+    void reasons_areImmutable() {
         PolicyDecision<PolicyDecisionDetails> output =
-                PolicyDecision.of(true, Arrays.asList("name"), List.of(), List.of());
+                new PolicyDecision<>(true, Arrays.asList("r"), null, new PolicyDecisionDetails());
 
-        assertThat(output.allowedFilteredAttributes()).isUnmodifiable();
+        assertThat(output.reasons()).isUnmodifiable();
     }
 
     private static final PolicyProvenance FALLBACK =
@@ -199,7 +168,7 @@ class PolicyDecisionTest {
     @Test
     void nullComponents_areNormalised() {
         PolicyDecision<PolicyDecisionDetails> output =
-                new PolicyDecision<>(true, null, null, null, null, null, new PolicyDecisionDetails());
+                new PolicyDecision<>(true, null, null, new PolicyDecisionDetails());
 
         assertThat(output).isEqualTo(PolicyDecision.ALLOW);
         assertThat(output.reasons()).isUnmodifiable();
@@ -207,8 +176,7 @@ class PolicyDecisionTest {
 
     @Test
     void nullDetails_areRefused() {
-        assertThatThrownBy(() -> new PolicyDecision<>(true, null, null, null, null, null, null))
-                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new PolicyDecision<>(true, null, null, null)).isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -240,40 +208,20 @@ class PolicyDecisionTest {
 
     @Test
     void withDetails_replacesOnlyTheDetails() {
-        PolicyDecision<PolicyDecisionDetails> output = new PolicyDecision<>(
-                true,
-                List.of("name"),
-                List.of(),
-                List.of(),
-                List.of("r"),
-                SUBSCRIBE,
-                new PolicyDecisionDetails(Map.of("a", 1)));
+        PolicyDecision<PolicyDecisionDetails> output =
+                new PolicyDecision<>(true, List.of("r"), SUBSCRIBE, new PolicyDecisionDetails(Map.of("a", 1)));
 
         PolicyDecision<Grant> typed = output.withDetails(new Grant(false, 7));
 
-        assertThat(typed)
-                .isEqualTo(new PolicyDecision<>(
-                        true, List.of("name"), List.of(), List.of(), List.of("r"), SUBSCRIBE, new Grant(false, 7)));
+        assertThat(typed).isEqualTo(new PolicyDecision<>(true, List.of("r"), SUBSCRIBE, new Grant(false, 7)));
     }
 
     @Test
     void combinedWith_mergesReasonsSortedAndDeduplicated() {
-        PolicyDecision<PolicyDecisionDetails> request = new PolicyDecision<>(
-                true,
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of("z.last", "a.first"),
-                FALLBACK,
-                new PolicyDecisionDetails());
-        PolicyDecision<PolicyDecisionDetails> candidate = new PolicyDecision<>(
-                false,
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of("m.middle", "a.first"),
-                SUBSCRIBE,
-                new PolicyDecisionDetails());
+        PolicyDecision<PolicyDecisionDetails> request =
+                new PolicyDecision<>(true, List.of("z.last", "a.first"), FALLBACK, new PolicyDecisionDetails());
+        PolicyDecision<PolicyDecisionDetails> candidate =
+                new PolicyDecision<>(false, List.of("m.middle", "a.first"), SUBSCRIBE, new PolicyDecisionDetails());
 
         assertThat(request.combinedWith(candidate).reasons()).containsExactly("a.first", "m.middle", "z.last");
     }
@@ -281,21 +229,9 @@ class PolicyDecisionTest {
     @Test
     void combinedWith_prefersTheNarrowerDecisionsProvenanceAndDetailsWhenPresent() {
         PolicyDecision<PolicyDecisionDetails> request = new PolicyDecision<>(
-                true,
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of(),
-                FALLBACK,
-                new PolicyDecisionDetails(Map.of("access_level", "read")));
+                true, List.of(), FALLBACK, new PolicyDecisionDetails(Map.of("access_level", "read")));
         PolicyDecision<PolicyDecisionDetails> candidate = new PolicyDecision<>(
-                true,
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of(),
-                SUBSCRIBE,
-                new PolicyDecisionDetails(Map.of("requires_approval", true)));
+                true, List.of(), SUBSCRIBE, new PolicyDecisionDetails(Map.of("requires_approval", true)));
 
         PolicyDecision<PolicyDecisionDetails> combined = request.combinedWith(candidate);
 
@@ -306,13 +242,7 @@ class PolicyDecisionTest {
     @Test
     void combinedWith_keepsThisDecisionsProvenanceAndDetailsWhenTheOtherHasNone() {
         PolicyDecision<PolicyDecisionDetails> request = new PolicyDecision<>(
-                true,
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of(),
-                FALLBACK,
-                new PolicyDecisionDetails(Map.of("access_level", "read")));
+                true, List.of(), FALLBACK, new PolicyDecisionDetails(Map.of("access_level", "read")));
 
         PolicyDecision<PolicyDecisionDetails> combined = request.combinedWith(PolicyDecision.ALLOW);
 

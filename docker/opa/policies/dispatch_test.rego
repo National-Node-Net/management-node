@@ -22,9 +22,6 @@ allowing_module := {
 	"version": "policies.mock/1.0.0",
 	"decision": {
 		"allow": true,
-		"allowed_filtered_attributes": [],
-		"denied_filtered_attributes": [],
-		"masked_filtered_attributes": [],
 		"reasons": [],
 		"details": {},
 	},
@@ -111,9 +108,6 @@ test_no_policy_when_even_the_global_fallback_is_missing if {
 
 	decision == {
 		"allow": false,
-		"allowed_filtered_attributes": [],
-		"denied_filtered_attributes": [],
-		"masked_filtered_attributes": [],
 		"reasons": ["dispatch.no_policy"],
 		"policy": {"id": "none", "version": "none", "resolution": "none"},
 		"details": {},
@@ -182,6 +176,7 @@ test_rule_cannot_forge_provenance_or_widen_through_malformed_fields if {
 		"allow": "yes",
 		"reasons": "not-a-list",
 		"details": ["not", "an", "object"],
+		"allowed_filtered_attributes": ["everything"],
 		"policy": {"id": "someone.else", "version": "x", "resolution": "exact"},
 	}})
 
@@ -191,7 +186,7 @@ test_rule_cannot_forge_provenance_or_widen_through_malformed_fields if {
 	decision.allow == false
 	decision.reasons == []
 	decision.details == {}
-	decision.allowed_filtered_attributes == []
+	not "allowed_filtered_attributes" in object.keys(decision)
 	decision.policy == {"id": "product.view", "version": "policies.mock/1.0.0", "resolution": "exact"}
 }
 
@@ -205,8 +200,7 @@ test_declared_rule_with_undefined_decision_denies_without_fallback if {
 				"contract": "management-node.decision/1",
 				"version": "policies.product.fallback/1.0.0",
 				"decision": {
-					"allow": true, "allowed_filtered_attributes": [], "denied_filtered_attributes": [],
-					"masked_filtered_attributes": [], "reasons": [], "details": {},
+					"allow": true, "reasons": [], "details": {},
 				},
 			},
 		},

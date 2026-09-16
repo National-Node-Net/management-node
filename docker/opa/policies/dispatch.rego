@@ -148,9 +148,6 @@ route := ordered[0][2] if {
 # leaking through. `allow` must be literally true.
 delegated := {
 	"allow": object.get(answer, "allow", false) == true,
-	"allowed_filtered_attributes": list_field("allowed_filtered_attributes"),
-	"denied_filtered_attributes": list_field("denied_filtered_attributes"),
-	"masked_filtered_attributes": list_field("masked_filtered_attributes"),
 	"reasons": sort({reason |
 		some reason in array.concat(list_field("reasons"), resolution_reasons)
 	}),

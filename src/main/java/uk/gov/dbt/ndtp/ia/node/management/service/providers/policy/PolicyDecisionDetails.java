@@ -71,8 +71,29 @@ public class PolicyDecisionDetails {
     }
 
     @JsonAnySetter
-    void putAdditional(String name, Object value) {
+    protected void putAdditional(String name, Object value) {
         additional.put(name, value);
+    }
+
+    /**
+     * These details narrowed by those of a more specific decision of the same type - e.g. a
+     * request decision's details by a candidate's - as used by
+     * {@link PolicyDecision#combinedWith(PolicyDecision)}.
+     *
+     * <p>By default the narrower details win when they carry anything, and these are kept
+     * otherwise. A subclass whose fields must be merged rather than replaced overrides this, and
+     * must return an instance of its own type.
+     *
+     * @param narrower the more specific decision's details; null leaves these unchanged
+     * @return the combined details, of this instance's type
+     */
+    public PolicyDecisionDetails narrowedBy(PolicyDecisionDetails narrower) {
+        return narrower == null || narrower.isEmpty() ? this : narrower;
+    }
+
+    /** Whether these details equal {@link #empty(Class) empty} details of their own type. */
+    protected boolean isEmpty() {
+        return equals(empty(getClass()));
     }
 
     /**
