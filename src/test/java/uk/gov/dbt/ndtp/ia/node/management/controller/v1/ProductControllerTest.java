@@ -312,12 +312,15 @@ class ProductControllerTest {
     }
 
     @Test
-    void subscribe_withoutProductId_returns400() throws Exception {
+    void subscribe_withoutProductId_returns400NamingTheFieldWithoutCodeDetails() throws Exception {
         mockMvc.perform(post("/api/v1/product/subscribe")
                         .requestAttr(PolicyDecision.REQUEST_ATTRIBUTE, subscribeDecision(false))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"scheduleType\": \"cron\"}"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Invalid request: productId must not be null"))
+                .andExpect(jsonPath("$.errorId").isNotEmpty());
     }
 
     // ---------------------------------------------------------------------------------------

@@ -151,17 +151,18 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void handleNoResourceFoundException_shouldReturnNotFoundStatus() {
+    void handleNoResourceFoundException_shouldReturnNotFoundStatus() throws Exception {
         // Arrange
         String path = "/api/v1/invalid";
         NoResourceFoundException exception = new NoResourceFoundException(HttpMethod.GET, path);
 
         // Act
-        ResponseEntity<ErrorResponse> response = exceptionHandler.handleNoResourceFoundException(exception, webRequest);
+        ResponseEntity<Object> response = exceptionHandler.handleException(exception, webRequest);
 
         // Assert
+        assertNotNull(response);
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        ErrorResponse errorResponse = response.getBody();
+        ErrorResponse errorResponse = (ErrorResponse) response.getBody();
         assertNotNull(errorResponse);
         assertEquals(HttpStatus.NOT_FOUND.value(), errorResponse.getStatus());
         assertEquals("Resource not found: " + path, errorResponse.getMessage());

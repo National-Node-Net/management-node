@@ -6,16 +6,37 @@
 
 package uk.gov.dbt.ndtp.ia.node.management.exception.handlers;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.TypeMismatchException;
+import org.springframework.context.MessageSourceResolvable;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.AccessRejectedException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.AuthenticationProcessingException;
@@ -24,22 +45,29 @@ import uk.gov.dbt.ndtp.ia.node.management.exception.ErrorResponse;
 import uk.gov.dbt.ndtp.ia.node.management.exception.PkiException;
 
 /**
- * Global exception handler for the application.
- * Handles all exceptions thrown by controllers and provides appropriate responses
- * without exposing stack traces to clients.
+ * Turns every exception a controller throws into an {@link ErrorResponse}: a status, a message a
+ * caller can act on, and an error id.
+ *
+ * <p>The response never carries framework or code details - no class names, method signatures,
+ * rejected values or exception messages from libraries. The full exception, stack trace included,
+ * is logged instead under the same error id, so a response can be traced to its log line:
+ * {@code ERROR} for 5xx, {@code WARN} for a bad request, and {@code DEBUG} for authentication and
+ * authorisation refusals, which are routine and logged where they are decided.
+ *
+ * <p>Spring MVC's own exceptions (validation, unreadable bodies, type mismatches, missing
+ * parameters, unsupported methods and media types, unknown paths, ...) are mapped to their status
+ * by {@link ResponseEntityExceptionHandler}; {@link #handleExceptionInternal} replaces its body
+ * with an {@link ErrorResponse} and a message from {@link #clientMessage}.
  */
 @RestControllerAdvice
 @Slf4j
-public class GlobalExceptionHandler {
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-    /**
-     * Generates a unique error ID for tracking and correlation.
-     *
-     * @return a unique UUID string
-     */
-    private String generateErrorId() {
-        return UUID.randomUUID().toString();
-    }
+    static final String INTERNAL_ERROR_MESSAGE = "An internal server error occurred";
+
+    // ---------------------------------------------------------------------------------------
+    // Application exceptions
+    // ---------------------------------------------------------------------------------------
 
     /**
      * Handles AuthenticationProcessingException and its subclasses.
@@ -54,16 +82,13 @@ public class GlobalExceptionHandler {
 
         String errorId = generateErrorId();
         log.debug(
-                "Authentication processing exception occurred for client {}, error_id={} , path={}: ",
+                "Authentication processing exception occurred for client {}, error_id={}, path={}",
                 ex.getClientId(),
                 errorId,
-                request.getContextPath(),
+                request.getDescription(false),
                 ex);
 
-        ErrorResponse errorResponse =
-                new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), "Authentication error: " + ex.getMessage(), errorId);
-
-        return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
+        return respond(HttpStatus.UNAUTHORIZED, "Authentication error: " + ex.getMessage(), errorId);
     }
 
     /**
@@ -76,13 +101,8 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(AccessRejectedException.class)
     public ResponseEntity<ErrorResponse> handleAccessRejectedException(AccessRejectedException ex, WebRequest request) {
-        log.debug(
-                "Access rejected, error_id={}, path={}: {}",
-                ex.getErrorId(),
-                request.getDescription(false),
-                ex.getMessage());
-        ErrorResponse errorResponse = new ErrorResponse(HttpStatus.FORBIDDEN.value(), ex.getMessage(), ex.getErrorId());
-        return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
+        log.debug("Access rejected, error_id={}, path={}", ex.getErrorId(), request.getDescription(false), ex);
+        return respond(HttpStatus.FORBIDDEN, ex.getMessage(), ex.getErrorId());
     }
 
     @ExceptionHandler(AuthorizationDeniedException.class)
@@ -90,32 +110,9 @@ public class GlobalExceptionHandler {
             AuthorizationDeniedException ex, WebRequest request) {
 
         String errorId = generateErrorId();
-        log.debug("Access denied, error_id={}, path={}: {}", errorId, request.getDescription(false), ex.getMessage());
+        log.debug("Access denied, error_id={}, path={}", errorId, request.getDescription(false), ex);
 
-        ErrorResponse errorResponse = new ErrorResponse(
-                HttpStatus.FORBIDDEN.value(), "Access denied: insufficient permissions for this operation", errorId);
-
-        return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
-    }
-
-    /**
-     * Handles NoResourceFoundException.
-     *
-     * @param ex      the exception
-     * @param request the current request
-     * @return a ResponseEntity with a 404 error message
-     */
-    @ExceptionHandler(NoResourceFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNoResourceFoundException(
-            NoResourceFoundException ex, WebRequest request) {
-
-        String errorId = generateErrorId();
-        log.debug("Resource not found, error_id={}, path={}: ", errorId, request.getContextPath(), ex);
-
-        ErrorResponse errorResponse =
-                new ErrorResponse(HttpStatus.NOT_FOUND.value(), "Resource not found: " + ex.getResourcePath(), errorId);
-
-        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+        return respond(HttpStatus.FORBIDDEN, "Access denied: insufficient permissions for this operation", errorId);
     }
 
     /**
@@ -130,86 +127,22 @@ public class GlobalExceptionHandler {
             CertificateSigningException ex, WebRequest request) {
 
         String errorId = generateErrorId();
-        log.warn(
-                "Certificate signing rejected, error_id={}, path={}: {}",
-                errorId,
-                request.getDescription(false),
-                ex.getMessage());
+        log.warn("Certificate signing rejected, error_id={}, path={}", errorId, request.getDescription(false), ex);
 
-        ErrorResponse errorResponse = new ErrorResponse(HttpStatus.FORBIDDEN.value(), ex.getMessage(), errorId);
-
-        return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
+        return respond(HttpStatus.FORBIDDEN, ex.getMessage(), errorId);
     }
 
     @ExceptionHandler(PkiException.class)
     public ResponseEntity<ErrorResponse> handlePkiException(PkiException ex, WebRequest request) {
 
         String errorId = generateErrorId();
-        log.error(
-                "PKI exception occurred, error_id={}, path={}: {}",
-                errorId,
-                request.getDescription(false),
-                ex.getMessage(),
-                ex);
+        log.error("PKI exception occurred, error_id={}, path={}", errorId, request.getDescription(false), ex);
 
-        ErrorResponse errorResponse = new ErrorResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(), "PKI/Certificate error: " + ex.getMessage(), errorId);
-
-        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        return respond(HttpStatus.INTERNAL_SERVER_ERROR, "PKI/Certificate error: " + ex.getMessage(), errorId);
     }
 
     /**
-     * Handles {@code @Valid} request body validation failures (e.g. field size/blank
-     * constraints) with a 400, rather than falling through to the 500 handler below.
-     *
-     * @param ex      the exception
-     * @param request the current request
-     * @return a ResponseEntity with a 400 error message
-     */
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(
-            MethodArgumentNotValidException ex, WebRequest request) {
-
-        String errorId = generateErrorId();
-        log.debug(
-                "Request validation failed, error_id={}, path={}: {}",
-                errorId,
-                request.getDescription(false),
-                ex.getMessage());
-
-        ErrorResponse errorResponse =
-                new ErrorResponse(HttpStatus.BAD_REQUEST.value(), "Invalid request: " + ex.getMessage(), errorId);
-
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
-    }
-
-    /**
-     * Handles malformed/unreadable request bodies (e.g. invalid JSON, wrong field types)
-     * with a 400, rather than falling through to the 500 handler below.
-     *
-     * @param ex      the exception
-     * @param request the current request
-     * @return a ResponseEntity with a 400 error message
-     */
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(
-            HttpMessageNotReadableException ex, WebRequest request) {
-
-        String errorId = generateErrorId();
-        log.debug(
-                "Malformed request body, error_id={}, path={}: {}",
-                errorId,
-                request.getDescription(false),
-                ex.getMessage());
-
-        ErrorResponse errorResponse =
-                new ErrorResponse(HttpStatus.BAD_REQUEST.value(), "Invalid request body", errorId);
-
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
-    }
-
-    /**
-     * Handles RuntimeException.
+     * Handles RuntimeException not handled more specifically.
      *
      * @param ex      the exception
      * @param request the current request
@@ -219,12 +152,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException ex, WebRequest request) {
 
         String errorId = generateErrorId();
-        log.debug("Runtime exception occurred, error_id={}, path={}: ", errorId, request.getContextPath(), ex);
+        log.error("Unhandled exception, error_id={}, path={}", errorId, request.getDescription(false), ex);
 
-        ErrorResponse errorResponse = new ErrorResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(), "An internal server error occurred", errorId);
-
-        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        return respond(HttpStatus.INTERNAL_SERVER_ERROR, INTERNAL_ERROR_MESSAGE, errorId);
     }
 
     /**
@@ -238,11 +168,156 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleAllExceptions(Exception ex, WebRequest request) {
 
         String errorId = generateErrorId();
-        log.debug("Runtime exception occurred, error_id={}, path={}: ", errorId, request.getContextPath(), ex);
+        log.error("Unhandled exception, error_id={}, path={}", errorId, request.getDescription(false), ex);
 
-        ErrorResponse errorResponse =
-                new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "An unexpected error occurred", errorId);
+        return respond(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred", errorId);
+    }
 
-        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+    // ---------------------------------------------------------------------------------------
+    // Spring MVC exceptions
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * Every Spring MVC exception handled by {@link ResponseEntityExceptionHandler} ends here, with
+     * the status and headers (e.g. {@code Allow}) it chose. Logs the exception in full and answers
+     * with an {@link ErrorResponse} instead of the framework's problem detail.
+     */
+    @Override
+    protected ResponseEntity<Object> handleExceptionInternal(
+            Exception ex, Object body, HttpHeaders headers, HttpStatusCode statusCode, WebRequest request) {
+
+        String errorId = generateErrorId();
+        if (statusCode.is5xxServerError()) {
+            log.error(
+                    "Request failed with {}, error_id={}, path={}",
+                    statusCode.value(),
+                    errorId,
+                    request.getDescription(false),
+                    ex);
+        } else {
+            log.warn(
+                    "Request rejected with {}, error_id={}, path={}",
+                    statusCode.value(),
+                    errorId,
+                    request.getDescription(false),
+                    ex);
+        }
+        ErrorResponse errorResponse = new ErrorResponse(statusCode.value(), clientMessage(ex, statusCode), errorId);
+        return super.handleExceptionInternal(ex, errorResponse, headers, statusCode, request);
+    }
+
+    /**
+     * The message a caller sees for a Spring MVC exception. Names only what the caller sent - a
+     * field, parameter, header, method or content type - and the constraint it broke, never the
+     * value, the handler or the exception's own message.
+     */
+    static String clientMessage(Exception ex, HttpStatusCode statusCode) {
+        return switch (ex) {
+            case MethodArgumentNotValidException e -> "Invalid request: " + describe(e.getBindingResult());
+            case HandlerMethodValidationException e -> "Invalid request: " + describe(e);
+            case HttpMessageNotReadableException e -> "Invalid request body: " + describe(e);
+            case MethodArgumentTypeMismatchException e -> "Invalid value for '" + e.getName() + "'";
+            case TypeMismatchException e -> "Invalid value for '" + e.getPropertyName() + "'";
+            case MissingServletRequestParameterException e ->
+                "Missing required parameter '" + e.getParameterName() + "'";
+            case MissingRequestHeaderException e -> "Missing required header '" + e.getHeaderName() + "'";
+            case HttpRequestMethodNotSupportedException e ->
+                "HTTP method " + e.getMethod() + " is not supported for this endpoint";
+            case HttpMediaTypeNotSupportedException e ->
+                e.getContentType() == null
+                        ? "Content type is not supported"
+                        : "Content type '" + e.getContentType() + "' is not supported";
+            case HttpMediaTypeNotAcceptableException e -> "The requested response format is not supported";
+            case NoResourceFoundException e -> "Resource not found: " + e.getResourcePath();
+            case NoHandlerFoundException e -> "Resource not found: " + e.getRequestURL();
+            case MaxUploadSizeExceededException e -> "Request is too large";
+            default -> statusCode.is5xxServerError() ? INTERNAL_ERROR_MESSAGE : reasonPhrase(statusCode);
+        };
+    }
+
+    /** Field errors as "productId must not be null", object errors as their message alone. */
+    private static String describe(BindingResult bindingResult) {
+        Set<String> problems = new LinkedHashSet<>();
+        bindingResult.getFieldErrors().forEach(error -> problems.add(describe(error)));
+        bindingResult.getGlobalErrors().forEach(error -> problems.add(error.getDefaultMessage()));
+        return join(problems);
+    }
+
+    /** Constraint violations on handler parameters, e.g. an {@code @Size} on a path variable. */
+    private static String describe(HandlerMethodValidationException ex) {
+        Set<String> problems = new LinkedHashSet<>();
+        ex.getParameterValidationResults().forEach(result -> {
+            String parameter = result.getMethodParameter().getParameterName();
+            for (MessageSourceResolvable error : result.getResolvableErrors()) {
+                problems.add(
+                        error instanceof FieldError fieldError
+                                ? describe(fieldError)
+                                : (parameter == null ? "" : parameter + " ") + error.getDefaultMessage());
+            }
+        });
+        return join(problems);
+    }
+
+    /**
+     * Why a body could not be read, in the caller's terms: missing, not JSON, or a field of the
+     * wrong type, named by its path (e.g. {@code filters.key}).
+     */
+    private static String describe(HttpMessageNotReadableException ex) {
+        for (Throwable cause = ex.getCause(); cause != null; cause = cause.getCause()) {
+            if (cause instanceof JsonParseException) {
+                return "malformed JSON";
+            }
+            if (cause instanceof JsonMappingException mapping
+                    && !mapping.getPath().isEmpty()) {
+                return "'" + path(mapping) + "' has an invalid value";
+            }
+        }
+        String message = ex.getMessage();
+        if (message != null && message.startsWith("Required request body is missing")) {
+            return "request body is missing";
+        }
+        return "the body could not be read";
+    }
+
+    private static String describe(FieldError error) {
+        return error.getField() + " " + error.getDefaultMessage();
+    }
+
+    private static String path(JsonMappingException ex) {
+        StringBuilder path = new StringBuilder();
+        for (JsonMappingException.Reference reference : ex.getPath()) {
+            if (reference.getFieldName() != null) {
+                path.append(path.isEmpty() ? "" : ".").append(reference.getFieldName());
+            } else if (reference.getIndex() >= 0) {
+                path.append('[').append(reference.getIndex()).append(']');
+            }
+        }
+        return path.toString();
+    }
+
+    private static String join(Set<String> problems) {
+        return problems.isEmpty()
+                ? "the request is not valid"
+                : problems.stream().collect(Collectors.joining("; "));
+    }
+
+    private static String reasonPhrase(HttpStatusCode statusCode) {
+        HttpStatus status = HttpStatus.resolve(statusCode.value());
+        return status == null ? "Request could not be processed" : status.getReasonPhrase();
+    }
+
+    // ---------------------------------------------------------------------------------------
+
+    private static ResponseEntity<ErrorResponse> respond(HttpStatus status, String message, String errorId) {
+        return new ResponseEntity<>(new ErrorResponse(status.value(), message, errorId), status);
+    }
+
+    /**
+     * Generates a unique error ID for tracking and correlation.
+     *
+     * @return a unique UUID string
+     */
+    private static String generateErrorId() {
+        return UUID.randomUUID().toString();
     }
 }
