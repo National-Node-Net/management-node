@@ -18,6 +18,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,9 +33,12 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.method.HandlerMethod;
 import uk.gov.dbt.ndtp.ia.node.management.model.jwt.EnhancedPrincipal;
-import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecision;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.DefaultPolicyDecisionOutput;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecisionClient;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInput;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInputFactory;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInputFixture;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyRequestBodyReader;
 
 class PolicyEnforcementInterceptorTest {
 
@@ -55,6 +60,12 @@ class PolicyEnforcementInterceptorTest {
     @Mock
     private Authentication authentication;
 
+    @Mock
+    private PolicyInputFactory policyInputFactory;
+
+    @Mock
+    private PolicyRequestBodyReader policyRequestBodyReader;
+
     private PolicyEnforcementInterceptor interceptor;
     private AutoCloseable closeable;
     private Logger logger;
@@ -63,7 +74,14 @@ class PolicyEnforcementInterceptorTest {
     @BeforeEach
     void setUp() {
         closeable = MockitoAnnotations.openMocks(this);
-        interceptor = new PolicyEnforcementInterceptor(policyDecisionClient, new ObjectMapper());
+        interceptor = new PolicyEnforcementInterceptor(
+                policyDecisionClient, policyInputFactory, policyRequestBodyReader, new ObjectMapper());
+        // The factory is unit-tested separately; here it only has to mirror the request under test.
+        lenient().when(policyInputFactory.create(any(), any())).thenAnswer(invocation -> {
+            HttpServletRequest intercepted = invocation.getArgument(0);
+            return PolicyInputFixture.of(
+                    "client-1", "configuration", "producer", intercepted.getRequestURI(), intercepted.getMethod());
+        });
         SecurityContextHolder.setContext(securityContext);
 
         logger = (Logger) LoggerFactory.getLogger(PolicyEnforcementInterceptor.class);
@@ -122,7 +140,7 @@ class PolicyEnforcementInterceptorTest {
         setupAuthentication("client-1");
         when(request.getRequestURI()).thenReturn("/api/v1/configuration/producer");
         when(request.getMethod()).thenReturn("GET");
-        when(policyDecisionClient.evaluate(any(PolicyInput.class))).thenReturn(PolicyDecision.ALLOW);
+        when(policyDecisionClient.evaluate(any(PolicyInput.class))).thenReturn(DefaultPolicyDecisionOutput.ALLOW);
 
         assertThat(interceptor.preHandle(request, response, handlerMethod)).isTrue();
         verify(response, never()).setStatus(anyInt());
@@ -133,7 +151,7 @@ class PolicyEnforcementInterceptorTest {
         setupAuthentication("client-1");
         when(request.getRequestURI()).thenReturn("/api/v1/configuration/producer");
         when(request.getMethod()).thenReturn("GET");
-        when(policyDecisionClient.evaluate(any(PolicyInput.class))).thenReturn(PolicyDecision.DENY);
+        when(policyDecisionClient.evaluate(any(PolicyInput.class))).thenReturn(DefaultPolicyDecisionOutput.DENY);
         StringWriter sw = setupResponseWriter();
 
         assertThat(interceptor.preHandle(request, response, handlerMethod)).isFalse();
@@ -142,32 +160,66 @@ class PolicyEnforcementInterceptorTest {
     }
 
     @Test
-    void policyInput_includesClientResourceAndAction() throws Exception {
+    void pdpAllows_publishesTheDecisionForTheHandler() throws Exception {
         setupAuthentication("client-1");
-        when(request.getRequestURI()).thenReturn("/api/v1/configuration/consumer");
+        when(request.getRequestURI()).thenReturn("/api/v1/configuration/producer");
         when(request.getMethod()).thenReturn("GET");
-        when(policyDecisionClient.evaluate(any(PolicyInput.class))).thenReturn(PolicyDecision.ALLOW);
+        DefaultPolicyDecisionOutput decision =
+                new DefaultPolicyDecisionOutput(true, List.of("name"), List.of("internal_owner"), List.of("email"));
+        when(policyDecisionClient.evaluate(any(PolicyInput.class))).thenReturn(decision);
 
-        interceptor.preHandle(request, response, handlerMethod);
+        assertThat(interceptor.preHandle(request, response, handlerMethod)).isTrue();
 
-        verify(policyDecisionClient)
-                .evaluate(new PolicyInput(
-                        "client-1", "test-organisation", null, "/api/v1/configuration/consumer", "GET"));
+        // Published whole, not reduced to allow/deny: the handler acts on the attribute lists too.
+        verify(request).setAttribute(DefaultPolicyDecisionOutput.REQUEST_ATTRIBUTE, decision);
     }
 
     @Test
-    void policyInput_includesBothTokenOrganisationAndCertificateOrganisationId() throws Exception {
+    void pdpDenies_publishesNoDecision() throws Exception {
         setupAuthentication("client-1");
-        when(request.getRequestURI()).thenReturn("/api/v1/configuration/consumer");
+        when(request.getRequestURI()).thenReturn("/api/v1/configuration/producer");
         when(request.getMethod()).thenReturn("GET");
-        when(request.getAttribute("ndtp.organisationId")).thenReturn(42L);
-        when(policyDecisionClient.evaluate(any(PolicyInput.class))).thenReturn(PolicyDecision.ALLOW);
+        when(policyDecisionClient.evaluate(any(PolicyInput.class))).thenReturn(DefaultPolicyDecisionOutput.DENY);
+        setupResponseWriter();
+
+        assertThat(interceptor.preHandle(request, response, handlerMethod)).isFalse();
+
+        verify(request, never()).setAttribute(eq(DefaultPolicyDecisionOutput.REQUEST_ATTRIBUTE), any());
+    }
+
+    @Test
+    void policyInput_isBuiltByTheFactoryAndForwardedToThePdp() throws Exception {
+        setupAuthentication("client-1");
+        PolicyInput built = PolicyInputFixture.of("client-1", "configuration", "consumer");
+        doReturn(built).when(policyInputFactory).create(any(), any());
+        when(policyDecisionClient.evaluate(any(PolicyInput.class))).thenReturn(DefaultPolicyDecisionOutput.ALLOW);
 
         interceptor.preHandle(request, response, handlerMethod);
 
-        verify(policyDecisionClient)
-                .evaluate(new PolicyInput(
-                        "client-1", "test-organisation", "42", "/api/v1/configuration/consumer", "GET"));
+        verify(policyDecisionClient).evaluate(built);
+    }
+
+    @Test
+    void bufferedBody_reachesThePolicyInput() throws Exception {
+        setupAuthentication("client-1");
+        Map<String, Object> body = Map.of("text", "this is sample text");
+        when(policyRequestBodyReader.read(request)).thenReturn(body);
+        when(policyDecisionClient.evaluate(any(PolicyInput.class))).thenReturn(DefaultPolicyDecisionOutput.ALLOW);
+
+        interceptor.preHandle(request, response, handlerMethod);
+
+        verify(policyInputFactory).create(request, body);
+    }
+
+    @Test
+    void unbufferedRequest_buildsTheInputWithNoBodyRatherThanFailing() throws Exception {
+        setupAuthentication("client-1");
+        when(policyRequestBodyReader.read(request)).thenReturn(null);
+        when(policyDecisionClient.evaluate(any(PolicyInput.class))).thenReturn(DefaultPolicyDecisionOutput.ALLOW);
+
+        interceptor.preHandle(request, response, handlerMethod);
+
+        verify(policyInputFactory).create(request, null);
     }
 
     @Test
@@ -175,7 +227,7 @@ class PolicyEnforcementInterceptorTest {
         setupAuthentication("client-1");
         when(request.getRequestURI()).thenReturn("/api/v1/configuration/producer");
         when(request.getMethod()).thenReturn("GET");
-        when(policyDecisionClient.evaluate(any(PolicyInput.class))).thenReturn(PolicyDecision.ALLOW);
+        when(policyDecisionClient.evaluate(any(PolicyInput.class))).thenReturn(DefaultPolicyDecisionOutput.ALLOW);
 
         interceptor.preHandle(request, response, handlerMethod);
 
@@ -195,7 +247,7 @@ class PolicyEnforcementInterceptorTest {
         setupAuthentication("client-1");
         when(request.getRequestURI()).thenReturn("/api/v1/configuration/producer");
         when(request.getMethod()).thenReturn("GET");
-        when(policyDecisionClient.evaluate(any(PolicyInput.class))).thenReturn(PolicyDecision.DENY);
+        when(policyDecisionClient.evaluate(any(PolicyInput.class))).thenReturn(DefaultPolicyDecisionOutput.DENY);
         StringWriter sw = setupResponseWriter();
 
         interceptor.preHandle(request, response, handlerMethod);

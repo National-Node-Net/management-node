@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
- * © Crown Copyright 2025. This work has been developed by the National Digital Twin Programme and is legally
+ * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
  * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 
@@ -55,7 +55,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
      * @param name optional case-insensitive contains filter on product name
      * @param topic optional case-insensitive contains filter on product topic
      * @param type optional case-insensitive exact filter on product type name
-     * @param pageable bounds the candidate set size (e.g. {@code PageRequest.of(0, maxCandidates)})
+     * @param pageable bounds the candidate set size (e.g. {@code PageRequest.of(0, 200)})
      * @return candidate products matching the filters, bounded by {@code pageable}
      */
     default List<Product> findDiscoveryCandidates(String name, String topic, String type, Pageable pageable) {

@@ -48,23 +48,34 @@ class WebConfigTest {
     }
 
     private WebConfig configWithProtectedPaths(List<String> protectedPaths) {
+        return configWithProtectedPaths(protectedPaths, true);
+    }
+
+    private WebConfig configWithProtectedPaths(List<String> protectedPaths, boolean opaEnabled) {
         OpaProperties opaProperties = new OpaProperties(
+                opaEnabled,
                 "https://opa.example.internal",
-                "/v1/data/management_node/allow",
+                "/v1/data/management_node/decision",
                 Duration.ofSeconds(2),
                 Duration.ofSeconds(3),
-                protectedPaths);
-        return new WebConfig(certificateValidationInterceptor, policyEnforcementInterceptor, opaProperties);
+                protectedPaths,
+                List.of("content-type"),
+                false,
+                false);
+        return new WebConfig(
+                certificateValidationInterceptor,
+                policyEnforcementInterceptor,
+                new PolicyDecisionOutputArgumentResolver(),
+                opaProperties);
     }
 
     @Test
-    void certificateEndpoints_excludedFromCertificateValidation() {
+    void certificateValidation_registeredOnTheConfiguredPath() {
         config = configWithProtectedPaths(List.of("/api/v1/configuration/**"));
         config.addInterceptors(registry);
 
         verify(registry).addInterceptor(certificateValidationInterceptor);
-        verify(registration).addPathPatterns("/api/**");
-        verify(registration).excludePathPatterns("/api/v1/certificate/**");
+        verify(registration).addPathPatterns("/api/configuration");
     }
 
     @Test
@@ -81,6 +92,16 @@ class WebConfigTest {
         config = configWithProtectedPaths(List.of());
         config.addInterceptors(registry);
 
+        verify(registry, never()).addInterceptor(policyEnforcementInterceptor);
+    }
+
+    @Test
+    void opaDisabled_doesNotRegisterThePolicyEnforcementPoint() {
+        config = configWithProtectedPaths(List.of("/api/v1/configuration/**"), false);
+        config.addInterceptors(registry);
+
+        // Certificate validation is unaffected; only policy enforcement is switched off.
+        verify(registry).addInterceptor(certificateValidationInterceptor);
         verify(registry, never()).addInterceptor(policyEnforcementInterceptor);
     }
 }

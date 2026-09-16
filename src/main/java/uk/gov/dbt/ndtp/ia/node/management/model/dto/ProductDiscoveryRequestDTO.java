@@ -43,11 +43,11 @@ import lombok.Builder;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record ProductDiscoveryRequestDTO(
-        @Size(max = 255) @Schema(description = "Free-text search term", example = "planning") String text,
+        @Size(max = 255) @Schema(description = "Free-text search term", example = "search term") String text,
         @Size(max = 50)
                 @Schema(
                         description = "Named filters; values may be a scalar or a list",
-                        example = "{\"classification\": \"OFFICIAL\"}")
+                        example = "{\"attribute\": \"value\"}")
                 Map<@Size(max = 150) String, Object> filters) {
 
     public ProductDiscoveryRequestDTO {
