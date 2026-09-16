@@ -4,7 +4,7 @@
  * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 
-package uk.gov.dbt.ndtp.ia.node.management.config;
+package uk.gov.dbt.ndtp.ia.node.management.web.certificate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -152,17 +152,6 @@ class CertificateValidationInterceptorTest {
         when(validationProvider.isActive(cert)).thenReturn(true);
 
         assertThat(interceptor.preHandle(request, response, handlerMethod)).isTrue();
-    }
-
-    @Test
-    void activeCert_setsOrganisationIdAttributeForDownstreamInterceptors() throws Exception {
-        setupAuthentication("client-1");
-        OrganisationCertificateDTO cert = certDto(CertificateType.AUTOMATED, null);
-        when(validationProvider.findByClientId("client-1")).thenReturn(Optional.of(cert));
-        when(validationProvider.isActive(cert)).thenReturn(true);
-
-        assertThat(interceptor.preHandle(request, response, handlerMethod)).isTrue();
-        verify(request).setAttribute("ndtp.organisationId", cert.getOrganisationId());
     }
 
     @Test

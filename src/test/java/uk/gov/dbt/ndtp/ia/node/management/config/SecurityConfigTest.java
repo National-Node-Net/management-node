@@ -19,6 +19,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+import uk.gov.dbt.ndtp.ia.node.management.web.security.ClientIdMdcFilter;
+import uk.gov.dbt.ndtp.ia.node.management.web.security.KeycloakJwtAuthenticationConverter;
 
 @ExtendWith(MockitoExtension.class)
 class SecurityConfigTest {

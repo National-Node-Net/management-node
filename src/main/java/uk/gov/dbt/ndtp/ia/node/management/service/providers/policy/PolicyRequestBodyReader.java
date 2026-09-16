@@ -11,7 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import uk.gov.dbt.ndtp.ia.node.management.config.CachedBodyHttpServletRequest;
+import uk.gov.dbt.ndtp.ia.node.management.web.policy.CachedBodyHttpServletRequest;
 
 /**
  * Reads the request body a caller has buffered, as the structured value a policy can address -

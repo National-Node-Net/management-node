@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
-import uk.gov.dbt.ndtp.ia.node.management.config.CachedBodyHttpServletRequest;
+import uk.gov.dbt.ndtp.ia.node.management.web.policy.CachedBodyHttpServletRequest;
 
 class PolicyRequestBodyReaderTest {
 

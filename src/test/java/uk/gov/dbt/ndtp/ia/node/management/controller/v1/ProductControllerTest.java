@@ -32,7 +32,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import uk.gov.dbt.ndtp.ia.node.management.config.PolicyDecisionOutputArgumentResolver;
 import uk.gov.dbt.ndtp.ia.node.management.exception.handlers.GlobalExceptionHandler;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProductDiscoveryRequestDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.jwt.EnhancedPrincipal;
@@ -40,6 +39,7 @@ import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductDiscoveryService;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInput;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInputFactory;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInputFixture;
+import uk.gov.dbt.ndtp.ia.node.management.web.policy.PolicyDecisionOutputArgumentResolver;
 
 /**
  * Covers {@code POST /api/v1/product/discover} while it is deliberately disconnected from

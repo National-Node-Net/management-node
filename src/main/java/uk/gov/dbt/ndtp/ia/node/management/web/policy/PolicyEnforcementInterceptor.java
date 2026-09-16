@@ -4,7 +4,7 @@
  * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 
-package uk.gov.dbt.ndtp.ia.node.management.config;
+package uk.gov.dbt.ndtp.ia.node.management.web.policy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,6 +19,7 @@ import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecisio
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInput;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInputFactory;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyRequestBodyReader;
+import uk.gov.dbt.ndtp.ia.node.management.web.RequestRejectionSupport;
 
 /**
  * Policy Enforcement Point: intercepts requests to policy-aware APIs, enriches them

@@ -22,6 +22,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import uk.gov.dbt.ndtp.ia.node.management.web.certificate.CertificateValidationInterceptor;
+import uk.gov.dbt.ndtp.ia.node.management.web.policy.PolicyDecisionOutputArgumentResolver;
+import uk.gov.dbt.ndtp.ia.node.management.web.policy.PolicyEnforcementInterceptor;
 
 @ExtendWith(MockitoExtension.class)
 class WebConfigTest {
@@ -75,7 +78,7 @@ class WebConfigTest {
         config.addInterceptors(registry);
 
         verify(registry).addInterceptor(certificateValidationInterceptor);
-        verify(registration).addPathPatterns("/api/configuration");
+        verify(registration).addPathPatterns("/api/v1/configuration/**");
     }
 
     @Test

@@ -25,7 +25,6 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import uk.gov.dbt.ndtp.ia.node.management.config.PolicyEnforcementInterceptor;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.ConsumerConfigDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProducerConfigDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.jwt.EnhancedPrincipal;
@@ -35,6 +34,7 @@ import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecisio
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInputFactory;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInputFixture;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyRequestBodyReader;
+import uk.gov.dbt.ndtp.ia.node.management.web.policy.PolicyEnforcementInterceptor;
 
 /**
  * Integration test wiring {@link PolicyEnforcementInterceptor} in front of

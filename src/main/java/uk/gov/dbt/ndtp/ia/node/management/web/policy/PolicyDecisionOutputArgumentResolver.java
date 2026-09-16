@@ -4,7 +4,7 @@
  * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 
-package uk.gov.dbt.ndtp.ia.node.management.config;
+package uk.gov.dbt.ndtp.ia.node.management.web.policy;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.MethodParameter;

@@ -4,7 +4,7 @@
  * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 
-package uk.gov.dbt.ndtp.ia.node.management.config;
+package uk.gov.dbt.ndtp.ia.node.management.web.certificate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,6 +18,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.OrganisationCertificateDTO;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.CertificateType;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.CertificateValidationProvider;
+import uk.gov.dbt.ndtp.ia.node.management.web.RequestRejectionSupport;
 
 @Component
 @Slf4j

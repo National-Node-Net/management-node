@@ -11,6 +11,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import uk.gov.dbt.ndtp.ia.node.management.web.certificate.CertificateValidationInterceptor;
+import uk.gov.dbt.ndtp.ia.node.management.web.policy.PolicyDecisionOutputArgumentResolver;
+import uk.gov.dbt.ndtp.ia.node.management.web.policy.PolicyEnforcementInterceptor;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
@@ -43,7 +46,7 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(certificateValidationInterceptor).addPathPatterns("/api/configuration");
+        registry.addInterceptor(certificateValidationInterceptor).addPathPatterns("/api/v1/configuration/**");
 
         List<String> protectedPaths = opaProperties.protectedPaths();
         if (!protectedPaths.isEmpty() && opaProperties.enabled()) {

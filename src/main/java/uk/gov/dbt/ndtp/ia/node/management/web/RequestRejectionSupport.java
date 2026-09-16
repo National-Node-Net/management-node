@@ -4,7 +4,7 @@
  * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 
-package uk.gov.dbt.ndtp.ia.node.management.config;
+package uk.gov.dbt.ndtp.ia.node.management.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
@@ -19,15 +19,14 @@ import uk.gov.dbt.ndtp.ia.node.management.model.jwt.EnhancedPrincipal;
 /**
  * Shared request-rejection behaviour for {@code HandlerInterceptor}s that gate access
  * on the authenticated client: resolving the client id from the security context and
- * writing a JSON {@link ErrorResponse} for a rejected request. {@link #getOrganisationId}
- * is also read by controllers (e.g. product discover) that need the organisation
- * {@link CertificateValidationInterceptor} resolved for the current request.
+ * writing a JSON {@link ErrorResponse} for a rejected request. Shared by the interceptors in
+ * the sibling packages, which gate different things on the same identity.
  */
 public final class RequestRejectionSupport {
 
     private RequestRejectionSupport() {}
 
-    static String extractClientId() {
+    public static String extractClientId() {
         return fromPrincipal(EnhancedPrincipal::clientId);
     }
 
@@ -40,7 +39,7 @@ public final class RequestRejectionSupport {
         return (value == null || value.isEmpty()) ? null : value;
     }
 
-    static void writeError(
+    public static void writeError(
             HttpServletResponse response, ObjectMapper objectMapper, int status, String message, String errorId)
             throws IOException {
         response.setStatus(status);
