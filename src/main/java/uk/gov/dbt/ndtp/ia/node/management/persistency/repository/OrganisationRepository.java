@@ -25,7 +25,7 @@ import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Organisation;
 public interface OrganisationRepository extends JpaRepository<Organisation, Long> {
 
     /**
-     * Finds an organisation by its unique key (e.g. {@code ENV}).
+     * Finds an organisation by its unique key (e.g. {@code ORG_A}).
      *
      * @param organisationKey the organisation key to look up
      * @return the matching organisation, or empty when no organisation carries that key

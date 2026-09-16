@@ -27,10 +27,10 @@ import lombok.Setter;
 @AllArgsConstructor
 public class OrganisationDTO {
 
-    /** The organisation's display name (e.g. {@code "Environment Agency (ENV)"}). */
+    /** The organisation's display name (e.g. {@code "Organisation A"}). */
     private String name;
 
-    /** The organisation's unique key (e.g. {@code "ENV"}). */
+    /** The organisation's unique key (e.g. {@code "ORG_A"}). */
     private String key;
 
     /** Live {@code ORGANISATION}-scope policy attributes for this organisation. */
