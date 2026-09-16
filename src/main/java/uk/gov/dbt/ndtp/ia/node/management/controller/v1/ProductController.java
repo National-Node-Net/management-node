@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,8 +24,6 @@ import org.springframework.web.bind.annotation.RestController;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductDiscoveryRequestDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductDiscoveryResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.DefaultPolicyDecisionOutput;
-import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInput;
-import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInputFactory;
 
 @RestController
 @RequestMapping("/api/v1/product")
@@ -33,12 +32,6 @@ import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInputFa
         name = "Product Discovery",
         description = "Policy-aware discover of data products the requester is authorised to see.")
 public class ProductController {
-
-    private final PolicyInputFactory policyInputFactory;
-
-    public ProductController(PolicyInputFactory policyInputFactory) {
-        this.policyInputFactory = policyInputFactory;
-    }
 
     @PostMapping("/discover")
     @PreAuthorize("hasAuthority('ROLE_management-node:product_discovery')")
@@ -58,29 +51,16 @@ public class ProductController {
                             schema = @Schema(implementation = ProductDiscoveryResponseDTO.class)))
     @ApiResponse(responseCode = "400", description = "Invalid request body")
     @ApiResponse(responseCode = "401", description = "Unauthorized")
-    @ApiResponse(responseCode = "403", description = "policyDecision = {DefaultPolicyDecisionOutput@24571} \"DefaultPolicyDecisionOutput[allow=true, allowedFilteredAttributes=[], deniedFilteredAttributes=[], maskedFilteredAttributes=[]]\"Forbidden")
+    @ApiResponse(
+            responseCode = "403",
+            description =
+                    "policyDecision = {DefaultPolicyDecisionOutput@24571} \"DefaultPolicyDecisionOutput[allow=true, allowedFilteredAttributes=[], deniedFilteredAttributes=[], maskedFilteredAttributes=[]]\"Forbidden")
     @ApiResponse(responseCode = "500", description = "Internal server error")
     public ProductDiscoveryResponseDTO discoverProducts(
             HttpServletRequest request,
             @Valid @RequestBody(required = false) ProductDiscoveryRequestDTO criteria,
-            DefaultPolicyDecisionOutput policyDecision) {
-        // An absent body is no criteria rather than no request, so it reaches policy as an empty
-        // criteria document instead of a null the PDP would have to interpret.
-        ProductDiscoveryRequestDTO effectiveCriteria =
-                criteria == null ? ProductDiscoveryRequestDTO.builder().build() : criteria;
-        // The bound criteria are passed to the factory rather than the request stream: the body
-        // has already been consumed by binding, and policy should see the criteria the endpoint
-        // will actually act on.
-        PolicyInput input = policyInputFactory.create(request, effectiveCriteria);
-        // policyDecision is resolved by PolicyDecisionOutputArgumentResolver from the decision the
-        // Policy Enforcement Point published for this request, or ALLOW with nothing filtered
-        // where no whole-request decision was taken. Both it and the input are what get handed to
-        // ProductDiscoveryService once candidate lookup is wired back up.
-        log.info(
-                "Product discover request action={} criteria={} policyAllow={}",
-                input.action(),
-                effectiveCriteria,
-                policyDecision.allow());
+            Optional<DefaultPolicyDecisionOutput> policyDecision) {
+        log.debug(policyDecision.isPresent() + "");
         return ProductDiscoveryResponseDTO.builder().build();
     }
 }

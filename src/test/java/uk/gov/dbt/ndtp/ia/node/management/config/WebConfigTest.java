@@ -68,7 +68,7 @@ class WebConfigTest {
         return new WebConfig(
                 certificateValidationInterceptor,
                 policyEnforcementInterceptor,
-                new PolicyDecisionOutputArgumentResolver(),
+                new PolicyDecisionOutputArgumentResolver(opaProperties),
                 opaProperties);
     }
 

@@ -6,52 +6,67 @@
 
 package uk.gov.dbt.ndtp.ia.node.management.web.policy;
 
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.MethodParameter;
+import org.springframework.core.ResolvableType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
+import uk.gov.dbt.ndtp.ia.node.management.config.OpaProperties;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.DefaultPolicyDecisionOutput;
 
 /**
- * Injects the PDP's decision into any controller method that declares a
- * {@link DefaultPolicyDecisionOutput} parameter, so a handler can pass the decision on to the
- * service layer instead of re-deriving it.
+ * Injects the PDP's decision into any controller method that declares an
+ * {@code Optional<DefaultPolicyDecisionOutput>} parameter, so a handler can pass the decision on to
+ * the service layer instead of re-deriving it.
  *
- * <p>The value is the one {@link PolicyEnforcementInterceptor} published for this request. When no
- * whole-request decision was taken - the path is not in {@code application.opa.protected-paths},
- * or policy enforcement is switched off - the parameter resolves to
- * {@link DefaultPolicyDecisionOutput#ALLOW}. That is not a permission being granted here: a
- * request only reaches a handler if the PEP allowed it or never gated it, so the honest value for
- * "no whole-request decision was taken" is a verdict of allow with nothing filtered. Any
- * finer-grained filtering is the decision the service layer asks for per resource.
+ * <p>The value is present only when a decision was actually taken: policy enforcement is switched
+ * on and {@link PolicyEnforcementInterceptor} published one for this request. Otherwise it is
+ * empty - with {@code application.opa.enabled=false}, or on a path outside
+ * {@code application.opa.protected-paths}, no decision exists, and an empty value says so rather
+ * than standing in a verdict nobody reached. A handler therefore cannot mistake "policy is off" for
+ * "policy allowed this".
+ *
+ * <p>Only the {@code Optional} form is supported, so there is one way to ask for the decision and
+ * every caller has to handle its absence.
  */
 @Component
 @Slf4j
 public class PolicyDecisionOutputArgumentResolver implements HandlerMethodArgumentResolver {
 
-    @Override
-    public boolean supportsParameter(MethodParameter parameter) {
-        return DefaultPolicyDecisionOutput.class.equals(parameter.getParameterType());
+    private final boolean enabled;
+
+    public PolicyDecisionOutputArgumentResolver(OpaProperties opaProperties) {
+        this.enabled = opaProperties.enabled();
     }
 
     @Override
-    public DefaultPolicyDecisionOutput resolveArgument(
+    public boolean supportsParameter(MethodParameter parameter) {
+        return Optional.class.equals(parameter.getParameterType())
+                && DefaultPolicyDecisionOutput.class.equals(ResolvableType.forMethodParameter(parameter)
+                        .getGeneric(0)
+                        .resolve());
+    }
+
+    @Override
+    public Optional<DefaultPolicyDecisionOutput> resolveArgument(
             MethodParameter parameter,
             ModelAndViewContainer mavContainer,
             NativeWebRequest webRequest,
             WebDataBinderFactory binderFactory) {
+        if (!enabled) {
+            return Optional.empty();
+        }
         Object decision =
                 webRequest.getAttribute(DefaultPolicyDecisionOutput.REQUEST_ATTRIBUTE, RequestAttributes.SCOPE_REQUEST);
         if (decision instanceof DefaultPolicyDecisionOutput output) {
-            return output;
+            return Optional.of(output);
         }
-        log.debug(
-                "No policy decision published for this request; resolving {} to ALLOW with nothing filtered",
-                parameter.getParameterType().getSimpleName());
-        return DefaultPolicyDecisionOutput.ALLOW;
+        log.debug("No policy decision published for this request; resolving to an empty decision");
+        return Optional.empty();
     }
 }

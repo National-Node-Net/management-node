@@ -72,7 +72,7 @@ Authorisation happens in two different places, and they are not interchangeable.
 
 The whole-request PEP is a gate: one decision, and a denial ends the request. Per-candidate evaluation is a filter: the request succeeds, and the response contains only the products the PDP allowed. A caller cannot tell a denied product from a non-existent one — which is the point.
 
-> **Status:** `ProductController` is currently **not wired to `ProductDiscoveryService`**, while how `filters` should narrow the candidate query is settled. The endpoint binds and validates the criteria and builds the policy input, but returns an empty product list without asking for any decision — so no policy is evaluated on the discovery path today, and the per-candidate behaviour described here is what `ProductDiscoveryServiceImpl` does once the controller calls it again.
+> **Status:** `ProductController` is currently **not wired to `ProductDiscoveryService`**, while how `filters` should narrow the candidate query is settled. The endpoint binds and validates the criteria, but returns an empty product list without asking for any decision — so no policy is evaluated on the discovery path today, and the per-candidate behaviour described here is what `ProductDiscoveryServiceImpl` does once the controller calls it again.
 
 Product discovery is deliberately **not** listed in `protected-paths`. If it were, the interceptor would make a single whole-endpoint decision and the per-product filtering would never run.
 
@@ -151,12 +151,13 @@ A decision does not stop at the enforcement point that asked for it.
 - The **whole-request PEP** publishes the allowed decision as a request attribute
   (`DefaultPolicyDecisionOutput.REQUEST_ATTRIBUTE`). A denied request publishes nothing — it never
   reaches a handler.
-- `PolicyDecisionOutputArgumentResolver` injects it into any controller method that declares a
-  `DefaultPolicyDecisionOutput` parameter, so a handler passes the decision down to the service
-  layer instead of asking for a second one that could answer differently. Where no whole-request
-  decision was taken — the path is not in `protected-paths`, or policy enforcement is off — the
-  parameter resolves to `DefaultPolicyDecisionOutput.ALLOW`: allow with nothing filtered. That
-  grants nothing, since a request only reaches a handler if the PEP allowed it or never gated it.
+- `PolicyDecisionOutputArgumentResolver` injects it into any controller method that declares an
+  `Optional<DefaultPolicyDecisionOutput>` parameter, so a handler passes the decision down to the
+  service layer instead of asking for a second one that could answer differently. The value is
+  present only when policy enforcement is on **and** a decision was published for the request. It
+  is empty when `application.opa.enabled=false`, and when the path is not in `protected-paths` —
+  no decision exists in either case, so a handler cannot mistake "policy is off" for "policy
+  allowed this". Only the `Optional` form is resolved.
 - **Per-candidate evaluation** narrows that request decision by each candidate's own, via
   `combinedWith`: the action is permitted only if both permit it, and the attribute lists are
   merged with withholding winning over disclosure — anything denied or masked by either decision
@@ -263,7 +264,7 @@ so `input.request.body.text == "planning"`, `input.request.body.filters["key 2"]
 
 A servlet body is a one-shot stream: whoever reads it first consumes it. So the body is **supplied by the caller of the factory**, never read from the request inside it — and the two enforcement points get it from different places:
 
-- **Product discovery** — `ProductController` already has the body bound to `ProductDiscoveryRequestDTO`, and passes it straight through. Policy therefore sees the *accepted* criteria, which is what the endpoint will actually act on; **fields the DTO does not declare are dropped at binding and never reach the PDP**. The DTO declares `text` and `filters`; `filters` is an untyped map, so arbitrary keys do survive binding and reach the policy, but a misspelt top-level field (`fitlers`) does not.
+- **Product discovery** — the body arrives already bound to `ProductDiscoveryRequestDTO`, so once the endpoint is wired back up the bound DTO is what gets passed through, not the raw stream. Policy therefore sees the *accepted* criteria, which is what the endpoint will actually act on; **fields the DTO does not declare are dropped at binding and never reach the PDP**. The DTO declares `text` and `filters`; `filters` is an untyped map, so arbitrary keys do survive binding and reach the policy, but a misspelt top-level field (`fitlers`) does not.
 - **The whole-request PEP** — `preHandle` runs before the handler binds anything, so there is nothing bound to pass. `PolicyBodyCachingFilter` buffers the body first and `PolicyRequestBodyReader` parses it out of that buffer, so the interceptor can hand the body to the factory *and* the handler still gets a stream to bind.
 
 Buffering is deliberately narrow, because holding a body in memory costs what streaming does not. A request is buffered only when all of these hold:
@@ -434,7 +435,7 @@ real policy overrides, one at a time.
 - `PolicyDecisionSerializationTest` pins the wire format, including that attribute JSON types survive and that unset fields are omitted.
 - `DefaultPolicyDecisionOutputTest` covers how each shape of PDP result is read into the decision document, and how two decisions combine.
 - `PolicyDecisionClientTest` covers the request body and the fail-closed behaviour.
-- `PolicyDecisionOutputArgumentResolverTest` covers injecting the published decision into a controller, and what an unprotected path gets instead.
+- `PolicyDecisionOutputArgumentResolverTest` covers when a controller receives the decision and when it receives an empty `Optional`.
 - `ProductDiscoveryServiceImplTest` covers per-candidate evaluation and that denied products leak nothing into the response.
 
 Exercising the PDP end to end needs OPA running — see the OPA stack under `docker/`. Because the PDP fails closed, a stopped OPA makes every protected endpoint return `403`.

@@ -25,8 +25,7 @@ public interface ProductDiscoveryService {
      *
      * @param input who is asking, as the PDP sees them
      * @param requestDecision the decision already taken for the request as a whole, which each
-     *     per-candidate decision is narrowed by. {@link DefaultPolicyDecisionOutput#ALLOW} when the
-     *     endpoint took no whole-request decision
+     *     per-candidate decision is narrowed by, or null when no whole-request decision was taken
      * @param name optional case-insensitive contains filter on product name
      * @param topic optional case-insensitive contains filter on product topic
      * @param type optional case-insensitive exact filter on product type name
