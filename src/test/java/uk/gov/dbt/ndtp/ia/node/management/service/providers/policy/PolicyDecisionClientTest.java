@@ -122,25 +122,30 @@ class PolicyDecisionClientTest {
     }
 
     @Test
-    void discoveryDetails_carryTheAttributeLists() {
+    void discoveryDetails_carryFieldsAndAttributesSeparately() {
         mockServer
                 .expect(requestTo(PROPERTIES.url() + PROPERTIES.decisionPath()))
                 .andRespond(withSuccess(
                         """
                         {"result": {"allow": true,
                                     "details": {"evaluation": "candidate",
-                                                "allowed_filtered_attributes": ["name"],
-                                                "denied_filtered_attributes": ["internal_owner"],
-                                                "masked_filtered_attributes": ["contact_email"]}}}""",
+                                                "allowed_filtered_fields": ["name", "topic"],
+                                                "masked_filtered_fields": ["consumers"],
+                                                "allowed_filtered_attributes": ["identifiability"],
+                                                "denied_filtered_attributes": ["temporal_resolution"],
+                                                "masked_filtered_attributes": ["population_risk_tags"]}}}""",
                         MediaType.APPLICATION_JSON));
 
         ProductDiscoveryPolicyDecisionDetails details = client.evaluate(
                         INPUT, ProductDiscoveryPolicyDecisionDetails.class)
                 .details();
 
-        assertThat(details.allowedFilteredAttributes()).containsExactly("name");
-        assertThat(details.deniedFilteredAttributes()).containsExactly("internal_owner");
-        assertThat(details.maskedFilteredAttributes()).containsExactly("contact_email");
+        assertThat(details.allowedFilteredFields()).containsExactly("name", "topic");
+        assertThat(details.deniedFilteredFields()).isEmpty();
+        assertThat(details.maskedFilteredFields()).containsExactly("consumers");
+        assertThat(details.allowedFilteredAttributes()).containsExactly("identifiability");
+        assertThat(details.deniedFilteredAttributes()).containsExactly("temporal_resolution");
+        assertThat(details.maskedFilteredAttributes()).containsExactly("population_risk_tags");
     }
 
     @Test

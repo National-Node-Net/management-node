@@ -86,7 +86,7 @@ Notes:
 - Product Subscription API: Clients may request a subscription of their organisation to a product when their token contains the role `product_subscribe`. The role only gates access to the endpoint; policy is then evaluated on top of it (`@Policy(resource = "product", action = "subscribe")`), and decides both whether the subscription is allowed and its terms - whether approval is required, the maximum validity and the permitted schedule types (see [Policy Enforcement](POLICY_ENFORCEMENT.md#reference-endpoints)).
   - Enforcement in code: `@PreAuthorize("hasAuthority('ROLE_management-node:product_subscribe')")` on `POST /api/v1/product/subscribe`.
 
-- Product View API: Clients may retrieve a single product when their token contains the role `product_view`. Policy is then evaluated on top of the role check (`@Policy(resource = "product", action = "view")`); with no dedicated rule for `view`, the product resource fallback applies, which allows read-only access for a caller whose token identifies a known organisation.
+- Product View API: Clients may retrieve a single product when their token contains the role `product_view`. Policy is then evaluated on top of the role check (`@Policy(resource = "product", action = "view")`): the `product.view` rule allows organisations cleared to `OFFICIAL-SENSITIVE` or higher and sets how much of the product they see.
   - Enforcement in code: `@PreAuthorize("hasAuthority('ROLE_management-node:product_view')")` on `GET /api/v1/product/{productId}`.
 
 Where an endpoint is annotated `@Policy`, holding the role is necessary but not sufficient: a request with the role can still be refused with `403` by policy. Policy is only evaluated when `application.opa.enabled=true`; see [Policy Enforcement](POLICY_ENFORCEMENT.md).
@@ -141,5 +141,5 @@ curl -k 'https://localhost:8090/api/v1/configuration/producer' \
   - Bootstrap Certificate API requires role: `request_bootstrap_certificate`.
   - Product Discovery API requires role: `product_discovery` (plus per-product PDP authorisation, see [Policy Enforcement](POLICY_ENFORCEMENT.md)).
   - Product Subscription API requires role: `product_subscribe` (plus policy, which also sets the subscription terms).
-  - Product View API requires role: `product_view` (plus policy; answered by the product resource fallback).
+  - Product View API requires role: `product_view` (plus policy; answered by the `product.view` rule).
 - Swagger/OpenAPI: Use Swagger UI at `/swagger-ui.html` to explore and test with a valid token.

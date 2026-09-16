@@ -13,14 +13,14 @@ import lombok.ToString;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecisionDetails;
 
 /**
- * The rule-specific part of a {@code product.view} decision. No rule is dedicated to viewing, so
- * it is answered by the product resource fallback ({@code docker/opa/policies/product/fallback.rego}),
- * whose details carry the access level granted. The view endpoint declares it on {@code @Policy} and
- * receives {@code Optional<PolicyDecision<ProductViewPolicyDecisionDetails>>}; a dedicated
- * {@code product.view} rule written later keeps this contract or extends it.
+ * The rule-specific part of a {@code product.view} decision
+ * ({@code docker/opa/policies/product/view.rego}): the access level granted - {@code full},
+ * {@code summary} or {@code none}. The same type also reads the product resource fallback's details
+ * ({@code read}), which answers routes such as {@code browse}. The view endpoint declares it on
+ * {@code @Policy} and receives {@code Optional<PolicyDecision<ProductViewPolicyDecisionDetails>>}.
  *
- * <p>A missing field reads as null rather than failing the decision; fields a rule adds later land
- * in {@link #additional()}.
+ * <p>A missing field reads as null rather than failing the decision. The rule's other details
+ * ({@code withheld_fields}, {@code required_clearance}) land in {@link #additional()}.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @EqualsAndHashCode(callSuper = true)

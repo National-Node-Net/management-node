@@ -78,18 +78,14 @@ public class ProductController {
         policyDecision.ifPresentOrElse(
                 decision -> log.info(
                         "Product discover policy decision allow={} policy={} resolution={} reasons={} "
-                                + "evaluation={} permittedNationalities={} excludedClassifications={} "
-                                + "allowed={} denied={} masked={}",
+                                + "evaluation={} fields={} attributes={}",
                         decision.allow(),
                         decision.policy().id(),
                         decision.policy().resolution(),
                         decision.reasons(),
                         decision.details().evaluation(),
-                        decision.details().permittedNationalities(),
-                        decision.details().excludedClassifications(),
-                        decision.details().allowedFilteredAttributes(),
-                        decision.details().deniedFilteredAttributes(),
-                        decision.details().maskedFilteredAttributes()),
+                        decision.details().fields(),
+                        decision.details().attributes()),
                 () -> log.info("Product discover served without a policy decision (policy enforcement is off)"));
         return ProductDiscoveryResponseDTO.builder().build();
     }
@@ -142,8 +138,8 @@ public class ProductController {
     @Policy(resource = "product", action = "view", details = ProductViewPolicyDecisionDetails.class)
     @Operation(
             summary = "View a product",
-            description = "Returns a single product. No rule is dedicated to viewing, so the product "
-                    + "resource fallback decides: read-only access for a caller from a known organisation.",
+            description = "Returns a single product. The product.view policy allows organisations cleared "
+                    + "to OFFICIAL-SENSITIVE or higher, and sets how much of the product they see.",
             security = {@SecurityRequirement(name = "bearerAuth")})
     @ApiResponse(
             responseCode = "200",

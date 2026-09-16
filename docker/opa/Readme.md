@@ -45,14 +45,20 @@ annotated endpoints. In non-local environments the URL must be `https://`.
 policies/
   dispatch.rego                   package dispatch — the entrypoint
   lib/decision.rego               contract id, deny-shaped document, organisation helpers
+  lib/entitlements.rego           clearance, purposes, jurisdictions — facts every product rule reads
+  lib/product.rego                product fields, hidden fields by clearance, sensitive attributes
   fallback.rego                   policies.fallback                — global fallback: deny
   configuration/fallback.rego     policies.configuration.fallback  — allow (local placeholder)
   product/fallback.rego           policies.product.fallback        — read-only for a known organisation
-  product/discover.rego           policies.product.discover        — discovery, per request and per candidate
+  product/view.rego               policies.product.view            — view access by clearance
+  product/discover.rego           policies.product.discover        — search contract, per request and per candidate
   product/subscribe.rego          policies.product.subscribe       — subscription and its terms
   routing/data.json               data.routing
   *_test.rego                     unit tests (ignored by the server)
 ```
+
+How these rules treat the sample organisations `ENV`, `HEG` and `BCC`, with
+every expected output, is in [policy_sample_stories.md](policy_sample_stories.md).
 
 The directory mirrors the package only for readability; OPA keys rules by
 `package`, and data files by directory (`routing/data.json` → `data.routing`).
@@ -158,21 +164,33 @@ Subscribe — exact rule, terms in `details`:
 
 ```bash
 curl -s -X POST localhost:8181/v1/data/dispatch/decision -d '{"input":{
-  "subject":{"organisation":{"key":"FEDERATOR_ENV","attributes":{"trusted_subscriber":true,"max_subscription_days":90}}},
+  "subject":{"organisation":{"key":"ENV","attributes":{"authorised_classifications":["OFFICIAL","SECRET"],
+    "permitted_purposes":["regulatory_oversight","service_delivery"],"jurisdictions":["England","Wales"]}}},
   "resource":{"kind":"product"},"action":"subscribe",
-  "request":{"method":"POST","body":{"productId":42,"scheduleType":"cron"}}}}'
-# => {"result":{"allow":true, ..., "reasons":[],
-#      "policy":{"id":"product.subscribe","resolution":"exact","version":"policies.product.subscribe/1.0.0"},
+  "request":{"method":"POST","body":{"productId":3,"scheduleType":"cron"}}}}'
+# => {"result":{"allow":true,"reasons":[],
+#      "policy":{"id":"product.subscribe","resolution":"exact","version":"policies.product.subscribe/2.0.0"},
 #      "details":{"max_validity_days":90,"permitted_schedule_types":["cron","interval"],"requires_approval":false}}}
 ```
 
-View — no `product.view` rule, answered by the product fallback:
+View — exact rule, access by clearance:
 
 ```bash
 curl -s -X POST localhost:8181/v1/data/dispatch/decision -d '{"input":{
-  "subject":{"organisation":{"key":"FEDERATOR_ENV"}},
-  "resource":{"kind":"product","id":"42"},"action":"view","request":{"method":"GET"}}}'
-# => {"result":{"allow":true, ..., "reasons":["dispatch.resource_fallback"],
+  "subject":{"organisation":{"key":"HEG","attributes":{"authorised_classifications":["OFFICIAL","OFFICIAL-SENSITIVE"]}}},
+  "resource":{"kind":"product"},"action":"view","request":{"method":"GET"}}}'
+# => {"result":{"allow":true,"reasons":[],
+#      "policy":{"id":"product.view","resolution":"exact","version":"policies.product.view/1.0.0"},
+#      "details":{"access_level":"summary","required_clearance":"OFFICIAL-SENSITIVE","withheld_fields":["configurations","consumers"]}}}
+```
+
+An action with no rule of its own — answered by the product fallback:
+
+```bash
+curl -s -X POST localhost:8181/v1/data/dispatch/decision -d '{"input":{
+  "subject":{"organisation":{"key":"ENV"}},
+  "resource":{"kind":"product"},"action":"export","request":{"method":"GET"}}}'
+# => {"result":{"allow":true,"reasons":["dispatch.resource_fallback"],
 #      "policy":{"id":"product.fallback","resolution":"resource_fallback",...},"details":{"access_level":"read"}}}
 ```
 

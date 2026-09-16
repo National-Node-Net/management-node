@@ -1,28 +1,46 @@
 # METADATA
 # title: Product subscription
 # description: |
-#   Decides whether an organisation may subscribe to a product, and on what terms. The terms
-#   travel in `details` so the service applies what policy decided - approval, validity cap,
-#   schedule types - instead of restating those limits in Java where they would drift.
+#   Whether an organisation may subscribe to a product, and on what terms.
+#
+#   Allowed for any organisation that delivers a public service. The terms depend on who is
+#   asking:
+#     - approval   - a regulator (regulatory_oversight) is accepted straight away; everyone
+#                    else waits for approval;
+#     - validity   - research (statistical_analysis) needs long-running feeds: 365 days;
+#                    regulatory oversight is time-boxed to an investigation: 90 days;
+#                    anything else: 30 days;
+#     - schedules  - an organisation with a local remit may only pull on an interval;
+#                    national bodies may also use cron.
+#
+#   The terms travel in `details` whether or not the request is allowed, so a refused caller
+#   can see what it would be held to.
 package policies.product.subscribe
 
 import data.lib.decision.deny_shape
-import data.lib.decision.organisation_attributes
 import data.lib.decision.organisation_known
+import data.lib.entitlements.has_purpose
+import data.lib.entitlements.local_remit
 
 contract := "management-node.decision/1"
 
-version := "policies.product.subscribe/1.0.0"
+version := "policies.product.subscribe/2.0.0"
 
 decision := object.union(deny_shape, {
 	"allow": allow,
 	"reasons": reasons,
-	"details": details,
+	"details": {
+		"requires_approval": requires_approval,
+		"max_validity_days": max_validity_days,
+		"permitted_schedule_types": permitted_schedule_types,
+	},
 })
 
-permitted_schedule_types := ["cron", "interval"]
-
 body := object.get(input, ["request", "body"], {})
+
+# ---------------------------------------------------------------------------
+# Allowed when nothing below is wrong
+# ---------------------------------------------------------------------------
 
 default allow := false
 
@@ -32,43 +50,33 @@ reasons := sort([reason | some reason in reason_set])
 
 reason_set contains "organisation.missing" if not organisation_known
 
-reason_set contains "request.product_missing" if not product_requested
+reason_set contains "organisation.purpose_not_permitted" if not has_purpose("service_delivery")
 
-reason_set contains "schedule.type_not_permitted" if not schedule_type_permitted
+reason_set contains "request.product_missing" if object.get(body, "productId", null) in {null, ""}
 
-default product_requested := false
-
-product_requested if {
-	product_id := object.get(body, "productId", null)
-	product_id != null
-	product_id != ""
+reason_set contains "schedule.type_not_permitted" if {
+	requested := object.get(body, "scheduleType", null)
+	requested != null
+	not requested in permitted_schedule_types
 }
 
-# A schedule type is optional; the service omits unset fields, and null is treated the same
-# way so a serialiser that emits nulls does not turn "not asked" into "not permitted".
-default schedule_type_permitted := false
+# ---------------------------------------------------------------------------
+# Terms
+# ---------------------------------------------------------------------------
 
-schedule_type_permitted if object.get(body, "scheduleType", null) == null
-
-schedule_type_permitted if body.scheduleType in permitted_schedule_types
-
-# The terms are returned whether or not the request is allowed, so a denied caller can see
-# what it would be held to once the reasons are fixed.
-details := {
-	"requires_approval": requires_approval,
-	"max_validity_days": max_validity_days,
-	"permitted_schedule_types": permitted_schedule_types,
-}
-
-# Approval is skipped only on an explicit `true`: a missing, misspelt or string-typed
-# attribute keeps the organisation on the approval path.
+# Regulators are accepted straight away; everyone else waits for approval.
 default requires_approval := true
 
-requires_approval := false if organisation_attributes.trusted_subscriber == true
+requires_approval := false if has_purpose("regulatory_oversight")
 
-# Used when the organisation carries no numeric max_subscription_days attribute.
-default max_validity_days := 30
+# The longest term any purpose the organisation holds allows.
+max_validity_days := 365 if {
+	has_purpose("statistical_analysis")
+} else := 90 if {
+	has_purpose("regulatory_oversight")
+} else := 30
 
-max_validity_days := organisation_attributes.max_subscription_days if {
-	is_number(organisation_attributes.max_subscription_days)
-}
+# A local remit pulls on an interval only.
+default permitted_schedule_types := ["cron", "interval"]
+
+permitted_schedule_types := ["interval"] if local_remit

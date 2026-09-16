@@ -263,13 +263,13 @@ With the shipped rules and routing data (organisation known, `GET` for reads):
 
 | `@Policy` | Resolution | `policy.id` | Outcome | `reasons` |
 |---|---|---|---|---|
-| `product` / `discover` | `exact` | `product.discover` | allow for a permitted nationality (a `POST`, so the read-only fallback would have refused it) | `[]` when allowed |
+| `product` / `discover` | `exact` | `product.discover` | allow for a UK organisation with a clearance, with its search contract in `details` (a `POST`, so the read-only fallback would have refused it) | `[]` when allowed |
 | `product` / `subscribe` | `exact` | `product.subscribe` | decided by the subscription rule; terms in `details` | `[]` when allowed |
-| `product` / `view` | `resource_fallback` | `product.fallback` | allow, `details: {"access_level": "read"}` | `["dispatch.resource_fallback"]` |
+| `product` / `view` | `exact` | `product.view` | allow from `OFFICIAL-SENSITIVE` clearance, `details: {"access_level": "full"\|"summary", ...}` | `[]` when allowed |
 | `product` / `browse` | `route` (`route-product-browse`) | `product.fallback` | allow, `details: {"access_level": "read"}` | `[]` |
 | `invoice` / `read` | `global_fallback` | `fallback` | deny | `["dispatch.global_fallback", "policy.no_specific_rule"]` |
 
-`browse` and `view` reach the same rule by different means: `view` because no `product.view` module exists, `browse` because a route says so. A route adds no dispatch reason — it is an explicit decision, not a fallback.
+`browse` has no module of its own, and a route sends it to the product fallback. A route adds no dispatch reason — it is an explicit decision, not a fallback. An action with neither a module nor a route (for example `product` / `export`) resolves to the product fallback as `resource_fallback`, with reason `dispatch.resource_fallback`.
 
 ## Actions with no dedicated rule
 
@@ -337,9 +337,9 @@ Attribute filtering is **not** part of the envelope. Which attributes a caller m
 
 | Details type | Rule | Fields |
 |---|---|---|
-| `ProductDiscoveryPolicyDecisionDetails` | `policies.product.discover` | `evaluation()`, `permittedNationalities()`, `excludedClassifications()`, `allowedFilteredAttributes()`, `deniedFilteredAttributes()`, `maskedFilteredAttributes()` |
+| `ProductDiscoveryPolicyDecisionDetails` | `policies.product.discover` | `evaluation()`, `allowedFilteredFields()`, `deniedFilteredFields()`, `maskedFilteredFields()`, `allowedFilteredAttributes()`, `deniedFilteredAttributes()`, `maskedFilteredAttributes()`; grouped as `fields()` and `attributes()` |
 | `ProductSubscriptionPolicyDecisionDetails` | `policies.product.subscribe` | `requiresApproval()`, `maxValidityDays()`, `permittedScheduleTypes()` |
-| `ProductViewPolicyDecisionDetails` | `policies.product.fallback` (no `view` rule yet) | `accessLevel()` |
+| `ProductViewPolicyDecisionDetails` | `policies.product.view` (and the product fallback, for routed actions) | `accessLevel()` |
 
 The endpoint names its type once in `@Policy` and again in its parameter:
 
@@ -380,8 +380,8 @@ Every decision is a `POST` to `application.opa.decision-path` with a single JSON
       "clientId": "ia-data-product-catalogue-ui",
       "token": { "azp": "ia-data-product-catalogue-ui", "exp": 1789392949 },
       "organisation": {
-        "key": "FEDERATOR_ENV",
-        "attributes": { "trusted_subscriber": true, "max_subscription_days": 90 }
+        "key": "ENV",
+        "attributes": { "authorised_classifications": ["OFFICIAL", "SECRET"], "permitted_purposes": ["regulatory_oversight", "service_delivery"], "jurisdictions": ["England", "Wales"] }
       }
     },
     "action": "subscribe",
@@ -446,7 +446,7 @@ Attribute values keep their JSON type — a numeric attribute arrives as a numbe
 "attributes": { "tier": 3, "sensitive": true, "regions": ["UK", "EU"], "nationality": "GB" }
 ```
 
-This matters to rules: `policies.product.subscribe` skips approval only when `trusted_subscriber` is the boolean `true`, and uses `max_subscription_days` only when it is a number.
+This matters to rules: a rule comparing a value must compare it with the right type. The shipped rules read their organisation attributes through `lib/entitlements.rego`, which ignores values that are not strings, so a mistyped attribute gives the lowest entitlement rather than an error.
 
 A `multi_valued` attribute is held as **one `policy_attribute_value` row per value**, and all of its live values are collected into an array.
 
@@ -538,7 +538,7 @@ PDP decision request -> http://localhost:8181/v1/data/dispatch/decision
   subject.kind         : service
   subject.user_id      : ia-data-product-catalogue-ui
   subject.clientId     : ia-data-product-catalogue-ui
-  subject.organisation : FEDERATOR_ENV attributes={trusted_subscriber=true}
+  subject.organisation : ENV attributes={authorised_classifications=[OFFICIAL, SECRET], permitted_purposes=[regulatory_oversight, service_delivery], jurisdictions=[England, Wales]}
   action               : subscribe
   resource             : product id=null attributes={}
   request              : POST /api/v1/product/subscribe
@@ -656,35 +656,45 @@ The rule for the endpoint in the example would be annotated `@Policy(resource = 
 
 ## Reference endpoints
 
-Three endpoints on `ProductController` exercise the mechanism end to end.
+Three endpoints on `ProductController` exercise the mechanism end to end. Their rules are built from the organisation and product attributes in the database, and are walked through per organisation, with every expected output, in [`docker/opa/policy_sample_stories.md`](../docker/opa/policy_sample_stories.md).
 
-### `POST /api/v1/product/discover` — one rule at request and candidate level
+All three rules read the caller through four facts in `lib/entitlements.rego`:
+
+| Fact | From attribute | Meaning |
+|---|---|---|
+| `clearance` | `authorised_classifications` | highest held: `OFFICIAL`=1, `OFFICIAL-SENSITIVE`=2, `SECRET`=3, `TOP SECRET`=4; 0 if none |
+| `has_purpose(p)` | `permitted_purposes` | `p` is held |
+| `uk_jurisdiction` | `jurisdictions` | at least one UK nation |
+| `local_remit` | `jurisdictions` | at least one area that is not a nation |
+
+### `POST /api/v1/product/discover` — a search contract, at request and candidate level
 
 - Role: `product_discovery`.
-- `@Policy(resource = "product", action = "discover", details = ProductDiscoveryPolicyDecisionDetails.class)`; the handler receives the decision as `Optional<PolicyDecision<ProductDiscoveryPolicyDecisionDetails>>` and logs its verdict, provenance, reasons and details, including the attribute lists.
+- `@Policy(resource = "product", action = "discover", details = ProductDiscoveryPolicyDecisionDetails.class)`; the handler receives the decision and logs its verdict, provenance, reasons, `fields()` and `attributes()`.
 - Answered by `policies.product.discover` (resolution `exact`). `POST` is not a read for the product fallback, so without this rule discovery would be refused.
 
-| Condition | Applies at | Deny reason |
+The rule returns the caller's search contract in `details`. Filtering is described separately for **fields** (properties of the product as the API names them, listed in `lib/product.rego`) and **attributes** (policy attributes stored against the product). A name in the request's `filters` counts as a field when it is in that list, and as an attribute otherwise.
+
+| `details` field | Meaning |
+|---|---|
+| `allowed_filtered_fields` / `allowed_filtered_attributes` | what the caller may filter on |
+| `denied_filtered_fields` / `denied_filtered_attributes` | what the caller asked to filter on but may not |
+| `masked_filtered_fields` / `masked_filtered_attributes` | what must be masked in results |
+| `row_filter` | the condition over product attributes every result must satisfy; `{"type": "literal", "value": false}` when refused |
+| `max_page_size`, `obligations` | limits and duties for the search layer |
+| `evaluation` | `request`, or `candidate` when `input.resource.id` is set |
+
+| Refused when | Applies at | Reason |
 |---|---|---|
-| organisation attribute `nationality` is one of `["GB"]` | request and candidate | `organisation.nationality_not_permitted` |
-| product attribute `classification` is present and not one of `["SECRET"]` | candidate only (`input.resource.id` set) | `product.classification_not_permitted` |
+| no organisation | both | `organisation.missing` |
+| no UK nation in `jurisdictions` | both | `organisation.jurisdiction_not_permitted` |
+| no classification held | both | `organisation.clearance_missing` |
+| a requested filter field is not allowed | both | `filter.field_not_permitted` |
+| a requested filter attribute is not allowed | both | `filter.attribute_not_permitted` |
+| the product lacks `identifiability` or `quality_designation` | candidate | `product.attributes_missing` |
+| the product fails the `row_filter` | candidate | `product.identifiability_not_permitted`, `product.quality_not_permitted`, `product.population_risk_not_permitted` |
 
-A candidate with no `classification` is refused rather than assumed unclassified, so a missing attribute never widens what a caller sees. Callers of a non-permitted nationality have `contact_email` in `details.masked_filtered_attributes`. `details` are:
-
-```json
-{
-  "evaluation": "request" | "candidate",
-  "permitted_nationalities": ["GB"],
-  "excluded_classifications": ["SECRET"],
-  "allowed_filtered_attributes": [],
-  "denied_filtered_attributes": [],
-  "masked_filtered_attributes": ["contact_email"]
-}
-```
-
-The three attribute lists are always present (empty when nothing is filtered) and are read through `ProductDiscoveryPolicyDecisionDetails`.
-
-> **Note:** nationality is read from the organisation's `ORGANISATION`-scoped attributes, which are found by matching the token's `organisation` claim against `organisation.organisation_key`. If the claim (e.g. `FEDERATOR_ENV`) does not match a key in the database (e.g. `ENV`), the attributes are empty and discovery is refused with `organisation.nationality_not_permitted`.
+Refusing a disallowed filter, rather than dropping it, keeps a search from quietly returning more than was asked for. The six lists are typed on `ProductDiscoveryPolicyDecisionDetails`. When request and candidate decisions combine, fields and attributes are each merged so that withholding wins. `row_filter`, `max_page_size` and `obligations` are read through `additional()`.
 
 ### `POST /api/v1/product/subscribe` — exact rule with typed details
 
@@ -693,32 +703,36 @@ The three attribute lists are always present (empty when nothing is filtered) an
 - Body `ProductSubscriptionRequestDTO`: `productId` (required), `scheduleType`, `scheduleExpression`, `destination`. It reaches the PDP as `input.request.body`.
 - Answered by `policies.product.subscribe` (resolution `exact`).
 
-The rule allows when all of these hold, and reports each that does not:
-
-| Condition | Deny reason |
+| Refused when | Reason |
 |---|---|
-| organisation key is a non-empty string | `organisation.missing` |
-| `input.request.body.productId` is present and not empty | `request.product_missing` |
-| `scheduleType`, if supplied and not null, is one of the permitted types | `schedule.type_not_permitted` |
+| no organisation | `organisation.missing` |
+| `service_delivery` not held | `organisation.purpose_not_permitted` |
+| no `productId` in the body | `request.product_missing` |
+| `scheduleType` given and not permitted | `schedule.type_not_permitted` |
 
-`details` are returned whether allowed or denied, so a denied caller can see the terms it would be held to:
+`details` are returned whether allowed or denied:
 
 | Field | `ProductSubscriptionPolicyDecisionDetails` | Value |
 |---|---|---|
-| `requires_approval` | `requiresApproval` | `false` only when the organisation attribute `trusted_subscriber` is the boolean `true`; otherwise `true` |
-| `max_validity_days` | `maxValidityDays` | the organisation attribute `max_subscription_days` when it is a number; otherwise `30` |
-| `permitted_schedule_types` | `permittedScheduleTypes` | `["cron", "interval"]` |
+| `requires_approval` | `requiresApproval` | `false` for a regulator (`regulatory_oversight`); otherwise `true` |
+| `max_validity_days` | `maxValidityDays` | 365 for research (`statistical_analysis`), otherwise 90 for a regulator, otherwise 30 |
+| `permitted_schedule_types` | `permittedScheduleTypes` | `["interval"]` for a local remit; otherwise `["cron", "interval"]` |
 
 The terms live in policy so the service applies what policy decided rather than restating those limits in Java. The handler reads them into `ProductSubscriptionResponseDTO`: `status` is `PENDING_APPROVAL` when approval is required and `ACCEPTED` otherwise, alongside `maxValidityDays` and `permittedScheduleTypes`.
 
-### `GET /api/v1/product/{productId}` — no dedicated rule
+### `GET /api/v1/product/{productId}` — access by clearance
 
 - Role: `product_view`.
 - `@Policy(resource = "product", action = "view", details = ProductViewPolicyDecisionDetails.class)`; the handler receives `Optional<PolicyDecision<ProductViewPolicyDecisionDetails>>` and logs its verdict and `accessLevel()` at `DEBUG`.
-- No `policies.product.view` module exists, so dispatch resolves to `policies.product.fallback` (resolution `resource_fallback`, reason `dispatch.resource_fallback`).
-- Allowed for a known organisation, since the method is `GET`; `details` are `{"access_level": "read"}`. Without an organisation claim the decision is a deny with reasons `dispatch.resource_fallback` and `organisation.missing`.
+- Answered by `policies.product.view` (resolution `exact`). The rule sees no product attributes for this endpoint, so it decides on the caller alone.
 
-Writing `policies/product/view.rego` later changes the resolution to `exact` with no Java change.
+| Refused when | Reason |
+|---|---|
+| no organisation | `organisation.missing` |
+| clearance below `OFFICIAL-SENSITIVE` | `organisation.clearance_insufficient` |
+| method not `GET` or `HEAD` | `action.not_read_only` |
+
+`details`: `access_level` is `full` at `SECRET` or above, `summary` at `OFFICIAL-SENSITIVE`, and `none` when refused. `withheld_fields` lists the product fields that clearance may not see (advisory: the handler does not strip them yet). `required_clearance` is `OFFICIAL-SENSITIVE`.
 
 ## Testing
 
@@ -730,8 +744,11 @@ Every rule has a `*_test.rego` beside it (ignored by the OPA server):
 |---|---|
 | `dispatch_test.rego` | each resolution kind; each refusal (`dispatch.no_policy`, `dispatch.route_policy_missing`, `dispatch.contract_mismatch`, including a module with no contract); the reserved `fallback` name; route priority; that a rule cannot forge provenance, widen access through malformed fields, or add top-level attribute lists |
 | `product/fallback_test.rego` | read-only access for a known organisation, `HEAD`, non-read methods, missing, null and empty organisation keys, and that every failing condition is reported |
-| `product/discover_test.rego` | request-level and candidate-level decisions, masking for other nationalities (in `details`, never the envelope), a missing nationality, `SECRET` and unclassified candidates, every failing condition reported, and exact resolution through the dispatcher |
-| `product/subscribe_test.rego` | default and attribute-driven terms, attribute type strictness, optional schedule type, each deny reason, and terms on a denial |
+| `lib/sample_data_test.rego` | not a test: the sample organisations' and products' attributes exactly as stored, shared by the rule tests |
+| `lib/entitlements_test.rego` | each entitlement fact for the three sample organisations, and for missing, single-valued and unknown attributes |
+| `product/view_test.rego` | full, summary and refused access per organisation, no organisation, non-read methods, and exact resolution |
+| `product/subscribe_test.rego` | each organisation's terms, a refused `cron` for a local remit and its allowed `interval`, optional schedule type, and each deny reason |
+| `product/discover_test.rego` | each organisation's full search contract, filter refusals split into fields and attributes, organisation gates, per-candidate results for each sample product, a product without attributes, and exact resolution |
 
 The OPA image has no shell, so run the binary against the host tree from `docker/opa`:
 
@@ -747,7 +764,7 @@ docker run --rm -v "$P" openpolicyagent/opa:1.20.2 fmt --diff /p   # no output =
 Plain JUnit 5 and Mockito unit tests, run by `./mvnw test`:
 
 - `PolicyDecisionTest` — how each shape of PDP result is read (envelope, reasons, provenance, details, bare boolean, non-object details as `policy.details_unreadable`), `deny`, `of`, `withDetails`, and how two decisions combine, typed details included; that top-level attribute lists are ignored.
-- `PolicyDecisionDetailsTest` — the generic form, each endpoint's details subclass bound from its rule's shape (discovery's attribute lists included), `narrowedBy` (discovery merging its lists), and `empty`.
+- `PolicyDecisionDetailsTest` — the generic form, each endpoint's details subclass bound from its rule's shape (discovery's field and attribute lists included), `narrowedBy` (discovery merging fields and attributes separately), and `empty`.
 - `PolicyDecisionClientTest` — the request body, fail-closed behaviour, the switched-off path, and reading details into a declared type, including DENY with provenance kept when they cannot be read.
 - `PolicyDecisionSerializationTest` — the wire format, including that attribute JSON types survive and that unset fields are omitted.
 - `PolicyInputFactoryTest` — how each field is sourced, including resource and action from the target, and that a configured `Authorization` header is never forwarded.

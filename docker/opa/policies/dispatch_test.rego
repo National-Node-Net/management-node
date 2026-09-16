@@ -51,12 +51,11 @@ test_exact_resolves_to_the_dedicated_rule if {
 
 	decision.policy.id == "product.subscribe"
 	decision.policy.resolution == "exact"
-	decision.policy.version == "policies.product.subscribe/1.0.0"
-	decision.allow == true
+	decision.policy.version == "policies.product.subscribe/2.0.0"
 }
 
 test_resource_fallback_answers_an_action_with_no_rule if {
-	decision := dispatch.decision with input as request("product", "view", "GET")
+	decision := dispatch.decision with input as request("product", "export", "GET")
 
 	decision.policy.id == "product.fallback"
 	decision.policy.resolution == "resource_fallback"

@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductDiscoveryPolicyDecisionDetails;
+import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductDiscoveryPolicyDecisionDetails.Filtering;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductSubscriptionPolicyDecisionDetails;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductViewPolicyDecisionDetails;
 
@@ -44,19 +45,22 @@ class PolicyDecisionDetailsTest {
     void discover_bindsTheDiscoverRulesDetails() throws Exception {
         ProductDiscoveryPolicyDecisionDetails details = objectMapper.readValue(
                 """
-                {"evaluation": "candidate", "permitted_nationalities": ["GB"],
-                 "excluded_classifications": ["SECRET"],
-                 "allowed_filtered_attributes": ["name"], "denied_filtered_attributes": ["internal_owner"],
-                 "masked_filtered_attributes": ["contact_email"], "added_later": true}""",
+                {"evaluation": "candidate",
+                 "allowed_filtered_fields": ["name", "topic"], "denied_filtered_fields": ["source"],
+                 "masked_filtered_fields": ["consumers"],
+                 "allowed_filtered_attributes": ["identifiability"],
+                 "denied_filtered_attributes": ["temporal_resolution"],
+                 "masked_filtered_attributes": ["population_risk_tags"],
+                 "max_page_size": 50}""",
                 ProductDiscoveryPolicyDecisionDetails.class);
 
         assertThat(details.evaluation()).isEqualTo(ProductDiscoveryPolicyDecisionDetails.EVALUATION_CANDIDATE);
-        assertThat(details.permittedNationalities()).containsExactly("GB");
-        assertThat(details.excludedClassifications()).containsExactly("SECRET");
-        assertThat(details.allowedFilteredAttributes()).containsExactly("name");
-        assertThat(details.deniedFilteredAttributes()).containsExactly("internal_owner");
-        assertThat(details.maskedFilteredAttributes()).containsExactly("contact_email");
-        assertThat(details.additional()).isEqualTo(Map.of("added_later", true));
+        assertThat(details.fields())
+                .isEqualTo(new Filtering(List.of("name", "topic"), List.of("source"), List.of("consumers")));
+        assertThat(details.attributes())
+                .isEqualTo(new Filtering(
+                        List.of("identifiability"), List.of("temporal_resolution"), List.of("population_risk_tags")));
+        assertThat(details.additional()).isEqualTo(Map.of("max_page_size", 50));
     }
 
     @Test
@@ -82,8 +86,9 @@ class PolicyDecisionDetailsTest {
         ProductDiscoveryPolicyDecisionDetails details = new ProductDiscoveryPolicyDecisionDetails();
 
         assertThat(details.evaluation()).isNull();
-        assertThat(details.permittedNationalities()).isEmpty();
-        assertThat(details.excludedClassifications()).isEmpty();
+        assertThat(details.allowedFilteredFields()).isEmpty();
+        assertThat(details.deniedFilteredFields()).isEmpty();
+        assertThat(details.maskedFilteredFields()).isEmpty();
         assertThat(details.allowedFilteredAttributes()).isEmpty();
         assertThat(details.deniedFilteredAttributes()).isEmpty();
         assertThat(details.maskedFilteredAttributes()).isEmpty();
@@ -100,41 +105,42 @@ class PolicyDecisionDetailsTest {
     }
 
     @Test
-    void discover_narrowedBy_mergesAttributeListsLettingWithholdingWinOverDisclosure() {
-        ProductDiscoveryPolicyDecisionDetails request = new ProductDiscoveryPolicyDecisionDetails(
-                ProductDiscoveryPolicyDecisionDetails.EVALUATION_REQUEST,
-                List.of("GB"),
-                List.of("SECRET"),
-                List.of("name", "topic"),
-                List.of("internal_owner"),
-                List.of());
-        ProductDiscoveryPolicyDecisionDetails candidate = new ProductDiscoveryPolicyDecisionDetails(
-                ProductDiscoveryPolicyDecisionDetails.EVALUATION_CANDIDATE,
-                List.of("GB"),
-                List.of("SECRET"),
-                List.of("name", "source"),
-                List.of(),
-                List.of("topic"));
-
-        ProductDiscoveryPolicyDecisionDetails combined = request.narrowedBy(candidate);
+    void filtering_narrowedBy_letsWithholdingWinOverDisclosure() {
+        Filtering request = new Filtering(List.of("name", "topic"), List.of("internal_owner"), List.of());
+        Filtering candidate = new Filtering(List.of("name", "source"), List.of(), List.of("topic"));
 
         // "topic" is allowed by the request but masked by the candidate, so it is not left in the
         // allowed list; the same holds for anything either denies.
-        assertThat(combined.allowedFilteredAttributes()).containsExactly("name", "source");
-        assertThat(combined.deniedFilteredAttributes()).containsExactly("internal_owner");
-        assertThat(combined.maskedFilteredAttributes()).containsExactly("topic");
+        assertThat(request.narrowedBy(candidate))
+                .isEqualTo(new Filtering(List.of("name", "source"), List.of("internal_owner"), List.of("topic")));
+    }
+
+    @Test
+    void discover_narrowedBy_mergesFieldsAndAttributesSeparately() {
+        ProductDiscoveryPolicyDecisionDetails request = new ProductDiscoveryPolicyDecisionDetails(
+                ProductDiscoveryPolicyDecisionDetails.EVALUATION_REQUEST,
+                new Filtering(List.of("name", "source"), List.of(), List.of("consumers")),
+                new Filtering(List.of("identifiability"), List.of(), List.of()));
+        ProductDiscoveryPolicyDecisionDetails candidate = new ProductDiscoveryPolicyDecisionDetails(
+                ProductDiscoveryPolicyDecisionDetails.EVALUATION_CANDIDATE,
+                new Filtering(List.of("name"), List.of(), List.of("source")),
+                new Filtering(List.of("identifiability"), List.of(), List.of("population_risk_tags")));
+
+        ProductDiscoveryPolicyDecisionDetails combined = request.narrowedBy(candidate);
+
         assertThat(combined.evaluation()).isEqualTo(ProductDiscoveryPolicyDecisionDetails.EVALUATION_CANDIDATE);
+        assertThat(combined.fields())
+                .isEqualTo(new Filtering(List.of("name"), List.of(), List.of("consumers", "source")));
+        assertThat(combined.attributes())
+                .isEqualTo(new Filtering(List.of("identifiability"), List.of(), List.of("population_risk_tags")));
     }
 
     @Test
     void discover_narrowedBy_emptyDetails_keepsThese() {
         ProductDiscoveryPolicyDecisionDetails request = new ProductDiscoveryPolicyDecisionDetails(
                 ProductDiscoveryPolicyDecisionDetails.EVALUATION_REQUEST,
-                List.of("GB"),
-                List.of("SECRET"),
-                List.of(),
-                List.of(),
-                List.of("contact_email"));
+                new Filtering(List.of(), List.of(), List.of("consumers")),
+                new Filtering(List.of(), List.of(), List.of()));
 
         assertThat(request.narrowedBy(new ProductDiscoveryPolicyDecisionDetails()))
                 .isSameAs(request);
@@ -147,27 +153,22 @@ class PolicyDecisionDetailsTest {
                         true, ProductDiscoveryPolicyDecisionDetails.class)
                 .withDetails(new ProductDiscoveryPolicyDecisionDetails(
                         ProductDiscoveryPolicyDecisionDetails.EVALUATION_REQUEST,
-                        List.of("GB"),
-                        List.of("SECRET"),
-                        List.of(),
-                        List.of(),
-                        List.of("contact_email")));
+                        new Filtering(List.of(), List.of(), List.of("consumers")),
+                        new Filtering(List.of(), List.of(), List.of("population_risk_tags"))));
         PolicyDecision<ProductDiscoveryPolicyDecisionDetails> candidate = PolicyDecision.of(
                         true, ProductDiscoveryPolicyDecisionDetails.class)
                 .withDetails(new ProductDiscoveryPolicyDecisionDetails(
                         ProductDiscoveryPolicyDecisionDetails.EVALUATION_CANDIDATE,
-                        List.of("GB"),
-                        List.of("SECRET"),
-                        List.of("name"),
-                        List.of(),
-                        List.of()));
+                        new Filtering(List.of("name"), List.of(), List.of()),
+                        new Filtering(List.of("identifiability"), List.of(), List.of())));
 
         ProductDiscoveryPolicyDecisionDetails details =
                 request.combinedWith(candidate).details();
 
         assertThat(details.evaluation()).isEqualTo(ProductDiscoveryPolicyDecisionDetails.EVALUATION_CANDIDATE);
-        assertThat(details.allowedFilteredAttributes()).containsExactly("name");
-        assertThat(details.maskedFilteredAttributes()).containsExactly("contact_email");
+        assertThat(details.maskedFilteredFields()).containsExactly("consumers");
+        assertThat(details.maskedFilteredAttributes()).containsExactly("population_risk_tags");
+        assertThat(details.allowedFilteredAttributes()).containsExactly("identifiability");
     }
 
     @Test
