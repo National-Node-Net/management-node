@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import jakarta.annotation.PostConstruct;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import uk.gov.dbt.ndtp.ia.node.management.config.OpaProperties;
@@ -32,6 +33,7 @@ public class PolicyOutputLogger {
 
     private final boolean enabled;
     private final ObjectWriter prettyWriter;
+    private final ObjectWriter compactWriter;
 
     public PolicyOutputLogger(OpaProperties opaProperties, ObjectMapper objectMapper) {
         this.enabled = opaProperties.logOutput();
@@ -40,6 +42,7 @@ public class PolicyOutputLogger {
         // log shows the same document the PDP returned.
         ObjectMapper loggingMapper = objectMapper.copy().setSerializationInclusion(JsonInclude.Include.NON_NULL);
         this.prettyWriter = loggingMapper.writerWithDefaultPrettyPrinter();
+        this.compactWriter = loggingMapper.writer();
     }
 
     @PostConstruct
@@ -64,7 +67,7 @@ public class PolicyOutputLogger {
      * @param input the decision input the response answers
      * @param output the decision the PDP returned
      */
-    public void logOutput(PolicyInput input, DefaultPolicyDecisionOutput output) {
+    public void logOutput(PolicyInput input, PolicyDecision<?> output) {
         if (!enabled || input == null || output == null) {
             return;
         }
@@ -77,20 +80,36 @@ public class PolicyOutputLogger {
                   allowed_attributes   : {}
                   denied_attributes    : {}
                   masked_attributes    : {}
+                  reasons              : {}
+                  policy               : id={} version={} resolution={}
+                  details              : {}
                   payload:
                 {}""",
-                output.decision(),
+                output.verdict(),
                 value(input.action()),
                 resource == null ? NONE : value(resource.kind()),
                 resource == null ? NONE : value(resource.id()),
                 output.allowedFilteredAttributes(),
                 output.deniedFilteredAttributes(),
                 output.maskedFilteredAttributes(),
+                output.reasons(),
+                output.policy().id(),
+                output.policy().version(),
+                output.policy().resolution(),
+                compact(output.details()),
                 payload(output));
     }
 
-    private String payload(DefaultPolicyDecisionOutput output) {
-        return serialise(new PolicyDecisionResponse(output)).indent(2).stripTrailing();
+    private String payload(PolicyDecision<?> output) {
+        return serialise(Map.of("result", output)).indent(2).stripTrailing();
+    }
+
+    private String compact(Object value) {
+        try {
+            return compactWriter.writeValueAsString(value);
+        } catch (Exception e) {
+            return "<not serialisable: " + e.getMessage() + ">";
+        }
     }
 
     private String serialise(Object value) {

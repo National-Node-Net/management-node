@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
@@ -29,6 +30,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 import uk.gov.dbt.ndtp.ia.node.management.config.OpaProperties;
+import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductSubscriptionPolicyDecisionDetails;
 
 class PolicyDecisionClientTest {
 
@@ -37,10 +39,9 @@ class PolicyDecisionClientTest {
     private static final OpaProperties PROPERTIES = new OpaProperties(
             true,
             "https://opa.example.internal",
-            "/v1/data/management_node/decision",
+            "/v1/data/dispatch/decision",
             Duration.ofSeconds(2),
             Duration.ofSeconds(3),
-            List.of("/api/v1/configuration/**"),
             List.of("content-type"),
             false,
             false);
@@ -54,7 +55,11 @@ class PolicyDecisionClientTest {
         restClientBuilder = RestClient.builder().baseUrl(PROPERTIES.url());
         mockServer = MockRestServiceServer.bindTo(restClientBuilder).build();
         client = new PolicyDecisionClient(
-                restClientBuilder.build(), PROPERTIES, loggerFor(PROPERTIES), outputLoggerFor(PROPERTIES));
+                restClientBuilder.build(),
+                PROPERTIES,
+                loggerFor(PROPERTIES),
+                outputLoggerFor(PROPERTIES),
+                new ObjectMapper());
     }
 
     @Test
@@ -64,7 +69,7 @@ class PolicyDecisionClientTest {
                 .andExpect(method(HttpMethod.POST))
                 .andRespond(withSuccess("{\"result\":true}", MediaType.APPLICATION_JSON));
 
-        assertThat(client.evaluate(INPUT)).isEqualTo(DefaultPolicyDecisionOutput.ALLOW);
+        assertThat(client.evaluate(INPUT)).isEqualTo(PolicyDecision.ALLOW);
     }
 
     @Test
@@ -74,7 +79,7 @@ class PolicyDecisionClientTest {
                 .andExpect(method(HttpMethod.POST))
                 .andRespond(withSuccess("{\"result\":false}", MediaType.APPLICATION_JSON));
 
-        assertThat(client.evaluate(INPUT)).isEqualTo(DefaultPolicyDecisionOutput.DENY);
+        assertThat(client.evaluate(INPUT)).isEqualTo(PolicyDecision.DENY);
     }
 
     @Test
@@ -91,8 +96,8 @@ class PolicyDecisionClientTest {
                         MediaType.APPLICATION_JSON));
 
         assertThat(client.evaluate(INPUT))
-                .isEqualTo(new DefaultPolicyDecisionOutput(
-                        true, List.of("name"), List.of("internal_owner"), List.of("contact_email")));
+                .isEqualTo(
+                        PolicyDecision.of(true, List.of("name"), List.of("internal_owner"), List.of("contact_email")));
     }
 
     @Test
@@ -103,7 +108,7 @@ class PolicyDecisionClientTest {
                         "{\"result\": {\"allow\": false, \"denied_filtered_attributes\": [\"name\"]}}",
                         MediaType.APPLICATION_JSON));
 
-        DefaultPolicyDecisionOutput output = client.evaluate(INPUT);
+        PolicyDecision<PolicyDecisionDetails> output = client.evaluate(INPUT);
 
         assertThat(output.allow()).isFalse();
         assertThat(output.deniedFilteredAttributes()).containsExactly("name");
@@ -115,7 +120,7 @@ class PolicyDecisionClientTest {
                 .expect(requestTo(PROPERTIES.url() + PROPERTIES.decisionPath()))
                 .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
 
-        assertThat(client.evaluate(INPUT)).isEqualTo(DefaultPolicyDecisionOutput.DENY);
+        assertThat(client.evaluate(INPUT)).isEqualTo(PolicyDecision.DENY);
     }
 
     @Test
@@ -124,7 +129,7 @@ class PolicyDecisionClientTest {
                 .expect(requestTo(PROPERTIES.url() + PROPERTIES.decisionPath()))
                 .andRespond(withSuccess("not-json", MediaType.APPLICATION_JSON));
 
-        assertThat(client.evaluate(INPUT)).isEqualTo(DefaultPolicyDecisionOutput.DENY);
+        assertThat(client.evaluate(INPUT)).isEqualTo(PolicyDecision.DENY);
     }
 
     @Test
@@ -133,7 +138,7 @@ class PolicyDecisionClientTest {
                 .expect(requestTo(PROPERTIES.url() + PROPERTIES.decisionPath()))
                 .andRespond(withServerError());
 
-        assertThat(client.evaluate(INPUT)).isEqualTo(DefaultPolicyDecisionOutput.DENY);
+        assertThat(client.evaluate(INPUT)).isEqualTo(PolicyDecision.DENY);
     }
 
     @Test
@@ -144,7 +149,7 @@ class PolicyDecisionClientTest {
                     throw new IOException("connection refused");
                 });
 
-        assertThat(client.evaluate(INPUT)).isEqualTo(DefaultPolicyDecisionOutput.DENY);
+        assertThat(client.evaluate(INPUT)).isEqualTo(PolicyDecision.DENY);
     }
 
     @Test
@@ -155,7 +160,7 @@ class PolicyDecisionClientTest {
                     throw new SocketTimeoutException("read timed out");
                 });
 
-        assertThat(client.evaluate(INPUT)).isEqualTo(DefaultPolicyDecisionOutput.DENY);
+        assertThat(client.evaluate(INPUT)).isEqualTo(PolicyDecision.DENY);
     }
 
     @Test
@@ -182,14 +187,17 @@ class PolicyDecisionClientTest {
                 PROPERTIES.decisionPath(),
                 PROPERTIES.connectTimeout(),
                 PROPERTIES.readTimeout(),
-                PROPERTIES.protectedPaths(),
                 PROPERTIES.forwardedHeaders(),
                 PROPERTIES.logInput(),
                 PROPERTIES.logOutput());
         PolicyDecisionClient disabledClient = new PolicyDecisionClient(
-                restClientBuilder.build(), disabled, loggerFor(disabled), outputLoggerFor(disabled));
+                restClientBuilder.build(),
+                disabled,
+                loggerFor(disabled),
+                outputLoggerFor(disabled),
+                new ObjectMapper());
 
-        assertThat(disabledClient.evaluate(INPUT)).isEqualTo(DefaultPolicyDecisionOutput.ALLOW);
+        assertThat(disabledClient.evaluate(INPUT)).isEqualTo(PolicyDecision.ALLOW);
 
         // No request was expected on the mock server, so any call would have failed verification.
         mockServer.verify();
@@ -203,7 +211,6 @@ class PolicyDecisionClientTest {
                 PROPERTIES.decisionPath(),
                 PROPERTIES.connectTimeout(),
                 PROPERTIES.readTimeout(),
-                PROPERTIES.protectedPaths(),
                 PROPERTIES.forwardedHeaders(),
                 PROPERTIES.logInput(),
                 PROPERTIES.logOutput());
@@ -213,7 +220,11 @@ class PolicyDecisionClientTest {
         logger.addAppender(appender);
         try {
             new PolicyDecisionClient(
-                            restClientBuilder.build(), disabled, loggerFor(disabled), outputLoggerFor(disabled))
+                            restClientBuilder.build(),
+                            disabled,
+                            loggerFor(disabled),
+                            outputLoggerFor(disabled),
+                            new ObjectMapper())
                     .warnWhenDisabled();
         } finally {
             logger.detachAppender(appender);
@@ -236,7 +247,11 @@ class PolicyDecisionClientTest {
         logger.addAppender(appender);
         try {
             new PolicyDecisionClient(
-                            restClientBuilder.build(), PROPERTIES, loggerFor(PROPERTIES), outputLoggerFor(PROPERTIES))
+                            restClientBuilder.build(),
+                            PROPERTIES,
+                            loggerFor(PROPERTIES),
+                            outputLoggerFor(PROPERTIES),
+                            new ObjectMapper())
                     .warnWhenDisabled();
         } finally {
             logger.detachAppender(appender);
@@ -254,7 +269,6 @@ class PolicyDecisionClientTest {
                 PROPERTIES.decisionPath(),
                 PROPERTIES.connectTimeout(),
                 PROPERTIES.readTimeout(),
-                PROPERTIES.protectedPaths(),
                 PROPERTIES.forwardedHeaders(),
                 PROPERTIES.logInput(),
                 true);
@@ -262,7 +276,8 @@ class PolicyDecisionClientTest {
                 restClientBuilder.build(),
                 logOutputEnabled,
                 loggerFor(logOutputEnabled),
-                outputLoggerFor(logOutputEnabled));
+                outputLoggerFor(logOutputEnabled),
+                new ObjectMapper());
         mockServer
                 .expect(requestTo(PROPERTIES.url() + PROPERTIES.decisionPath()))
                 .andRespond(withSuccess("{\"result\":true}", MediaType.APPLICATION_JSON));
@@ -299,6 +314,127 @@ class PolicyDecisionClientTest {
         }
 
         assertThat(appender.list).isEmpty();
+    }
+
+    private static final String SUBSCRIBE_RESULT =
+            """
+            {"result": {"allow": true,
+                        "reasons": [],
+                        "policy": {"id": "product.subscribe",
+                                   "version": "policies.product.subscribe/1.0.0",
+                                   "resolution": "exact"},
+                        "details": {"requires_approval": false,
+                                    "max_validity_days": 90,
+                                    "permitted_schedule_types": ["cron", "interval"]}}}""";
+
+    private static final PolicyProvenance SUBSCRIBE =
+            new PolicyProvenance("product.subscribe", "policies.product.subscribe/1.0.0", "exact");
+
+    @Test
+    void objectResult_carriesReasonsProvenanceAndRawDetails() {
+        mockServer
+                .expect(requestTo(PROPERTIES.url() + PROPERTIES.decisionPath()))
+                .andRespond(withSuccess(SUBSCRIBE_RESULT, MediaType.APPLICATION_JSON));
+
+        PolicyDecision<PolicyDecisionDetails> output = client.evaluate(INPUT);
+
+        assertThat(output.allow()).isTrue();
+        assertThat(output.policy()).isEqualTo(SUBSCRIBE);
+        assertThat(output.details().additional())
+                .containsEntry("requires_approval", false)
+                .containsEntry("max_validity_days", 90)
+                .containsEntry("permitted_schedule_types", List.of("cron", "interval"));
+    }
+
+    @Test
+    void declaredDetailsType_readsTheDetailsIntoThatType() {
+        mockServer
+                .expect(requestTo(PROPERTIES.url() + PROPERTIES.decisionPath()))
+                .andRespond(withSuccess(SUBSCRIBE_RESULT, MediaType.APPLICATION_JSON));
+
+        PolicyDecision<ProductSubscriptionPolicyDecisionDetails> output =
+                client.evaluate(INPUT, ProductSubscriptionPolicyDecisionDetails.class);
+
+        assertThat(output.allow()).isTrue();
+        assertThat(output.policy()).isEqualTo(SUBSCRIBE);
+        assertThat(output.details())
+                .isEqualTo(new ProductSubscriptionPolicyDecisionDetails(false, 90, List.of("cron", "interval")));
+    }
+
+    @Test
+    void declaredDetailsType_keepsFieldsItDoesNotDeclareAsAdditional() {
+        mockServer
+                .expect(requestTo(PROPERTIES.url() + PROPERTIES.decisionPath()))
+                .andRespond(withSuccess(
+                        """
+                        {"result": {"allow": true,
+                                    "details": {"requires_approval": true, "review_queue": "gold"}}}""",
+                        MediaType.APPLICATION_JSON));
+
+        PolicyDecision<ProductSubscriptionPolicyDecisionDetails> output =
+                client.evaluate(INPUT, ProductSubscriptionPolicyDecisionDetails.class);
+
+        assertThat(output.details().requiresApproval()).isTrue();
+        assertThat(output.details().maxValidityDays()).isNull();
+        assertThat(output.details().permittedScheduleTypes()).isEmpty();
+        assertThat(output.details().additional()).isEqualTo(Map.of("review_queue", "gold"));
+    }
+
+    @Test
+    void declaredDetailsType_withNoDetailsReturned_isEmptyDetailsOfThatType() {
+        mockServer
+                .expect(requestTo(PROPERTIES.url() + PROPERTIES.decisionPath()))
+                .andRespond(withSuccess("{\"result\": {\"allow\": true}}", MediaType.APPLICATION_JSON));
+
+        assertThat(client.evaluate(INPUT, ProductSubscriptionPolicyDecisionDetails.class)
+                        .details())
+                .isEqualTo(new ProductSubscriptionPolicyDecisionDetails());
+    }
+
+    @Test
+    void detailsTheDeclaredTypeCannotHold_isDenyKeepingProvenance() {
+        mockServer
+                .expect(requestTo(PROPERTIES.url() + PROPERTIES.decisionPath()))
+                .andRespond(withSuccess(
+                        """
+                        {"result": {"allow": true,
+                                    "policy": {"id": "product.subscribe",
+                                               "version": "policies.product.subscribe/1.0.0",
+                                               "resolution": "exact"},
+                                    "details": {"max_validity_days": "forever"}}}""",
+                        MediaType.APPLICATION_JSON));
+        Logger logger = (Logger) LoggerFactory.getLogger(PolicyDecisionClient.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+
+        PolicyDecision<ProductSubscriptionPolicyDecisionDetails> output;
+        try {
+            output = client.evaluate(INPUT, ProductSubscriptionPolicyDecisionDetails.class);
+        } finally {
+            logger.detachAppender(appender);
+        }
+
+        assertThat(output.allow()).isFalse();
+        assertThat(output.reasons()).containsExactly(PolicyDecision.REASON_DETAILS_UNREADABLE);
+        assertThat(output.policy()).isEqualTo(SUBSCRIBE);
+        assertThat(output.details()).isEqualTo(new ProductSubscriptionPolicyDecisionDetails());
+        assertThat(appender.list).anySatisfy(event -> {
+            assertThat(event.getLevel()).isEqualTo(Level.WARN);
+            assertThat(event.getFormattedMessage())
+                    .contains("product.subscribe")
+                    .contains(ProductSubscriptionPolicyDecisionDetails.class.getName());
+        });
+    }
+
+    @Test
+    void declaredDetailsType_doesNotTurnAnUnreachablePdpIntoAnythingButDeny() {
+        mockServer
+                .expect(requestTo(PROPERTIES.url() + PROPERTIES.decisionPath()))
+                .andRespond(withServerError());
+
+        assertThat(client.evaluate(INPUT, ProductSubscriptionPolicyDecisionDetails.class))
+                .isEqualTo(PolicyDecision.of(false, ProductSubscriptionPolicyDecisionDetails.class));
     }
 
     private static PolicyInputLogger loggerFor(OpaProperties properties) {

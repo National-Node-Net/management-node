@@ -1,0 +1,12 @@
+{
+    "routes": [
+        {
+            "id": "route-product-browse",
+            "resource": "product",
+            "action": "browse",
+            "policy": "product.fallback",
+            "priority": 10,
+            "enabled": true
+        }
+    ]
+}

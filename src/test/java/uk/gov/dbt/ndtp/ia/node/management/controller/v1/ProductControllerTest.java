@@ -6,19 +6,27 @@
 
 package uk.gov.dbt.ndtp.ia.node.management.controller.v1;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -28,41 +36,60 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import uk.gov.dbt.ndtp.ia.node.management.config.OpaProperties;
 import uk.gov.dbt.ndtp.ia.node.management.exception.handlers.GlobalExceptionHandler;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProductDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductSubscriptionResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.jwt.EnhancedPrincipal;
+import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductDiscoveryPolicyDecisionDetails;
+import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductSubscriptionPolicyDecisionDetails;
+import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductViewPolicyDecisionDetails;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductDiscoveryService;
-import uk.gov.dbt.ndtp.ia.node.management.web.policy.PolicyDecisionOutputArgumentResolver;
+import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductService;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecision;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyProvenance;
+import uk.gov.dbt.ndtp.ia.node.management.web.policy.PolicyDecisionArgumentResolver;
 
 /**
- * Covers {@code POST /api/v1/product/discover} while it is deliberately disconnected from
- * {@link ProductDiscoveryService}: the endpoint binds and validates the {@code text}/{@code
- * filters} criteria, but always answers with an empty product list. The candidate-lookup and per-product filtering scenarios live in
- * {@code ProductDiscoveryServiceImplTest} until the endpoint is wired back up.
+ * Covers the product endpoints at the controller boundary.
+ *
+ * <p>{@code POST /api/v1/product/discover} is deliberately disconnected from
+ * {@link ProductDiscoveryService}: it binds and validates the {@code text}/{@code filters}
+ * criteria, but always answers with an empty product list. The candidate-lookup and per-product
+ * filtering scenarios live in {@code ProductDiscoveryServiceImplTest}.
+ *
+ * <p>The PEP is not part of a standalone MockMvc setup, so the subscribe and view tests publish a
+ * decision on the request themselves - exactly what the PEP does before the handler runs - and
+ * check how the handler uses it.
  */
 @ExtendWith(MockitoExtension.class)
 class ProductControllerTest {
+
+    @Mock
+    private ProductService productService;
 
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
-        ProductController controller = new ProductController();
-        mockMvc = MockMvcBuilders.standaloneSetup(controller)
-                .setControllerAdvice(new GlobalExceptionHandler())
-                .setCustomArgumentResolvers(
-                        new AuthenticationPrincipalArgumentResolver(),
-                        new PolicyDecisionOutputArgumentResolver(opaProperties()))
-                .build();
+        mockMvc = mockMvc(true);
         authenticateAs("client-1");
     }
 
-    private static OpaProperties opaProperties() {
+    private MockMvc mockMvc(boolean opaEnabled) {
+        return MockMvcBuilders.standaloneSetup(new ProductController(productService))
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .setCustomArgumentResolvers(
+                        new AuthenticationPrincipalArgumentResolver(),
+                        new PolicyDecisionArgumentResolver(opaProperties(opaEnabled)))
+                .build();
+    }
+
+    private static OpaProperties opaProperties(boolean opaEnabled) {
         return new OpaProperties(
-                true,
+                opaEnabled,
                 "http://localhost:8181",
-                "/v1/data/management_node/decision",
+                "/v1/data/dispatch/decision",
                 Duration.ofSeconds(2),
                 Duration.ofSeconds(3),
-                List.of("/api/v1/product/**"),
                 List.of("content-type"),
                 false,
                 false);
@@ -166,5 +193,166 @@ class ProductControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"filters\":{\"key 1\":null}}"))
                 .andExpect(status().isOk());
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // Discover: the request-level decision reaches the handler and is logged
+    // ---------------------------------------------------------------------------------------
+
+    private static String discoverLogAfter(MockMvc mvc, PolicyDecision<?> published) throws Exception {
+        Logger logger = (Logger) LoggerFactory.getLogger(ProductController.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            var request = post("/api/v1/product/discover")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"text\":\"search term\"}");
+            if (published != null) {
+                request.requestAttr(PolicyDecision.REQUEST_ATTRIBUTE, published);
+            }
+            mvc.perform(request).andExpect(status().isOk());
+        } finally {
+            logger.detachAppender(appender);
+        }
+        return appender.list.stream()
+                .map(ILoggingEvent::getFormattedMessage)
+                .filter(message -> message.startsWith("Product discover"))
+                .findFirst()
+                .orElseThrow();
+    }
+
+    @Test
+    void discover_publishedDecision_isAvailableToTheHandlerAndLogged() throws Exception {
+        PolicyDecision<ProductDiscoveryPolicyDecisionDetails> published = new PolicyDecision<>(
+                true,
+                List.of(),
+                List.of(),
+                List.of("contact_email"),
+                List.of(),
+                new PolicyProvenance("product.discover", "policies.product.discover/1.0.0", "exact"),
+                new ProductDiscoveryPolicyDecisionDetails(
+                        ProductDiscoveryPolicyDecisionDetails.EVALUATION_REQUEST, List.of("GB"), List.of("SECRET")));
+
+        assertThat(discoverLogAfter(mockMvc, published))
+                .contains("allow=true")
+                .contains("policy=product.discover")
+                .contains("resolution=exact")
+                .contains("masked=[contact_email]")
+                .contains("evaluation=request")
+                .contains("permittedNationalities=[GB]")
+                .contains("excludedClassifications=[SECRET]");
+    }
+
+    @Test
+    void discover_withPolicySwitchedOff_logsThatNoDecisionWasTaken() throws Exception {
+        assertThat(discoverLogAfter(mockMvc(false), null)).contains("without a policy decision");
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // Subscribe
+    // ---------------------------------------------------------------------------------------
+
+    private static PolicyDecision<ProductSubscriptionPolicyDecisionDetails> subscribeDecision(
+            Boolean requiresApproval) {
+        return PolicyDecision.of(true, ProductSubscriptionPolicyDecisionDetails.class)
+                .withDetails(new ProductSubscriptionPolicyDecisionDetails(
+                        requiresApproval, 90, List.of("cron", "interval")));
+    }
+
+    private static final String SUBSCRIPTION =
+            """
+            {"productId": 42, "scheduleType": "cron", "scheduleExpression": "*/5 * * * *"}""";
+
+    @Test
+    void subscribe_withoutApprovalRequired_isAcceptedOnThePolicyTerms() throws Exception {
+        mockMvc.perform(post("/api/v1/product/subscribe")
+                        .requestAttr(PolicyDecision.REQUEST_ATTRIBUTE, subscribeDecision(false))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(SUBSCRIPTION))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.productId").value(42))
+                .andExpect(jsonPath("$.status").value(ProductSubscriptionResponseDTO.STATUS_ACCEPTED))
+                .andExpect(jsonPath("$.maxValidityDays").value(90))
+                .andExpect(jsonPath("$.permittedScheduleTypes[0]").value("cron"));
+    }
+
+    @Test
+    void subscribe_whenPolicyRequiresApproval_isPendingApproval() throws Exception {
+        mockMvc.perform(post("/api/v1/product/subscribe")
+                        .requestAttr(PolicyDecision.REQUEST_ATTRIBUTE, subscribeDecision(true))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(SUBSCRIPTION))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(ProductSubscriptionResponseDTO.STATUS_PENDING_APPROVAL));
+    }
+
+    /** A missing approval flag is not read as "no approval needed". */
+    @Test
+    void subscribe_whenPolicyOmitsTheApprovalFlag_isPendingApproval() throws Exception {
+        mockMvc.perform(post("/api/v1/product/subscribe")
+                        .requestAttr(PolicyDecision.REQUEST_ATTRIBUTE, subscribeDecision(null))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(SUBSCRIPTION))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(ProductSubscriptionResponseDTO.STATUS_PENDING_APPROVAL));
+    }
+
+    /** With policy switched off nothing set terms, so the request is held rather than accepted. */
+    @Test
+    void subscribe_withPolicySwitchedOff_isPendingApprovalWithNoTerms() throws Exception {
+        mockMvc(false)
+                .perform(post("/api/v1/product/subscribe")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(SUBSCRIPTION))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(ProductSubscriptionResponseDTO.STATUS_PENDING_APPROVAL))
+                .andExpect(jsonPath("$.maxValidityDays").doesNotExist())
+                .andExpect(jsonPath("$.permittedScheduleTypes").isEmpty());
+    }
+
+    @Test
+    void subscribe_withoutProductId_returns400() throws Exception {
+        mockMvc.perform(post("/api/v1/product/subscribe")
+                        .requestAttr(PolicyDecision.REQUEST_ATTRIBUTE, subscribeDecision(false))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"scheduleType\": \"cron\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // View
+    // ---------------------------------------------------------------------------------------
+
+    @Test
+    void view_existingProduct_isReturned() throws Exception {
+        when(productService.getProductsByIds(List.of(7L)))
+                .thenReturn(
+                        List.of(ProductDTO.builder().id(7L).name("Product A").build()));
+
+        mockMvc.perform(get("/api/v1/product/7")
+                        .requestAttr(
+                                PolicyDecision.REQUEST_ATTRIBUTE,
+                                PolicyDecision.of(true, ProductViewPolicyDecisionDetails.class)
+                                        .withDetails(new ProductViewPolicyDecisionDetails(
+                                                ProductViewPolicyDecisionDetails.ACCESS_LEVEL_READ))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Product A"));
+    }
+
+    @Test
+    void view_withPolicySwitchedOff_isStillServed() throws Exception {
+        when(productService.getProductsByIds(List.of(7L)))
+                .thenReturn(
+                        List.of(ProductDTO.builder().id(7L).name("Product A").build()));
+
+        mockMvc(false).perform(get("/api/v1/product/7")).andExpect(status().isOk());
+    }
+
+    @Test
+    void view_unknownProduct_returns404() throws Exception {
+        when(productService.getProductsByIds(List.of(99L))).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/v1/product/99")).andExpect(status().isNotFound());
     }
 }

@@ -7,13 +7,13 @@
 package uk.gov.dbt.ndtp.ia.node.management.web.certificate;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.math.BigInteger;
 import java.security.cert.X509Certificate;
 import java.sql.Timestamp;
@@ -21,71 +21,63 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.stream.Stream;
+import org.aopalliance.intercept.MethodInvocation;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import uk.gov.dbt.ndtp.ia.node.management.exception.AccessRejectedException;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.OrganisationCertificateDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.jwt.EnhancedPrincipal;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.CertificateType;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.CertificateValidationProvider;
 
+/**
+ * Covers the organisation certificate check as method advice: which calls it judges, each reason it
+ * refuses, and that a refusal stops the call before the handler runs.
+ */
+@ExtendWith(MockitoExtension.class)
 class CertificateValidationInterceptorTest {
+
+    private static final String PROTECTED_PATH = "/api/v1/configuration/consumer";
+    private static final String HANDLED = "handled";
 
     @Mock
     private CertificateValidationProvider validationProvider;
 
     @Mock
-    private HttpServletRequest request;
+    private MethodInvocation invocation;
 
-    @Mock
-    private HttpServletResponse response;
-
-    @Mock
-    private HandlerMethod handlerMethod;
-
-    @Mock
-    private SecurityContext securityContext;
-
-    @Mock
-    private Authentication authentication;
-
+    private MockHttpServletRequest request;
     private CertificateValidationInterceptor interceptor;
-    private AutoCloseable closeable;
 
     @BeforeEach
     void setUp() {
-        closeable = MockitoAnnotations.openMocks(this);
-        interceptor = new CertificateValidationInterceptor(validationProvider, new ObjectMapper());
-        SecurityContextHolder.setContext(securityContext);
+        interceptor = new CertificateValidationInterceptor(validationProvider);
+        request = new MockHttpServletRequest("GET", PROTECTED_PATH);
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
     }
 
     @AfterEach
-    void tearDown() throws Exception {
+    void tearDown() {
+        RequestContextHolder.resetRequestAttributes();
         SecurityContextHolder.clearContext();
-        closeable.close();
     }
 
-    private void setupAuthentication(String clientId) {
+    private void authenticateAs(String clientId) {
         EnhancedPrincipal principal = new EnhancedPrincipal("subject", clientId, "test-organisation");
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getPrincipal()).thenReturn(principal);
-    }
-
-    private StringWriter setupResponseWriter() throws Exception {
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        when(response.getWriter()).thenReturn(pw);
-        return sw;
+        SecurityContextHolder.getContext().setAuthentication(new TestingAuthenticationToken(principal, null));
     }
 
     private OrganisationCertificateDTO certDto(CertificateType type, String serial) {
@@ -99,72 +91,132 @@ class CertificateValidationInterceptorTest {
                 .build();
     }
 
-    @Test
-    void noAuthentication_returns403() throws Exception {
-        when(securityContext.getAuthentication()).thenReturn(null);
-        when(request.getRequestURI()).thenReturn("/api/v1/configuration/consumer");
-        setupResponseWriter();
+    private void activeCertificate(CertificateType type, String serial) {
+        OrganisationCertificateDTO cert = certDto(type, serial);
+        when(validationProvider.findByClientId("client-1")).thenReturn(Optional.of(cert));
+        when(validationProvider.isActive(cert)).thenReturn(true);
+    }
 
-        assertThat(interceptor.preHandle(request, response, handlerMethod)).isFalse();
-        verify(response).setStatus(403);
+    private void presentCertificateWithSerial(String hexSerial) {
+        X509Certificate presented = mock(X509Certificate.class);
+        when(presented.getSerialNumber()).thenReturn(new BigInteger(hexSerial, 16));
+        request.setAttribute("jakarta.servlet.request.X509Certificate", new X509Certificate[] {presented});
+    }
+
+    private void assertPassesThrough() throws Throwable {
+        when(invocation.proceed()).thenReturn(HANDLED);
+        assertThat(interceptor.invoke(invocation)).isEqualTo(HANDLED);
+    }
+
+    private void assertRejectedWith(String message) throws Throwable {
+        assertThatThrownBy(() -> interceptor.invoke(invocation))
+                .isInstanceOf(AccessRejectedException.class)
+                .hasMessage(message)
+                .satisfies(rejection -> assertThat(((AccessRejectedException) rejection).getErrorId())
+                        .isNotBlank());
+        verify(invocation, never()).proceed();
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // Which calls are judged
+    // ---------------------------------------------------------------------------------------
+
+    @Test
+    void pathOutsideProtectedPaths_proceedsWithoutCheckingCertificates() throws Throwable {
+        request.setRequestURI("/api/v1/product/discover");
+
+        assertPassesThrough();
+        verifyNoInteractions(validationProvider);
     }
 
     @Test
-    void nonEnhancedPrincipal_returns403() throws Exception {
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getPrincipal()).thenReturn("plain-string-principal");
-        when(request.getRequestURI()).thenReturn("/api/v1/configuration/consumer");
-        setupResponseWriter();
+    void callOutsideARequest_proceedsWithoutCheckingCertificates() throws Throwable {
+        RequestContextHolder.resetRequestAttributes();
 
-        assertThat(interceptor.preHandle(request, response, handlerMethod)).isFalse();
-        verify(response).setStatus(403);
+        assertPassesThrough();
+        verifyNoInteractions(validationProvider);
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // Refusals
+    // ---------------------------------------------------------------------------------------
+
+    @Test
+    void noAuthentication_isRejected() throws Throwable {
+        assertRejectedWith("Client ID required");
     }
 
     @Test
-    void emptyClientId_returns403() throws Exception {
-        setupAuthentication("");
-        when(request.getRequestURI()).thenReturn("/api/v1/configuration/consumer");
-        setupResponseWriter();
+    void nonEnhancedPrincipal_isRejected() throws Throwable {
+        SecurityContextHolder.getContext()
+                .setAuthentication(new TestingAuthenticationToken("plain-string-principal", null));
 
-        assertThat(interceptor.preHandle(request, response, handlerMethod)).isFalse();
-        verify(response).setStatus(403);
+        assertRejectedWith("Client ID required");
     }
 
     @Test
-    void noCertRecord_returns403() throws Exception {
-        setupAuthentication("client-1");
+    void emptyClientId_isRejected() throws Throwable {
+        authenticateAs("");
+
+        assertRejectedWith("Client ID required");
+    }
+
+    @Test
+    void noCertRecord_isRejected() throws Throwable {
+        authenticateAs("client-1");
         when(validationProvider.findByClientId("client-1")).thenReturn(Optional.empty());
-        when(request.getRequestURI()).thenReturn("/api/v1/configuration/consumer");
-        setupResponseWriter();
 
-        assertThat(interceptor.preHandle(request, response, handlerMethod)).isFalse();
-        verify(response).setStatus(403);
+        assertRejectedWith("No organisation certificate found");
     }
+
+    @Test
+    void inactiveCert_isRejected() throws Throwable {
+        authenticateAs("client-1");
+        OrganisationCertificateDTO cert = certDto(CertificateType.AUTOMATED, null);
+        when(validationProvider.findByClientId("client-1")).thenReturn(Optional.of(cert));
+        when(validationProvider.isActive(cert)).thenReturn(false);
+
+        assertRejectedWith("Organisation certificate is not active");
+    }
+
+    @Test
+    void mismatchedSerialNumber_isRejected() throws Throwable {
+        authenticateAs("client-1");
+        activeCertificate(CertificateType.AUTOMATED, "abc123");
+        presentCertificateWithSerial("def456");
+
+        assertRejectedWith("Certificate serial number mismatch");
+    }
+
+    @Test
+    void noCertificateWhenSerialExpected_isRejected() throws Throwable {
+        authenticateAs("client-1");
+        activeCertificate(CertificateType.AUTOMATED, "abc123");
+
+        assertRejectedWith("Client certificate required");
+    }
+
+    @Test
+    void bootstrapCert_isAlwaysRejected() throws Throwable {
+        authenticateAs("client-1");
+        activeCertificate(CertificateType.BOOTSTRAP, null);
+
+        assertRejectedWith("Bootstrap certificates cannot access this endpoint");
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // Pass-through
+    // ---------------------------------------------------------------------------------------
 
     @ParameterizedTest
     @EnumSource(
             value = CertificateType.class,
             names = {"AUTOMATED", "MANUAL"})
-    void activeCert_passesThrough(CertificateType type) throws Exception {
-        setupAuthentication("client-1");
-        OrganisationCertificateDTO cert = certDto(type, null);
-        when(validationProvider.findByClientId("client-1")).thenReturn(Optional.of(cert));
-        when(validationProvider.isActive(cert)).thenReturn(true);
+    void activeCert_passesThrough(CertificateType type) throws Throwable {
+        authenticateAs("client-1");
+        activeCertificate(type, null);
 
-        assertThat(interceptor.preHandle(request, response, handlerMethod)).isTrue();
-    }
-
-    @Test
-    void inactiveCert_returns403() throws Exception {
-        setupAuthentication("client-1");
-        OrganisationCertificateDTO cert = certDto(CertificateType.AUTOMATED, null);
-        when(validationProvider.findByClientId("client-1")).thenReturn(Optional.of(cert));
-        when(validationProvider.isActive(cert)).thenReturn(false);
-        when(request.getRequestURI()).thenReturn("/api/v1/configuration/consumer");
-        setupResponseWriter();
-
-        assertThat(interceptor.preHandle(request, response, handlerMethod)).isFalse();
-        verify(response).setStatus(403);
+        assertPassesThrough();
     }
 
     static Stream<Arguments> serialNumberFormats() {
@@ -176,88 +228,20 @@ class CertificateValidationInterceptorTest {
 
     @ParameterizedTest(name = "{1}")
     @MethodSource("serialNumberFormats")
-    void matchingSerialNumber_passesThrough(String storedSerial, String description) throws Exception {
-        setupAuthentication("client-1");
-        OrganisationCertificateDTO cert = certDto(CertificateType.AUTOMATED, storedSerial);
-        when(validationProvider.findByClientId("client-1")).thenReturn(Optional.of(cert));
-        when(validationProvider.isActive(cert)).thenReturn(true);
+    void matchingSerialNumber_passesThrough(String storedSerial, String description) throws Throwable {
+        authenticateAs("client-1");
+        activeCertificate(CertificateType.AUTOMATED, storedSerial);
+        presentCertificateWithSerial("abc123");
 
-        X509Certificate mockCert = mock(X509Certificate.class);
-        when(mockCert.getSerialNumber()).thenReturn(new BigInteger("abc123", 16));
-        when(request.getAttribute("jakarta.servlet.request.X509Certificate"))
-                .thenReturn(new X509Certificate[] {mockCert});
-
-        assertThat(interceptor.preHandle(request, response, handlerMethod)).isTrue();
+        assertPassesThrough();
     }
 
+    /** No stored serial means nothing to compare, so a missing client certificate is not a refusal. */
     @Test
-    void mismatchedSerialNumber_returns403() throws Exception {
-        setupAuthentication("client-1");
-        OrganisationCertificateDTO cert = certDto(CertificateType.AUTOMATED, "abc123");
-        when(validationProvider.findByClientId("client-1")).thenReturn(Optional.of(cert));
-        when(validationProvider.isActive(cert)).thenReturn(true);
+    void nullSerialNumber_skipsTheSerialCheck() throws Throwable {
+        authenticateAs("client-1");
+        activeCertificate(CertificateType.AUTOMATED, null);
 
-        X509Certificate mockCert = mock(X509Certificate.class);
-        when(mockCert.getSerialNumber()).thenReturn(new BigInteger("def456", 16));
-        when(request.getAttribute("jakarta.servlet.request.X509Certificate"))
-                .thenReturn(new X509Certificate[] {mockCert});
-        setupResponseWriter();
-
-        assertThat(interceptor.preHandle(request, response, handlerMethod)).isFalse();
-        verify(response).setStatus(403);
-    }
-
-    @Test
-    void noCertificateWhenSerialExpected_returns403() throws Exception {
-        setupAuthentication("client-1");
-        OrganisationCertificateDTO cert = certDto(CertificateType.AUTOMATED, "abc123");
-        when(validationProvider.findByClientId("client-1")).thenReturn(Optional.of(cert));
-        when(validationProvider.isActive(cert)).thenReturn(true);
-        when(request.getAttribute("jakarta.servlet.request.X509Certificate")).thenReturn(null);
-        setupResponseWriter();
-
-        assertThat(interceptor.preHandle(request, response, handlerMethod)).isFalse();
-        verify(response).setStatus(403);
-    }
-
-    @Test
-    void nullSerialNumber_skipsCheck() throws Exception {
-        setupAuthentication("client-1");
-        OrganisationCertificateDTO cert = certDto(CertificateType.AUTOMATED, null);
-        when(validationProvider.findByClientId("client-1")).thenReturn(Optional.of(cert));
-        when(validationProvider.isActive(cert)).thenReturn(true);
-
-        assertThat(interceptor.preHandle(request, response, handlerMethod)).isTrue();
-        verify(request, never()).getAttribute("jakarta.servlet.request.X509Certificate");
-    }
-
-    @Test
-    void bootstrapCert_alwaysReturns403() throws Exception {
-        setupAuthentication("client-1");
-        OrganisationCertificateDTO cert = certDto(CertificateType.BOOTSTRAP, null);
-        when(validationProvider.findByClientId("client-1")).thenReturn(Optional.of(cert));
-        when(validationProvider.isActive(cert)).thenReturn(true);
-        when(request.getRequestURI()).thenReturn("/api/v1/configuration/consumer");
-        setupResponseWriter();
-
-        assertThat(interceptor.preHandle(request, response, handlerMethod)).isFalse();
-        verify(response).setStatus(403);
-    }
-
-    @Test
-    void errorResponse_containsStatusAndMessage() throws Exception {
-        setupAuthentication("client-1");
-        OrganisationCertificateDTO cert = certDto(CertificateType.AUTOMATED, null);
-        when(validationProvider.findByClientId("client-1")).thenReturn(Optional.of(cert));
-        when(validationProvider.isActive(cert)).thenReturn(false);
-        when(request.getRequestURI()).thenReturn("/api/v1/configuration/consumer");
-        StringWriter sw = setupResponseWriter();
-
-        interceptor.preHandle(request, response, handlerMethod);
-
-        verify(response).setStatus(403);
-        verify(response).setContentType("application/json");
-        String body = sw.toString();
-        assertThat(body).contains("403").contains("Organisation certificate is not active");
+        assertPassesThrough();
     }
 }

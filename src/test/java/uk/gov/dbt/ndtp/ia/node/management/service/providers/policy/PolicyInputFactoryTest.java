@@ -41,6 +41,8 @@ class PolicyInputFactoryTest {
     @Mock
     private PolicyAttributeService policyAttributeService;
 
+    private static final PolicyTarget<PolicyDecisionDetails> TARGET = PolicyTarget.of("product", "discover");
+
     private PolicyInputFactory factory;
 
     @BeforeEach
@@ -48,10 +50,9 @@ class PolicyInputFactoryTest {
         OpaProperties properties = new OpaProperties(
                 true,
                 "http://opa",
-                "/v1/data/management_node/decision",
+                "/v1/data/dispatch/decision",
                 Duration.ofSeconds(2),
                 Duration.ofSeconds(3),
-                List.of("/api/v1/configuration/**"),
                 List.of("content-type", "x-correlation-id", "authorization"),
                 false,
                 false);
@@ -64,22 +65,26 @@ class PolicyInputFactoryTest {
     }
 
     @Test
-    void action_and_resourceKind_areDerivedFromThePath() {
+    void action_and_resourceKind_comeFromTheTargetNotThePath() {
         authenticate("service-account-catalogue-ui", "catalogue-ui", Map.of());
 
-        PolicyInput input = factory.create(request("/api/v1/product/discover"), null);
+        PolicyInput input = factory.create(
+                request("/api/v1/product/42"), Map.of("productId", 42), PolicyTarget.of("product", "view"));
 
-        assertThat(input.action()).isEqualTo("discover");
+        assertThat(input.action()).isEqualTo("view");
         assertThat(input.resource().kind()).isEqualTo("product");
         assertThat(input.resource().id()).isNull();
+        // The request facts still describe the request as it arrived.
+        assertThat(input.request().path()).isEqualTo("/api/v1/product/42");
+        assertThat(input.request().body()).isEqualTo(Map.of("productId", 42));
     }
 
     @Test
     void serviceAccountToken_isReportedAsServiceWithTheClientId() {
         authenticate("service-account-catalogue-ui", "catalogue-ui", Map.of());
 
-        PolicySubject subject =
-                factory.create(request("/api/v1/product/discover"), null).subject();
+        PolicySubject subject = factory.create(request("/api/v1/product/discover"), null, TARGET)
+                .subject();
 
         assertThat(subject.kind()).isEqualTo(PolicySubject.KIND_SERVICE);
         assertThat(subject.userId()).isEqualTo("catalogue-ui");
@@ -89,8 +94,8 @@ class PolicyInputFactoryTest {
     void humanToken_isReportedAsUserWithTheEmail() {
         authenticate("j.okafor", "catalogue-ui", Map.of("email", "j.okafor@nhsengland.nhs.uk"));
 
-        PolicySubject subject =
-                factory.create(request("/api/v1/product/discover"), null).subject();
+        PolicySubject subject = factory.create(request("/api/v1/product/discover"), null, TARGET)
+                .subject();
 
         assertThat(subject.kind()).isEqualTo(PolicySubject.KIND_USER);
         assertThat(subject.userId()).isEqualTo("j.okafor@nhsengland.nhs.uk");
@@ -103,7 +108,7 @@ class PolicyInputFactoryTest {
         when(policyAttributeService.findAttributeMap(42L, PolicyAttributeScopeCode.ORGANISATION))
                 .thenReturn(Map.of("nationality", "GB"));
 
-        PolicyOrganisation organisation = factory.create(request("/api/v1/product/discover"), null)
+        PolicyOrganisation organisation = factory.create(request("/api/v1/product/discover"), null, TARGET)
                 .subject()
                 .organisation();
 
@@ -116,7 +121,7 @@ class PolicyInputFactoryTest {
         authenticate("service-account-catalogue-ui", "catalogue-ui", Map.of());
         when(organisationService.findIdByKey("FEDERATOR_ENV")).thenReturn(Optional.empty());
 
-        PolicyOrganisation organisation = factory.create(request("/api/v1/product/discover"), null)
+        PolicyOrganisation organisation = factory.create(request("/api/v1/product/discover"), null, TARGET)
                 .subject()
                 .organisation();
 
@@ -129,7 +134,7 @@ class PolicyInputFactoryTest {
     void organisation_isEmptyWhenTheTokenNamesNoOrganisation() {
         authenticateWithOrganisation("service-account-catalogue-ui", "catalogue-ui", UnknownIdentifiers.UNKNOWN_ORG);
 
-        PolicyOrganisation organisation = factory.create(request("/api/v1/product/discover"), null)
+        PolicyOrganisation organisation = factory.create(request("/api/v1/product/discover"), null, TARGET)
                 .subject()
                 .organisation();
 
@@ -142,8 +147,8 @@ class PolicyInputFactoryTest {
     void clientId_comesFromThePrincipalAlongsideTheOrganisation() {
         authenticate("j.okafor", "catalogue-ui", Map.of("email", "j.okafor@nhsengland.nhs.uk"));
 
-        PolicySubject subject =
-                factory.create(request("/api/v1/product/discover"), null).subject();
+        PolicySubject subject = factory.create(request("/api/v1/product/discover"), null, TARGET)
+                .subject();
 
         // A human caller: user_id identifies the person, clientId the application they used.
         assertThat(subject.userId()).isEqualTo("j.okafor@nhsengland.nhs.uk");
@@ -159,7 +164,8 @@ class PolicyInputFactoryTest {
         request.addHeader("Authorization", "Bearer super-secret");
         request.addHeader("X-Not-Listed", "nope");
 
-        Map<String, String> headers = factory.create(request, null).request().headers();
+        Map<String, String> headers =
+                factory.create(request, null, TARGET).request().headers();
 
         assertThat(headers)
                 .containsEntry("content-type", "application/json")
@@ -175,7 +181,7 @@ class PolicyInputFactoryTest {
         MockHttpServletRequest request = request("/api/v1/product/discover");
         request.setQueryString("topic=a&topic=b");
 
-        assertThat(factory.create(request, null).request().query()).containsEntry("topic", List.of("a", "b"));
+        assertThat(factory.create(request, null, TARGET).request().query()).containsEntry("topic", List.of("a", "b"));
     }
 
     @Test
@@ -185,7 +191,7 @@ class PolicyInputFactoryTest {
         request.setQueryString("page=1&last_page=222");
 
         Map<String, List<String>> query =
-                factory.create(request, null).request().query();
+                factory.create(request, null, TARGET).request().query();
 
         assertThat(query).containsEntry("page", List.of("1")).containsEntry("last_page", List.of("222"));
     }
@@ -197,7 +203,7 @@ class PolicyInputFactoryTest {
         request.setQueryString("q=two%20words&flag");
 
         Map<String, List<String>> query =
-                factory.create(request, null).request().query();
+                factory.create(request, null, TARGET).request().query();
 
         assertThat(query).containsEntry("q", List.of("two words")).containsEntry("flag", List.of(""));
     }
@@ -206,7 +212,7 @@ class PolicyInputFactoryTest {
     void query_isEmptyWhenThereIsNoQueryString() {
         authenticate("service-account-catalogue-ui", "catalogue-ui", Map.of());
 
-        assertThat(factory.create(request("/api/v1/product/discover"), null)
+        assertThat(factory.create(request("/api/v1/product/discover"), null, TARGET)
                         .request()
                         .query())
                 .isEmpty();
@@ -217,7 +223,7 @@ class PolicyInputFactoryTest {
         authenticate("service-account-catalogue-ui", "catalogue-ui", Map.of());
         Object criteria = Map.of("topic", "planning");
 
-        assertThat(factory.create(request("/api/v1/product/discover"), criteria)
+        assertThat(factory.create(request("/api/v1/product/discover"), criteria, TARGET)
                         .request()
                         .body())
                 .isEqualTo(criteria);
@@ -228,7 +234,7 @@ class PolicyInputFactoryTest {
         Instant expiry = Instant.ofEpochSecond(1789392949L);
         authenticate("service-account-catalogue-ui", "catalogue-ui", Map.of("exp", expiry));
 
-        Map<String, Object> token = factory.create(request("/api/v1/product/discover"), null)
+        Map<String, Object> token = factory.create(request("/api/v1/product/discover"), null, TARGET)
                 .subject()
                 .token();
 
@@ -240,7 +246,7 @@ class PolicyInputFactoryTest {
         authenticate("service-account-catalogue-ui", "catalogue-ui", Map.of());
         Object body = Map.of("topic", "planning");
 
-        assertThat(factory.create(request("/api/v1/product/discover"), body)
+        assertThat(factory.create(request("/api/v1/product/discover"), body, TARGET)
                         .request()
                         .body())
                 .isEqualTo(body);

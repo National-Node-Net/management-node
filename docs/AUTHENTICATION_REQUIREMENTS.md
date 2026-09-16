@@ -46,6 +46,8 @@ Sample JWT payload (use this structure when testing locally):
         "access_public_certificates",
         "request_bootstrap_certificate",
         "BrownfieldLandAvailability",
+        "product_subscribe",
+        "product_view",
         "PendingPlanningApplications"
       ]
     }
@@ -78,8 +80,16 @@ Notes:
 - Bootstrap Certificate API: The onboarding service account may request bootstrap certificate packages when its token contains the role `request_bootstrap_certificate`. The request body contains the target `organisationId` and a CSR. If no certificate record exists for the organisation, one is created automatically. This role is typically assigned only to the website backend service account, not to individual federator clients.
   - Enforcement in code: `@PreAuthorize("hasAuthority('ROLE_management-node:request_bootstrap_certificate')")` on `POST /api/v1/certificate/bootstrap`.
 
-- Product Discovery API: Clients may discover the products they are authorised to see when their token contains the role `product_discovery`. Even with the role, results are further filtered per-product by the PDP (see [Policy Enforcement](POLICY_ENFORCEMENT.md)) - the role only gates access to the endpoint itself, while the PDP decides which products appear in the response.
+- Product Discovery API: Clients may discover the products they are authorised to see when their token contains the role `product_discovery`. Even with the role, policy applies on top of it (`@Policy(resource = "product", action = "discover")`): the `product.discover` rule first decides whether the caller may discover at all, and then filters results per product - the role only gates access to the endpoint itself (see [Policy Enforcement](POLICY_ENFORCEMENT.md#reference-endpoints)).
   - Enforcement in code: `@PreAuthorize("hasAuthority('ROLE_management-node:product_discovery')")` on `POST /api/v1/product/discover`.
+
+- Product Subscription API: Clients may request a subscription of their organisation to a product when their token contains the role `product_subscribe`. The role only gates access to the endpoint; policy is then evaluated on top of it (`@Policy(resource = "product", action = "subscribe")`), and decides both whether the subscription is allowed and its terms - whether approval is required, the maximum validity and the permitted schedule types (see [Policy Enforcement](POLICY_ENFORCEMENT.md#reference-endpoints)).
+  - Enforcement in code: `@PreAuthorize("hasAuthority('ROLE_management-node:product_subscribe')")` on `POST /api/v1/product/subscribe`.
+
+- Product View API: Clients may retrieve a single product when their token contains the role `product_view`. Policy is then evaluated on top of the role check (`@Policy(resource = "product", action = "view")`); with no dedicated rule for `view`, the product resource fallback applies, which allows read-only access for a caller whose token identifies a known organisation.
+  - Enforcement in code: `@PreAuthorize("hasAuthority('ROLE_management-node:product_view')")` on `GET /api/v1/product/{productId}`.
+
+Where an endpoint is annotated `@Policy`, holding the role is necessary but not sufficient: a request with the role can still be refused with `403` by policy. Policy is only evaluated when `application.opa.enabled=true`; see [Policy Enforcement](POLICY_ENFORCEMENT.md).
 
 ## How this maps to Keycloak
 
@@ -95,6 +105,8 @@ Notes:
   - `access_public_certificates`
   - `request_bootstrap_certificate`
   - `product_discovery`
+  - `product_subscribe`
+  - `product_view`
 - Assign configuration roles to the appropriate Producer or Consumer Federator clients or service accounts.
 - Assign certificate roles (`create_keys`, `sign_certificate`, `access_public_certificates`) to federator service accounts that manage their own certificates.
 - Assign `request_bootstrap_certificate` only to the website/onboarding backend service account.
@@ -128,4 +140,6 @@ curl -k 'https://localhost:8090/api/v1/configuration/producer' \
   - Intermediate Certificate API requires role: `access_public_certificates`.
   - Bootstrap Certificate API requires role: `request_bootstrap_certificate`.
   - Product Discovery API requires role: `product_discovery` (plus per-product PDP authorisation, see [Policy Enforcement](POLICY_ENFORCEMENT.md)).
+  - Product Subscription API requires role: `product_subscribe` (plus policy, which also sets the subscription terms).
+  - Product View API requires role: `product_view` (plus policy; answered by the product resource fallback).
 - Swagger/OpenAPI: Use Swagger UI at `/swagger-ui.html` to explore and test with a valid token.

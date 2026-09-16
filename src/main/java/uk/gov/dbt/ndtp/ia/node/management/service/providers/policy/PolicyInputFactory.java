@@ -71,22 +71,26 @@ public class PolicyInputFactory {
     }
 
     /**
-     * Builds the decision input for {@code request}.
+     * Builds the decision input for {@code request}, deciding about {@code target}.
      *
      * <p>The body is supplied by the caller rather than read from the request here: a servlet body
      * is a one-shot stream, so reading it would leave nothing for the handler to bind. A controller
-     * passes the body it has already bound; an interceptor running before the handler passes null.
+     * passes the body it has already bound; an interceptor running before the handler passes the
+     * body it buffered, or null.
+     *
+     * <p>The resource kind and action come from the target, never from the URL, so the rule the
+     * PDP selects does not shift when a path is renamed or carries path variables.
      *
      * @param request the request being authorised
      * @param body the request body as policy attributes, or null for none
+     * @param target the resource kind and action being decided
      * @return the PDP input
      */
-    public PolicyInput create(HttpServletRequest request, Object body) {
-        String path = request.getRequestURI();
+    public PolicyInput create(HttpServletRequest request, Object body, PolicyTarget<?> target) {
         return new PolicyInput(
                 buildSubject(request),
-                actionOf(path),
-                PolicyResource.ofKind(resourceKindOf(path)),
+                target.action(),
+                PolicyResource.ofKind(target.resource()),
                 buildRequest(request, body));
     }
 
@@ -161,30 +165,6 @@ public class PolicyInputFactory {
 
     private Map<String, List<String>> queryOf(HttpServletRequest request) {
         return QueryParameters.of(request.getQueryString());
-    }
-
-    /**
-     * The final path segment - {@code /api/v1/product/discover} gives {@code discover}. Falls
-     * back to the HTTP method for a path with no segments.
-     */
-    private String actionOf(String path) {
-        List<String> segments = segmentsOf(path);
-        return segments.isEmpty() ? null : segments.get(segments.size() - 1);
-    }
-
-    /** The segment preceding the action - {@code /api/v1/product/discover} gives {@code product}. */
-    private String resourceKindOf(String path) {
-        List<String> segments = segmentsOf(path);
-        return segments.size() < 2 ? null : segments.get(segments.size() - 2);
-    }
-
-    private List<String> segmentsOf(String path) {
-        if (path == null || path.isBlank()) {
-            return List.of();
-        }
-        return java.util.Arrays.stream(path.split("/"))
-                .filter(s -> !s.isBlank())
-                .toList();
     }
 
     private Map<String, Object> claimsOf(Authentication authentication) {

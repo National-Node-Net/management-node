@@ -9,7 +9,8 @@ package uk.gov.dbt.ndtp.ia.node.management.service.data;
 import java.util.List;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProductDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductDiscoveryResponseDTO;
-import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.DefaultPolicyDecisionOutput;
+import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductDiscoveryPolicyDecisionDetails;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecision;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInput;
 
 /**
@@ -32,7 +33,11 @@ public interface ProductDiscoveryService {
      * @return the products the requester is authorised to discover, matching the criteria
      */
     ProductDiscoveryResponseDTO discover(
-            PolicyInput input, DefaultPolicyDecisionOutput requestDecision, String name, String topic, String type);
+            PolicyInput input,
+            PolicyDecision<ProductDiscoveryPolicyDecisionDetails> requestDecision,
+            String name,
+            String topic,
+            String type);
 
     /**
      * Evaluates one PDP decision per candidate product and returns only the ALLOWed ones. A
@@ -46,5 +51,7 @@ public interface ProductDiscoveryService {
      * @return the subset of candidates the PDP allows for this requester
      */
     List<ProductDTO> filterAuthorised(
-            PolicyInput input, DefaultPolicyDecisionOutput requestDecision, List<ProductDTO> candidates);
+            PolicyInput input,
+            PolicyDecision<ProductDiscoveryPolicyDecisionDetails> requestDecision,
+            List<ProductDTO> candidates);
 }

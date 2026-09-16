@@ -6,7 +6,44 @@
 
 ---
 
-This document describes how the Management Node asks the Policy Decision Point (OPA) for authorisation decisions: the two enforcement points, the shape of the `input` document sent to the PDP, and where each field in it comes from.
+This document describes how the Management Node asks the Policy Decision Point (OPA) for authorisation decisions: how an endpoint opts in, how the PDP chooses the rule that answers, the shape of the `input` document sent and of the decision returned, and how to add policy to an endpoint.
+
+Policy is enforced **on top of** authentication and role checks, never instead of them. A request must first carry a valid token with the endpoint's role (see [Authentication Requirements](AUTHENTICATION_REQUIREMENTS.md)); policy then decides whether this caller may perform this action, and on what terms.
+
+## Contents
+
+- [Enforcement order](#enforcement-order)
+- [Configuration reference](#configuration-reference)
+- [The master switch](#the-master-switch)
+- [Opting in: `@Policy`](#opting-in-policy)
+- [Dispatch](#dispatch)
+- [Actions with no dedicated rule](#actions-with-no-dedicated-rule)
+- [The decision document](#the-decision-document)
+- [The decision request](#the-decision-request)
+- [Where each field comes from](#where-each-field-comes-from)
+- [Seeing what is sent to the PDP](#seeing-what-is-sent-to-the-pdp)
+- [Adding policy to a new endpoint](#adding-policy-to-a-new-endpoint)
+- [Writing a policy](#writing-a-policy)
+- [Reference endpoints](#reference-endpoints)
+- [Testing](#testing)
+
+## Enforcement order
+
+Every request to a protected endpoint is judged in this order, and a request refused at any step never reaches the next:
+
+| Step | Mechanism | Refusal |
+|---|---|---|
+| 1. authentication | security filter chain (`BearerTokenAuthenticationFilter`) | `401` |
+| 2. authorization | method security: `@PreAuthorize` (and any `@Secured`/JSR-250) | `403 "Access denied: insufficient permissions for this operation"` |
+| 3. organisation certificate | `CertificateValidationInterceptor`, on `/api/v1/configuration/**` | `403` with the certificate reason, e.g. `"No organisation certificate found"` |
+| 4. policy | `PolicyEnforcementInterceptor`, on methods carrying `@Policy` | `403 "Access denied by policy"` |
+| 5. the handler | the controller method | — |
+
+So a caller without the endpoint's role is never checked for a certificate and **never sent to the PDP**.
+
+Steps 3 and 4 are method interceptors, not Spring MVC `HandlerInterceptor`s. A handler interceptor runs before the controller method is invoked, and `@PreAuthorize` is evaluated as part of that invocation — so a handler interceptor always runs *before* authorization, and would consult the PDP for callers authorization then refuses. `RequestEnforcementConfig` instead places both in the same advice chain as method security, ordered after the last pre-invocation authorization step (`CERTIFICATE_VALIDATION_ORDER`, then `POLICY_ENFORCEMENT_ORDER`). A refusal is an `AccessRejectedException`, rendered by `GlobalExceptionHandler` as the `403` above with the logged error id.
+
+Two things still happen before authorization, neither of which calls the PDP: the request body is buffered for `@Policy` handlers (see [Request body buffering](#request-body-buffering)), and handler arguments are resolved — which is why the decision is written into the `Optional<PolicyDecision<...>>` argument by the PEP itself (see [Receiving the decision in the handler](#receiving-the-decision-in-the-handler)).
 
 ## Configuration reference
 
@@ -17,16 +54,17 @@ carries one-line comments only; this table is the reference they point at.
 |---|---|---|---|
 | `application.opa.enabled` | `OPA_ENABLED` | `false` | Master switch. While false the PEP is not registered and every decision returns ALLOW — see [The master switch](#the-master-switch). |
 | `application.opa.url` | `OPA_URL` | `http://localhost:8181` | PDP base URL. Must be `https://` in any non-local environment: this service enforces mTLS for all service-to-service traffic, and the client keystore/truststore under `application.client` are applied automatically to any `https://` call. |
-| `application.opa.decision-path` | `OPA_DECISION_PATH` | `/v1/data/management_node/decision` | Path appended to the base URL. Resolves to the `decision` rule of the `management_node` package; rename the package or the rule and this must follow. |
+| `application.opa.decision-path` | `OPA_DECISION_PATH` | `/v1/data/dispatch/decision` | Path appended to the base URL. Resolves to the `decision` rule of the `dispatch` package, the single entrypoint that selects a rule per `(resource, action)` — see [Dispatch](#dispatch). |
 | `application.opa.connect-timeout` | `OPA_CONNECT_TIMEOUT` | `2s` | Maximum time to establish a connection to the PDP. A timeout is a DENY, since the PDP fails closed. |
-| `application.opa.read-timeout` | `OPA_READ_TIMEOUT` | `3s` | Maximum time to wait for a decision. Discovery asks for one decision per candidate product, so this bounds each decision, not the request. |
-| `application.opa.protected-paths` | — | `/api/v1/configuration/**` | Spring MVC path patterns the whole-request PEP intercepts. Required and non-empty: Spring's `MappedInterceptor` reads an empty include list as "match every path", not "match nothing". Product discovery is deliberately absent — see [The two enforcement points](#the-two-enforcement-points). |
+| `application.opa.read-timeout` | `OPA_READ_TIMEOUT` | `3s` | Maximum time to wait for a decision. Per-candidate evaluation asks for one decision per candidate, so this bounds each decision, not the request. |
 | `application.opa.forwarded-headers` | — | `content-type`, `accept`, `x-correlation-id`, `x-forwarded-for`, `user-agent` | Request headers allowed into `input.request.headers` — see [Headers are allow-listed](#headers-are-allow-listed). `Authorization`, `Cookie`, `Set-Cookie` and `Proxy-Authorization` are refused in code whatever is listed here. |
 | `application.opa.log-input` | `OPA_LOG_INPUT` | `false` | Logs each decision document before it is sent. Carries the token's claims verbatim — see [Seeing what is sent to the PDP](#seeing-what-is-sent-to-the-pdp). |
 | `application.opa.log-output` | `OPA_LOG_OUTPUT` | `false` | Logs each decision the PDP returned — see [Seeing what the PDP returned](#seeing-what-the-pdp-returned). |
 
-The `dev` profile (`application-dev.yml`) turns `enabled`, `log-input` and `log-output` on and
-protects `/api/v1/product/**` instead.
+There is no path-pattern setting. Which endpoints are enforced is declared in code with `@Policy`,
+not configured — see [Opting in](#opting-in-policy).
+
+The `dev` profile (`application-dev.yml`) turns `enabled`, `log-input` and `log-output` on.
 
 ## The master switch
 
@@ -40,9 +78,11 @@ application:
 
 | | `enabled: false` (default) | `enabled: true` |
 |---|---|---|
-| Policy Enforcement Point | not registered | registered on `protected-paths` |
+| Policy Enforcement Point | present, but lets every call through without a decision | acts on methods annotated `@Policy`, after authorization |
+| Request body buffering | never | for requests whose handler carries `@Policy` |
 | Every decision | returns ALLOW without contacting OPA | evaluated by the PDP |
-| Product discovery | returns **every** candidate, unfiltered | returns only authorised products |
+| Injected `Optional<PolicyDecision<...>>` | always empty | present on an annotated handler that was allowed |
+| Per-candidate evaluation | every candidate allowed, unfiltered | only candidates the PDP allows |
 | OPA reachable? | irrelevant, never called | required — it fails closed |
 
 At startup with the switch off, the service logs:
@@ -53,28 +93,282 @@ WARN  OPA is switched off in configuration (application.opa.enabled=false). Poli
       Set application.opa.enabled=true to enforce policy.
 ```
 
-The warning is emitted **once at startup**, not per decision — product discovery alone asks for one decision per candidate product, so a per-call warning would bury the message it exists to make visible. Individual skipped evaluations are logged at `DEBUG`.
+The warning is emitted **once at startup**, not per decision — per-candidate evaluation asks for one decision per candidate, so a per-call warning would bury the message it exists to make visible. Individual skipped evaluations are logged at `DEBUG`.
 
-> **Note:** the switch is a development and bring-up convenience. With it off there is no per-product filtering at all, so discovery returns products a policy would have denied. Any environment relying on policy to restrict access must set `application.opa.enabled=true`.
+> **Note:** the switch is a development and bring-up convenience. With it off there is no policy at all: annotated endpoints run for any caller holding the role, and per-candidate filtering returns everything. Any environment relying on policy to restrict access must set `application.opa.enabled=true`.
 
 Certificate validation is unaffected by this switch — only policy enforcement is disabled.
 
-## The two enforcement points
+## Opting in: `@Policy`
 
-Authorisation happens in two different places, and they are not interchangeable.
+A controller method is enforced only when it is annotated:
 
-| | Whole-request PEP | Per-candidate evaluation |
+```java
+@PostMapping("/subscribe")
+@PreAuthorize("hasAuthority('ROLE_management-node:product_subscribe')")
+@Policy(resource = "product", action = "subscribe", details = ProductSubscriptionPolicyDecisionDetails.class)
+public ProductSubscriptionResponseDTO subscribe(
+        @Valid @RequestBody ProductSubscriptionRequestDTO request,
+        @Parameter(hidden = true) Optional<PolicyDecision<ProductSubscriptionPolicyDecisionDetails>> policyDecision) { ... }
+```
+
+| Attribute | Becomes | Purpose |
 |---|---|---|
-| Component | `PolicyEnforcementInterceptor` | `ProductDiscoveryServiceImpl` |
-| Applies to | paths in `application.opa.protected-paths` | product discovery only |
-| Decisions per request | one | one **per candidate product** |
-| On DENY | request rejected with `403` | that product is omitted from the response |
+| `resource` | `input.resource.kind` | selects the rule, together with `action` |
+| `action` | `input.action` | selects the rule, together with `resource` |
+| `details` | — | the `PolicyDecisionDetails` subclass the rule's `details` object is read into; defaults to `PolicyDecisionDetails` itself (the generic form) |
 
-The whole-request PEP is a gate: one decision, and a denial ends the request. Per-candidate evaluation is a filter: the request succeeds, and the response contains only the products the PDP allowed. A caller cannot tell a denied product from a non-existent one — which is the point.
+The resource and action are taken from the annotation, **never from the URL**. Renaming a path, adding a path variable or versioning the API does not change which rule answers.
 
-> **Status:** `ProductController` is currently **not wired to `ProductDiscoveryService`**, while how `filters` should narrow the candidate query is settled. The endpoint binds and validates the criteria, but returns an empty product list without asking for any decision — so no policy is evaluated on the discovery path today, and the per-candidate behaviour described here is what `ProductDiscoveryServiceImpl` does once the controller calls it again.
+### What an un-annotated endpoint gets
 
-Product discovery is deliberately **not** listed in `protected-paths`. If it were, the interceptor would make a single whole-endpoint decision and the per-product filtering would never run.
+Nothing. The Policy Enforcement Point only advises methods carrying `@Policy`, so a handler without it is never judged: no input is built, no body is buffered, and the PDP is never called. Such an endpoint is still protected by authentication and its `@PreAuthorize` role check.
+
+This makes enforcement opt-in per endpoint. The trade-off is deliberate: a URL pattern in configuration can silently stop matching after a path change, whereas an annotation moves with the method it protects.
+
+### When the PDP denies
+
+The request is rejected with `403` and the body `"Access denied by policy"` (with an error id) before the handler runs. The decision is logged at `WARN` with the client id, path, action, method, reasons, provenance and the same id as `correlationId`, so the response can be traced to the log line. The reasons are never returned to the caller. A denial can only happen to a caller authorization has already accepted.
+
+### Receiving the decision in the handler
+
+Every `@Policy` handler receives the decision by declaring an `Optional<PolicyDecision<D>>` parameter, where `D` is the type named in `@Policy(details = ...)`, so it reads its rule's details typed and can pass the decision to the service layer instead of asking for a second one that could answer differently. Mark the parameter `@Parameter(hidden = true)` so it stays out of the OpenAPI document. Because the PEP runs inside the handler invocation — after arguments are resolved — `PolicyDecisionArgumentResolver` supplies the parameter and the PEP writes the allowed decision into it before the method body runs. The decision is also published as a request attribute (`PolicyDecision.REQUEST_ATTRIBUTE`).
+
+| Endpoint | Parameter |
+|---|---|
+| `POST /api/v1/product/discover` | `Optional<PolicyDecision<ProductDiscoveryPolicyDecisionDetails>>` |
+| `POST /api/v1/product/subscribe` | `Optional<PolicyDecision<ProductSubscriptionPolicyDecisionDetails>>` |
+| `GET /api/v1/product/{productId}` | `Optional<PolicyDecision<ProductViewPolicyDecisionDetails>>` |
+| `GET /api/v1/configuration/producer`, `/consumer` | `Optional<PolicyDecision<PolicyDecisionDetails>>` (generic; no typed details yet) |
+
+| Situation | Parameter value |
+|---|---|
+| `enabled: true`, handler annotated, PDP allowed | present, with `details` already read into the `@Policy(details = ...)` type |
+| `enabled: false` | empty — no decision was taken, and an empty value says so rather than standing in for a verdict nobody reached |
+
+A denied request never reaches the handler. Only the `Optional` form is supported, so every caller has to handle the switched-off case.
+
+### Startup validation
+
+Annotations are checked when the application starts; a violation fails startup rather than surfacing as a runtime `403`.
+
+| Rule | Why |
+|---|---|
+| `resource` and `action` match `[a-z][a-z0-9_]*` | each names a Rego package segment (`policies.<resource>.<action>`) |
+| neither is `fallback` | `fallback` is reserved for the resource and global fallback rules |
+| a handler declaring `Optional<PolicyDecision<...>>` carries `@Policy` | without it no decision is ever taken, so the parameter could only ever be empty — almost certainly a missing annotation |
+| that parameter's details type is assignable from the `@Policy` details type | otherwise the decision taken could never be handed to it |
+| `details` is concrete and has a no-argument constructor | details are bound by Jackson, and a decision no rule answered carries empty details of that type |
+
+### Request body buffering
+
+A servlet body is a one-shot stream, and the handler binds it before the PEP runs. `PolicyBodyCachingFilter` therefore buffers the body before either, and `PolicyRequestBodyReader` parses it out of that buffer, so the PEP sends the body **as the caller sent it** — including fields the handler's DTO would drop at binding — and the handler still gets a stream to bind. Buffering happens before authorization; it only holds bytes in memory and never contacts the PDP.
+
+Buffering holds a body in memory, so it is narrow. A request is buffered only when all of these hold:
+
+| Condition | Otherwise |
+|---|---|
+| `application.opa.enabled` is true | no decision is made, so no body is needed |
+| the handler the request resolves to carries `@Policy` | an un-annotated endpoint is never sent to the PDP |
+| a declared `Content-Length` of 1..65536 bytes | a larger body is streamed through and logged at `WARN`; an undeclared (chunked) length is passed through, since reading part of it to measure it would corrupt the stream this exists to preserve |
+
+`PolicyRequestBodyReader` parses the buffer as JSON (`application/json` or any `+json`), so a rule reaches `input.request.body.productId` rather than a string. It yields **no body** rather than an error for an unbuffered request, an empty body, a non-JSON content type, or JSON that will not parse — a malformed body is the handler's `400` to give, and failing the decision first would report it as a misleading `403`.
+
+### Per-candidate evaluation
+
+The PEP makes one decision per request: a gate. Some endpoints also authorise a *set* of resources, where the response should contain only what the caller may see. Product discovery uses both, from one rule: `@Policy(resource = "product", action = "discover")` gates whether the caller may discover at all and hands the handler that decision, and `ProductDiscoveryServiceImpl` asks the same rule once per candidate product. `policies.product.discover` tells the two apart by `input.resource.id` — absent for the request, set for a candidate.
+
+| | Whole-request (`@Policy`) | Per-candidate |
+|---|---|---|
+| Component | `PolicyEnforcementInterceptor` | the service, calling `PolicyDecisionClient` |
+| Target | from the annotation | a `PolicyTarget` built by the caller |
+| Decisions per request | one | one **per candidate** |
+| `resource.id` / `resource.attributes` | null / empty | the candidate's id and its `PRODUCT`-scoped attributes |
+| On DENY | request rejected with `403` | that candidate is omitted from the response |
+
+The caller builds the input with `PolicyInputFactory.create(request, body, PolicyTarget.of("product", "discover"))` — or `new PolicyTarget<>(resource, action, detailsType)` for typed details, as discovery does with `ProductDiscoveryPolicyDecisionDetails` — then varies only the resource per candidate. A caller cannot tell a denied candidate from a non-existent one, which is the point.
+
+Each candidate decision is narrowed by the request decision, when there is one, via `combinedWith`:
+
+- the action is permitted only if both permit it;
+- attribute lists are merged, withholding winning over disclosure — anything denied or masked by either decision is not left in the allowed list;
+- reasons are the union of both, de-duplicated and sorted;
+- provenance and details are the candidate decision's when it has them (it is the more specific answer), otherwise the request decision's. Both decisions carry the same details type, so they combine without casting; details count as absent when they equal empty details of their type.
+
+> **Status:** `ProductController`'s discovery handler is policy-enforced and receives the request decision as `Optional<PolicyDecision<ProductDiscoveryPolicyDecisionDetails>>`, which it logs. It is currently **not wired to `ProductDiscoveryService`**, while how `filters` should narrow the candidate query is settled, so it returns an empty product list without asking for per-candidate decisions. The per-candidate behaviour above is what `ProductDiscoveryServiceImpl` does once the controller calls it, passing that request decision to be narrowed.
+
+## Dispatch
+
+The service never names the rule that answers. Every decision is posted to one entrypoint, `data.dispatch.decision` (`docker/opa/policies/dispatch.rego`), which selects a rule from `input.resource.kind` and `input.action`. Rules can therefore be added, shared between actions or rolled back without a Java release.
+
+### Resolution order
+
+The first step that applies wins:
+
+| # | `policy.resolution` | Looks for | Reason added |
+|---|---|---|---|
+| 1 | `route` | an enabled entry in `data.routing.routes` for this resource and action; lowest `priority` wins, `id` breaks ties | — |
+| 2 | `exact` | module `policies.<resource>.<action>` | — |
+| 3 | `resource_fallback` | module `policies.<resource>.fallback` | `dispatch.resource_fallback` |
+| 4 | `global_fallback` | module `policies.fallback` | `dispatch.global_fallback` |
+| — | `none` | nothing resolved | `dispatch.no_policy` (deny) |
+
+A *module* here is a loaded package exposing a `decision` rule. Rules are reached by dynamic reference into `data.policies`, so a module becomes resolvable simply by being loaded under that prefix; the dispatcher needs no edit.
+
+### Deny without falling through
+
+Dispatch moves to the next step **only when a module is absent**. Every other problem denies, because a more general rule quietly answering for a broken specific one would hide the breakage:
+
+| Situation | Reason | `policy.resolution` |
+|---|---|---|
+| nothing resolves, not even the global fallback | `dispatch.no_policy` | `none` |
+| a matched route names a module that is not loaded | `dispatch.route_policy_missing` | `route` |
+| the selected module's `contract` is missing or is not `management-node.decision/1` | `dispatch.contract_mismatch` | the step that selected it |
+| the selected module's `decision` is undefined for this input, or not an object | `dispatch.decision_undefined` | the step that selected it |
+
+A matched route is final: if its module is missing the request is denied, not passed on to exact or fallback resolution.
+
+> **Note:** a module counts as present when it declares any of `contract`, `version` or `decision`. A rule whose `decision` is *undefined* for a given input — for example `decision := {...} if { ... }` with a condition that fails — still declares its contract and version, so it is found and denied with `dispatch.decision_undefined`. It is never handed to a fallback, which could allow what the dedicated rule never decided.
+
+Each of these deny documents is fully shaped: `allow: false`, empty attribute lists, `details: {}`, the reason above, and provenance.
+
+### What is copied from a rule
+
+The dispatcher does not return a rule's `decision` verbatim. It copies only the contract's fields, each type-checked against its deny default:
+
+- `allow` is true only if the rule's value is literally `true`;
+- an attribute list or `reasons` that is not an array becomes `[]`;
+- `details` that are not an object become `{}`;
+- the dispatch reason, if any, is merged into `reasons`, which are then de-duplicated and sorted;
+- `policy` is always the dispatcher's own provenance — a rule cannot set or forge it.
+
+A malformed field therefore narrows access rather than leaking through.
+
+### Provenance
+
+Every decision, deny-shaped ones included, carries `policy`:
+
+| Field | Value |
+|---|---|
+| `id` | the module that answered as `<resource>.<action>` (e.g. `product.fallback`), `fallback` for the global fallback, or `none` |
+| `version` | the module's declared `version`, or `none` if it declares none or nothing resolved |
+| `resolution` | `route`, `exact`, `resource_fallback`, `global_fallback` or `none` |
+
+Provenance lets "no rule", "broken route" and "the rule said no" be told apart after the fact, and records which rule decided rather than merely that one did. On the Java side it is `PolicyProvenance`; a decision no rule answered (switched off, PDP unreachable, response unreadable) carries `PolicyProvenance.NONE`.
+
+### Worked example
+
+With the shipped rules and routing data (organisation known, `GET` for reads):
+
+| `@Policy` | Resolution | `policy.id` | Outcome | `reasons` |
+|---|---|---|---|---|
+| `product` / `discover` | `exact` | `product.discover` | allow for a permitted nationality (a `POST`, so the read-only fallback would have refused it) | `[]` when allowed |
+| `product` / `subscribe` | `exact` | `product.subscribe` | decided by the subscription rule; terms in `details` | `[]` when allowed |
+| `product` / `view` | `resource_fallback` | `product.fallback` | allow, `details: {"access_level": "read"}` | `["dispatch.resource_fallback"]` |
+| `product` / `browse` | `route` (`route-product-browse`) | `product.fallback` | allow, `details: {"access_level": "read"}` | `[]` |
+| `invoice` / `read` | `global_fallback` | `fallback` | deny | `["dispatch.global_fallback", "policy.no_specific_rule"]` |
+
+`browse` and `view` reach the same rule by different means: `view` because no `product.view` module exists, `browse` because a route says so. A route adds no dispatch reason — it is an explicit decision, not a fallback.
+
+## Actions with no dedicated rule
+
+Annotating an endpoint and writing its rule are separate steps, and an endpoint can be annotated before anyone writes a rule for it. The design answer to "what decides an action nobody wrote a rule for" has three parts.
+
+**1. The resource fallback decides for its resource.** `policies.<resource>.fallback` answers every action on that resource without its own rule. The owner of a resource chooses a safe default once, instead of every new action inheriting whatever happens to be nearest.
+
+| Module | Behaviour |
+|---|---|
+| `policies.product.fallback` | **read-only for a known organisation**: allow only when `input.subject.organisation.key` is a non-empty string **and** `input.request.method` is `GET` or `HEAD`. Deny reasons `organisation.missing`, `action.not_read_only` (every failing condition is reported). `details` is `{"access_level": "read"}` when allowed, `{}` otherwise. |
+| `policies.configuration.fallback` | allow, `details: {}`. A local placeholder for the configuration endpoints (`action` `producer` and `consumer`); who may call them is already gated by roles and the client certificate. It is the first thing to replace with real rules. |
+
+The product fallback judges the **HTTP method**, not the action name. Action names are free-form, so a rule guessing which ones are harmless would be guessing; the method is what the caller is actually doing. Nothing that changes state is allowed until a rule for that action exists. A read that has to be a `POST`, such as discovery with a search body, therefore needs its own rule — which is why `policies.product.discover` exists rather than relying on the fallback.
+
+**2. The global fallback denies.** `policies.fallback` answers any resource with neither a dedicated rule nor a resource fallback, with `allow: false` and reason `policy.no_specific_rule`.
+
+Fail-closed is the global default because the global fallback answers exactly the requests nobody has thought about. An endpoint annotated before its rule is written, a resource added without a fallback, or a typo in `@Policy` all land here. Allowing would grant access that no one decided to grant, and the mistake would be invisible because everything would appear to work; denying makes the gap show up as a `403` with a reason and provenance that name it.
+
+**3. Routes share a rule without Rego changes.** When an action should be decided exactly like an existing rule, add an entry to `docker/opa/policies/routing/data.json` instead of writing a module:
+
+```json
+{"id": "route-product-browse", "resource": "product", "action": "browse",
+ "policy": "product.fallback", "priority": 10, "enabled": true}
+```
+
+`policy` is `<resource>.<action>` of the module to use (`fallback` for the global one). Lowest `priority` wins, `id` breaks ties, entries with `enabled` not `true` are ignored. A route can also point an action with a dedicated rule at a different one, since routes are consulted first — for example to roll back to an earlier rule.
+
+## The decision document
+
+Every decision has the same envelope, whichever rule answered, plus a rule-specific `details` object:
+
+```json
+{
+  "result": {
+    "allow": true,
+    "allowed_filtered_attributes": ["name", "topic"],
+    "denied_filtered_attributes": ["internal_owner"],
+    "masked_filtered_attributes": ["contact_email"],
+    "reasons": ["dispatch.resource_fallback"],
+    "policy": {"id": "product.fallback", "version": "policies.product.fallback/1.0.0", "resolution": "resource_fallback"},
+    "details": {"access_level": "read"}
+  }
+}
+```
+
+It is read into `PolicyDecision<D extends PolicyDecisionDetails>`.
+
+### Generic envelope
+
+Every rule fills these the same way, and Java reads them into typed fields:
+
+| Field | Java | Meaning |
+|---|---|---|
+| `allow` | `allow()` | whether the action is permitted |
+| `allowed_filtered_attributes` | `allowedFilteredAttributes()` | attributes the subject may see in full |
+| `denied_filtered_attributes` | `deniedFilteredAttributes()` | attributes that must be withheld entirely |
+| `masked_filtered_attributes` | `maskedFilteredAttributes()` | attributes that may be returned only in masked form |
+| `reasons` | `reasons()` | sorted, stable codes explaining the decision, e.g. `organisation.missing` |
+| `policy` | `policy()` | provenance — see [Provenance](#provenance) |
+
+Nothing is null in Java: absent lists are empty and immutable, absent `policy` is `PolicyProvenance.NONE`, absent `details` are empty details of the declared type. A policy that decides only allow/deny returns empty lists.
+
+### Dynamic `details`
+
+`details` belongs to the rule: each rule defines its own shape, and `{}` is valid. On the Java side every shape is a `PolicyDecisionDetails`, and the decision is generic over it — `PolicyDecision<D extends PolicyDecisionDetails>`:
+
+- **`PolicyDecisionDetails`** is the generic form. It keeps every field the rule returned, in order, readable through `additional()`. Endpoints whose details nothing acts on yet (the configuration endpoints) use it.
+- **A subclass per rule** declares the fields an endpoint acts on as typed properties. Anything the subclass does not declare still lands in `additional()`, so a rule can grow its details without breaking the reader.
+
+| Details type | Rule | Fields |
+|---|---|---|
+| `ProductDiscoveryPolicyDecisionDetails` | `policies.product.discover` | `evaluation()`, `permittedNationalities()`, `excludedClassifications()` |
+| `ProductSubscriptionPolicyDecisionDetails` | `policies.product.subscribe` | `requiresApproval()`, `maxValidityDays()`, `permittedScheduleTypes()` |
+| `ProductViewPolicyDecisionDetails` | `policies.product.fallback` (no `view` rule yet) | `accessLevel()` |
+
+The endpoint names its type once in `@Policy` and again in its parameter:
+
+```java
+@Policy(resource = "product", action = "subscribe", details = ProductSubscriptionPolicyDecisionDetails.class)
+public ProductSubscriptionResponseDTO subscribe(
+        ..., Optional<PolicyDecision<ProductSubscriptionPolicyDecisionDetails>> policyDecision) {
+    policyDecision.map(PolicyDecision::details).map(terms -> terms.requiresApproval()) ...
+}
+```
+
+`PolicyDecisionClient.evaluate(input, detailsType)` returns `PolicyDecision<D>`, converting the details with the application's `ObjectMapper` so they bind like any other JSON in the service; `evaluate(input)` returns the generic form. No cast is needed anywhere: `decision.details()` is already `D`. `withDetails(E)` returns the same envelope carrying other details.
+
+A details subclass must be concrete, have a no-argument constructor (checked at startup), use `@JsonIgnoreProperties(ignoreUnknown = true)`, and implement `equals` over its fields (e.g. Lombok `@EqualsAndHashCode(callSuper = true)`) so empty details can be recognised when decisions combine. A missing field should read as null, or an empty list for a list.
+
+### Reading failures are DENY
+
+| Situation | Result |
+|---|---|
+| PDP unreachable, timeout, non-200, malformed body, missing `result` | `DENY`, no reasons, `policy` = `NONE` |
+| `result` is a string, number, array or null | `DENY` |
+| `details` present but not an object | `DENY`, reason `policy.details_unreadable`, provenance kept |
+| `details` cannot be converted to the declared type | `DENY`, reason `policy.details_unreadable`, provenance kept, empty details of the declared type, logged at `WARN` with the rule's id and version |
+| `result` is a bare boolean (`{"result": true}`) | read as the verdict, with empty lists, no reasons, `NONE` provenance and empty details |
+
+`PolicyDecisionClient` catches every exception and returns DENY, so the PDP fails closed. A caller acting on typed details must never be handed a permission whose conditions it cannot read, which is why unreadable details deny rather than allow with empty terms. Provenance is kept so the broken rule can be found. The bare boolean form is accepted so a policy that has not been moved to the envelope keeps working.
 
 ## The decision request
 
@@ -90,78 +384,23 @@ Every decision is a `POST` to `application.opa.decision-path` with a single JSON
       "token": { "azp": "ia-data-product-catalogue-ui", "exp": 1789392949 },
       "organisation": {
         "key": "FEDERATOR_ENV",
-        "attributes": { "nationality": "GB" }
+        "attributes": { "trusted_subscriber": true, "max_subscription_days": 90 }
       }
     },
-    "action": "discover",
+    "action": "subscribe",
     "resource": {
-      "kind": "product",
-      "id": "42",
-      "attributes": { "classification": "OFFICIAL", "regions": ["UK", "EU"] }
+      "kind": "product"
     },
     "request": {
       "headers": { "content-type": "application/json" },
       "query": {},
-      "path": "/api/v1/product/discover",
+      "path": "/api/v1/product/subscribe",
       "method": "POST",
-      "body": { "text": "planning" }
+      "body": { "productId": 42, "scheduleType": "cron" }
     }
   }
 }
 ```
-
-## The decision document
-
-Every policy answers with the same document, whatever it is deciding about, so a caller never has
-to know which rule replied:
-
-```json
-{
-  "result": {
-    "allow": true,
-    "allowed_filtered_attributes": ["name", "topic"],
-    "denied_filtered_attributes": ["internal_owner"],
-    "masked_filtered_attributes": ["contact_email"]
-  }
-}
-```
-
-| Field | Meaning |
-|---|---|
-| `allow` | whether the action is permitted |
-| `allowed_filtered_attributes` | attributes the subject may see in full |
-| `denied_filtered_attributes` | attributes that must be withheld entirely |
-| `masked_filtered_attributes` | attributes that may be returned only in masked form |
-
-It is read into `DefaultPolicyDecisionOutput`. A policy that decides only allow/deny still returns
-the three lists, empty; the lists are never null in Java, so no caller null-checks them. The rule
-that assembles the document is `decision`, which is what `application.opa.decision-path` points at
-(`/v1/data/management_node/decision`).
-
-**Anything that cannot be read as that document is DENY** — a missing `result`, a result that is
-not an object, a malformed body, a non-200, a timeout, or OPA being unreachable.
-`PolicyDecisionClient` catches every exception and returns DENY, so the PDP fails closed. One
-older shape is still accepted: a bare `{"result": true}` is read as the verdict with empty lists,
-so a policy that has not yet been moved to the `decision` rule keeps working.
-
-### Where the decision goes
-
-A decision does not stop at the enforcement point that asked for it.
-
-- The **whole-request PEP** publishes the allowed decision as a request attribute
-  (`DefaultPolicyDecisionOutput.REQUEST_ATTRIBUTE`). A denied request publishes nothing — it never
-  reaches a handler.
-- `PolicyDecisionOutputArgumentResolver` injects it into any controller method that declares an
-  `Optional<DefaultPolicyDecisionOutput>` parameter, so a handler passes the decision down to the
-  service layer instead of asking for a second one that could answer differently. The value is
-  present only when policy enforcement is on **and** a decision was published for the request. It
-  is empty when `application.opa.enabled=false`, and when the path is not in `protected-paths` —
-  no decision exists in either case, so a handler cannot mistake "policy is off" for "policy
-  allowed this". Only the `Optional` form is resolved.
-- **Per-candidate evaluation** narrows that request decision by each candidate's own, via
-  `combinedWith`: the action is permitted only if both permit it, and the attribute lists are
-  merged with withholding winning over disclosure — anything denied or masked by either decision
-  is not left in the allowed list.
 
 ## Where each field comes from
 
@@ -175,23 +414,16 @@ A decision does not stop at the enforcement point that asked for it.
 | `subject.token` | the JWT's claims verbatim. Timestamp claims (`exp`, `iat`) are emitted as epoch seconds, not serialised `Instant`s, so a policy can compare them numerically |
 | `subject.organisation.key` | the principal's `organisation` claim (e.g. `FEDERATOR_ENV`) |
 | `subject.organisation.attributes` | live `ORGANISATION`-scoped rows from `policy_attribute_value`, for the organisation that key identifies |
-| `action` | the **last** path segment |
-| `resource.kind` | the path segment **before** the action |
-| `resource.id` | the entity id, when the decision concerns one entity. Null for whole-endpoint decisions |
+| `action` | `@Policy.action`, or the `PolicyTarget` action for per-candidate evaluation |
+| `resource.kind` | `@Policy.resource`, or the `PolicyTarget` resource |
+| `resource.id` | the entity id, when the decision concerns one entity (per-candidate evaluation). Null for whole-request decisions |
 | `resource.attributes` | live `PRODUCT`-scoped rows for that entity |
 | `request.headers` | allow-listed request headers (see below) |
 | `request.query` | parsed from the **query string**, every value of a repeated parameter kept, percent-decoded |
 | `request.path` / `request.method` | the request URI and HTTP method |
 | `request.body` | the parsed request body as structured attributes (see below) |
 
-### Path-derived action and resource kind
-
-`action` and `resource.kind` are read off the request path — the last segment is the action, the one before it the resource kind:
-
-```
-/api/v1/product/discover   ->  action "discover" on kind "product"
-/api/v1/configuration/producer  ->  action "producer" on kind "configuration"
-```
+`action` and `resource.kind` never come from the URL, so `request.path` is informational: a rule may inspect it, but rule selection does not depend on it.
 
 ### Client and organisation both come from the principal
 
@@ -205,7 +437,7 @@ The organisation is resolved in two steps:
 Two cases are handled deliberately rather than by failing:
 
 - **Key matches no organisation row** — the key still reaches the PDP, with empty attributes. The policy decides what an unknown organisation means; the decision does not error.
-- **Token carries no organisation claim** — `EnhancedPrincipal` substitutes the sentinel `UNKNOWN_ORG` (`UnknownIdentifiers.UNKNOWN_ORG`). That sentinel is *not* forwarded: `organisation` is emitted with a null key and empty attributes, so a policy cannot come to depend on a magic string that only means "the claim was missing".
+- **Token carries no organisation claim** — `EnhancedPrincipal` substitutes the sentinel `UNKNOWN_ORG` (`UnknownIdentifiers.UNKNOWN_ORG`). That sentinel is *not* forwarded: `organisation` is emitted with a null key and empty attributes, so a policy cannot come to depend on a magic string that only means "the claim was missing". The shipped rules test for a non-empty string key (`data.lib.decision.organisation_known`), so a null key reads as `organisation.missing`.
 
 > **Note:** the organisation claim is matched against `organisation.organisation_key`. If the claim values your IdP issues (e.g. `FEDERATOR_ENV`) differ from the keys held in the database (e.g. `ENV`), no row will match and attributes will always be empty. Keep the two aligned, or map between them before the lookup.
 
@@ -216,6 +448,8 @@ Attribute values keep their JSON type — a numeric attribute arrives as a numbe
 ```json
 "attributes": { "tier": 3, "sensitive": true, "regions": ["UK", "EU"], "nationality": "GB" }
 ```
+
+This matters to rules: `policies.product.subscribe` skips approval only when `trusted_subscriber` is the boolean `true`, and uses `max_subscription_days` only when it is a number.
 
 A `multi_valued` attribute is held as **one `policy_attribute_value` row per value**, and all of its live values are collected into an array.
 
@@ -256,28 +490,18 @@ becomes
 }
 ```
 
-so `input.request.body.text == "planning"`, `input.request.body.filters["key 2"][_] == 1234` and `input.request.query.page[0] == "1"` all work. Criteria the caller did not supply are omitted rather than sent as nulls.
+so `input.request.body.text == "planning"`, `input.request.body.filters["key 2"][_] == 1234` and `input.request.query.page[0] == "1"` all work.
 
 `query` is parsed from the raw query string rather than the servlet parameters. For a form-encoded POST the container merges posted fields into `getParameterMap`, which would put body content into `query`; reading the query string keeps each field meaning exactly what its name says.
 
 #### Where the body comes from
 
-A servlet body is a one-shot stream: whoever reads it first consumes it. So the body is **supplied by the caller of the factory**, never read from the request inside it — and the two enforcement points get it from different places:
+The body is **supplied by the caller of the factory**, never read from the request inside it, because reading a one-shot stream there would leave nothing for the handler to bind:
 
-- **Product discovery** — the body arrives already bound to `ProductDiscoveryRequestDTO`, so once the endpoint is wired back up the bound DTO is what gets passed through, not the raw stream. Policy therefore sees the *accepted* criteria, which is what the endpoint will actually act on; **fields the DTO does not declare are dropped at binding and never reach the PDP**. The DTO declares `text` and `filters`; `filters` is an untyped map, so arbitrary keys do survive binding and reach the policy, but a misspelt top-level field (`fitlers`) does not.
-- **The whole-request PEP** — `preHandle` runs before the handler binds anything, so there is nothing bound to pass. `PolicyBodyCachingFilter` buffers the body first and `PolicyRequestBodyReader` parses it out of that buffer, so the interceptor can hand the body to the factory *and* the handler still gets a stream to bind.
+- **The whole-request PEP** passes the body buffered by `PolicyBodyCachingFilter` and parsed by `PolicyRequestBodyReader` — see [Request body buffering](#request-body-buffering). The PDP sees the JSON exactly as posted, including fields the handler's DTO does not declare.
+- **Per-candidate evaluation** runs inside the handler, which already has the body bound to its DTO and passes that. Policy then sees the *accepted* criteria, which is what the endpoint will act on; fields the DTO does not declare are dropped at binding and never reach the PDP, and unset fields are omitted rather than sent as nulls.
 
-Buffering is deliberately narrow, because holding a body in memory costs what streaming does not. A request is buffered only when all of these hold:
-
-| Condition | Otherwise |
-|---|---|
-| `application.opa.enabled` is true | no decision is made, so no body is needed |
-| the path matches `application.opa.protected-paths` | product discovery needs no buffer — its controller has the body bound already |
-| a declared `Content-Length` of 1..65536 bytes | a larger body is streamed through and logged at `WARN`; an undeclared (chunked) length is passed through, since reading part of it to measure it would corrupt the stream this exists to preserve |
-
-`PolicyRequestBodyReader` then parses the buffer as JSON (`application/json` or any `+json`), so a rule reaches `input.request.body.filters["key 1"]` rather than a string. It yields **no body** rather than an error for an unbuffered request, an empty body, a non-JSON content type, or JSON that will not parse — a malformed body is the handler's `400` to give, and failing the decision first would report it as a misleading `403`.
-
-> **Note:** the body is sent to the PDP as-is. Do not accept secrets in a request body on a policy-aware path: unlike headers there is no allow list, so whatever is posted is what the policy sees.
+> **Note:** the body is sent to the PDP as-is. Do not accept secrets in a request body on a policy-enforced endpoint: unlike headers there is no allow list, so whatever is posted is what the policy sees.
 
 ### Headers are allow-listed
 
@@ -310,27 +534,27 @@ application:
 It is **off by default and must stay off wherever logs are retained or shipped** — `subject.token`
 is the caller's claims verbatim. Switching it on emits a `WARN` at startup saying so. Each decision
 then logs a summary of the fields a policy is most likely to key on, followed by the payload exactly
-as it goes on the wire, and the resulting decision:
+as it goes on the wire:
 
 ```
-PDP decision request -> http://localhost:8181/v1/data/management_node/decision
+PDP decision request -> http://localhost:8181/v1/data/dispatch/decision
   subject.kind         : service
   subject.user_id      : ia-data-product-catalogue-ui
   subject.clientId     : ia-data-product-catalogue-ui
-  subject.organisation : FEDERATOR_ENV attributes={nationality=GB}
-  action               : discover
-  resource             : product id=42 attributes={classification=OFFICIAL}
-  request              : POST /api/v1/product/discover
+  subject.organisation : FEDERATOR_ENV attributes={trusted_subscriber=true}
+  action               : subscribe
+  resource             : product id=null attributes={}
+  request              : POST /api/v1/product/subscribe
   request.headers      : {content-type=application/json}
-  request.query        : {page=[1]}
-  request.body         : {"text":"planning","filters":{"classification":"OFFICIAL"}}
+  request.query        : {}
+  request.body         : {"productId":42,"scheduleType":"cron"}
   payload:
   {
     "input" : { ... }
   }
 ```
 
-Product discovery asks for one decision per candidate product, so the switch produces one such
+Per-candidate evaluation asks for one decision per candidate, so the switch produces one such
 block per candidate — another reason it is a bring-up aid rather than something to leave on.
 
 ### Reading `request.body`
@@ -339,14 +563,14 @@ The summary prints `request.body : <none>` when the caller passed no body at all
 serialised document when it passed one. The distinction matters, because an empty body in the
 payload has two quite different causes:
 
-- **`<none>`** — no body reached the PDP. On a protected path that means the request was not
+- **`<none>`** — no body reached the PDP. On an annotated endpoint that means the request was not
   buffered or not parsed: no `Content-Length`, a body over the 64KB limit, a content type that is
   not JSON, or JSON that would not parse. The first three are logged where the decision is made,
   at `DEBUG` or `WARN`; check those lines first.
-- **`{"filters":{}}`** — a body was supplied but carried nothing the DTO declares. Its two fields
-  are `text` and `filters`; unknown top-level fields are dropped at binding and `text` is omitted
-  when unset, so a misspelt field name reduces to this. Check the top-level names against the DTO —
-  keys *inside* `filters` are unconstrained and always survive.
+- **An empty or near-empty document** (e.g. `{"filters":{}}` on discovery) — a body was supplied
+  but carried nothing the handler's DTO declares. This applies where the body passed is the bound
+  DTO (per-candidate evaluation): unknown top-level fields are dropped at binding and unset fields
+  are omitted, so a misspelt field name reduces to this. Check the top-level names against the DTO.
 
 ### Seeing what the PDP returned
 
@@ -361,81 +585,167 @@ application:
 ```
 
 Unlike `log-input`, the decision document carries none of the caller's token claims — only the
-verdict and the three attribute lists — so switching it on does not expose anything `log-input`
-doesn't already. Switching it on still emits a `WARN` at startup, and product discovery still asks
-for one decision per candidate product, so it is just as noisy a bring-up aid:
+verdict, the attribute lists, reasons, provenance and the rule's details — so switching it on does
+not expose anything `log-input` doesn't already. Switching it on still emits a `WARN` at startup,
+and per-candidate evaluation still asks for one decision per candidate, so it is just as noisy a
+bring-up aid. Provenance in this log is the quickest way to see which rule actually answered.
 
-```
-PDP decision response <- ALLOW
-  action               : discover
-  resource             : product id=42
-  allowed_attributes   : [name, topic]
-  denied_attributes    : [internal_owner]
-  masked_attributes    : []
-  payload:
-  {
-    "result" : { ... }
-  }
-```
+## Adding policy to a new endpoint
 
-## Extending the input
-
-The input is an object graph rather than a flat set of strings so that each part can grow independently. To add a fact:
-
-- a new **subject** fact — add a component to `PolicySubject` and populate it in `PolicyInputFactory`
-- a new **resource** fact — usually a new policy attribute definition, which needs no Java change at all: define it, scope it, and it appears under `resource.attributes`
-- a new **request** fact — add a component to `PolicyHttpRequest`
-
-Because unset fields are omitted rather than serialised as `null`, adding a component does not change the document a policy already sees.
+1. **Give the endpoint its role check** (`@PreAuthorize`) and document the role in [Authentication Requirements](AUTHENTICATION_REQUIREMENTS.md). Policy applies on top of it.
+2. **Annotate the handler** with `@Policy(resource = "...", action = "...")`. Both must match `[a-z][a-z0-9_]*` and must not be `fallback`; startup fails otherwise.
+3. **Decide who answers**, in `docker/opa/policies/`:
+   - a dedicated rule: `<resource>/<action>.rego`, package `policies.<resource>.<action>`, declaring `contract`, `version` and a total `decision` — see [Writing a policy](#writing-a-policy);
+   - or an existing rule, via a route in `routing/data.json`;
+   - or deliberately nothing, relying on `policies.<resource>.fallback` — and if the resource has none, the global fallback denies.
+4. **Receive the decision**: declare `@Parameter(hidden = true) Optional<PolicyDecision<D>> policyDecision` on the handler. If the rule returns details the endpoint acts on, define `<Resource><Action>PolicyDecisionDetails extends PolicyDecisionDetails` under `model/policy/<resource>/` (see [Dynamic `details`](#dynamic-details)), name it in `@Policy(details = ...)` and use it as `D`; otherwise use `PolicyDecisionDetails`. Handle the empty `Optional` (policy switched off) explicitly.
+5. **Write the tests**: a `<action>_test.rego` beside the rule covering the allow case, each deny reason and the `details`; and Java unit tests for the handler, including the empty-decision case and how the details shape the response.
+6. **Run the checks** — see [Testing](#testing) — and restart OPA (`docker compose restart opa`) to load the change locally.
 
 ## Writing a policy
 
-The bundled `docker/opa/policy.rego` defaults to allow — it is a placeholder so local development is not blocked, **not** a policy. A rule matching the input above:
+Each rule is its own module. The dispatcher selects it; the rule only answers.
+
+| Requirement | Detail |
+|---|---|
+| package | `policies.<resource>.<action>`; `policies.<resource>.fallback` for a resource fallback |
+| `contract` | exactly `"management-node.decision/1"`; anything else, or none, is `dispatch.contract_mismatch` |
+| `version` | `"policies.<resource>.<action>/<semver>"`; reported in provenance |
+| `decision` | an object with `allow`, the three attribute lists, `reasons` and `details`. **No `policy` key** — the dispatcher adds provenance and ignores any a rule sets |
+| totality | `decision` must be defined for every input, with every field present |
+
+Totality matters twice over: a field a rule forgets must still be present and denied, and a `decision` that is undefined for some input is refused with `dispatch.decision_undefined` — so a non-total rule turns into denials rather than into the answer the rule would have given. Start from the shared deny shape in `lib/decision.rego`, which also provides `organisation_known` and `organisation_attributes` so "is the caller's organisation known" means one thing in every rule:
 
 ```rego
-package management_node
+package policies.invoice.read
+
+import data.lib.decision.deny_shape
+import data.lib.decision.organisation_known
+
+contract := "management-node.decision/1"
+
+version := "policies.invoice.read/1.0.0"
+
+decision := object.union(deny_shape, {
+	"allow": allow,
+	"reasons": reasons,
+	"details": details,
+})
 
 default allow := false
 
-default allowed_filtered_attributes := []
+allow if count(reason_set) == 0
 
-default denied_filtered_attributes := []
+reasons := sort([reason | some reason in reason_set])
 
-default masked_filtered_attributes := []
+reason_set contains "organisation.missing" if not organisation_known
 
-allow if {
-    input.action == "discover"
-    input.resource.kind == "product"
-    input.subject.organisation.attributes.nationality == "GB"
-    input.resource.attributes.classification != "SECRET"
-}
+reason_set contains "action.not_read_only" if not input.request.method in {"GET", "HEAD"}
 
-masked_filtered_attributes := ["contact_email"] if {
-    input.subject.organisation.attributes.nationality != "GB"
-}
+default details := {}
 
-decision := {
-    "allow": allow,
-    "allowed_filtered_attributes": allowed_filtered_attributes,
-    "denied_filtered_attributes": denied_filtered_attributes,
-    "masked_filtered_attributes": masked_filtered_attributes,
-}
+details := {"access_level": "read"} if allow
 ```
 
-`decision` is the only rule the service queries; the four rules it is assembled from are what a
-real policy overrides, one at a time.
+Conventions the shipped rules follow:
+
+- `default` every rule a field is built from, so the document is never undefined.
+- Report **every** failing condition as a reason, as a set sorted into a list, so a caller fixes them all at once.
+- Reason codes are stable `area.condition` strings (`organisation.missing`, `schedule.type_not_permitted`); callers and audit logs key on them.
+- Return `details` even on a denial when they describe terms the caller would be held to.
+- Treat missing and `null` input fields the same where the service may send either.
+
+The rule for the endpoint in the example would be annotated `@Policy(resource = "invoice", action = "read")`. See `docker/opa/Readme.md` for the directory layout, running OPA, and querying a decision directly with `curl`.
+
+## Reference endpoints
+
+Three endpoints on `ProductController` exercise the mechanism end to end.
+
+### `POST /api/v1/product/discover` — one rule at request and candidate level
+
+- Role: `product_discovery`.
+- `@Policy(resource = "product", action = "discover", details = ProductDiscoveryPolicyDecisionDetails.class)`; the handler receives the decision as `Optional<PolicyDecision<ProductDiscoveryPolicyDecisionDetails>>` and logs its verdict, provenance, reasons, masked attributes and details.
+- Answered by `policies.product.discover` (resolution `exact`). `POST` is not a read for the product fallback, so without this rule discovery would be refused.
+
+| Condition | Applies at | Deny reason |
+|---|---|---|
+| organisation attribute `nationality` is one of `["GB"]` | request and candidate | `organisation.nationality_not_permitted` |
+| product attribute `classification` is present and not one of `["SECRET"]` | candidate only (`input.resource.id` set) | `product.classification_not_permitted` |
+
+A candidate with no `classification` is refused rather than assumed unclassified, so a missing attribute never widens what a caller sees. Callers of a non-permitted nationality have `contact_email` in `masked_filtered_attributes`. `details` are `{"evaluation": "request"|"candidate", "permitted_nationalities": ["GB"], "excluded_classifications": ["SECRET"]}`.
+
+> **Note:** nationality is read from the organisation's `ORGANISATION`-scoped attributes, which are found by matching the token's `organisation` claim against `organisation.organisation_key`. If the claim (e.g. `FEDERATOR_ENV`) does not match a key in the database (e.g. `ENV`), the attributes are empty and discovery is refused with `organisation.nationality_not_permitted`.
+
+### `POST /api/v1/product/subscribe` — exact rule with typed details
+
+- Role: `product_subscribe`.
+- `@Policy(resource = "product", action = "subscribe", details = ProductSubscriptionPolicyDecisionDetails.class)`; the handler receives `Optional<PolicyDecision<ProductSubscriptionPolicyDecisionDetails>>`.
+- Body `ProductSubscriptionRequestDTO`: `productId` (required), `scheduleType`, `scheduleExpression`, `destination`. It reaches the PDP as `input.request.body`.
+- Answered by `policies.product.subscribe` (resolution `exact`).
+
+The rule allows when all of these hold, and reports each that does not:
+
+| Condition | Deny reason |
+|---|---|
+| organisation key is a non-empty string | `organisation.missing` |
+| `input.request.body.productId` is present and not empty | `request.product_missing` |
+| `scheduleType`, if supplied and not null, is one of the permitted types | `schedule.type_not_permitted` |
+
+`details` are returned whether allowed or denied, so a denied caller can see the terms it would be held to:
+
+| Field | `ProductSubscriptionPolicyDecisionDetails` | Value |
+|---|---|---|
+| `requires_approval` | `requiresApproval` | `false` only when the organisation attribute `trusted_subscriber` is the boolean `true`; otherwise `true` |
+| `max_validity_days` | `maxValidityDays` | the organisation attribute `max_subscription_days` when it is a number; otherwise `30` |
+| `permitted_schedule_types` | `permittedScheduleTypes` | `["cron", "interval"]` |
+
+The terms live in policy so the service applies what policy decided rather than restating those limits in Java. The handler reads them into `ProductSubscriptionResponseDTO`: `status` is `PENDING_APPROVAL` when approval is required and `ACCEPTED` otherwise, alongside `maxValidityDays` and `permittedScheduleTypes`.
+
+### `GET /api/v1/product/{productId}` — no dedicated rule
+
+- Role: `product_view`.
+- `@Policy(resource = "product", action = "view", details = ProductViewPolicyDecisionDetails.class)`; the handler receives `Optional<PolicyDecision<ProductViewPolicyDecisionDetails>>` and logs its verdict and `accessLevel()` at `DEBUG`.
+- No `policies.product.view` module exists, so dispatch resolves to `policies.product.fallback` (resolution `resource_fallback`, reason `dispatch.resource_fallback`).
+- Allowed for a known organisation, since the method is `GET`; `details` are `{"access_level": "read"}`. Without an organisation claim the decision is a deny with reasons `dispatch.resource_fallback` and `organisation.missing`.
+
+Writing `policies/product/view.rego` later changes the resolution to `exact` with no Java change.
 
 ## Testing
 
-- `PolicyInputFactoryTest` covers how each field is sourced, including that a configured `Authorization` header is still never forwarded.
-- `PolicyBodyCachingFilterTest` covers which requests are buffered, and that a buffered body is still readable — twice — downstream.
-- `PolicyRequestBodyReaderTest` covers parsing and each case that yields no body rather than an error.
-- `PolicyInputLoggerTest` covers the `log-input` switch, including that an unsupplied body reads as `<none>` rather than an empty document.
-- `PolicyOutputLoggerTest` covers the `log-output` switch, including the attribute lists and that a logging failure never throws.
-- `PolicyDecisionSerializationTest` pins the wire format, including that attribute JSON types survive and that unset fields are omitted.
-- `DefaultPolicyDecisionOutputTest` covers how each shape of PDP result is read into the decision document, and how two decisions combine.
-- `PolicyDecisionClientTest` covers the request body and the fail-closed behaviour.
-- `PolicyDecisionOutputArgumentResolverTest` covers when a controller receives the decision and when it receives an empty `Optional`.
-- `ProductDiscoveryServiceImplTest` covers per-candidate evaluation and that denied products leak nothing into the response.
+### Rego
 
-Exercising the PDP end to end needs OPA running — see the OPA stack under `docker/`. Because the PDP fails closed, a stopped OPA makes every protected endpoint return `403`.
+Every rule has a `*_test.rego` beside it (ignored by the OPA server):
+
+| File | Covers |
+|---|---|
+| `dispatch_test.rego` | each resolution kind; each refusal (`dispatch.no_policy`, `dispatch.route_policy_missing`, `dispatch.contract_mismatch`, including a module with no contract); the reserved `fallback` name; route priority; that a rule cannot forge provenance or widen access through malformed fields |
+| `product/fallback_test.rego` | read-only access for a known organisation, `HEAD`, non-read methods, missing, null and empty organisation keys, and that every failing condition is reported |
+| `product/discover_test.rego` | request-level and candidate-level decisions, masking for other nationalities, a missing nationality, `SECRET` and unclassified candidates, every failing condition reported, and exact resolution through the dispatcher |
+| `product/subscribe_test.rego` | default and attribute-driven terms, attribute type strictness, optional schedule type, each deny reason, and terms on a denial |
+
+The OPA image has no shell, so run the binary against the host tree from `docker/opa`:
+
+```bash
+P="$PWD/policies:/p:ro"
+docker run --rm -v "$P" openpolicyagent/opa:1.20.2 check --strict /p
+docker run --rm -v "$P" openpolicyagent/opa:1.20.2 test -v /p
+docker run --rm -v "$P" openpolicyagent/opa:1.20.2 fmt --diff /p   # no output = formatted
+```
+
+### Java
+
+Plain JUnit 5 and Mockito unit tests, run by `./mvnw test`:
+
+- `PolicyDecisionTest` — how each shape of PDP result is read (envelope, reasons, provenance, details, bare boolean, non-object details as `policy.details_unreadable`), `deny`, `of`, `withDetails`, and how two decisions combine, typed details included.
+- `PolicyDecisionDetailsTest` — the generic form, each endpoint's details subclass bound from its rule's shape, and `empty`.
+- `PolicyDecisionClientTest` — the request body, fail-closed behaviour, the switched-off path, and reading details into a declared type, including DENY with provenance kept when they cannot be read.
+- `PolicyDecisionSerializationTest` — the wire format, including that attribute JSON types survive and that unset fields are omitted.
+- `PolicyInputFactoryTest` — how each field is sourced, including resource and action from the target, and that a configured `Authorization` header is never forwarded.
+- `PolicyBodyCachingFilterTest` and `PolicyRequestBodyReaderTest` — which requests are buffered, that a buffered body is still readable downstream, and each case that yields no body rather than an error.
+- `PolicyInputLoggerTest` and `PolicyOutputLoggerTest` — the `log-input` and `log-output` switches.
+- `PolicyEnforcementInterceptorTest` and `PolicyDecisionArgumentResolverTest` — the enforcement point, publishing the allowed decision, what a handler receives when no decision was taken, and that a decision is only handed to a parameter whose details type can hold it.
+- `PolicyAnnotationValidatorTest` — startup validation of `@Policy` identifiers, details types and decision parameters, including that every shipped `@Policy` controller method declares a decision parameter matching its details type.
+- `ProductDiscoveryServiceImplTest` — per-candidate evaluation, and that denied products leak nothing into the response.
+- `ProductControllerTest` — the product endpoints.
+
+Exercising the PDP end to end needs OPA running — see `docker/opa/Readme.md`. Because the PDP fails closed, a stopped OPA makes every annotated endpoint return `403`.

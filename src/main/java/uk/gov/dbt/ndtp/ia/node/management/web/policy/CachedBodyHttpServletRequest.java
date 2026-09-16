@@ -23,7 +23,7 @@ import java.nio.charset.StandardCharsets;
  * nothing to bind.
  *
  * <p>Wrapping is decided by {@link PolicyBodyCachingFilter}, which only does so for a bounded
- * body on a policy-protected path - nothing else in the application pays for the buffer.
+ * body bound for a {@link Policy} handler - nothing else in the application pays for the buffer.
  */
 public class CachedBodyHttpServletRequest extends HttpServletRequestWrapper {
 

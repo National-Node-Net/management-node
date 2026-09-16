@@ -49,10 +49,9 @@ class PolicyOutputLoggerTest {
         return new OpaProperties(
                 true,
                 "http://opa:8181",
-                "/v1/data/management_node/decision",
+                "/v1/data/dispatch/decision",
                 Duration.ofSeconds(2),
                 Duration.ofSeconds(3),
-                List.of("/api/v1/configuration/**"),
                 List.of("content-type"),
                 false,
                 logOutput);
@@ -72,7 +71,7 @@ class PolicyOutputLoggerTest {
         PolicyOutputLogger outputLogger = loggerWith(false);
         PolicyInput input = PolicyInputFixture.of("client-1", "product", "discover");
 
-        outputLogger.logOutput(input, DefaultPolicyDecisionOutput.ALLOW);
+        outputLogger.logOutput(input, PolicyDecision.ALLOW);
 
         assertThat(outputLogger.isEnabled()).isFalse();
         assertThat(appender.list).isEmpty();
@@ -84,7 +83,7 @@ class PolicyOutputLoggerTest {
         PolicyInput candidate =
                 PolicyInputFixture.of("client-1", "product", "discover").withResource("42", Map.of());
 
-        outputLogger.logOutput(candidate, DefaultPolicyDecisionOutput.ALLOW);
+        outputLogger.logOutput(candidate, PolicyDecision.ALLOW);
 
         assertThat(onlyMessage())
                 .contains("PDP decision response <- ALLOW")
@@ -96,8 +95,8 @@ class PolicyOutputLoggerTest {
     @Test
     void enabled_logsAllThreeAttributeLists() {
         PolicyOutputLogger outputLogger = loggerWith(true);
-        DefaultPolicyDecisionOutput output = new DefaultPolicyDecisionOutput(
-                true, List.of("name"), List.of("internal_owner"), List.of("contact_email"));
+        PolicyDecision<PolicyDecisionDetails> output =
+                PolicyDecision.of(true, List.of("name"), List.of("internal_owner"), List.of("contact_email"));
         PolicyInput input = PolicyInputFixture.of("client-1", "product", "discover");
 
         outputLogger.logOutput(input, output);
@@ -110,11 +109,33 @@ class PolicyOutputLoggerTest {
     }
 
     @Test
+    void enabled_logsReasonsProvenanceAndDetails() {
+        PolicyOutputLogger outputLogger = loggerWith(true);
+        PolicyDecision<PolicyDecisionDetails> output = new PolicyDecision<>(
+                true,
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of("dispatch.resource_fallback"),
+                new PolicyProvenance("product.fallback", "policies.product.fallback/1.0.0", "resource_fallback"),
+                new PolicyDecisionDetails(Map.of("access_level", "read")));
+        PolicyInput input = PolicyInputFixture.of("client-1", "product", "view");
+
+        outputLogger.logOutput(input, output);
+
+        assertThat(onlyMessage())
+                .contains("reasons              : [dispatch.resource_fallback]")
+                .contains("policy               : id=product.fallback version=policies.product.fallback/1.0.0"
+                        + " resolution=resource_fallback")
+                .contains("details              : {\"access_level\":\"read\"}");
+    }
+
+    @Test
     void deny_isLoggedAsDeny() {
         PolicyOutputLogger outputLogger = loggerWith(true);
         PolicyInput input = PolicyInputFixture.of("client-1", "product", "discover");
 
-        outputLogger.logOutput(input, DefaultPolicyDecisionOutput.DENY);
+        outputLogger.logOutput(input, PolicyDecision.DENY);
 
         assertThat(onlyMessage()).contains("PDP decision response <- DENY");
     }
@@ -124,20 +145,19 @@ class PolicyOutputLoggerTest {
     void unserialisablePayload_isReportedInPlaceOfThePayloadRatherThanThrowing() {
         ObjectMapper failingMapper = new ObjectMapper();
         SimpleModule failingModule = new SimpleModule();
-        failingModule.addSerializer(
-                DefaultPolicyDecisionOutput.class, new StdSerializer<>(DefaultPolicyDecisionOutput.class) {
-                    @Override
-                    public void serialize(
-                            DefaultPolicyDecisionOutput value, JsonGenerator gen, SerializerProvider provider)
-                            throws IOException {
-                        throw new IOException("boom");
-                    }
-                });
+        failingModule.addSerializer(PolicyDecision.class, new StdSerializer<>(PolicyDecision.class) {
+            @Override
+            @SuppressWarnings("rawtypes")
+            public void serialize(PolicyDecision value, JsonGenerator gen, SerializerProvider provider)
+                    throws IOException {
+                throw new IOException("boom");
+            }
+        });
         failingMapper.registerModule(failingModule);
         PolicyOutputLogger outputLogger = new PolicyOutputLogger(properties(true), failingMapper);
         PolicyInput input = PolicyInputFixture.of("client-1", "product", "discover");
 
-        outputLogger.logOutput(input, DefaultPolicyDecisionOutput.ALLOW);
+        outputLogger.logOutput(input, PolicyDecision.ALLOW);
 
         // Jackson wraps the cause, so the reported text carries its message rather than only "boom".
         assertThat(onlyMessage()).contains("<not serialisable:").contains("boom");
@@ -145,7 +165,7 @@ class PolicyOutputLoggerTest {
 
     @Test
     void nullInput_isIgnored() {
-        loggerWith(true).logOutput(null, DefaultPolicyDecisionOutput.ALLOW);
+        loggerWith(true).logOutput(null, PolicyDecision.ALLOW);
 
         assertThat(appender.list).isEmpty();
     }

@@ -8,6 +8,7 @@ package uk.gov.dbt.ndtp.ia.node.management.service.data.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -21,10 +22,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProductDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductDiscoveryResponseDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductDiscoveryPolicyDecisionDetails;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeScopeCode;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductService;
-import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.DefaultPolicyDecisionOutput;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecision;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecisionClient;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInput;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInputFixture;
@@ -40,8 +42,15 @@ class ProductDiscoveryServiceImplTest {
 
     private static final PolicyInput INPUT = PolicyInputFixture.of("client-1", "product", "discover");
 
-    /** Discover takes no whole-request decision, so the request decision is the permissive one. */
-    private static final DefaultPolicyDecisionOutput REQUEST_DECISION = DefaultPolicyDecisionOutput.ALLOW;
+    private static final Class<ProductDiscoveryPolicyDecisionDetails> DETAILS =
+            ProductDiscoveryPolicyDecisionDetails.class;
+
+    private static final PolicyDecision<ProductDiscoveryPolicyDecisionDetails> ALLOW = PolicyDecision.of(true, DETAILS);
+
+    private static final PolicyDecision<ProductDiscoveryPolicyDecisionDetails> DENY = PolicyDecision.of(false, DETAILS);
+
+    /** A permissive whole-request decision, so each candidate's own decision is what filters. */
+    private static final PolicyDecision<ProductDiscoveryPolicyDecisionDetails> REQUEST_DECISION = ALLOW;
 
     @Mock
     private ProductService productService;
@@ -66,7 +75,7 @@ class ProductDiscoveryServiceImplTest {
 
     @Test
     void filterAuthorised_fullyPermitted_returnsAllCandidates() {
-        when(policyDecisionClient.evaluate(any())).thenReturn(DefaultPolicyDecisionOutput.ALLOW);
+        when(policyDecisionClient.evaluate(any(), eq(DETAILS))).thenReturn(ALLOW);
 
         List<ProductDTO> result = productDiscoveryService.filterAuthorised(
                 INPUT, REQUEST_DECISION, List.of(allowedProduct, deniedProduct));
@@ -79,8 +88,8 @@ class ProductDiscoveryServiceImplTest {
         // Also covers the PDP-failure case: PolicyDecisionClient already fails closed
         // (returns DENY) on any PDP error, so a denied candidate here is indistinguishable
         // from a failed one - both are excluded the same way.
-        when(policyDecisionClient.evaluate(argThatResource("1"))).thenReturn(DefaultPolicyDecisionOutput.ALLOW);
-        when(policyDecisionClient.evaluate(argThatResource("2"))).thenReturn(DefaultPolicyDecisionOutput.DENY);
+        when(policyDecisionClient.evaluate(argThatResource("1"), eq(DETAILS))).thenReturn(ALLOW);
+        when(policyDecisionClient.evaluate(argThatResource("2"), eq(DETAILS))).thenReturn(DENY);
 
         List<ProductDTO> result = productDiscoveryService.filterAuthorised(
                 INPUT, REQUEST_DECISION, List.of(allowedProduct, deniedProduct));
@@ -92,7 +101,7 @@ class ProductDiscoveryServiceImplTest {
 
     @Test
     void filterAuthorised_noneAuthorised_returnsEmptyList() {
-        when(policyDecisionClient.evaluate(any())).thenReturn(DefaultPolicyDecisionOutput.DENY);
+        when(policyDecisionClient.evaluate(any(), eq(DETAILS))).thenReturn(DENY);
 
         List<ProductDTO> result = productDiscoveryService.filterAuthorised(
                 INPUT, REQUEST_DECISION, List.of(allowedProduct, deniedProduct));
@@ -102,18 +111,18 @@ class ProductDiscoveryServiceImplTest {
 
     @Test
     void filterAuthorised_variesOnlyTheResourcePerCandidate() {
-        when(policyDecisionClient.evaluate(any())).thenReturn(DefaultPolicyDecisionOutput.ALLOW);
+        when(policyDecisionClient.evaluate(any(), eq(DETAILS))).thenReturn(ALLOW);
         when(policyAttributeService.findAttributeMap(1L, PolicyAttributeScopeCode.PRODUCT))
                 .thenReturn(Map.of("classification", "OFFICIAL"));
 
         productDiscoveryService.filterAuthorised(INPUT, REQUEST_DECISION, List.of(allowedProduct));
 
-        verify(policyDecisionClient).evaluate(INPUT.withResource("1", Map.of("classification", "OFFICIAL")));
+        verify(policyDecisionClient).evaluate(INPUT.withResource("1", Map.of("classification", "OFFICIAL")), DETAILS);
     }
 
     @Test
     void filterAuthorised_attachesEachCandidatesOwnProductAttributes() {
-        when(policyDecisionClient.evaluate(any())).thenReturn(DefaultPolicyDecisionOutput.ALLOW);
+        when(policyDecisionClient.evaluate(any(), eq(DETAILS))).thenReturn(ALLOW);
         when(policyAttributeService.findAttributeMap(1L, PolicyAttributeScopeCode.PRODUCT))
                 .thenReturn(Map.of("tier", 1));
         when(policyAttributeService.findAttributeMap(2L, PolicyAttributeScopeCode.PRODUCT))
@@ -121,16 +130,16 @@ class ProductDiscoveryServiceImplTest {
 
         productDiscoveryService.filterAuthorised(INPUT, REQUEST_DECISION, List.of(allowedProduct, deniedProduct));
 
-        verify(policyDecisionClient).evaluate(INPUT.withResource("1", Map.of("tier", 1)));
-        verify(policyDecisionClient).evaluate(INPUT.withResource("2", Map.of("tier", 2)));
+        verify(policyDecisionClient).evaluate(INPUT.withResource("1", Map.of("tier", 1)), DETAILS);
+        verify(policyDecisionClient).evaluate(INPUT.withResource("2", Map.of("tier", 2)), DETAILS);
     }
 
     @Test
     void discover_queriesCandidatesThenFiltersByPolicy() {
         when(productService.findDiscoveryCandidates("Alpha", "topic-1", "TypeA"))
                 .thenReturn(List.of(allowedProduct, deniedProduct));
-        when(policyDecisionClient.evaluate(argThatResource("1"))).thenReturn(DefaultPolicyDecisionOutput.ALLOW);
-        when(policyDecisionClient.evaluate(argThatResource("2"))).thenReturn(DefaultPolicyDecisionOutput.DENY);
+        when(policyDecisionClient.evaluate(argThatResource("1"), eq(DETAILS))).thenReturn(ALLOW);
+        when(policyDecisionClient.evaluate(argThatResource("2"), eq(DETAILS))).thenReturn(DENY);
 
         ProductDiscoveryResponseDTO result =
                 productDiscoveryService.discover(INPUT, REQUEST_DECISION, "Alpha", "topic-1", "TypeA");
@@ -146,6 +155,15 @@ class ProductDiscoveryServiceImplTest {
                 productDiscoveryService.discover(INPUT, REQUEST_DECISION, null, null, null);
 
         assertThat(result.products()).isEmpty();
+    }
+
+    @Test
+    void filterAuthorised_deniedRequestDecision_excludesCandidatesThePdpAllows() {
+        when(policyDecisionClient.evaluate(any(), eq(DETAILS))).thenReturn(ALLOW);
+
+        List<ProductDTO> result = productDiscoveryService.filterAuthorised(INPUT, DENY, List.of(allowedProduct));
+
+        assertThat(result).isEmpty();
     }
 
     private PolicyInput argThatResource(String productId) {

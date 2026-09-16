@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import uk.gov.dbt.ndtp.ia.node.management.exception.AccessRejectedException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.AuthenticationProcessingException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.ErrorResponse;
 import uk.gov.dbt.ndtp.ia.node.management.exception.JwtClaimParsingException;
@@ -96,6 +97,21 @@ class GlobalExceptionHandlerTest {
         assertEquals(HttpStatus.FORBIDDEN.value(), errorResponse.getStatus());
         assertTrue(errorResponse.getMessage().contains("insufficient permissions"));
         assertNotNull(errorResponse.getErrorId());
+    }
+
+    @Test
+    void handleAccessRejectedException_shouldReturnForbiddenWithTheRejectionsMessageAndErrorId() {
+        AccessRejectedException exception = new AccessRejectedException("Access denied by policy", "error-123");
+
+        ResponseEntity<ErrorResponse> response = exceptionHandler.handleAccessRejectedException(exception, webRequest);
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        ErrorResponse errorResponse = response.getBody();
+        assertNotNull(errorResponse);
+        assertEquals(HttpStatus.FORBIDDEN.value(), errorResponse.getStatus());
+        assertEquals("Access denied by policy", errorResponse.getMessage());
+        // The id the enforcement check logged, so the response can be traced to its log line.
+        assertEquals("error-123", errorResponse.getErrorId());
     }
 
     @Test

@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import uk.gov.dbt.ndtp.ia.node.management.exception.AccessRejectedException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.AuthenticationProcessingException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.CertificateSigningException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.ErrorResponse;
@@ -63,6 +64,25 @@ public class GlobalExceptionHandler {
                 new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), "Authentication error: " + ex.getMessage(), errorId);
 
         return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
+    }
+
+    /**
+     * Handles a request refused by the certificate check or the policy decision, which run only
+     * once method security has authorised the caller.
+     *
+     * @param ex the rejection, carrying the message for the caller and the logged error id
+     * @param request the current request
+     * @return a 403 with the rejection's message and error id
+     */
+    @ExceptionHandler(AccessRejectedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessRejectedException(AccessRejectedException ex, WebRequest request) {
+        log.debug(
+                "Access rejected, error_id={}, path={}: {}",
+                ex.getErrorId(),
+                request.getDescription(false),
+                ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse(HttpStatus.FORBIDDEN.value(), ex.getMessage(), ex.getErrorId());
+        return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler(AuthorizationDeniedException.class)

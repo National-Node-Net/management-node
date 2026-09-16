@@ -44,10 +44,9 @@ class PolicyInputLoggerTest {
         return new OpaProperties(
                 true,
                 "http://opa:8181",
-                "/v1/data/management_node/decision",
+                "/v1/data/dispatch/decision",
                 Duration.ofSeconds(2),
                 Duration.ofSeconds(3),
-                List.of("/api/v1/configuration/**"),
                 List.of("content-type"),
                 logInput,
                 false);
@@ -80,7 +79,7 @@ class PolicyInputLoggerTest {
 
         String message = onlyMessage();
         assertThat(message)
-                .contains("http://opa:8181/v1/data/management_node/decision")
+                .contains("http://opa:8181/v1/data/dispatch/decision")
                 .contains("subject.clientId     : client-1")
                 .contains("action               : discover")
                 .contains("resource             : product")

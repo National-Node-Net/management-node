@@ -11,11 +11,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProductDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductDiscoveryResponseDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductDiscoveryPolicyDecisionDetails;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeScopeCode;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductDiscoveryService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductService;
-import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.DefaultPolicyDecisionOutput;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecision;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecisionClient;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInput;
 
@@ -49,7 +50,11 @@ public class ProductDiscoveryServiceImpl implements ProductDiscoveryService {
 
     @Override
     public ProductDiscoveryResponseDTO discover(
-            PolicyInput input, DefaultPolicyDecisionOutput requestDecision, String name, String topic, String type) {
+            PolicyInput input,
+            PolicyDecision<ProductDiscoveryPolicyDecisionDetails> requestDecision,
+            String name,
+            String topic,
+            String type) {
         List<ProductDTO> candidates = productService.findDiscoveryCandidates(name, topic, type);
         List<ProductDTO> authorised = filterAuthorised(input, requestDecision, candidates);
         return ProductDiscoveryResponseDTO.builder().products(authorised).build();
@@ -57,7 +62,9 @@ public class ProductDiscoveryServiceImpl implements ProductDiscoveryService {
 
     @Override
     public List<ProductDTO> filterAuthorised(
-            PolicyInput input, DefaultPolicyDecisionOutput requestDecision, List<ProductDTO> candidates) {
+            PolicyInput input,
+            PolicyDecision<ProductDiscoveryPolicyDecisionDetails> requestDecision,
+            List<ProductDTO> candidates) {
         return candidates.stream()
                 .filter(candidate -> decide(input, requestDecision, candidate).allow())
                 .toList();
@@ -68,14 +75,17 @@ public class ProductDiscoveryServiceImpl implements ProductDiscoveryService {
      * subject, action and request facts are built once by the caller and reused, so a candidate
      * differs from its neighbours only by the entity under test and that entity's attributes.
      */
-    private DefaultPolicyDecisionOutput decide(
-            PolicyInput input, DefaultPolicyDecisionOutput requestDecision, ProductDTO candidate) {
+    private PolicyDecision<ProductDiscoveryPolicyDecisionDetails> decide(
+            PolicyInput input,
+            PolicyDecision<ProductDiscoveryPolicyDecisionDetails> requestDecision,
+            ProductDTO candidate) {
         String productId = String.valueOf(candidate.getId());
         PolicyInput candidateInput = input.withResource(
                 productId,
                 policyAttributeService.findAttributeMap(candidate.getId(), PolicyAttributeScopeCode.PRODUCT));
-        DefaultPolicyDecisionOutput decision = policyDecisionClient.evaluate(candidateInput);
-        DefaultPolicyDecisionOutput effective =
+        PolicyDecision<ProductDiscoveryPolicyDecisionDetails> decision =
+                policyDecisionClient.evaluate(candidateInput, ProductDiscoveryPolicyDecisionDetails.class);
+        PolicyDecision<ProductDiscoveryPolicyDecisionDetails> effective =
                 requestDecision == null ? decision : requestDecision.combinedWith(decision);
         if (!effective.allow()) {
             log.debug(

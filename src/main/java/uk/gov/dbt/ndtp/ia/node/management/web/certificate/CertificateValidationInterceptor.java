@@ -6,76 +6,103 @@
 
 package uk.gov.dbt.ndtp.ia.node.management.web.certificate;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
+import org.aopalliance.intercept.MethodInterceptor;
+import org.aopalliance.intercept.MethodInvocation;
+import org.springframework.http.server.PathContainer;
 import org.springframework.stereotype.Component;
-import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.util.UrlPathHelper;
+import org.springframework.web.util.pattern.PathPattern;
+import org.springframework.web.util.pattern.PathPatternParser;
+import uk.gov.dbt.ndtp.ia.node.management.exception.AccessRejectedException;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.OrganisationCertificateDTO;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.CertificateType;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.CertificateValidationProvider;
+import uk.gov.dbt.ndtp.ia.node.management.web.RequestContextSupport;
 import uk.gov.dbt.ndtp.ia.node.management.web.RequestRejectionSupport;
 
+/**
+ * Requires the calling client's organisation to hold an active, matching, non-bootstrap
+ * certificate before a protected endpoint runs.
+ *
+ * <p>A method interceptor rather than a {@code HandlerInterceptor}: handler interceptors run
+ * before the handler method is invoked, and so before {@code @PreAuthorize}. Advising the method,
+ * ordered after method security (see {@code RequestEnforcementConfig}), means a caller without the
+ * required role is refused by authorization and never reaches this check.
+ *
+ * <p>Applies to requests under {@link #PROTECTED_PATHS}, matched against the path within the
+ * application; every other advised call proceeds untouched.
+ */
 @Component
 @Slf4j
-public class CertificateValidationInterceptor implements HandlerInterceptor {
+public class CertificateValidationInterceptor implements MethodInterceptor {
+
+    /** Endpoints that require a valid organisation certificate. */
+    public static final List<String> PROTECTED_PATHS = List.of("/api/v1/configuration/**");
 
     private static final String X509_CERT_ATTRIBUTE = "jakarta.servlet.request.X509Certificate";
 
     private final CertificateValidationProvider validationProvider;
-    private final ObjectMapper objectMapper;
+    private final List<PathPattern> protectedPatterns;
 
-    public CertificateValidationInterceptor(
-            CertificateValidationProvider validationProvider, ObjectMapper objectMapper) {
+    public CertificateValidationInterceptor(CertificateValidationProvider validationProvider) {
         this.validationProvider = validationProvider;
-        this.objectMapper = objectMapper;
+        this.protectedPatterns = PROTECTED_PATHS.stream()
+                .map(PathPatternParser.defaultInstance::parse)
+                .toList();
     }
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
-            throws Exception {
+    public Object invoke(MethodInvocation invocation) throws Throwable {
+        HttpServletRequest request = RequestContextSupport.currentRequest().orElse(null);
+        if (request == null || !isProtected(request)) {
+            return invocation.proceed();
+        }
+        validate(request);
+        return invocation.proceed();
+    }
+
+    private boolean isProtected(HttpServletRequest request) {
+        PathContainer path = PathContainer.parsePath(UrlPathHelper.defaultInstance.getPathWithinApplication(request));
+        return protectedPatterns.stream().anyMatch(pattern -> pattern.matches(path));
+    }
+
+    private void validate(HttpServletRequest request) {
         String clientId = RequestRejectionSupport.extractClientId();
         if (clientId == null) {
             log.warn("No client ID found for request to {}", request.getRequestURI());
-            writeError(response, HttpServletResponse.SC_FORBIDDEN, "Client ID required");
-            return false;
+            throw reject("Client ID required");
         }
 
         OrganisationCertificateDTO cert =
                 validationProvider.findByClientId(clientId).orElse(null);
         if (cert == null) {
             log.warn("No certificate record for client {} on {}", clientId, request.getRequestURI());
-            writeError(response, HttpServletResponse.SC_FORBIDDEN, "No organisation certificate found");
-            return false;
+            throw reject("No organisation certificate found");
         }
 
         if (!validationProvider.isActive(cert)) {
             log.warn("Inactive certificate for client {} on {}", clientId, request.getRequestURI());
-            writeError(response, HttpServletResponse.SC_FORBIDDEN, "Organisation certificate is not active");
-            return false;
+            throw reject("Organisation certificate is not active");
         }
 
         if (cert.getSerialNumber() != null) {
             String rejection = validateSerialNumber(request, cert, clientId);
             if (rejection != null) {
-                writeError(response, HttpServletResponse.SC_FORBIDDEN, rejection);
-                return false;
+                throw reject(rejection);
             }
         }
 
         if (cert.getType() == CertificateType.BOOTSTRAP) {
             log.warn("Bootstrap certificate denied access to {}", request.getRequestURI());
-            writeError(
-                    response, HttpServletResponse.SC_FORBIDDEN, "Bootstrap certificates cannot access this endpoint");
-            return false;
+            throw reject("Bootstrap certificates cannot access this endpoint");
         }
 
         log.debug("Certificate validation successful for client {} on {}", clientId, request.getRequestURI());
-        return true;
     }
 
     private String validateSerialNumber(HttpServletRequest request, OrganisationCertificateDTO cert, String clientId) {
@@ -96,8 +123,7 @@ public class CertificateValidationInterceptor implements HandlerInterceptor {
         return null;
     }
 
-    private void writeError(HttpServletResponse response, int status, String message) throws IOException {
-        RequestRejectionSupport.writeError(
-                response, objectMapper, status, message, UUID.randomUUID().toString());
+    private static AccessRejectedException reject(String message) {
+        return new AccessRejectedException(message, UUID.randomUUID().toString());
     }
 }

@@ -14,4 +14,4 @@ package uk.gov.dbt.ndtp.ia.node.management.service.providers.policy;
  *
  * @param result the PDP's decision result
  */
-public record PolicyDecisionResponse(DefaultPolicyDecisionOutput result) {}
+public record PolicyDecisionResponse(PolicyDecision<PolicyDecisionDetails> result) {}

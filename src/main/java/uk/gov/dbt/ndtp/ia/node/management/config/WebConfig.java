@@ -9,48 +9,28 @@ package uk.gov.dbt.ndtp.ia.node.management.config;
 import java.util.List;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
-import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import uk.gov.dbt.ndtp.ia.node.management.web.certificate.CertificateValidationInterceptor;
-import uk.gov.dbt.ndtp.ia.node.management.web.policy.PolicyDecisionOutputArgumentResolver;
-import uk.gov.dbt.ndtp.ia.node.management.web.policy.PolicyEnforcementInterceptor;
+import uk.gov.dbt.ndtp.ia.node.management.web.policy.PolicyDecisionArgumentResolver;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    private final CertificateValidationInterceptor certificateValidationInterceptor;
-    private final PolicyEnforcementInterceptor policyEnforcementInterceptor;
-    private final PolicyDecisionOutputArgumentResolver policyDecisionOutputArgumentResolver;
-    private final OpaProperties opaProperties;
+    private final PolicyDecisionArgumentResolver policyDecisionArgumentResolver;
 
-    public WebConfig(
-            CertificateValidationInterceptor certificateValidationInterceptor,
-            PolicyEnforcementInterceptor policyEnforcementInterceptor,
-            PolicyDecisionOutputArgumentResolver policyDecisionOutputArgumentResolver,
-            OpaProperties opaProperties) {
-        this.certificateValidationInterceptor = certificateValidationInterceptor;
-        this.policyEnforcementInterceptor = policyEnforcementInterceptor;
-        this.policyDecisionOutputArgumentResolver = policyDecisionOutputArgumentResolver;
-        this.opaProperties = opaProperties;
+    public WebConfig(PolicyDecisionArgumentResolver policyDecisionArgumentResolver) {
+        this.policyDecisionArgumentResolver = policyDecisionArgumentResolver;
     }
 
     /**
-     * Registered whether or not policy enforcement is on: with OPA off no decision is published,
-     * and the resolver answers with a permissive decision rather than leaving the parameter
-     * unresolvable and the handler unmappable.
+     * Registered whether or not policy enforcement is on, so a handler asking for the decision is
+     * always resolvable; with OPA off the parameter is simply empty.
+     *
+     * <p>The certificate check and the Policy Enforcement Point are not handler interceptors: they
+     * must run after {@code @PreAuthorize}, which only method advice can do. See
+     * {@link RequestEnforcementConfig}.
      */
     @Override
     public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
-        resolvers.add(policyDecisionOutputArgumentResolver);
-    }
-
-    @Override
-    public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(certificateValidationInterceptor).addPathPatterns("/api/v1/configuration/**");
-
-        List<String> protectedPaths = opaProperties.protectedPaths();
-        if (!protectedPaths.isEmpty() && opaProperties.enabled()) {
-            registry.addInterceptor(policyEnforcementInterceptor).addPathPatterns(protectedPaths);
-        }
+        resolvers.add(policyDecisionArgumentResolver);
     }
 }

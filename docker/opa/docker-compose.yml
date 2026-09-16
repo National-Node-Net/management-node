@@ -17,15 +17,19 @@ services:
       - "--log-level=${OPA_LOG_LEVEL:-info}"
       - "--log-format=json"
       - "--set=decision_logs.console=true"
-      - "/policies/policy.rego"
+      # Unit tests live beside the rules they test; they are for `opa test`, not for serving.
+      - "--ignore=*_test.rego"
+      # The whole tree: dispatch.rego, the rules under policies.*, and routing/data.json,
+      # which loads as data.routing because data files are keyed by their directory.
+      - "/policies"
 
     ports:
       - "${OPA_PORT:-8181}:8181"
       - "${OPA_DIAGNOSTIC_PORT:-8282}:8282"
 
     volumes:
-      # Read-only: edit policy.rego on the host, then `docker compose restart opa`.
-      - ./policy.rego:/policies/policy.rego:ro
+      # Read-only: edit the policy tree on the host, then `docker compose restart opa`.
+      - ./policies:/policies:ro
 
     healthcheck:
       # The image has no shell or curl, so health is probed with OPA's own binary

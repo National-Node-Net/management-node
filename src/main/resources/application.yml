@@ -23,6 +23,7 @@ spring:
     locations: classpath:db/migration,classpath:db/samples # samples are only for local development
     enabled: true
     baseline-on-migrate: true
+    out-of-order: true
   datasource:
     url: jdbc:postgresql://localhost:5433/keycloak_db # this is setup to get you going easily using the Keycloak postgres so change this !
     username: ${POSTGRES_USER:keycloak_db_user}
@@ -63,11 +64,9 @@ application:
     # Policy enforcement. Key-by-key reference: docs/POLICY_ENFORCEMENT.md
     enabled: ${OPA_ENABLED:false} # master switch; false leaves the PEP unregistered
     url: ${OPA_URL:http://localhost:8181} # PDP base URL; https:// outside local development
-    decision-path: ${OPA_DECISION_PATH:/v1/data/management_node/decision}
+    decision-path: ${OPA_DECISION_PATH:/v1/data/dispatch/decision}
     connect-timeout: ${OPA_CONNECT_TIMEOUT:2s}
     read-timeout: ${OPA_READ_TIMEOUT:3s}
-    protected-paths: # path patterns the PEP intercepts
-      - /api/v1/configuration/**
     forwarded-headers: # allowed into input.request.headers; credentials refused in code
       - content-type
       - accept

@@ -45,10 +45,9 @@ class OpaClientConfigTest {
         contextRunner
                 .withPropertyValues(
                         "application.opa.url=https://opa.example.internal",
-                        "application.opa.decision-path=/v1/data/management_node/decision",
+                        "application.opa.decision-path=/v1/data/dispatch/decision",
                         "application.opa.connect-timeout=2s",
-                        "application.opa.read-timeout=3s",
-                        "application.opa.protected-paths[0]=/api/v1/configuration/**")
+                        "application.opa.read-timeout=3s")
                 .run(context -> assertThat(context).hasSingleBean(RestClient.class));
     }
 
@@ -58,10 +57,9 @@ class OpaClientConfigTest {
                 .withPropertyValues(
                         "application.opa.enabled=true",
                         "application.opa.url=http://opa.example.internal",
-                        "application.opa.decision-path=/v1/data/management_node/decision",
+                        "application.opa.decision-path=/v1/data/dispatch/decision",
                         "application.opa.connect-timeout=2s",
-                        "application.opa.read-timeout=3s",
-                        "application.opa.protected-paths[0]=/api/v1/configuration/**")
+                        "application.opa.read-timeout=3s")
                 .run(context -> assertThat(logAppender.list).anySatisfy(event -> {
                     assertThat(event.getLevel()).isEqualTo(Level.WARN);
                     assertThat(event.getFormattedMessage()).contains("http://opa.example.internal");
@@ -74,10 +72,9 @@ class OpaClientConfigTest {
                 .withPropertyValues(
                         "application.opa.enabled=true",
                         "application.opa.url=https://opa.example.internal",
-                        "application.opa.decision-path=/v1/data/management_node/decision",
+                        "application.opa.decision-path=/v1/data/dispatch/decision",
                         "application.opa.connect-timeout=2s",
-                        "application.opa.read-timeout=3s",
-                        "application.opa.protected-paths[0]=/api/v1/configuration/**")
+                        "application.opa.read-timeout=3s")
                 .run(context -> assertThat(warnings()).isEmpty());
     }
 
@@ -86,10 +83,9 @@ class OpaClientConfigTest {
         contextRunner
                 .withPropertyValues(
                         "application.opa.url=http://opa.example.internal",
-                        "application.opa.decision-path=/v1/data/management_node/decision",
+                        "application.opa.decision-path=/v1/data/dispatch/decision",
                         "application.opa.connect-timeout=2s",
-                        "application.opa.read-timeout=3s",
-                        "application.opa.protected-paths[0]=/api/v1/configuration/**")
+                        "application.opa.read-timeout=3s")
                 .run(context -> {
                     // The client is still built, it just never gets called - so a TLS warning
                     // would only add noise beside PolicyDecisionClient's "OPA is switched off".
@@ -104,16 +100,15 @@ class OpaClientConfigTest {
                 .withPropertyValues(
                         "application.opa.enabled=true",
                         "application.opa.url=https://opa.example.internal",
-                        "application.opa.decision-path=/v1/data/management_node/decision",
+                        "application.opa.decision-path=/v1/data/dispatch/decision",
                         "application.opa.connect-timeout=2s",
-                        "application.opa.read-timeout=3s",
-                        "application.opa.protected-paths[0]=/api/v1/configuration/**")
+                        "application.opa.read-timeout=3s")
                 .run(context -> assertThat(logAppender.list).anySatisfy(event -> {
                     assertThat(event.getLevel()).isEqualTo(Level.INFO);
                     assertThat(event.getFormattedMessage())
                             .contains("ENABLED")
                             .contains("https://opa.example.internal")
-                            .contains("/v1/data/management_node/decision");
+                            .contains("/v1/data/dispatch/decision");
                 }));
     }
 
@@ -122,10 +117,9 @@ class OpaClientConfigTest {
         contextRunner
                 .withPropertyValues(
                         "application.opa.url=http://opa.example.internal",
-                        "application.opa.decision-path=/v1/data/management_node/decision",
+                        "application.opa.decision-path=/v1/data/dispatch/decision",
                         "application.opa.connect-timeout=2s",
-                        "application.opa.read-timeout=3s",
-                        "application.opa.protected-paths[0]=/api/v1/configuration/**")
+                        "application.opa.read-timeout=3s")
                 .run(context -> assertThat(logAppender.list).anySatisfy(event -> {
                     assertThat(event.getLevel()).isEqualTo(Level.INFO);
                     assertThat(event.getFormattedMessage())
