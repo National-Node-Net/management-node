@@ -97,7 +97,7 @@ public class PolicyEnforcementInterceptor implements MethodInterceptor {
                     decision.reasons(),
                     decision.policy(),
                     correlationId);
-            throw new AccessRejectedException("Access denied by policy", correlationId);
+            throw new AccessRejectedException("Access denied by policy", decision.callerReasons(), correlationId);
         }
 
         log.info(

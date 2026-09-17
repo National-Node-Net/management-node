@@ -100,6 +100,7 @@ class GlobalExceptionHandlerWebTest {
                         post("/sample").contentType(MediaType.APPLICATION_JSON).content("{\"code\": \"too-long\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.reasons").doesNotExist())
                 .andReturn();
 
         String message = message(result);

@@ -47,8 +47,10 @@ import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.Certific
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.configuration.ConfigurationProvider;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecision;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecisionClient;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecisionDetails;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInputFactory;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInputFixture;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyProvenance;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyRequestBodyReader;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyTarget;
 import uk.gov.dbt.ndtp.ia.node.management.support.EnforcedControllerProxy;
@@ -167,7 +169,8 @@ class ConfigurationPolicyEnforcementIntegrationTest {
 
         mockMvc.perform(get("/api/v1/configuration/producer"))
                 .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.message").value("No organisation certificate found"));
+                .andExpect(jsonPath("$.message").value("No organisation certificate found"))
+                .andExpect(jsonPath("$.reasons").doesNotExist());
 
         verifyNoInteractions(policyDecisionClient, policyInputFactory, configurationProvider);
     }
@@ -224,6 +227,7 @@ class ConfigurationPolicyEnforcementIntegrationTest {
         mockMvc.perform(get("/api/v1/configuration/consumer"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("Access denied by policy"))
+                .andExpect(jsonPath("$.reasons").doesNotExist())
                 .andExpect(jsonPath("$.errorId").isNotEmpty());
 
         verifyNoInteractions(configurationProvider);
@@ -238,6 +242,28 @@ class ConfigurationPolicyEnforcementIntegrationTest {
         mockMvc.perform(get("/api/v1/configuration/producer"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("Access denied by policy"));
+
+        verifyNoInteractions(configurationProvider);
+    }
+
+    @Test
+    void deniedByPolicy_returnsTheCallerReasons_withoutReasonsAboutPolicyWiring() throws Exception {
+        authenticateAs("client-1", PRODUCER_ROLE);
+        activeCertificateFor("client-1");
+        when(policyDecisionClient.evaluate(any(), any()))
+                .thenReturn(new PolicyDecision<>(
+                        false,
+                        List.of("dispatch.resource_fallback", "organisation.clearance_insufficient"),
+                        new PolicyProvenance(
+                                "configuration.fallback", "policies.configuration.fallback/1.0.0", "resource_fallback"),
+                        new PolicyDecisionDetails()));
+
+        mockMvc.perform(get("/api/v1/configuration/producer"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("Access denied by policy"))
+                .andExpect(jsonPath("$.reasons.length()").value(1))
+                .andExpect(jsonPath("$.reasons[0]").value("organisation.clearance_insufficient"))
+                .andExpect(jsonPath("$.errorId").isNotEmpty());
 
         verifyNoInteractions(configurationProvider);
     }

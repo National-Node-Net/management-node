@@ -100,6 +100,23 @@ class PolicyDecisionTest {
     }
 
     @Test
+    void callerReasons_leaveOutReasonsAboutPolicyWiring() {
+        PolicyDecision<PolicyDecisionDetails> decision = new PolicyDecision<>(
+                false,
+                List.of(
+                        "dispatch.resource_fallback",
+                        "organisation.clearance_insufficient",
+                        "policy.details_unreadable",
+                        "schedule.type_not_permitted"),
+                FALLBACK,
+                new PolicyDecisionDetails());
+
+        assertThat(decision.callerReasons())
+                .containsExactly("organisation.clearance_insufficient", "schedule.type_not_permitted");
+        assertThat(PolicyDecision.DENY.callerReasons()).isEmpty();
+    }
+
+    @Test
     void combinedWith_null_leavesTheDecisionUnchanged() {
         PolicyDecision<PolicyDecisionDetails> decision =
                 new PolicyDecision<>(true, List.of("r"), SUBSCRIBE, new PolicyDecisionDetails(Map.of("a", 1)));

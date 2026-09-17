@@ -110,7 +110,21 @@ class GlobalExceptionHandlerTest {
         assertNotNull(errorResponse);
         assertEquals(HttpStatus.FORBIDDEN.value(), errorResponse.getStatus());
         assertEquals("Access denied by policy", errorResponse.getMessage());
+        assertTrue(errorResponse.getReasons().isEmpty());
         // The id the enforcement check logged, so the response can be traced to its log line.
+        assertEquals("error-123", errorResponse.getErrorId());
+    }
+
+    @Test
+    void handleAccessRejectedException_shouldReturnTheRejectionsReasons() {
+        AccessRejectedException exception = new AccessRejectedException(
+                "Access denied by policy", java.util.List.of("organisation.clearance_insufficient"), "error-123");
+
+        ResponseEntity<ErrorResponse> response = exceptionHandler.handleAccessRejectedException(exception, webRequest);
+
+        ErrorResponse errorResponse = response.getBody();
+        assertNotNull(errorResponse);
+        assertEquals(java.util.List.of("organisation.clearance_insufficient"), errorResponse.getReasons());
         assertEquals("error-123", errorResponse.getErrorId());
     }
 

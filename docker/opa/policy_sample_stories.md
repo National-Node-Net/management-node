@@ -343,7 +343,8 @@ per-candidate evaluation returns:
 
 ### D2 to D6: searching with filters
 
-A refused search is HTTP `403`. Its decision shows the denied names and still lists what was allowed.
+A refused search is HTTP `403`, with the refusal reason in the response's `reasons`. The decision in
+the log also shows the denied names and still lists what was allowed.
 
 | Request `filters` | `ENV` | `HEG` | `BCC` |
 |---|---|---|---|
@@ -395,8 +396,11 @@ As a result:
 - **Discovery varies by product through `row_filter`.**
 - **Per-candidate evaluation exists in the rule but is not called yet.** The discover handler is not
   wired to `ProductDiscoveryService`, so today only the request-level contract is produced.
-- **A refused caller only sees `403 "Access denied by policy"`.** Reasons and details appear in the
-  service log when `application.opa.log-output` is on (it is in the `dev` profile).
+- **A refused caller sees the reasons, not the details.** The `403` body is
+  `{"status": 403, "message": "Access denied by policy", "reasons": [...], "errorId": "..."}`.
+  `reasons` holds the codes in this document (e.g. `organisation.clearance_insufficient`); codes
+  starting `dispatch.` or `policy.` are left out. The details (terms, search contract) and provenance
+  appear only in the service log, when `application.opa.log-output` is on (it is in the `dev` profile).
 
 ## Where the rules live
 

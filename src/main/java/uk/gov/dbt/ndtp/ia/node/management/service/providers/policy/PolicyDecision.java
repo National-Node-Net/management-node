@@ -67,6 +67,9 @@ public record PolicyDecision<D extends PolicyDecisionDetails>(
      */
     public static final String REQUEST_ATTRIBUTE = PolicyDecision.class.getName();
 
+    /** Prefixes of reasons about policy wiring rather than the caller; see {@link #callerReasons()}. */
+    private static final List<String> INTERNAL_REASON_PREFIXES = List.of("dispatch.", "policy.");
+
     /** Reason given when a rule's details cannot be read into the type the caller declared. */
     public static final String REASON_DETAILS_UNREADABLE = "policy.details_unreadable";
 
@@ -193,6 +196,22 @@ public record PolicyDecision<D extends PolicyDecisionDetails>(
                 List.copyOf(mergedReasons),
                 PolicyProvenance.NONE.equals(other.policy) ? policy : other.policy,
                 (D) details.narrowedBy(other.details));
+    }
+
+    /**
+     * The reasons a refused caller may be shown: those describing the caller and its request, such as
+     * {@code organisation.clearance_insufficient} or {@code schedule.type_not_permitted}.
+     *
+     * <p>Reasons starting {@code dispatch.} or {@code policy.} describe how policy is wired - which rule
+     * answered, a missing route, an unreadable rule - rather than anything the caller can change, so
+     * they are left out and stay in the log.
+     *
+     * @return the caller-facing reasons, in their original order
+     */
+    public List<String> callerReasons() {
+        return reasons.stream()
+                .filter(reason -> INTERNAL_REASON_PREFIXES.stream().noneMatch(reason::startsWith))
+                .toList();
     }
 
     /** The verdict as the enum the enforcement points log and branch on. */

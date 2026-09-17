@@ -95,14 +95,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      * Handles a request refused by the certificate check or the policy decision, which run only
      * once method security has authorised the caller.
      *
-     * @param ex the rejection, carrying the message for the caller and the logged error id
+     * @param ex the rejection, carrying the message and reasons for the caller and the logged error id
      * @param request the current request
-     * @return a 403 with the rejection's message and error id
+     * @return a 403 with the rejection's message, reasons and error id
      */
     @ExceptionHandler(AccessRejectedException.class)
     public ResponseEntity<ErrorResponse> handleAccessRejectedException(AccessRejectedException ex, WebRequest request) {
         log.debug("Access rejected, error_id={}, path={}", ex.getErrorId(), request.getDescription(false), ex);
-        return respond(HttpStatus.FORBIDDEN, ex.getMessage(), ex.getErrorId());
+        ErrorResponse errorResponse =
+                new ErrorResponse(HttpStatus.FORBIDDEN.value(), ex.getMessage(), ex.getReasons(), ex.getErrorId());
+        return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler(AuthorizationDeniedException.class)

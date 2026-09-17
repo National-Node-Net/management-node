@@ -55,7 +55,7 @@ import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyTarget;
 /**
  * Covers the Policy Enforcement Point as method advice: which calls it judges, what it asks the PDP,
  * how an allowed decision reaches the handler, and that a denial stops the call before the handler
- * runs while keeping the policy's reasons out of the response.
+ * runs, handing the caller only the reasons about its own request.
  */
 @ExtendWith(MockitoExtension.class)
 class PolicyEnforcementInterceptorTest {
@@ -250,11 +250,11 @@ class PolicyEnforcementInterceptorTest {
     // ---------------------------------------------------------------------------------------
 
     @Test
-    void deny_stopsTheCallWithAGenericRejectionAndLogsReasonsAndProvenance() throws Throwable {
+    void deny_stopsTheCallWithTheCallerReasonsAndLogsEveryReasonAndProvenance() throws Throwable {
         Object[] arguments = invoking("subscribe", "{}", Optional.empty());
         PolicyDecision<SubscriptionDetails> decision = new PolicyDecision<>(
                 false,
-                List.of("organisation.missing", "request.product_missing"),
+                List.of("dispatch.resource_fallback", "organisation.missing", "request.product_missing"),
                 new PolicyProvenance("product.subscribe", "policies.product.subscribe/1.0.0", "exact"),
                 new SubscriptionDetails());
         when(policyDecisionClient.evaluate(any(), eq(SubscriptionDetails.class)))
@@ -265,11 +265,9 @@ class PolicyEnforcementInterceptorTest {
 
         assertThat(rejection).isNotNull();
         verify(invocation, never()).proceed();
-        // The reasons describe the policy; they are for the log, never for the caller.
-        assertThat(rejection.getMessage())
-                .isEqualTo("Access denied by policy")
-                .doesNotContain("organisation.missing")
-                .doesNotContain("product.subscribe");
+        // The caller gets the reasons about its own request; how policy is wired stays in the log.
+        assertThat(rejection.getMessage()).isEqualTo("Access denied by policy");
+        assertThat(rejection.getReasons()).containsExactly("organisation.missing", "request.product_missing");
         assertThat(arguments[1]).isEqualTo(Optional.empty());
         assertThat(request.getAttribute(PolicyDecision.REQUEST_ATTRIBUTE)).isNull();
 
@@ -279,6 +277,7 @@ class PolicyEnforcementInterceptorTest {
                 .orElseThrow();
         assertThat(denyEvent.getLevel()).isEqualTo(Level.WARN);
         assertThat(denyEvent.getFormattedMessage())
+                .contains("dispatch.resource_fallback")
                 .contains("organisation.missing")
                 .contains("request.product_missing")
                 .contains("policies.product.subscribe/1.0.0")

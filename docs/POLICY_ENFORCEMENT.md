@@ -36,7 +36,7 @@ Every request to a protected endpoint is judged in this order, and a request ref
 | 1. authentication | security filter chain (`BearerTokenAuthenticationFilter`) | `401` |
 | 2. authorization | method security: `@PreAuthorize` (and any `@Secured`/JSR-250) | `403 "Access denied: insufficient permissions for this operation"` |
 | 3. organisation certificate | `CertificateValidationInterceptor`, on `/api/v1/configuration/**` | `403` with the certificate reason, e.g. `"No organisation certificate found"` |
-| 4. policy | `PolicyEnforcementInterceptor`, on methods carrying `@Policy` | `403 "Access denied by policy"` |
+| 4. policy | `PolicyEnforcementInterceptor`, on methods carrying `@Policy` | `403 "Access denied by policy"`, with the policy's caller-facing `reasons` |
 | 5. the handler | the controller method | — |
 
 So a caller without the endpoint's role is never checked for a certificate and **never sent to the PDP**.
@@ -128,7 +128,15 @@ This makes enforcement opt-in per endpoint. The trade-off is deliberate: a URL p
 
 ### When the PDP denies
 
-The request is rejected with `403` and the body `"Access denied by policy"` (with an error id) before the handler runs. The decision is logged at `WARN` with the client id, path, action, method, reasons, provenance and the same id as `correlationId`, so the response can be traced to the log line. The reasons are never returned to the caller. A denial can only happen to a caller authorization has already accepted.
+The request is rejected with `403` before the handler runs. The body carries the message `"Access denied by policy"`, the reasons the caller may act on, and an error id:
+
+```json
+{"status": 403, "message": "Access denied by policy", "reasons": ["schedule.type_not_permitted"], "errorId": "…"}
+```
+
+The decision is logged at `WARN` with the client id, path, action, method, **every** reason, provenance and the same id as `correlationId`, so the response can be traced to the log line. A denial can only happen to a caller authorization has already accepted.
+
+Not every reason reaches the caller. `PolicyDecision.callerReasons()` leaves out reasons starting `dispatch.` or `policy.`, such as `dispatch.resource_fallback`, `dispatch.contract_mismatch` or `policy.details_unreadable`. Those describe how policy is wired rather than anything the caller can change, so they stay in the log. A refusal with no caller-facing reasons (for example, the PDP was unreachable) omits `reasons`. `reasons` appears only on policy refusals; every other error response has no such field.
 
 ### Receiving the decision in the handler
 
