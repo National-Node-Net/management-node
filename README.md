@@ -123,6 +123,23 @@ The system requires several certificate files:
 
 ### Step-by-Step Certificate Generation
 
+#### Note : Updating existing certs
+To update existing certs see **./scripts/cert-readme.md** and follow the notes.
+TL;DR - download certs.zip from s3 copy the scripts to the ./certs unzipped folder and run (dont make up a password as the apps are already expecting a value)
+```
+cd ./certs
+./generate-certs.sh --cert client-org2 --password ****** --rootpasswdfile client-rootCA.passwd --extfile localhost.ext
+
+# new certs generated
+ls ./client-org2 
+client-org2.crt  client-org2.csr  client-org2.key  client-org2-keystore.jks  client-org2.p12  client-org2.srl  client.p12
+
+# patch the application ( you will will only need to patch the mamangement node 1 time - for subsequent runs say no)
+./update-k8s-secrets.sh --certname client-org2 --namespace ia-federation-org2 --certdir ./client-org2 --patch-management-node false
+
+```
+
+### Certificate Generation from start
 For development purposes, follow these steps to generate certificates for mTLS. All passwords used are `changeit`. When generating these certficates, for the `Country Name`, you can use the value of 'UK'. All remaining certificate fields can be left to their default values.
 
 move to the docker folder
