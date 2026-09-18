@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
- * © Crown Copyright 2025. This work has been developed by the National Digital Twin Programme and is legally
+ * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
  * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 
@@ -12,8 +12,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,10 +25,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ConsumerConfigDTO;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProducerConfigDTO;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProducerDTO;
+import uk.gov.dbt.ndtp.ia.node.management.config.OpaProperties;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ConsumerConfigDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProducerConfigDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProducerDTO;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.configuration.ConfigurationProvider;
+import uk.gov.dbt.ndtp.ia.node.management.web.policy.PolicyDecisionArgumentResolver;
 
 @ExtendWith(MockitoExtension.class)
 class ConfigurationControllerTest {
@@ -48,7 +52,17 @@ class ConfigurationControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(configurationController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(configurationController)
+                .setCustomArgumentResolvers(new PolicyDecisionArgumentResolver(new OpaProperties(
+                        false,
+                        "http://localhost:8181",
+                        "/v1/data/dispatch/decision",
+                        Duration.ofSeconds(2),
+                        Duration.ofSeconds(3),
+                        List.of("content-type"),
+                        false,
+                        false)))
+                .build();
 
         // Set up producer config
         ProducerDTO producerDTO = ProducerDTO.builder()

@@ -979,6 +979,8 @@ These roles must be:
 
 Read the full details, examples, and Keycloak mapping guidance in [Authentication Requirements](docs/AUTHENTICATION_REQUIREMENTS.md).
 
+For how authorisation decisions are sent to the PDP (OPA) - the two enforcement points, the `input` document, and where each of its fields comes from - see [Policy Enforcement](docs/POLICY_ENFORCEMENT.md).
+
 ## Public Funding Acknowledgment
 This repository has been developed with public funding as part of the National Digital Twin Programme (NDTP), a UK Government initiative. NDTP, alongside its partners, has invested in this work to advance open, secure, and reusable digital twin technologies for any organisation, whether from the public or private sector, irrespective of size.
 ## License

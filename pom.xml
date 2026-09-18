@@ -250,6 +250,9 @@
             <includes>
               <include>**/*.json</include>
             </includes>
+            <excludes>
+              <exclude>**/target/**</exclude>
+            </excludes>
             <gson>
               <indentSpaces>4</indentSpaces>
               <version>${plugin.spotless.gson}</version>

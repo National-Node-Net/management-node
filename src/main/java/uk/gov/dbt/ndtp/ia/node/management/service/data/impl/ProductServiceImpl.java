@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
- * © Crown Copyright 2025. This work has been developed by the National Digital Twin Programme and is legally
+ * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
  * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 
@@ -8,15 +8,14 @@ package uk.gov.dbt.ndtp.ia.node.management.service.data.impl;
 
 import java.util.List;
 import java.util.Optional;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import uk.gov.dbt.ndtp.ia.node.management.converter.impl.ProductConverter;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProductDTO;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Product;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.ProductRepository;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProductDTO;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.Product;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.configuration.ProductRepository;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductService;
 
 /**
@@ -25,32 +24,22 @@ import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductService;
 @Service
 public class ProductServiceImpl implements ProductService {
 
+    // Discovery makes one synchronous PDP call per candidate, so the candidate set fetched
+    // per request stays bounded.
+    private static final int MAX_DISCOVERY_CANDIDATES = 200;
+
     private final ProductRepository productRepository;
     private final ProductConverter productConverter;
-    private final int maxDiscoveryCandidates;
 
     /**
      * Constructor-based dependency injection.
      *
      * @param productRepository the organisation data provider repository
      * @param productConverter  the converter for entity-to-DTO conversion
-     * @param maxDiscoveryCandidates upper bound on candidates fetched for discovery, keeping
-     *     the per-candidate PDP call loop in {@code ProductDiscoveryService} bounded
-     * @throws IllegalArgumentException if maxDiscoveryCandidates is less than 1 - fails fast
-     *     at startup rather than on every discovery request (PageRequest.of rejects a page
-     *     size below 1)
      */
-    public ProductServiceImpl(
-            ProductRepository productRepository,
-            ProductConverter productConverter,
-            @Value("${application.product-discovery.max-candidates:200}") int maxDiscoveryCandidates) {
-        if (maxDiscoveryCandidates < 1) {
-            throw new IllegalArgumentException(
-                    "application.product-discovery.max-candidates must be at least 1, got " + maxDiscoveryCandidates);
-        }
+    public ProductServiceImpl(ProductRepository productRepository, ProductConverter productConverter) {
         this.productRepository = productRepository;
         this.productConverter = productConverter;
-        this.maxDiscoveryCandidates = maxDiscoveryCandidates;
     }
 
     /**
@@ -83,7 +72,7 @@ public class ProductServiceImpl implements ProductService {
      */
     @Override
     public List<ProductDTO> findDiscoveryCandidates(String name, String topic, String type) {
-        Pageable limit = PageRequest.of(0, maxDiscoveryCandidates);
+        Pageable limit = PageRequest.of(0, MAX_DISCOVERY_CANDIDATES);
         List<Product> candidates = productRepository.findDiscoveryCandidates(
                 blankToNull(name), blankToNull(topic), blankToNull(type), limit);
         return productConverter.toDtoList(candidates);

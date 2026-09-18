@@ -17,11 +17,11 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import uk.gov.dbt.ndtp.ia.node.management.converter.impl.OrganisationCertificateConverter;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.OrganisationCertificateDTO;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.CertificateType;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Organisation;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.OrganisationCertificate;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.OrganisationCertificateRepository;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.OrganisationCertificateDTO;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.CertificateType;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.OrganisationCertificate;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.organisation.Organisation;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.certificate.OrganisationCertificateRepository;
 
 class OrganisationCertificateServiceImplTest {
 

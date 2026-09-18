@@ -12,9 +12,9 @@ import java.util.Map;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
 import uk.gov.dbt.ndtp.ia.node.management.converter.impl.OrganisationConverter;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.OrganisationDTO;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Organisation;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.OrganisationRepository;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.organisation.OrganisationDTO;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.organisation.Organisation;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.organisation.OrganisationRepository;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.OrganisationService;
 
 /**
@@ -48,6 +48,14 @@ public class OrganisationServiceImpl implements OrganisationService {
             return Optional.empty();
         }
         return organisationRepository.findByOrganisationKey(organisationKey).map(organisationConverter::toDto);
+    }
+
+    @Override
+    public Optional<Long> findIdByKey(String organisationKey) {
+        if (organisationKey == null || organisationKey.isBlank()) {
+            return Optional.empty();
+        }
+        return organisationRepository.findByOrganisationKey(organisationKey).map(Organisation::getId);
     }
 
     @Override

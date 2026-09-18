@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import uk.gov.dbt.ndtp.ia.node.management.exception.AccessRejectedException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.AuthenticationProcessingException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.ErrorResponse;
 import uk.gov.dbt.ndtp.ia.node.management.exception.JwtClaimParsingException;
@@ -99,6 +100,35 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void handleAccessRejectedException_shouldReturnForbiddenWithTheRejectionsMessageAndErrorId() {
+        AccessRejectedException exception = new AccessRejectedException("Access denied by policy", "error-123");
+
+        ResponseEntity<ErrorResponse> response = exceptionHandler.handleAccessRejectedException(exception, webRequest);
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        ErrorResponse errorResponse = response.getBody();
+        assertNotNull(errorResponse);
+        assertEquals(HttpStatus.FORBIDDEN.value(), errorResponse.getStatus());
+        assertEquals("Access denied by policy", errorResponse.getMessage());
+        assertTrue(errorResponse.getReasons().isEmpty());
+        // The id the enforcement check logged, so the response can be traced to its log line.
+        assertEquals("error-123", errorResponse.getErrorId());
+    }
+
+    @Test
+    void handleAccessRejectedException_shouldReturnTheRejectionsReasons() {
+        AccessRejectedException exception = new AccessRejectedException(
+                "Access denied by policy", java.util.List.of("organisation.clearance_insufficient"), "error-123");
+
+        ResponseEntity<ErrorResponse> response = exceptionHandler.handleAccessRejectedException(exception, webRequest);
+
+        ErrorResponse errorResponse = response.getBody();
+        assertNotNull(errorResponse);
+        assertEquals(java.util.List.of("organisation.clearance_insufficient"), errorResponse.getReasons());
+        assertEquals("error-123", errorResponse.getErrorId());
+    }
+
+    @Test
     void handleRuntimeException_shouldReturnInternalServerErrorStatus() {
         // Arrange
         String message = "Something went wrong";
@@ -135,17 +165,18 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void handleNoResourceFoundException_shouldReturnNotFoundStatus() {
+    void handleNoResourceFoundException_shouldReturnNotFoundStatus() throws Exception {
         // Arrange
         String path = "/api/v1/invalid";
         NoResourceFoundException exception = new NoResourceFoundException(HttpMethod.GET, path);
 
         // Act
-        ResponseEntity<ErrorResponse> response = exceptionHandler.handleNoResourceFoundException(exception, webRequest);
+        ResponseEntity<Object> response = exceptionHandler.handleException(exception, webRequest);
 
         // Assert
+        assertNotNull(response);
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        ErrorResponse errorResponse = response.getBody();
+        ErrorResponse errorResponse = (ErrorResponse) response.getBody();
         assertNotNull(errorResponse);
         assertEquals(HttpStatus.NOT_FOUND.value(), errorResponse.getStatus());
         assertEquals("Resource not found: " + path, errorResponse.getMessage());

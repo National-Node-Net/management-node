@@ -8,10 +8,10 @@ package uk.gov.dbt.ndtp.ia.node.management.converter.impl;
 
 import org.springframework.stereotype.Component;
 import uk.gov.dbt.ndtp.ia.node.management.converter.EntityDtoConverter;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.OrganisationCertificateDTO;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Organisation;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.OrganisationCertificate;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.OrganisationRepository;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.OrganisationCertificateDTO;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.OrganisationCertificate;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.organisation.Organisation;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.organisation.OrganisationRepository;
 
 /**
  * Converter for OrganisationCertificate entity and OrganisationCertificateDTO.

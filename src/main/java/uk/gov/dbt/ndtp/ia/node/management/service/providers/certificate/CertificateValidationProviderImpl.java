@@ -14,7 +14,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.OrganisationCertificateDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.OrganisationCertificateDTO;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.OrganisationCertificateService;
 
 /**

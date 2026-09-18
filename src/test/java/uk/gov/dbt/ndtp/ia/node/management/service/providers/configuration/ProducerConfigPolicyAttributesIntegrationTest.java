@@ -29,28 +29,28 @@ import uk.gov.dbt.ndtp.ia.node.management.converter.impl.OrganisationConverter;
 import uk.gov.dbt.ndtp.ia.node.management.converter.impl.OrganisationProducerConverter;
 import uk.gov.dbt.ndtp.ia.node.management.converter.impl.ProductConsumerConverter;
 import uk.gov.dbt.ndtp.ia.node.management.converter.impl.ProductConverter;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ConsumerDTO;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.PolicyAttributeDTO;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProducerConfigDTO;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProducerDTO;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProductConsumerDTO;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProductDTO;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.AttributeDefinition;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.AttributeDefinitionScope;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.AttributeScope;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.AttributeValue;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Consumer;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Organisation;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Producer;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Product;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.ProductConsumer;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.ProductType;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ConsumerDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProducerConfigDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProducerDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProductConsumerDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProductDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.policy.PolicyAttributeDTO;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.Consumer;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.Producer;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.Product;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.ProductConsumer;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.ProductType;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.organisation.Organisation;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.policy.PolicyAttributeDefinition;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.policy.PolicyAttributeDefinitionScope;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.policy.PolicyAttributeScope;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.policy.PolicyAttributeValue;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.AbstractPostgresRepositoryTest;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.AttributeDefinitionRepository;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.AttributeDefinitionScopeRepository;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.AttributeScopeRepository;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.AttributeValueRepository;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.OrganisationRepository;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.organisation.OrganisationRepository;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.policy.PolicyAttributeDefinitionRepository;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.policy.PolicyAttributeDefinitionScopeRepository;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.policy.PolicyAttributeScopeRepository;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.policy.PolicyAttributeValueRepository;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ConsumerService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProducerService;
@@ -95,16 +95,16 @@ class ProducerConfigPolicyAttributesIntegrationTest extends AbstractPostgresRepo
     private ProductConsumerService productConsumerService;
 
     @Autowired
-    private AttributeValueRepository attributeValueRepository;
+    private PolicyAttributeValueRepository policyAttributeValueRepository;
 
     @Autowired
-    private AttributeDefinitionRepository attributeDefinitionRepository;
+    private PolicyAttributeDefinitionRepository policyAttributeDefinitionRepository;
 
     @Autowired
-    private AttributeDefinitionScopeRepository attributeDefinitionScopeRepository;
+    private PolicyAttributeDefinitionScopeRepository policyAttributeDefinitionScopeRepository;
 
     @Autowired
-    private AttributeScopeRepository attributeScopeRepository;
+    private PolicyAttributeScopeRepository policyAttributeScopeRepository;
 
     @Autowired
     private OrganisationRepository organisationRepository;
@@ -114,7 +114,7 @@ class ProducerConfigPolicyAttributesIntegrationTest extends AbstractPostgresRepo
         when(certificateValidationProvider.findActiveOrganisationIds(any()))
                 .thenAnswer(invocation -> new HashSet<>(invocation.getArgument(0)));
         PolicyAttributeService policyAttributeService =
-                new PolicyAttributeServiceImpl(attributeValueRepository, new ObjectMapper());
+                new PolicyAttributeServiceImpl(policyAttributeValueRepository, new ObjectMapper());
         return new ConfigurationProviderImpl(
                 consumerService,
                 productConsumerService,
@@ -183,25 +183,26 @@ class ProducerConfigPolicyAttributesIntegrationTest extends AbstractPostgresRepo
     }
 
     private void persistAttribute(String scopeCode, Long entityId, String attrName, String rawJsonValue) {
-        AttributeDefinition definition = new AttributeDefinition();
+        PolicyAttributeDefinition definition = new PolicyAttributeDefinition();
         definition.setNamespace("policy");
         definition.setName(attrName);
         definition.setDescription("test");
         definition.setDataType("STRING");
         definition.setCreatedAt(Timestamp.from(Instant.now()));
         definition.setCreatedBy("test");
-        definition = attributeDefinitionRepository.saveAndFlush(definition);
+        definition = policyAttributeDefinitionRepository.saveAndFlush(definition);
 
-        AttributeScope scope = attributeScopeRepository.findByCode(scopeCode).orElseThrow();
-        AttributeDefinitionScope binding = new AttributeDefinitionScope();
+        PolicyAttributeScope scope =
+                policyAttributeScopeRepository.findByCode(scopeCode).orElseThrow();
+        PolicyAttributeDefinitionScope binding = new PolicyAttributeDefinitionScope();
         binding.setAttributeDefinition(definition);
         binding.setAttributeScope(scope);
         binding.setRequired(false);
         binding.setCreatedAt(Timestamp.from(Instant.now()));
         binding.setCreatedBy("test");
-        binding = attributeDefinitionScopeRepository.saveAndFlush(binding);
+        binding = policyAttributeDefinitionScopeRepository.saveAndFlush(binding);
 
-        AttributeValue value = new AttributeValue();
+        PolicyAttributeValue value = new PolicyAttributeValue();
         value.setAttributeDefinitionScope(binding);
         value.setEntityId(entityId);
         value.setValue(rawJsonValue);

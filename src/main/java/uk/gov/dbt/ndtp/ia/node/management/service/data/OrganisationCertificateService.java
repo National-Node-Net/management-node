@@ -9,7 +9,7 @@ package uk.gov.dbt.ndtp.ia.node.management.service.data;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.OrganisationCertificateDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.OrganisationCertificateDTO;
 
 /**
  * Service interface for managing OrganisationCertificate entities.

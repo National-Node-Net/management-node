@@ -9,7 +9,7 @@ package uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.OrganisationCertificateDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.OrganisationCertificateDTO;
 
 /**
  * Provides certificate validation logic for organisation certificates.

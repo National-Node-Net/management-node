@@ -24,11 +24,17 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.*;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.OrganisationDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ConsumerConfigDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ConsumerDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProducerConfigDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProducerDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProductConsumerDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProductDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.organisation.OrganisationDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.policy.PolicyAttributeDTO;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ConsumerService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.OrganisationService;
-import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeScope;
+import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeScopeCode;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProducerService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductConsumerService;
@@ -275,22 +281,23 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
     private void populatePolicyAttributes(List<ProducerDTO> producers) {
         for (ProducerDTO producer : producers) {
             producer.getPolicyAttributes()
-                    .addAll(policyAttributeService.findAttributes(producer.getId(), PolicyAttributeScope.PRODUCER));
+                    .addAll(policyAttributeService.findAttributes(producer.getId(), PolicyAttributeScopeCode.PRODUCER));
 
             for (ProductDTO product : producer.getProducts()) {
                 product.getPolicyAttributes()
-                        .addAll(policyAttributeService.findAttributes(product.getId(), PolicyAttributeScope.PRODUCT));
+                        .addAll(policyAttributeService.findAttributes(
+                                product.getId(), PolicyAttributeScopeCode.PRODUCT));
 
                 for (ConsumerDTO consumer : product.getConsumers()) {
                     consumer.getPolicyAttributes()
                             .addAll(policyAttributeService.findAttributes(
-                                    consumer.getId(), PolicyAttributeScope.CONSUMER));
+                                    consumer.getId(), PolicyAttributeScopeCode.CONSUMER));
                 }
                 for (ProductConsumerDTO configuration : product.getConfigurations()) {
                     configuration
                             .getPolicyAttributes()
                             .addAll(policyAttributeService.findAttributes(
-                                    configuration.getId(), PolicyAttributeScope.SUBSCRIPTION));
+                                    configuration.getId(), PolicyAttributeScopeCode.SUBSCRIPTION));
                 }
             }
         }
@@ -368,7 +375,7 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
         Map<Long, List<PolicyAttributeDTO>> attributesByOrgId = new LinkedHashMap<>();
         for (Long orgId : orgIds) {
             attributesByOrgId.put(
-                    orgId, policyAttributeService.findAttributes(orgId, PolicyAttributeScope.ORGANISATION));
+                    orgId, policyAttributeService.findAttributes(orgId, PolicyAttributeScopeCode.ORGANISATION));
         }
         return attributesByOrgId;
     }

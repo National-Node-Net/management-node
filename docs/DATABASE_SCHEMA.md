@@ -434,7 +434,7 @@ Soft-delete triggers:
 - `trg_organisation_policy_attribute_value_soft_delete`, `trg_consumer_policy_attribute_value_soft_delete`, `trg_producer_policy_attribute_value_soft_delete`, `trg_product_policy_attribute_value_soft_delete`, `trg_product_consumer_policy_attribute_value_soft_delete` — one `AFTER DELETE` trigger per owning table (`organisation`, `consumer`, `producer`, `product`, `product_consumer`), all calling the shared function `fn_policy_attribute_value_soft_delete_on_entity_delete()`. When a row in one of those tables is deleted, every live (`is_deleted = FALSE`) `policy_attribute_value` row scoped to that table and entity id is set `is_deleted = TRUE` rather than deleted or left orphaned.
 
 Usage:
-- Stores the actual attribute values used to build the OPA data bundle for policy decisions, keyed by which entity (organisation, consumer, producer, product, or subscription) they describe.
+- Stores the actual attribute values sent to the PDP (OPA) for policy decisions, keyed by which entity (organisation, consumer, producer, product, or subscription) they describe. Live rows are read per request and embedded in the decision input as `subject.organisation.attributes` (resolved from the token's organisation claim via `organisation_key`) and `resource.attributes`; the `value` JSONB keeps its type. A `multi_valued` attribute is stored as one row per value and all of its live rows are collected into a single array for the policy, so the partial unique index above (which permits many distinct live values per entity) is what makes multiple values possible. See [Policy Enforcement](POLICY_ENFORCEMENT.md).
 
 ---
 

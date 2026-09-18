@@ -23,6 +23,7 @@ spring:
     locations: classpath:db/migration,classpath:db/samples # samples are only for local development
     enabled: true
     baseline-on-migrate: true
+    out-of-order: true
   datasource:
     url: jdbc:postgresql://localhost:5433/keycloak_db # this is setup to get you going easily using the Keycloak postgres so change this !
     username: ${POSTGRES_USER:keycloak_db_user}
@@ -60,19 +61,20 @@ application:
     key-store-password: ${CERTPASSWORD:} # MTLS client keystore password
     keyStoreType: JKS
   opa:
-    # base URL of the OPA server (PDP). Must be https:// in any non-local environment -
-    # this service enforces mTLS for all service-to-service traffic, and the client
-    # keystore/truststore configured above are applied automatically to any https:// call.
-    url: ${OPA_URL:http://localhost:8181}
-    decision-path: ${OPA_DECISION_PATH:/v1/data/management_node/allow} # OPA decision query path
-    connect-timeout: ${OPA_CONNECT_TIMEOUT:2s} # max time to establish a connection to OPA
-    read-timeout: ${OPA_READ_TIMEOUT:3s} # max time to wait for an OPA decision response
-    protected-paths: # API path patterns the Policy Enforcement Point intercepts
-      - /api/v1/configuration/**
-  product-discovery:
-    # upper bound on candidates fetched per discovery request, before per-candidate PDP
-    # evaluation - keeps the synchronous PDP call loop bounded
-    max-candidates: ${PRODUCT_DISCOVERY_MAX_CANDIDATES:200}
+    # Policy enforcement. Key-by-key reference: docs/POLICY_ENFORCEMENT.md
+    enabled: ${OPA_ENABLED:false} # master switch; false leaves the PEP unregistered
+    url: ${OPA_URL:http://localhost:8181} # PDP base URL; https:// outside local development
+    decision-path: ${OPA_DECISION_PATH:/v1/data/dispatch/decision}
+    connect-timeout: ${OPA_CONNECT_TIMEOUT:2s}
+    read-timeout: ${OPA_READ_TIMEOUT:3s}
+    forwarded-headers: # allowed into input.request.headers; credentials refused in code
+      - content-type
+      - accept
+      - x-correlation-id
+      - x-forwarded-for
+      - user-agent
+    log-input: ${OPA_LOG_INPUT:false} # diagnostic only - carries the token's claims
+    log-output: ${OPA_LOG_OUTPUT:false} # diagnostic only - one entry per decision
 
 # Actuator Configuration
 management:

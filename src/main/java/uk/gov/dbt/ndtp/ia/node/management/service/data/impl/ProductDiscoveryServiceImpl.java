@@ -9,62 +9,94 @@ package uk.gov.dbt.ndtp.ia.node.management.service.data.impl;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProductDTO;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProductDiscoveryResponseDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProductDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductDiscoveryResponseDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductDiscoveryPolicyDecisionDetails;
+import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeScopeCode;
+import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductDiscoveryService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductService;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecision;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecisionClient;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInput;
-import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyRequester;
 
 /**
  * Reuses {@link PolicyDecisionClient} (built for the whole-request PEP on
- * {@code /api/v1/configuration/**}) once per candidate product, since discovery needs to
- * authorise a set of resources rather than the single request URI. The {@code resource} and
- * {@code action} fields of {@link PolicyInput} are repurposed here: {@code resource} carries
- * a stable {@code PRODUCT_RESOURCE_PREFIX + id} identifier instead of a request URI, and
- * {@code action} is the literal string {@code "discover"} instead of an HTTP method.
+ * {@code /api/v1/configuration/**}) once per candidate product, since discover authorises a set
+ * of resources rather than a single request. The caller supplies a {@link PolicyInput} carrying
+ * the subject, action and request facts for the call; this service varies only
+ * {@code resource.id} and {@code resource.attributes} per candidate.
+ *
+ * <p>The caller also supplies the decision already taken for the request as a whole. Each
+ * per-candidate decision is narrowed by it, so a product survives only if both permit it and the
+ * attribute lists in {@link ProductDiscoveryPolicyDecisionDetails} are the two merged.
  */
 @Service
 @Slf4j
 public class ProductDiscoveryServiceImpl implements ProductDiscoveryService {
 
-    private static final String DISCOVER_ACTION = "discover";
-    private static final String PRODUCT_RESOURCE_PREFIX = "product:";
-
     private final ProductService productService;
     private final PolicyDecisionClient policyDecisionClient;
+    private final PolicyAttributeService policyAttributeService;
 
-    public ProductDiscoveryServiceImpl(ProductService productService, PolicyDecisionClient policyDecisionClient) {
+    public ProductDiscoveryServiceImpl(
+            ProductService productService,
+            PolicyDecisionClient policyDecisionClient,
+            PolicyAttributeService policyAttributeService) {
         this.productService = productService;
         this.policyDecisionClient = policyDecisionClient;
+        this.policyAttributeService = policyAttributeService;
     }
 
     @Override
-    public ProductDiscoveryResponseDTO discover(PolicyRequester requester, String name, String topic, String type) {
+    public ProductDiscoveryResponseDTO discover(
+            PolicyInput input,
+            PolicyDecision<ProductDiscoveryPolicyDecisionDetails> requestDecision,
+            String name,
+            String topic,
+            String type) {
         List<ProductDTO> candidates = productService.findDiscoveryCandidates(name, topic, type);
-        List<ProductDTO> authorised = filterAuthorised(requester, candidates);
+        List<ProductDTO> authorised = filterAuthorised(input, requestDecision, candidates);
         return ProductDiscoveryResponseDTO.builder().products(authorised).build();
     }
 
     @Override
-    public List<ProductDTO> filterAuthorised(PolicyRequester requester, List<ProductDTO> candidates) {
+    public List<ProductDTO> filterAuthorised(
+            PolicyInput input,
+            PolicyDecision<ProductDiscoveryPolicyDecisionDetails> requestDecision,
+            List<ProductDTO> candidates) {
         return candidates.stream()
-                .filter(candidate -> isAuthorised(requester, candidate))
+                .filter(candidate -> decide(input, requestDecision, candidate).allow())
                 .toList();
     }
 
-    private boolean isAuthorised(PolicyRequester requester, ProductDTO candidate) {
-        PolicyInput input = PolicyInput.of(requester, PRODUCT_RESOURCE_PREFIX + candidate.getId(), DISCOVER_ACTION);
-        PolicyDecision decision = policyDecisionClient.evaluate(input);
-        if (decision == PolicyDecision.DENY) {
+    /**
+     * Evaluates one decision per candidate. Only the resource changes between candidates - the
+     * subject, action and request facts are built once by the caller and reused, so a candidate
+     * differs from its neighbours only by the entity under test and that entity's attributes.
+     */
+    private PolicyDecision<ProductDiscoveryPolicyDecisionDetails> decide(
+            PolicyInput input,
+            PolicyDecision<ProductDiscoveryPolicyDecisionDetails> requestDecision,
+            ProductDTO candidate) {
+        String productId = String.valueOf(candidate.getId());
+        PolicyInput candidateInput = input.withResource(
+                productId,
+                policyAttributeService.findAttributeMap(candidate.getId(), PolicyAttributeScopeCode.PRODUCT));
+        PolicyDecision<ProductDiscoveryPolicyDecisionDetails> decision =
+                policyDecisionClient.evaluate(candidateInput, ProductDiscoveryPolicyDecisionDetails.class);
+        PolicyDecision<ProductDiscoveryPolicyDecisionDetails> effective =
+                requestDecision == null ? decision : requestDecision.combinedWith(decision);
+        if (!effective.allow()) {
             log.debug(
-                    "Policy decision DENY clientId={} resource={} action={}",
-                    requester.clientId(),
-                    input.resource(),
-                    DISCOVER_ACTION);
+                    "Policy decision DENY subject={} resource={}:{} action={}",
+                    candidateInput.subject() == null
+                            ? null
+                            : candidateInput.subject().userId(),
+                    candidateInput.resource().kind(),
+                    productId,
+                    candidateInput.action());
         }
-        return decision == PolicyDecision.ALLOW;
+        return effective;
     }
 }

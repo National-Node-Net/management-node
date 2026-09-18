@@ -10,8 +10,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.OrganisationDTO;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Organisation;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.organisation.OrganisationDTO;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.organisation.Organisation;
 
 class OrganisationConverterTest {
 

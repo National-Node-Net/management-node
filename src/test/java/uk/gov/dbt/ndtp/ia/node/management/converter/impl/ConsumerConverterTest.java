@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
- * © Crown Copyright 2025. This work has been developed by the National Digital Twin Programme and is legally
+ * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
  * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 
@@ -16,10 +16,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ConsumerDTO;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Consumer;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Organisation;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.OrganisationRepository;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ConsumerDTO;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.Consumer;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.organisation.Organisation;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.organisation.OrganisationRepository;
 
 @ExtendWith(MockitoExtension.class)
 class ConsumerConverterTest {
@@ -171,24 +171,24 @@ class ConsumerConverterTest {
     @Test
     void toDto_withAttributes_shouldPopulateAttributesFromEntity() {
         // Arrange
-        uk.gov.dbt.ndtp.ia.node.management.persistency.entity.ProductConsumer pc1 =
-                new uk.gov.dbt.ndtp.ia.node.management.persistency.entity.ProductConsumer();
-        uk.gov.dbt.ndtp.ia.node.management.persistency.entity.ProductConsumerAttribute a1 =
-                new uk.gov.dbt.ndtp.ia.node.management.persistency.entity.ProductConsumerAttribute();
+        uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.ProductConsumer pc1 =
+                new uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.ProductConsumer();
+        uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.ProductConsumerAttribute a1 =
+                new uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.ProductConsumerAttribute();
         a1.setName("attr1");
         a1.setType("string");
         a1.setValue("v1");
-        uk.gov.dbt.ndtp.ia.node.management.persistency.entity.ProductConsumerAttribute a2 =
-                new uk.gov.dbt.ndtp.ia.node.management.persistency.entity.ProductConsumerAttribute();
+        uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.ProductConsumerAttribute a2 =
+                new uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.ProductConsumerAttribute();
         a2.setName("attr2");
         a2.setType("number");
         a2.setValue("42");
         pc1.setProductConsumerAttributes(java.util.List.of(a1, a2));
 
-        uk.gov.dbt.ndtp.ia.node.management.persistency.entity.ProductConsumer pc2 =
-                new uk.gov.dbt.ndtp.ia.node.management.persistency.entity.ProductConsumer();
-        uk.gov.dbt.ndtp.ia.node.management.persistency.entity.ProductConsumerAttribute a3 =
-                new uk.gov.dbt.ndtp.ia.node.management.persistency.entity.ProductConsumerAttribute();
+        uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.ProductConsumer pc2 =
+                new uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.ProductConsumer();
+        uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.ProductConsumerAttribute a3 =
+                new uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.ProductConsumerAttribute();
         a3.setName("attr3");
         a3.setType("bool");
         a3.setValue("true");

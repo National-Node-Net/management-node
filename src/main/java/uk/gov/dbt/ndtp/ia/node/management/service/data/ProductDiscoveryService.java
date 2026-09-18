@@ -7,37 +7,51 @@
 package uk.gov.dbt.ndtp.ia.node.management.service.data;
 
 import java.util.List;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProductDTO;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProductDiscoveryResponseDTO;
-import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyRequester;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProductDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductDiscoveryResponseDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductDiscoveryPolicyDecisionDetails;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecision;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInput;
 
 /**
- * Runs product discovery: queries candidate products matching the requester's search
+ * Runs product discover: queries candidate products matching the requester's search
  * criteria, then applies per-candidate PDP authorisation, keeping only the products the
  * requester is authorised to discover.
  */
 public interface ProductDiscoveryService {
 
     /**
-     * Queries discovery candidates matching the given search criteria, then evaluates one
+     * Queries discover candidates matching the given search criteria, then evaluates one
      * PDP decision per candidate, keeping only the ALLOWed ones.
      *
-     * @param requester who is asking, as the PDP sees them
+     * @param input who is asking, as the PDP sees them
+     * @param requestDecision the decision already taken for the request as a whole, which each
+     *     per-candidate decision is narrowed by, or null when no whole-request decision was taken
      * @param name optional case-insensitive contains filter on product name
      * @param topic optional case-insensitive contains filter on product topic
      * @param type optional case-insensitive exact filter on product type name
      * @return the products the requester is authorised to discover, matching the criteria
      */
-    ProductDiscoveryResponseDTO discover(PolicyRequester requester, String name, String topic, String type);
+    ProductDiscoveryResponseDTO discover(
+            PolicyInput input,
+            PolicyDecision<ProductDiscoveryPolicyDecisionDetails> requestDecision,
+            String name,
+            String topic,
+            String type);
 
     /**
      * Evaluates one PDP decision per candidate product and returns only the ALLOWed ones. A
      * candidate is excluded (not the whole request failed) if the PDP denies it or the PDP
      * call itself fails, so a partial PDP outage degrades results rather than the request.
      *
-     * @param requester who is asking, as the PDP sees them
-     * @param candidates discovery candidate products to authorise
+     * @param input who is asking, as the PDP sees them
+     * @param requestDecision the decision already taken for the request as a whole, which each
+     *     per-candidate decision is narrowed by
+     * @param candidates discover candidate products to authorise
      * @return the subset of candidates the PDP allows for this requester
      */
-    List<ProductDTO> filterAuthorised(PolicyRequester requester, List<ProductDTO> candidates);
+    List<ProductDTO> filterAuthorised(
+            PolicyInput input,
+            PolicyDecision<ProductDiscoveryPolicyDecisionDetails> requestDecision,
+            List<ProductDTO> candidates);
 }

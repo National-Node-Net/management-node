@@ -21,9 +21,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.dbt.ndtp.ia.node.management.converter.impl.OrganisationConverter;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.OrganisationDTO;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Organisation;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.OrganisationRepository;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.organisation.OrganisationDTO;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.organisation.Organisation;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.organisation.OrganisationRepository;
 
 @ExtendWith(MockitoExtension.class)
 class OrganisationServiceImplTest {
@@ -131,5 +131,28 @@ class OrganisationServiceImplTest {
         assertThat(service.findByIds(List.of())).isEmpty();
 
         verifyNoInteractions(organisationRepository);
+    }
+
+    @Test
+    void findIdByKey_returnsTheRowIdForAKnownKey() {
+        when(organisationRepository.findByOrganisationKey("ENV"))
+                .thenReturn(Optional.of(organisation(42L, "Environment Agency (ENV)", "ENV")));
+
+        assertThat(service.findIdByKey("ENV")).contains(42L);
+    }
+
+    @Test
+    void findIdByKey_returnsEmptyForAnUnknownKey() {
+        when(organisationRepository.findByOrganisationKey("NOPE")).thenReturn(Optional.empty());
+
+        assertThat(service.findIdByKey("NOPE")).isEmpty();
+    }
+
+    @Test
+    void findIdByKey_doesNotQueryForANullOrBlankKey() {
+        assertThat(service.findIdByKey(null)).isEmpty();
+        assertThat(service.findIdByKey("  ")).isEmpty();
+
+        verify(organisationRepository, never()).findByOrganisationKey(any());
     }
 }

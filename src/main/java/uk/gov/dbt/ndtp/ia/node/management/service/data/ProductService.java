@@ -1,13 +1,13 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
- * © Crown Copyright 2025. This work has been developed by the National Digital Twin Programme and is legally
+ * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
  * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 
 package uk.gov.dbt.ndtp.ia.node.management.service.data;
 
 import java.util.List;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProductDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProductDTO;
 
 /**
  * Service interface for managing OrganisationDataProvider entities.
@@ -31,9 +31,9 @@ public interface ProductService {
     List<ProductDTO> getProductsByProducerIds(List<Long> producerIds);
 
     /**
-     * Retrieves discovery candidate products across all organisations matching the optional
+     * Retrieves discover candidate products across all organisations matching the optional
      * search filters, bounded by the configured max-candidate limit. This is the pre-policy
-     * candidate set for {@code POST /v1/product/discovery}; authorisation is applied
+     * candidate set for {@code POST /v1/product/discover}; authorisation is applied
      * separately, per candidate, by the PDP.
      *
      * @param name optional case-insensitive contains filter on product name

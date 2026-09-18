@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
- * © Crown Copyright 2025. This work has been developed by the National Digital Twin Programme and is legally
+ * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
  * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 
@@ -21,10 +21,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ConsumerConfigDTO;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProducerConfigDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ConsumerConfigDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProducerConfigDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.jwt.EnhancedPrincipal;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.configuration.ConfigurationProvider;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecision;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecisionDetails;
+import uk.gov.dbt.ndtp.ia.node.management.web.policy.Policy;
 
 @RestController
 @RequestMapping("/api/v1/configuration")
@@ -40,6 +43,7 @@ public class ConfigurationController {
 
     @GetMapping("/producer")
     @PreAuthorize("hasAuthority('ROLE_management-node:access_producer_configurations')")
+    @Policy(resource = "configuration", action = "producer")
     @Operation(
             summary = "Get Federator Producer configuration",
             description = "Returns configuration for the authenticated client, optionally scoped to a specific"
@@ -63,7 +67,9 @@ public class ConfigurationController {
             @Parameter(hidden = true) @AuthenticationPrincipal EnhancedPrincipal principal,
             @Parameter(name = "producer_id", description = "Optional Producer identifier to filter configuration")
                     @RequestParam(value = "producer_id", required = false)
-                    Long producerId) {
+                    Long producerId,
+            @Parameter(hidden = true) Optional<PolicyDecision<PolicyDecisionDetails>> policyDecision) {
+        logDecision("producer", policyDecision);
         log.info("Preparing Federator Producer Config for producer {}", producerId);
         return configurationProvider.getProducerConfigByClientId(
                 principal.clientId(), producerId != null ? Optional.of(producerId) : Optional.empty());
@@ -71,6 +77,7 @@ public class ConfigurationController {
 
     @GetMapping("/consumer")
     @PreAuthorize("hasAuthority('ROLE_management-node:access_consumer_configurations')")
+    @Policy(resource = "configuration", action = "consumer")
     @Operation(
             summary = "Get Federator Consumer configuration",
             description =
@@ -92,10 +99,30 @@ public class ConfigurationController {
             @Parameter(hidden = true) @AuthenticationPrincipal EnhancedPrincipal principal,
             @Parameter(name = "consumer_id", description = "Optional Consumer identifier to filter configuration")
                     @RequestParam(value = "consumer_id", required = false)
-                    Long consumerId) {
+                    Long consumerId,
+            @Parameter(hidden = true) Optional<PolicyDecision<PolicyDecisionDetails>> policyDecision) {
+        logDecision("consumer", policyDecision);
         log.info("Preparing Consumer Config for client Id {} and Consumer {}", principal.clientId(), consumerId);
 
         return configurationProvider.getConsumerConfigByClientId(
                 principal.clientId(), consumerId != null ? Optional.of(consumerId) : Optional.empty());
+    }
+
+    /**
+     * The configuration rules return no details an endpoint acts on yet, so their decisions are
+     * received in the generic form and only logged.
+     */
+    private static void logDecision(String action, Optional<PolicyDecision<PolicyDecisionDetails>> policyDecision) {
+        policyDecision.ifPresentOrElse(
+                decision -> log.debug(
+                        "Configuration {} policy decision allow={} policy={} resolution={} reasons={} details={}",
+                        action,
+                        decision.allow(),
+                        decision.policy().id(),
+                        decision.policy().resolution(),
+                        decision.reasons(),
+                        decision.details().additional()),
+                () -> log.debug(
+                        "Configuration {} served without a policy decision (policy enforcement is off)", action));
     }
 }

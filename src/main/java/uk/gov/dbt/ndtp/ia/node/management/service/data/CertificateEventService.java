@@ -6,8 +6,8 @@
 
 package uk.gov.dbt.ndtp.ia.node.management.service.data;
 
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.CertificateEventType;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.CertificateType;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.CertificateEventType;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.CertificateType;
 
 /**
  * Service interface for recording certificate lifecycle events.

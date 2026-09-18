@@ -20,7 +20,16 @@ public class OpaClientConfig {
 
     @Bean
     public RestClient opaRestClient(OpaProperties properties) {
-        if (!properties.url().startsWith("https://")) {
+        log.info(
+                "OPA policy enforcement is {} - url={} decisionPath={}",
+                properties.enabled() ? "ENABLED" : "DISABLED",
+                properties.url(),
+                properties.decisionPath());
+
+        // Only worth warning about a URL that will actually be called: with policy enforcement
+        // switched off this client is never used, and the warning would sit confusingly beside
+        // the "OPA is switched off" one from PolicyDecisionClient.
+        if (properties.enabled() && !properties.url().startsWith("https://")) {
             log.warn(
                     "OPA URL {} is not using TLS. This service enforces mTLS for all "
                             + "service-to-service traffic - set OPA_URL to an https:// endpoint "

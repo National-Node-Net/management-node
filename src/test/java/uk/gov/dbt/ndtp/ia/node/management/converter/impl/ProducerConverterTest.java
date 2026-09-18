@@ -19,12 +19,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProducerDTO;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProductDTO;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Organisation;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Producer;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Product;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.OrganisationRepository;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProducerDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProductDTO;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.Producer;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.Product;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.organisation.Organisation;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.organisation.OrganisationRepository;
 
 @ExtendWith(MockitoExtension.class)
 class ProducerConverterTest {

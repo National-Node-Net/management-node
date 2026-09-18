@@ -19,7 +19,7 @@ import java.io.Serializable;
  * @param organisation -- GETTER --
  *                     Get the organisation the token was issued for, taken from the
  *                     {@code organisation} claim. Never null: falls back to
- *                     {@code unknown_organisation} when the claim is absent, so callers
+ *                     {@code UNKNOWN_ORG} when the claim is absent, so callers
  *                     do not have to null-check a value that is always present in the
  *                     token shape this node expects.
  */

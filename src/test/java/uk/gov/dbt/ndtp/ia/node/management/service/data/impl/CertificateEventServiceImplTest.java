@@ -16,12 +16,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.CertificateEvent;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.CertificateEventType;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.CertificateType;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.OrganisationCertificate;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.CertificateEventRepository;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.OrganisationCertificateRepository;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.CertificateEvent;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.CertificateEventType;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.CertificateType;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.OrganisationCertificate;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.certificate.CertificateEventRepository;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.certificate.OrganisationCertificateRepository;
 
 class CertificateEventServiceImplTest {
 

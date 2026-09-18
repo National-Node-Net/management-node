@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
- * © Crown Copyright 2025. This work has been developed by the National Digital Twin Programme and is legally
+ * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
  * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 
@@ -9,12 +9,12 @@ package uk.gov.dbt.ndtp.ia.node.management.converter.impl;
 import java.util.List;
 import org.springframework.stereotype.Component;
 import uk.gov.dbt.ndtp.ia.node.management.converter.EntityDtoConverter;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.AttributesDTO;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.ProductConsumerDTO;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Consumer;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.Product;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.ProductConsumer;
-import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.ProductConsumerAttribute;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProductConsumerAttributeDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProductConsumerDTO;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.Consumer;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.Product;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.ProductConsumer;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.ProductConsumerAttribute;
 
 /**
  * Converter for ConsumerAllowedDataProvider entity and ConsumerAllowedDataProviderDTO.
@@ -49,8 +49,8 @@ public class ProductConsumerConverter implements EntityDtoConverter<ProductConsu
         // Map attributes if available
         List<ProductConsumerAttribute> attrs = entity.getProductConsumerAttributes();
         if (attrs != null && !attrs.isEmpty()) {
-            List<AttributesDTO> attributes = attrs.stream()
-                    .map(a -> AttributesDTO.builder()
+            List<ProductConsumerAttributeDTO> attributes = attrs.stream()
+                    .map(a -> ProductConsumerAttributeDTO.builder()
                             .name(a.getName())
                             .type(a.getType())
                             .value(a.getValue())
