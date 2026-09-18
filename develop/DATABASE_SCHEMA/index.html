@@ -678,6 +678,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../POLICY_ENFORCEMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Policy Enforcement
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../entity-dto-converter-pattern/" class="md-nav__link">
         
   
@@ -1336,7 +1363,7 @@
 <p>Soft-delete triggers:
 - <code>trg_organisation_policy_attribute_value_soft_delete</code>, <code>trg_consumer_policy_attribute_value_soft_delete</code>, <code>trg_producer_policy_attribute_value_soft_delete</code>, <code>trg_product_policy_attribute_value_soft_delete</code>, <code>trg_product_consumer_policy_attribute_value_soft_delete</code> — one <code>AFTER DELETE</code> trigger per owning table (<code>organisation</code>, <code>consumer</code>, <code>producer</code>, <code>product</code>, <code>product_consumer</code>), all calling the shared function <code>fn_policy_attribute_value_soft_delete_on_entity_delete()</code>. When a row in one of those tables is deleted, every live (<code>is_deleted = FALSE</code>) <code>policy_attribute_value</code> row scoped to that table and entity id is set <code>is_deleted = TRUE</code> rather than deleted or left orphaned.</p>
 <p>Usage:
-- Stores the actual attribute values used to build the OPA data bundle for policy decisions, keyed by which entity (organisation, consumer, producer, product, or subscription) they describe.</p>
+- Stores the actual attribute values sent to the PDP (OPA) for policy decisions, keyed by which entity (organisation, consumer, producer, product, or subscription) they describe. Live rows are read per request and embedded in the decision input as <code>subject.organisation.attributes</code> (resolved from the token's organisation claim via <code>organisation_key</code>) and <code>resource.attributes</code>; the <code>value</code> JSONB keeps its type. A <code>multi_valued</code> attribute is stored as one row per value and all of its live rows are collected into a single array for the policy, so the partial unique index above (which permits many distinct live values per entity) is what makes multiple values possible. See <a href="../POLICY_ENFORCEMENT/">Policy Enforcement</a>.</p>
 <hr />
 <h2 id="migration-notes">Migration Notes</h2>
 <ul>
@@ -1369,7 +1396,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 11, 2026 15:40:42 UTC">September 11, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 18, 2026 12:12:47 UTC">September 18, 2026</span>
   </span>
 
     

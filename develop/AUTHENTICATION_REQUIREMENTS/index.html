@@ -540,6 +540,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../POLICY_ENFORCEMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Policy Enforcement
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../entity-dto-converter-pattern/" class="md-nav__link">
         
   
@@ -736,12 +763,14 @@
 </span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>        "access_public_certificates",
 </span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>        "request_bootstrap_certificate",
 </span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>        "BrownfieldLandAvailability",
-</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>        "PendingPlanningApplications"
-</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>      ]
-</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>    }
-</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>  },
-</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>  "scope": "FEDERATOR_PRODUCER MANAGEMENT_NODE_ACCESS FEDERATOR_CONSUMER"
-</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>}
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>        "product_subscribe",
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>        "product_view",
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>        "PendingPlanningApplications"
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>      ]
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>    }
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>  },
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>  "scope": "FEDERATOR_PRODUCER MANAGEMENT_NODE_ACCESS FEDERATOR_CONSUMER"
+</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>}
 </span></code></pre></div></p>
 <p>Notes:
 - The aud claim may be a list (as shown) and must include "management-node".
@@ -783,10 +812,23 @@
 <p>Enforcement in code: <code>@PreAuthorize("hasAuthority('ROLE_management-node:request_bootstrap_certificate')")</code> on <code>POST /api/v1/certificate/bootstrap</code>.</p>
 </li>
 <li>
-<p>Product Discovery API: Clients may discover the products they are authorised to see when their token contains the role <code>discover_products</code>. Even with the role, results are further filtered per-product by the PDP (see <code>docs/POLICY_ENFORCEMENT_TESTING.md</code>) - the role only gates access to the endpoint itself.</p>
+<p>Product Discovery API: Clients may discover the products they are authorised to see when their token contains the role <code>product_discovery</code>. Even with the role, policy applies on top of it (<code>@Policy(resource = "product", action = "discover")</code>): the <code>product.discover</code> rule first decides whether the caller may discover at all, and then filters results per product - the role only gates access to the endpoint itself (see <a href="../POLICY_ENFORCEMENT/#reference-endpoints">Policy Enforcement</a>).</p>
 </li>
-<li>Enforcement in code: <code>@PreAuthorize("hasAuthority('ROLE_management-node:discover_products')")</code> on <code>POST /api/v1/product/discovery</code>.</li>
+<li>
+<p>Enforcement in code: <code>@PreAuthorize("hasAuthority('ROLE_management-node:product_discovery')")</code> on <code>POST /api/v1/product/discover</code>.</p>
+</li>
+<li>
+<p>Product Subscription API: Clients may request a subscription of their organisation to a product when their token contains the role <code>product_subscribe</code>. The role only gates access to the endpoint; policy is then evaluated on top of it (<code>@Policy(resource = "product", action = "subscribe")</code>), and decides both whether the subscription is allowed and its terms - whether approval is required, the maximum validity and the permitted schedule types (see <a href="../POLICY_ENFORCEMENT/#reference-endpoints">Policy Enforcement</a>).</p>
+</li>
+<li>
+<p>Enforcement in code: <code>@PreAuthorize("hasAuthority('ROLE_management-node:product_subscribe')")</code> on <code>POST /api/v1/product/subscribe</code>.</p>
+</li>
+<li>
+<p>Product View API: Clients may retrieve a single product when their token contains the role <code>product_view</code>. Policy is then evaluated on top of the role check (<code>@Policy(resource = "product", action = "view")</code>): the <code>product.view</code> rule allows organisations cleared to <code>OFFICIAL-SENSITIVE</code> or higher and sets how much of the product they see.</p>
+</li>
+<li>Enforcement in code: <code>@PreAuthorize("hasAuthority('ROLE_management-node:product_view')")</code> on <code>GET /api/v1/product/{productId}</code>.</li>
 </ul>
+<p>Where an endpoint is annotated <code>@Policy</code>, holding the role is necessary but not sufficient: a request with the role can still be refused with <code>403</code> by policy. Policy is only evaluated when <code>application.opa.enabled=true</code>; see <a href="../POLICY_ENFORCEMENT/">Policy Enforcement</a>.</p>
 <h2 id="how-this-maps-to-keycloak">How this maps to Keycloak</h2>
 <ul>
 <li>In Keycloak, roles are typically assigned to a client (here conceptually the <code>management-node</code> client) and appear in tokens under <code>resource_access["management-node"].roles</code>.</li>
@@ -800,7 +842,9 @@
 <li><code>sign_certificate</code></li>
 <li><code>access_public_certificates</code></li>
 <li><code>request_bootstrap_certificate</code></li>
-<li><code>discover_products</code></li>
+<li><code>product_discovery</code></li>
+<li><code>product_subscribe</code></li>
+<li><code>product_view</code></li>
 <li>Assign configuration roles to the appropriate Producer or Consumer Federator clients or service accounts.</li>
 <li>Assign certificate roles (<code>create_keys</code>, <code>sign_certificate</code>, <code>access_public_certificates</code>) to federator service accounts that manage their own certificates.</li>
 <li>Assign <code>request_bootstrap_certificate</code> only to the website/onboarding backend service account.</li>
@@ -828,7 +872,9 @@
 <li>CSR Signing API requires role: <code>sign_certificate</code>.</li>
 <li>Intermediate Certificate API requires role: <code>access_public_certificates</code>.</li>
 <li>Bootstrap Certificate API requires role: <code>request_bootstrap_certificate</code>.</li>
-<li>Product Discovery API requires role: <code>discover_products</code> (plus per-product PDP authorisation).</li>
+<li>Product Discovery API requires role: <code>product_discovery</code> (plus per-product PDP authorisation, see <a href="../POLICY_ENFORCEMENT/">Policy Enforcement</a>).</li>
+<li>Product Subscription API requires role: <code>product_subscribe</code> (plus policy, which also sets the subscription terms).</li>
+<li>Product View API requires role: <code>product_view</code> (plus policy; answered by the <code>product.view</code> rule).</li>
 <li>Swagger/OpenAPI: Use Swagger UI at <code>/swagger-ui.html</code> to explore and test with a valid token.</li>
 </ul>
 
@@ -851,7 +897,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="August 31, 2026 14:18:59 UTC">August 31, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 18, 2026 12:12:47 UTC">September 18, 2026</span>
   </span>
 
     
