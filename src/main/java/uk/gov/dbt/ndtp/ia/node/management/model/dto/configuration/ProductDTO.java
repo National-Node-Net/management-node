@@ -7,6 +7,7 @@
 package uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.*;
@@ -31,6 +32,10 @@ public class ProductDTO {
     private String name;
 
     private String topic;
+
+    /** Prose describing the product; what discovery's free-text search reads. */
+    @Size(max = 4000)
+    private String description;
 
     private String type;
 

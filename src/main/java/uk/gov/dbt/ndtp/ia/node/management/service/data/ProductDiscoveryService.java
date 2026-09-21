@@ -6,52 +6,39 @@
 
 package uk.gov.dbt.ndtp.ia.node.management.service.data;
 
-import java.util.List;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProductDTO;
+import java.util.Optional;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductDiscoveryRequestDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductDiscoveryResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductDiscoveryPolicyDecisionDetails;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecision;
-import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyInput;
 
 /**
- * Runs product discover: queries candidate products matching the requester's search
- * criteria, then applies per-candidate PDP authorisation, keeping only the products the
- * requester is authorised to discover.
+ * Searches the data products a caller may discover.
+ *
+ * <p>Policy, not this service, decides what a caller can find. The decision taken for the request
+ * carries a search contract - which products exist for this caller, what they may filter on, and
+ * what is withheld - and the search turns that contract, together with the caller's criteria, into
+ * one database query. There is no entitlement logic here and no policy call of its own: the
+ * decision the endpoint was given is the only one taken.
  */
 public interface ProductDiscoveryService {
 
     /**
-     * Queries discover candidates matching the given search criteria, then evaluates one
-     * PDP decision per candidate, keeping only the ALLOWed ones.
+     * Runs one search.
      *
-     * @param input who is asking, as the PDP sees them
-     * @param requestDecision the decision already taken for the request as a whole, which each
-     *     per-candidate decision is narrowed by, or null when no whole-request decision was taken
-     * @param name optional case-insensitive contains filter on product name
-     * @param topic optional case-insensitive contains filter on product topic
-     * @param type optional case-insensitive exact filter on product type name
-     * @return the products the requester is authorised to discover, matching the criteria
+     * @param criteria what the caller asked for; null when they sent no body, which searches
+     *     everything they may discover
+     * @param decision the {@code product.discover} decision taken for this request, or empty when
+     *     policy enforcement is switched off - in which case nothing is restricted or withheld and
+     *     the response carries no policy block
+     * @return the page of products, where the page sits in the whole result, and (when policy
+     *     decided) what the caller was allowed
+     * @throws uk.gov.dbt.ndtp.ia.node.management.exception.InvalidSearchCriteriaException when the
+     *     criteria are malformed ({@code 400})
+     * @throws uk.gov.dbt.ndtp.ia.node.management.exception.AccessRejectedException when the criteria
+     *     ask for something policy does not permit, or the contract cannot be honoured ({@code 403})
      */
     ProductDiscoveryResponseDTO discover(
-            PolicyInput input,
-            PolicyDecision<ProductDiscoveryPolicyDecisionDetails> requestDecision,
-            String name,
-            String topic,
-            String type);
-
-    /**
-     * Evaluates one PDP decision per candidate product and returns only the ALLOWed ones. A
-     * candidate is excluded (not the whole request failed) if the PDP denies it or the PDP
-     * call itself fails, so a partial PDP outage degrades results rather than the request.
-     *
-     * @param input who is asking, as the PDP sees them
-     * @param requestDecision the decision already taken for the request as a whole, which each
-     *     per-candidate decision is narrowed by
-     * @param candidates discover candidate products to authorise
-     * @return the subset of candidates the PDP allows for this requester
-     */
-    List<ProductDTO> filterAuthorised(
-            PolicyInput input,
-            PolicyDecision<ProductDiscoveryPolicyDecisionDetails> requestDecision,
-            List<ProductDTO> candidates);
+            ProductDiscoveryRequestDTO criteria,
+            Optional<PolicyDecision<ProductDiscoveryPolicyDecisionDetails>> decision);
 }

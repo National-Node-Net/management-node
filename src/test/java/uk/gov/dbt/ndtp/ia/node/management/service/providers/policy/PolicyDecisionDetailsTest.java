@@ -13,8 +13,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import uk.gov.dbt.ndtp.ia.node.management.model.policy.filter.Combinator;
+import uk.gov.dbt.ndtp.ia.node.management.model.policy.filter.ComparisonOperator;
+import uk.gov.dbt.ndtp.ia.node.management.model.policy.filter.FilterNode;
+import uk.gov.dbt.ndtp.ia.node.management.model.policy.filter.FilterScope;
+import uk.gov.dbt.ndtp.ia.node.management.model.policy.filter.FilterTarget;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductDiscoveryPolicyDecisionDetails;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductDiscoveryPolicyDecisionDetails.Filtering;
+import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductPolicyContractDetails;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductSubscriptionPolicyDecisionDetails;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductViewPolicyDecisionDetails;
 
@@ -29,6 +35,10 @@ class PolicyDecisionDetailsTest {
 
     static class NoDefaultConstructor extends PolicyDecisionDetails {
         NoDefaultConstructor(String required) {}
+    }
+
+    private ProductDiscoveryPolicyDecisionDetails discoverDetails(String json) throws Exception {
+        return objectMapper.readValue(json, ProductDiscoveryPolicyDecisionDetails.class);
     }
 
     @Test
@@ -51,7 +61,8 @@ class PolicyDecisionDetailsTest {
                  "allowed_filtered_attributes": ["identifiability"],
                  "denied_filtered_attributes": ["temporal_resolution"],
                  "masked_filtered_attributes": ["population_risk_tags"],
-                 "max_page_size": 50}""",
+                 "max_page_size": 50,
+                 "row_filter_hint": "kept for the reader"}""",
                 ProductDiscoveryPolicyDecisionDetails.class);
 
         assertThat(details.evaluation()).isEqualTo(ProductDiscoveryPolicyDecisionDetails.EVALUATION_CANDIDATE);
@@ -60,7 +71,124 @@ class PolicyDecisionDetailsTest {
         assertThat(details.attributes())
                 .isEqualTo(new Filtering(
                         List.of("identifiability"), List.of("temporal_resolution"), List.of("population_risk_tags")));
-        assertThat(details.additional()).isEqualTo(Map.of("max_page_size", 50));
+        assertThat(details.maxPageSize()).isEqualTo(50);
+        // Anything the class does not declare still lands in additional().
+        assertThat(details.additional()).isEqualTo(Map.of("row_filter_hint", "kept for the reader"));
+    }
+
+    @Test
+    void discover_bindsTheSearchContractFromItsSnakeCaseNames() throws Exception {
+        ProductDiscoveryPolicyDecisionDetails details = discoverDetails(
+                """
+                {"evaluation": "request",
+                 "row_filter": {"type": "group", "combinator": "and", "nodes": [
+                   {"type": "comparison", "attribute": "identifiability", "operator": "in",
+                    "values": ["anonymised", "pseudonymised"]},
+                   {"type": "comparison", "field": "organisation.key", "operator": "eq", "values": ["ENV"]}]},
+                 "visible_fields": ["name", "topic", "producer"],
+                 "text_search_fields": ["name", "description"],
+                 "unmask_when": [{"names": ["consumers", "subscribed_by"],
+                                  "when": {"type": "comparison", "field": "organisation.key",
+                                           "operator": "eq", "values": ["ENV"]}}],
+                 "mask_sensitive_attributes": false,
+                 "max_page_size": 50,
+                 "obligations": ["audit_access"]}""");
+
+        FilterNode.Comparison ownOrganisation = new FilterNode.Comparison(
+                new FilterTarget(FilterScope.ORGANISATION, true, "key"), ComparisonOperator.EQ, List.of("ENV"));
+        assertThat(details.rowFilter())
+                .isEqualTo(FilterNode.Group.and(List.of(
+                        FilterNode.Comparison.ofAttribute(
+                                "identifiability", ComparisonOperator.IN, "anonymised", "pseudonymised"),
+                        ownOrganisation)));
+        assertThat(details.visibleFields()).containsExactly("name", "topic", "producer");
+        assertThat(details.textSearchFields()).containsExactly("name", "description");
+        assertThat(details.unmaskWhen())
+                .containsExactly(new ProductPolicyContractDetails.UnmaskRule(
+                        List.of("consumers", "subscribed_by"), ownOrganisation));
+        assertThat(details.maskSensitiveAttributes()).isFalse();
+        assertThat(details.maxPageSize()).isEqualTo(50);
+        assertThat(details.obligations()).containsExactly("audit_access");
+        assertThat(details.additional()).isEmpty();
+    }
+
+    @Test
+    void discover_absentSearchContract_readsInTheWithholdingDirection() throws Exception {
+        ProductDiscoveryPolicyDecisionDetails details = discoverDetails("{\"evaluation\": \"request\"}");
+
+        // No row filter is "matches nothing", never "no filter at all".
+        assertThat(details.rowFilter()).isEqualTo(FilterNode.DENY_ALL);
+        // An unstated sensitivity flag masks.
+        assertThat(details.maskSensitiveAttributes()).isTrue();
+        assertThat(details.visibleFields()).isEmpty();
+        assertThat(details.textSearchFields()).isEmpty();
+        assertThat(details.unmaskWhen()).isEmpty();
+        assertThat(details.obligations()).isEmpty();
+        assertThat(details.maxPageSize()).isNull();
+    }
+
+    @Test
+    void discover_narrowedBy_combinesTheSearchContract() throws Exception {
+        ProductDiscoveryPolicyDecisionDetails request = discoverDetails(
+                """
+                {"evaluation": "request",
+                 "row_filter": {"type": "comparison", "field": "type", "operator": "eq", "values": ["topic"]},
+                 "visible_fields": ["name", "topic", "source"],
+                 "text_search_fields": ["name", "description"],
+                 "unmask_when": [{"names": ["consumers"], "when": {"type": "literal", "value": true}}],
+                 "mask_sensitive_attributes": false,
+                 "max_page_size": 100,
+                 "obligations": ["audit_access"]}""");
+        ProductDiscoveryPolicyDecisionDetails candidate = discoverDetails(
+                """
+                {"evaluation": "candidate",
+                 "row_filter": {"type": "comparison", "attribute": "identifiability", "operator": "in",
+                                "values": ["anonymised"]},
+                 "visible_fields": ["name", "source", "producer"],
+                 "text_search_fields": ["name"],
+                 "unmask_when": [{"names": ["consumers"], "when": {"type": "literal", "value": true}}],
+                 "mask_sensitive_attributes": true,
+                 "max_page_size": 25,
+                 "obligations": ["log_query"]}""");
+
+        ProductDiscoveryPolicyDecisionDetails combined = request.narrowedBy(candidate);
+
+        // Both row filters must hold, so neither decision can widen what the other restricts.
+        assertThat(combined.rowFilter())
+                .isEqualTo(FilterNode.Group.and(List.of(request.rowFilter(), candidate.rowFilter())));
+        assertThat(combined.visibleFields()).containsExactly("name", "source");
+        assertThat(combined.textSearchFields()).containsExactly("name");
+        // Identical in both, so the rule survives the combination.
+        assertThat(combined.unmaskWhen()).isEqualTo(request.unmaskWhen());
+        assertThat(combined.maskSensitiveAttributes()).isTrue();
+        assertThat(combined.maxPageSize()).isEqualTo(25);
+        assertThat(combined.obligations()).containsExactly("audit_access", "log_query");
+    }
+
+    @Test
+    void discover_narrowedBy_dropsUnmaskRulesThatDiffer_andMasksOnlyWhenNeitherSaysOtherwise() throws Exception {
+        ProductDiscoveryPolicyDecisionDetails request = discoverDetails(
+                """
+                {"evaluation": "request",
+                 "unmask_when": [{"names": ["consumers"], "when": {"type": "literal", "value": true}}],
+                 "mask_sensitive_attributes": false,
+                 "max_page_size": 20}""");
+        ProductDiscoveryPolicyDecisionDetails candidate = discoverDetails(
+                """
+                {"evaluation": "candidate",
+                 "unmask_when": [{"names": ["subscribed_by"], "when": {"type": "literal", "value": true}}],
+                 "mask_sensitive_attributes": false}""");
+
+        ProductDiscoveryPolicyDecisionDetails combined = request.narrowedBy(candidate);
+
+        // The two decisions disagree on what may be unmasked, so nothing is.
+        assertThat(combined.unmaskWhen()).isEmpty();
+        assertThat(combined.maskSensitiveAttributes()).isFalse();
+        // Only one side stated a page size, so that is the limit.
+        assertThat(combined.maxPageSize()).isEqualTo(20);
+        // Neither stated a row filter, so the combination of two deny-alls still matches nothing.
+        assertThat(combined.rowFilter())
+                .isEqualTo(new FilterNode.Group(Combinator.AND, List.of(FilterNode.DENY_ALL, FilterNode.DENY_ALL)));
     }
 
     @Test

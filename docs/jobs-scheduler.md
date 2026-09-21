@@ -13,19 +13,19 @@ Use CRON when you want precise calendar-based schedules (e.g., "every weekday at
 
 A typical CRON expression uses 5 or 6 space-separated fields, depending on the scheduler implementation:
 
-- Second (optional) — 0–59
-- Minute — 0–59
-- Hour — 0–23
-- Day of month — 1–31
-- Month — 1–12 or JAN–DEC
-- Day of week — 0–7 (0 or 7 = Sunday) or SUN–SAT
+- Second (optional): 0–59
+- Minute: 0–59
+- Hour: 0–23
+- Day of month: 1–31
+- Month: 1–12 or JAN–DEC
+- Day of week: 0–7 (0 or 7 = Sunday) or SUN–SAT
 
 Common special characters:
-- * — any value
-- , — value list separator
-- - — range of values
-- / — step values (e.g., */5)
-- ? — no specific value (used in some cron dialects where both DOM and DOW exist)
+- `*`: any value
+- `,`: value list separator
+- `-`: range of values
+- `/`: step values (e.g., */5)
+- `?`: no specific value (used in some cron dialects where both DOM and DOW exist)
 
 Examples:
 - Every day at 02:30 (with seconds): 0 30 2 * * *
@@ -44,22 +44,22 @@ Tips:
 Use Interval when you want a fixed duration between runs (e.g., "every 15 minutes"), independent of calendar concepts. Intervals are represented as ISO‑8601 duration strings.
 
 ISO‑8601 Duration format: PnYnMnDTnHnMnS
-- P — designator meaning "period"
-- nY — years
-- nM — months (in the date part)
-- nW — weeks (alternative to days; if used, don’t combine with D)
-- nD — days
-- T — time designator that precedes the time components
-- nH — hours
-- nM — minutes (in the time part)
-- nS — seconds
+- P: designator meaning "period"
+- nY: years
+- nM: months (in the date part)
+- nW: weeks (alternative to days; if used, don’t combine with D)
+- nD: days
+- T: time designator that precedes the time components
+- nH: hours
+- nM: minutes (in the time part)
+- nS: seconds
 
 Common duration examples:
-- PT15M — every 15 minutes
-- PT1H — every 1 hour
-- PT1H30M — every 1 hour and 30 minutes
-- P1D — every 1 day (24 hours)
-- P2DT12H — every 2 days and 12 hours
+- PT15M: every 15 minutes
+- PT1H: every 1 hour
+- PT1H30M: every 1 hour and 30 minutes
+- P1D: every 1 day (24 hours)
+- P2DT12H: every 2 days and 12 hours
 
 Some systems also support repeating intervals using the ISO‑8601 repeating interval notation:
 - Rn/start/duration, where Rn is the repeat count (R without a number means unlimited repeats)
@@ -76,15 +76,15 @@ Notes:
 ## Quick reference examples
 
 CRON:
-- 0 0 9 * * MON-FRI — Weekdays at 09:00
-- 0 0 0 1 * * — Midnight on the first day of each month
-- 0 */10 * * * * — Every 10 minutes (with seconds field)
+- 0 0 9 * * MON-FRI: Weekdays at 09:00
+- 0 0 0 1 * *: Midnight on the first day of each month
+- 0 */10 * * * *: Every 10 minutes (with seconds field)
 
 ISO‑8601 durations (Interval):
-- PT5M — every five minutes
-- PT2H — every two hours
-- P1D — every day
-- R/2025-10-14T08:00:00Z/PT30M — from 2025-10-14 08:00Z, every 30 minutes, repeat indefinitely
+- PT5M: every five minutes
+- PT2H: every two hours
+- P1D: every day
+- R/2025-10-14T08:00:00Z/PT30M: from 2025-10-14 08:00Z, every 30 minutes, repeat indefinitely
 
 ## Database tables that accept schedule expressions and types
 

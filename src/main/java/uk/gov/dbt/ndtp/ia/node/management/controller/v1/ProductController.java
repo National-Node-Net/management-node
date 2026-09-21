@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -25,7 +24,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProductDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.DiscoveredProductDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductDiscoveryRequestDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductDiscoveryResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductSubscriptionRequestDTO;
@@ -33,7 +32,8 @@ import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductSubscriptionR
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductDiscoveryPolicyDecisionDetails;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductSubscriptionPolicyDecisionDetails;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductViewPolicyDecisionDetails;
-import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductService;
+import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductDiscoveryService;
+import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductViewService;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecision;
 import uk.gov.dbt.ndtp.ia.node.management.web.policy.Policy;
 
@@ -43,10 +43,13 @@ import uk.gov.dbt.ndtp.ia.node.management.web.policy.Policy;
 @Tag(name = "Product", description = "Policy-aware discovery, viewing and subscription of data products.")
 public class ProductController {
 
-    private final ProductService productService;
+    private final ProductDiscoveryService productDiscoveryService;
 
-    public ProductController(ProductService productService) {
-        this.productService = productService;
+    private final ProductViewService productViewService;
+
+    public ProductController(ProductDiscoveryService productDiscoveryService, ProductViewService productViewService) {
+        this.productDiscoveryService = productDiscoveryService;
+        this.productViewService = productViewService;
     }
 
     @PostMapping("/discover")
@@ -54,40 +57,43 @@ public class ProductController {
     @Policy(resource = "product", action = "discover", details = ProductDiscoveryPolicyDecisionDetails.class)
     @Operation(
             summary = "Discover authorised products",
-            description = "Accepts a free-text term and a set of named filters. The product.discover policy "
-                    + "decides whether the caller may discover at all. NOT YET IMPLEMENTED: candidate lookup "
-                    + "and per-product policy filtering are not wired up, so the product list is always empty.",
+            description = "Searches data products by free text, filters on product fields and policy "
+                    + "attributes, sorting and paging. Each result is a summary - id, name, description, type "
+                    + "and the owning organisation's key and name - enough to recognise a product, see "
+                    + "whose it is, and ask for it by id; the rest of a "
+                    + "product is returned by GET /api/v1/product/{productId}. Filtering and sorting are not "
+                    + "limited to those four: a search may filter and sort on anything policy allows it, "
+                    + "including fields the summary does not carry. The product.discover policy decides "
+                    + "whether the caller may discover at all, which products exist for them, what they may "
+                    + "filter on, and what is withheld. An empty body returns the first page of everything "
+                    + "the caller may discover. With policy enforcement switched off, nothing is restricted "
+                    + "and the response carries no policy block.",
             security = {@SecurityRequirement(name = "bearerAuth")})
     @ApiResponse(
             responseCode = "200",
-            description = "Discovery response returned; the product list is currently always empty",
+            description = "The page of product summaries the caller may discover, including when it is empty",
             content =
                     @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = ProductDiscoveryResponseDTO.class)))
-    @ApiResponse(responseCode = "400", description = "Invalid request body")
+    @ApiResponse(responseCode = "400", description = "Malformed search criteria")
     @ApiResponse(responseCode = "401", description = "Unauthorized")
     @ApiResponse(responseCode = "403", description = "Forbidden by role or by policy")
     @ApiResponse(responseCode = "500", description = "Internal server error")
     public ProductDiscoveryResponseDTO discoverProducts(
             @Valid @RequestBody(required = false) ProductDiscoveryRequestDTO criteria,
             @Parameter(hidden = true) Optional<PolicyDecision<ProductDiscoveryPolicyDecisionDetails>> policyDecision) {
-        // The request-level decision gates whether this caller may discover at all. Which products
-        // they see is a separate, per-candidate decision from the same rule, so this one is what
-        // the discovery service narrows once candidate lookup is wired up.
-        policyDecision.ifPresentOrElse(
-                decision -> log.info(
-                        "Product discover policy decision allow={} policy={} resolution={} reasons={} "
-                                + "evaluation={} fields={} attributes={}",
-                        decision.allow(),
-                        decision.policy().id(),
-                        decision.policy().resolution(),
-                        decision.reasons(),
-                        decision.details().evaluation(),
-                        decision.details().fields(),
-                        decision.details().attributes()),
-                () -> log.info("Product discover served without a policy decision (policy enforcement is off)"));
-        return ProductDiscoveryResponseDTO.builder().build();
+        // The decision taken for this request is the only one there is: it carries the caller's
+        // search contract, which the service turns into the query. It is passed on rather than
+        // asked for again, so nothing can answer differently half way through a search.
+        policyDecision.ifPresent(decision -> log.debug(
+                "Product discover policy decision allow={} policy={} resolution={} reasons={} evaluation={}",
+                decision.allow(),
+                decision.policy().id(),
+                decision.policy().resolution(),
+                decision.reasons(),
+                decision.details().evaluation()));
+        return productDiscoveryService.discover(criteria, policyDecision);
     }
 
     @PostMapping("/subscribe")
@@ -138,31 +144,35 @@ public class ProductController {
     @Policy(resource = "product", action = "view", details = ProductViewPolicyDecisionDetails.class)
     @Operation(
             summary = "View a product",
-            description = "Returns a single product. The product.view policy allows organisations cleared "
-                    + "to OFFICIAL-SENSITIVE or higher, and sets how much of the product they see.",
+            description = "Returns one product, as much of it as policy allows. The product.view policy "
+                    + "decides whether the caller may view at all, which products exist for them, and what is "
+                    + "withheld from the result - the same contract discovery is given, so a product the "
+                    + "caller could not discover cannot be reached by its id either. A product the caller "
+                    + "may not see is answered 404, exactly as a product that does not exist.",
             security = {@SecurityRequirement(name = "bearerAuth")})
     @ApiResponse(
             responseCode = "200",
-            description = "Product returned",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductDTO.class)))
+            description = "The product, with the members policy withholds absent",
+            content =
+                    @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = DiscoveredProductDTO.class)))
     @ApiResponse(responseCode = "401", description = "Unauthorized")
     @ApiResponse(responseCode = "403", description = "Forbidden by role or by policy")
-    @ApiResponse(responseCode = "404", description = "No product with that identifier")
+    @ApiResponse(responseCode = "404", description = "No such product for this caller")
     @ApiResponse(responseCode = "500", description = "Internal server error")
-    public ResponseEntity<ProductDTO> viewProduct(
+    public ResponseEntity<DiscoveredProductDTO> viewProduct(
             @Parameter(description = "Product identifier") @PathVariable("productId") Long productId,
             @Parameter(hidden = true) Optional<PolicyDecision<ProductViewPolicyDecisionDetails>> policyDecision) {
-        policyDecision.ifPresentOrElse(
-                decision -> log.debug(
-                        "Product view policy decision allow={} policy={} resolution={} reasons={} accessLevel={}",
-                        decision.allow(),
-                        decision.policy().id(),
-                        decision.policy().resolution(),
-                        decision.reasons(),
-                        decision.details().accessLevel()),
-                () -> log.debug("Product view served without a policy decision (policy enforcement is off)"));
-        return productService.getProductsByIds(List.of(productId)).stream()
-                .findFirst()
+        policyDecision.ifPresent(decision -> log.debug(
+                "Product view policy decision allow={} policy={} resolution={} reasons={} accessLevel={}",
+                decision.allow(),
+                decision.policy().id(),
+                decision.policy().resolution(),
+                decision.reasons(),
+                decision.details().accessLevel()));
+        return productViewService
+                .view(productId, policyDecision)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }

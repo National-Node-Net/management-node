@@ -183,11 +183,11 @@ public class CertificateController {
             responseCode = "200",
             description = "Bootstrap certificate package created successfully",
             content = @Content(mediaType = "application/zip"))
-    @ApiResponse(responseCode = "400", description = "Invalid request — client ID and CSR are required")
+    @ApiResponse(responseCode = "400", description = "Invalid request: client ID and CSR are required")
     @ApiResponse(responseCode = "401", description = "Unauthorized")
     @ApiResponse(
             responseCode = "403",
-            description = "Forbidden — insufficient permissions or certificate validation failure")
+            description = "Forbidden: insufficient permissions or certificate validation failure")
     @ApiResponse(responseCode = "500", description = "Internal server error")
     public ResponseEntity<byte[]> issueBootstrapCertificate(
             @Valid @RequestBody BootstrapRequestDTO request,

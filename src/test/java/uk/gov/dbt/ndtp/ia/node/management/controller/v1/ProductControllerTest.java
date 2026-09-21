@@ -7,26 +7,31 @@
 package uk.gov.dbt.ndtp.ia.node.management.controller.v1;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -35,15 +40,21 @@ import org.springframework.security.web.method.annotation.AuthenticationPrincipa
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import uk.gov.dbt.ndtp.ia.node.management.config.OpaProperties;
+import uk.gov.dbt.ndtp.ia.node.management.exception.AccessRejectedException;
+import uk.gov.dbt.ndtp.ia.node.management.exception.InvalidSearchCriteriaException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.handlers.GlobalExceptionHandler;
-import uk.gov.dbt.ndtp.ia.node.management.model.dto.configuration.ProductDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.DiscoveredProductDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductDiscoveryRequestDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductDiscoveryResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductSubscriptionResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.jwt.EnhancedPrincipal;
+import uk.gov.dbt.ndtp.ia.node.management.model.policy.filter.ComparisonOperator;
+import uk.gov.dbt.ndtp.ia.node.management.model.policy.filter.FilterScope;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductDiscoveryPolicyDecisionDetails;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductSubscriptionPolicyDecisionDetails;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductViewPolicyDecisionDetails;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductDiscoveryService;
-import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductService;
+import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductViewService;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecision;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyProvenance;
 import uk.gov.dbt.ndtp.ia.node.management.web.policy.PolicyDecisionArgumentResolver;
@@ -51,10 +62,10 @@ import uk.gov.dbt.ndtp.ia.node.management.web.policy.PolicyDecisionArgumentResol
 /**
  * Covers the product endpoints at the controller boundary.
  *
- * <p>{@code POST /api/v1/product/discover} is deliberately disconnected from
- * {@link ProductDiscoveryService}: it binds and validates the {@code text}/{@code filters}
- * criteria, but always answers with an empty product list. The candidate-lookup and per-product
- * filtering scenarios live in {@code ProductDiscoveryServiceImplTest}.
+ * <p>{@code POST /api/v1/product/discover} is covered here as far as the controller's own job goes:
+ * binding and validating the criteria, handing the request and the decision to
+ * {@link ProductDiscoveryService}, and answering with what the service returned. What the service
+ * makes of them - the contract, the query and the response - is {@code ProductDiscoveryServiceImplTest}.
  *
  * <p>The PEP is not part of a standalone MockMvc setup, so the subscribe and view tests publish a
  * decision on the request themselves - exactly what the PEP does before the handler runs - and
@@ -64,7 +75,10 @@ import uk.gov.dbt.ndtp.ia.node.management.web.policy.PolicyDecisionArgumentResol
 class ProductControllerTest {
 
     @Mock
-    private ProductService productService;
+    private ProductDiscoveryService productDiscoveryService;
+
+    @Mock
+    private ProductViewService productViewService;
 
     private MockMvc mockMvc;
 
@@ -75,7 +89,7 @@ class ProductControllerTest {
     }
 
     private MockMvc mockMvc(boolean opaEnabled) {
-        return MockMvcBuilders.standaloneSetup(new ProductController(productService))
+        return MockMvcBuilders.standaloneSetup(new ProductController(productDiscoveryService, productViewService))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(
                         new AuthenticationPrincipalArgumentResolver(),
@@ -111,123 +125,210 @@ class ProductControllerTest {
         SecurityContextHolder.setContext(context);
     }
 
+    /** What the service answers unless a test says otherwise. */
+    private void serviceReturns(ProductDiscoveryResponseDTO response) {
+        when(productDiscoveryService.discover(any(), any())).thenReturn(response);
+    }
+
+    private static ProductDiscoveryResponseDTO oneProduct() {
+        return ProductDiscoveryResponseDTO.builder()
+                .products(List.of(DiscoveredProductDTO.builder()
+                        .id(3L)
+                        .name("FloodRiskMapZones")
+                        .build()))
+                .page(ProductDiscoveryResponseDTO.Page.of(0, 20, 1, 1))
+                .build();
+    }
+
     @Test
-    void textAndFilters_areAccepted_andAnsweredWithAnEmptyProductList() throws Exception {
+    void discover_criteria_areBoundAndPassedToTheService() throws Exception {
+        serviceReturns(oneProduct());
+
         mockMvc.perform(
                         post("/api/v1/product/discover")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(
                                         """
-                                {"text": "this is sample text",
-                                 "filters": {"key 1": "value", "key 2": [1234, 33, 222]}}"""))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.products").isEmpty());
+                                {"text": "flood",
+                                 "filters": [{"field": "type", "operator": "eq", "values": ["topic"]},
+                                             {"scope": "organisation", "attribute": "jurisdictions",
+                                              "operator": "any_of", "values": ["England"]}],
+                                 "sort": [{"field": "name", "direction": "desc"}],
+                                 "page": 2, "size": 5}"""))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<ProductDiscoveryRequestDTO> criteria = ArgumentCaptor.forClass(ProductDiscoveryRequestDTO.class);
+        verify(productDiscoveryService).discover(criteria.capture(), any());
+        ProductDiscoveryRequestDTO sent = criteria.getValue();
+        assertThat(sent.text()).isEqualTo("flood");
+        assertThat(sent.page()).isEqualTo(2);
+        assertThat(sent.size()).isEqualTo(5);
+        assertThat(sent.filters()).hasSize(2);
+        assertThat(sent.filters().get(0).field()).isEqualTo("type");
+        assertThat(sent.filters().get(0).operator()).isEqualTo(ComparisonOperator.EQ);
+        assertThat(sent.filters().get(1).scope()).isEqualTo(FilterScope.ORGANISATION);
+        assertThat(sent.filters().get(1).attribute()).isEqualTo("jurisdictions");
+        assertThat(sent.sort()).singleElement().satisfies(key -> {
+            assertThat(key.field()).isEqualTo("name");
+            assertThat(key.descending()).isTrue();
+        });
     }
 
     @Test
-    void emptyBody_treatedAsNoCriteria() throws Exception {
-        mockMvc.perform(post("/api/v1/product/discover").contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.products").isEmpty());
-    }
+    void discover_serviceResponse_isReturnedAsIs() throws Exception {
+        serviceReturns(oneProduct());
 
-    @Test
-    void emptyJsonObject_treatedAsNoCriteria() throws Exception {
         mockMvc.perform(post("/api/v1/product/discover")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.products[0].id").value(3))
+                .andExpect(jsonPath("$.products[0].name").value("FloodRiskMapZones"))
+                .andExpect(jsonPath("$.page.totalElements").value(1))
+                // A member the service did not set is absent, not null: policy withheld it.
+                .andExpect(jsonPath("$.products[0].source").doesNotExist())
+                .andExpect(jsonPath("$.policy").doesNotExist());
+    }
+
+    @Test
+    void discover_emptyBody_reachesTheServiceAsNoCriteria() throws Exception {
+        serviceReturns(ProductDiscoveryResponseDTO.builder()
+                .page(ProductDiscoveryResponseDTO.Page.of(0, 20, 0, 0))
+                .build());
+
+        mockMvc.perform(post("/api/v1/product/discover").contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.products").isEmpty());
+
+        verify(productDiscoveryService).discover(isNull(), any());
     }
 
     /** An unknown top-level field is dropped at binding rather than rejected, as before. */
     @Test
-    void unknownTopLevelField_isIgnored() throws Exception {
+    void discover_unknownTopLevelField_isIgnored() throws Exception {
+        serviceReturns(oneProduct());
+
         mockMvc.perform(post("/api/v1/product/discover")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"text\":\"planning\",\"fitlers\":{\"a\":1}}"))
+                        .content("{\"text\":\"planning\",\"fitlers\":[]}"))
                 .andExpect(status().isOk());
     }
 
     @Test
-    void oversizedText_returns400() throws Exception {
+    void discover_oversizedText_returns400() throws Exception {
         mockMvc.perform(post("/api/v1/product/discover")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"text\":\"" + "x".repeat(256) + "\"}"))
                 .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(productDiscoveryService);
     }
 
     @Test
-    void tooManyFilters_returns400() throws Exception {
-        StringBuilder filters = new StringBuilder();
-        for (int i = 0; i <= 50; i++) {
-            filters.append(i > 0 ? "," : "").append("\"key").append(i).append("\":\"v\"");
-        }
+    void discover_tooManyFilters_returns400() throws Exception {
+        String filters = IntStream.rangeClosed(0, 50)
+                .mapToObj(i -> "{\"field\":\"name\",\"values\":[\"v" + i + "\"]}")
+                .collect(Collectors.joining(","));
 
         mockMvc.perform(post("/api/v1/product/discover")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"filters\":{" + filters + "}}"))
+                        .content("{\"filters\":[" + filters + "]}"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(productDiscoveryService);
+    }
+
+    @Test
+    void discover_oversizedFilterName_returns400() throws Exception {
+        mockMvc.perform(post("/api/v1/product/discover")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"filters\":[{\"attribute\":\"" + "k".repeat(151) + "\",\"values\":[\"v\"]}]}"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    void oversizedFilterName_returns400() throws Exception {
+    void discover_negativePage_returns400() throws Exception {
         mockMvc.perform(post("/api/v1/product/discover")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"filters\":{\"" + "k".repeat(151) + "\":\"v\"}}"))
+                        .content("{\"page\":-1}"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    void malformedJsonBody_returns400() throws Exception {
+    void discover_unknownOperator_returns400() throws Exception {
+        mockMvc.perform(post("/api/v1/product/discover")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                                "{\"filters\":[{\"field\":\"name\",\"operator\":\"sounds_like\",\"values\":[\"a\"]}]}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void discover_malformedJsonBody_returns400() throws Exception {
         mockMvc.perform(post("/api/v1/product/discover")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{not-json"))
                 .andExpect(status().isBadRequest());
     }
 
-    /** A null filter value is odd but legal JSON, and must not become a 500. */
+    /** Criteria the service cannot act on are the caller's to correct, so they are a 400. */
     @Test
-    void nullFilterValue_isAccepted() throws Exception {
+    void discover_invalidCriteria_returns400WithTheReason() throws Exception {
+        when(productDiscoveryService.discover(any(), any()))
+                .thenThrow(new InvalidSearchCriteriaException("A filter names exactly one of 'field' and 'attribute'"));
+
         mockMvc.perform(post("/api/v1/product/discover")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"filters\":{\"key 1\":null}}"))
-                .andExpect(status().isOk());
+                        .content("{\"filters\":[{\"field\":\"name\",\"attribute\":\"x\",\"values\":[\"v\"]}]}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(containsString("exactly one")));
+    }
+
+    /** Criteria policy does not permit are a 403 naming what was refused, not a 400. */
+    @Test
+    void discover_criteriaRefusedByPolicy_returns403WithNamedReasons() throws Exception {
+        when(productDiscoveryService.discover(any(), any()))
+                .thenThrow(new AccessRejectedException(
+                        "Access denied by policy",
+                        List.of("filter.attribute_not_permitted:identifiability"),
+                        "error-1"));
+
+        mockMvc.perform(post("/api/v1/product/discover")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"filters\":[{\"attribute\":\"identifiability\",\"values\":[\"non_personal\"]}]}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("Access denied by policy"))
+                .andExpect(jsonPath("$.reasons[0]").value("filter.attribute_not_permitted:identifiability"));
     }
 
     // ---------------------------------------------------------------------------------------
-    // Discover: the request-level decision reaches the handler and is logged
+    // Discover: the request-level decision reaches the handler and is handed to the service
     // ---------------------------------------------------------------------------------------
 
-    private static String discoverLogAfter(MockMvc mvc, PolicyDecision<?> published) throws Exception {
-        Logger logger = (Logger) LoggerFactory.getLogger(ProductController.class);
-        ListAppender<ILoggingEvent> appender = new ListAppender<>();
-        appender.start();
-        logger.addAppender(appender);
-        try {
-            var request = post("/api/v1/product/discover")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("{\"text\":\"search term\"}");
-            if (published != null) {
-                request.requestAttr(PolicyDecision.REQUEST_ATTRIBUTE, published);
-            }
-            mvc.perform(request).andExpect(status().isOk());
-        } finally {
-            logger.detachAppender(appender);
+    @SuppressWarnings("unchecked")
+    private Optional<PolicyDecision<ProductDiscoveryPolicyDecisionDetails>> decisionHandedToService(
+            MockMvc mvc, PolicyDecision<?> published) throws Exception {
+        serviceReturns(oneProduct());
+        var request = post("/api/v1/product/discover")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"text\":\"search term\"}");
+        if (published != null) {
+            request.requestAttr(PolicyDecision.REQUEST_ATTRIBUTE, published);
         }
-        return appender.list.stream()
-                .map(ILoggingEvent::getFormattedMessage)
-                .filter(message -> message.startsWith("Product discover"))
-                .findFirst()
-                .orElseThrow();
+        mvc.perform(request).andExpect(status().isOk());
+
+        ArgumentCaptor<Optional<PolicyDecision<ProductDiscoveryPolicyDecisionDetails>>> decision =
+                ArgumentCaptor.forClass(Optional.class);
+        verify(productDiscoveryService).discover(any(), decision.capture());
+        return decision.getValue();
     }
 
     @Test
-    void discover_publishedDecision_isAvailableToTheHandlerAndLogged() throws Exception {
+    void discover_publishedDecision_isHandedToTheService() throws Exception {
         PolicyDecision<ProductDiscoveryPolicyDecisionDetails> published = new PolicyDecision<>(
                 true,
                 List.of(),
-                new PolicyProvenance("product.discover", "policies.product.discover/1.0.0", "exact"),
+                new PolicyProvenance("product.discover", "policies.product.discover/3.0.0", "exact"),
                 new ProductDiscoveryPolicyDecisionDetails(
                         ProductDiscoveryPolicyDecisionDetails.EVALUATION_REQUEST,
                         new ProductDiscoveryPolicyDecisionDetails.Filtering(
@@ -235,18 +336,16 @@ class ProductControllerTest {
                         new ProductDiscoveryPolicyDecisionDetails.Filtering(
                                 List.of("identifiability"), List.of(), List.of("population_risk_tags"))));
 
-        assertThat(discoverLogAfter(mockMvc, published))
-                .contains("allow=true")
-                .contains("policy=product.discover")
-                .contains("resolution=exact")
-                .contains("evaluation=request")
-                .contains("fields=Filtering[allowed=[name, topic], denied=[], masked=[consumers]]")
-                .contains("attributes=Filtering[allowed=[identifiability], denied=[], masked=[population_risk_tags]]");
+        assertThat(decisionHandedToService(mockMvc, published)).containsSame(published);
     }
 
+    /**
+     * With policy enforcement off no decision is taken, and the handler passes on the empty value
+     * rather than standing in a verdict of its own: the service then searches unrestricted.
+     */
     @Test
-    void discover_withPolicySwitchedOff_logsThatNoDecisionWasTaken() throws Exception {
-        assertThat(discoverLogAfter(mockMvc(false), null)).contains("without a policy decision");
+    void discover_withPolicySwitchedOff_handsTheServiceNoDecision() throws Exception {
+        assertThat(decisionHandedToService(mockMvc(false), null)).isEmpty();
     }
 
     // ---------------------------------------------------------------------------------------
@@ -324,38 +423,126 @@ class ProductControllerTest {
     }
 
     // ---------------------------------------------------------------------------------------
-    // View
+    // View: a search constrained to one product
     // ---------------------------------------------------------------------------------------
 
-    @Test
-    void view_existingProduct_isReturned() throws Exception {
-        when(productService.getProductsByIds(List.of(7L)))
-                .thenReturn(
-                        List.of(ProductDTO.builder().id(7L).name("Product A").build()));
+    private static PolicyDecision<ProductViewPolicyDecisionDetails> viewDecision() {
+        return PolicyDecision.of(true, ProductViewPolicyDecisionDetails.class)
+                .withDetails(new ProductViewPolicyDecisionDetails(ProductViewPolicyDecisionDetails.ACCESS_LEVEL_READ));
+    }
 
-        mockMvc.perform(get("/api/v1/product/7")
-                        .requestAttr(
-                                PolicyDecision.REQUEST_ATTRIBUTE,
-                                PolicyDecision.of(true, ProductViewPolicyDecisionDetails.class)
-                                        .withDetails(new ProductViewPolicyDecisionDetails(
-                                                ProductViewPolicyDecisionDetails.ACCESS_LEVEL_READ))))
+    /** What the view service answers; a null product stands for "no such product for this caller". */
+    private void viewReturns(DiscoveredProductDTO product) {
+        when(productViewService.view(any(), any())).thenReturn(Optional.ofNullable(product));
+    }
+
+    @Test
+    void view_existingProduct_isReturnedWithWhatPolicyLeftVisible() throws Exception {
+        viewReturns(DiscoveredProductDTO.builder()
+                .id(7L)
+                .name("FloodRiskMapZones")
+                .organisation(
+                        DiscoveredProductDTO.Organisation.builder().key("ENV").build())
+                .build());
+
+        mockMvc.perform(get("/api/v1/product/7").requestAttr(PolicyDecision.REQUEST_ATTRIBUTE, viewDecision()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Product A"));
+                .andExpect(jsonPath("$.id").value(7))
+                .andExpect(jsonPath("$.name").value("FloodRiskMapZones"))
+                .andExpect(jsonPath("$.organisation.key").value("ENV"))
+                // Masking shows as absence, not as null: a member the service never set is not
+                // serialised at all, so a caller cannot tell "withheld" from "we sent you nothing".
+                .andExpect(jsonPath("$.description").doesNotExist())
+                .andExpect(jsonPath("$.source").doesNotExist())
+                .andExpect(jsonPath("$.consumers").doesNotExist())
+                .andExpect(jsonPath("$.organisation.name").doesNotExist());
+    }
+
+    /**
+     * An empty answer is a 404 whether the product does not exist or the row filter excluded it.
+     * The API deliberately does not distinguish the two (D1): a 403 for "excluded" would turn an id
+     * into an oracle for the existence of products the caller may not discover, and the service
+     * hands back the same {@code Optional.empty()} for both, so the controller could not tell them
+     * apart even if it wanted to.
+     */
+    @Test
+    void view_noProductForThisCaller_returns404WhetherItIsAbsentOrWithheld() throws Exception {
+        viewReturns(null);
+
+        mockMvc.perform(get("/api/v1/product/99").requestAttr(PolicyDecision.REQUEST_ATTRIBUTE, viewDecision()))
+                .andExpect(status().isNotFound());
+
+        ArgumentCaptor<Long> productId = ArgumentCaptor.forClass(Long.class);
+        verify(productViewService).view(productId.capture(), any());
+        assertThat(productId.getValue()).isEqualTo(99L);
     }
 
     @Test
-    void view_withPolicySwitchedOff_isStillServed() throws Exception {
-        when(productService.getProductsByIds(List.of(7L)))
-                .thenReturn(
-                        List.of(ProductDTO.builder().id(7L).name("Product A").build()));
+    void view_pathVariable_reachesTheServiceAsALong() throws Exception {
+        viewReturns(DiscoveredProductDTO.builder().id(7L).build());
 
-        mockMvc(false).perform(get("/api/v1/product/7")).andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/product/7").requestAttr(PolicyDecision.REQUEST_ATTRIBUTE, viewDecision()))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<Long> productId = ArgumentCaptor.forClass(Long.class);
+        verify(productViewService).view(productId.capture(), any());
+        assertThat(productId.getValue()).isEqualTo(7L);
     }
 
+    /** Type conversion, not policy: the id never binds, so nothing is asked of the service. */
     @Test
-    void view_unknownProduct_returns404() throws Exception {
-        when(productService.getProductsByIds(List.of(99L))).thenReturn(List.of());
+    void view_nonNumericProductId_returns400WithoutReachingTheService() throws Exception {
+        mockMvc.perform(get("/api/v1/product/not-a-number")
+                        .requestAttr(PolicyDecision.REQUEST_ATTRIBUTE, viewDecision()))
+                .andExpect(status().isBadRequest());
 
-        mockMvc.perform(get("/api/v1/product/99")).andExpect(status().isNotFound());
+        verifyNoInteractions(productViewService);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Optional<PolicyDecision<ProductViewPolicyDecisionDetails>> viewDecisionHandedToService(
+            MockMvc mvc, PolicyDecision<?> published) throws Exception {
+        viewReturns(DiscoveredProductDTO.builder().id(7L).build());
+        var request = get("/api/v1/product/7");
+        if (published != null) {
+            request.requestAttr(PolicyDecision.REQUEST_ATTRIBUTE, published);
+        }
+        mvc.perform(request).andExpect(status().isOk());
+
+        ArgumentCaptor<Optional<PolicyDecision<ProductViewPolicyDecisionDetails>>> decision =
+                ArgumentCaptor.forClass(Optional.class);
+        verify(productViewService).view(any(), decision.capture());
+        return decision.getValue();
+    }
+
+    /** The decision the PEP published is the one the service works from - it asks for no other. */
+    @Test
+    void view_publishedDecision_isHandedToTheService() throws Exception {
+        PolicyDecision<ProductViewPolicyDecisionDetails> published = viewDecision();
+
+        assertThat(viewDecisionHandedToService(mockMvc, published)).containsSame(published);
+    }
+
+    /**
+     * With policy enforcement off nothing judged the request, and the handler passes the empty
+     * value on rather than inventing a verdict: the service is the one that decides what an absent
+     * decision means.
+     */
+    @Test
+    void view_withPolicySwitchedOff_handsTheServiceNoDecision() throws Exception {
+        assertThat(viewDecisionHandedToService(mockMvc(false), null)).isEmpty();
+    }
+
+    /** A contract the service cannot honour is a 403 naming why, exactly as on discovery. */
+    @Test
+    void view_refusedByTheService_returns403WithItsReasons() throws Exception {
+        when(productViewService.view(any(), any()))
+                .thenThrow(new AccessRejectedException(
+                        "Access denied by policy", List.of("policy.obligation_unsupported"), "error-2"));
+
+        mockMvc.perform(get("/api/v1/product/7").requestAttr(PolicyDecision.REQUEST_ATTRIBUTE, viewDecision()))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("Access denied by policy"))
+                .andExpect(jsonPath("$.reasons[0]").value("policy.obligation_unsupported"));
     }
 }

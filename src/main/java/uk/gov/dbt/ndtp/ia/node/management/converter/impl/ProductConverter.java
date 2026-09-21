@@ -48,6 +48,7 @@ public class ProductConverter implements EntityDtoConverter<Product, ProductDTO>
                 .id(entity.getId())
                 .name(entity.getName())
                 .topic(entity.getTopic())
+                .description(entity.getDescription())
                 .type(typeName)
                 .source(entity.getSource())
                 .producerId(entity.getProducer() != null ? entity.getProducer().getId() : null)
@@ -70,6 +71,7 @@ public class ProductConverter implements EntityDtoConverter<Product, ProductDTO>
         entity.setId(dto.getId());
         entity.setName(dto.getName());
         entity.setTopic(dto.getTopic());
+        entity.setDescription(dto.getDescription());
         entity.setSource(dto.getSource());
 
         // Set the producer if producerId is provided

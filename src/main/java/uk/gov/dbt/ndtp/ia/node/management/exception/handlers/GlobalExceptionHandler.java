@@ -42,6 +42,7 @@ import uk.gov.dbt.ndtp.ia.node.management.exception.AccessRejectedException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.AuthenticationProcessingException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.CertificateSigningException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.ErrorResponse;
+import uk.gov.dbt.ndtp.ia.node.management.exception.InvalidSearchCriteriaException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.PkiException;
 
 /**
@@ -105,6 +106,29 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ErrorResponse errorResponse =
                 new ErrorResponse(HttpStatus.FORBIDDEN.value(), ex.getMessage(), ex.getReasons(), ex.getErrorId());
         return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
+    }
+
+    /**
+     * Handles search criteria the service cannot act on - a filter naming both a field and an
+     * attribute, an operator that does not apply to its target, a value of the wrong type. The
+     * message names what the caller sent, since they supplied it and have to correct it.
+     *
+     * <p>Criteria the caller is not <em>permitted</em> to use are a different answer: those are an
+     * {@link AccessRejectedException} and a {@code 403}, so that a name which does not exist is
+     * refused exactly like one that is forbidden.
+     *
+     * @param ex the rejection, carrying the message for the caller
+     * @param request the current request
+     * @return a 400 with that message and an error id
+     */
+    @ExceptionHandler(InvalidSearchCriteriaException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidSearchCriteriaException(
+            InvalidSearchCriteriaException ex, WebRequest request) {
+
+        String errorId = generateErrorId();
+        log.warn("Invalid search criteria, error_id={}, path={}", errorId, request.getDescription(false), ex);
+
+        return respond(HttpStatus.BAD_REQUEST, "Invalid search criteria: " + ex.getMessage(), errorId);
     }
 
     @ExceptionHandler(AuthorizationDeniedException.class)

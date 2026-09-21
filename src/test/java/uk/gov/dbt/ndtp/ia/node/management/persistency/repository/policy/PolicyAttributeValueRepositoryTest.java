@@ -172,7 +172,7 @@ class PolicyAttributeValueRepositoryTest extends AbstractPostgresRepositoryTest 
 
         assertThat(live).hasSize(1);
         PolicyAttributeValue found = live.get(0);
-        // Accessing the definition must not trigger an additional query - proves the JOIN FETCH,
+        // Subscribing the definition must not trigger an additional query - proves the JOIN FETCH,
         // not lazy N+1 loading, populated it.
         assertThat(found.getAttributeDefinitionScope().getAttributeDefinition().getName())
                 .isEqualTo("producer-tier");

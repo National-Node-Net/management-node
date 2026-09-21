@@ -78,6 +78,7 @@ erDiagram
     BIGSERIAL id PK
     VARCHAR name
     VARCHAR topic
+    TEXT description
     BIGINT producer_id FK
     BIGINT product_type_id FK
     VARCHAR source
@@ -179,7 +180,7 @@ Represents an organisation that owns Producers and Consumers.
 Columns:
 - `id` BIGSERIAL, primary key
 - `name` VARCHAR(150), not null
-- `organisation_key` VARCHAR(50), not null — stable, human-readable identifier for the organisation (e.g. `ENV`, `BCC`, `HEG`), so callers can address an organisation without depending on ids that differ between environments
+- `organisation_key` VARCHAR(50), not null: stable, human-readable identifier for the organisation (e.g. `ENV`, `BCC`, `HEG`), so callers can address an organisation without depending on ids that differ between environments
 - `certificate_automation_enabled` BOOLEAN, not null, default TRUE
 
 Indexes and constraints:
@@ -200,10 +201,10 @@ Columns:
 - `description` TEXT, not null
 - `org_id` BIGINT, not null, foreign key → `organisation(id)`
 - `active` BOOLEAN, not null
-- `host` VARCHAR(500), not null — host or base URL where the producer can be reached
-- `port` NUMERIC, not null — network port (stored as numeric)
-- `tls` BOOLEAN, not null — whether TLS is required for this endpoint
-- `idp_client_id` VARCHAR(50), not null — identity provider client id (e.g., Keycloak). Informational; not an FK
+- `host` VARCHAR(500), not null: host or base URL where the producer can be reached
+- `port` NUMERIC, not null: network port (stored as numeric)
+- `tls` BOOLEAN, not null: whether TLS is required for this endpoint
+- `idp_client_id` VARCHAR(50), not null: identity provider client id (e.g., Keycloak). Informational; not an FK
 
 Usage:
 - Owns `product` records.
@@ -218,9 +219,9 @@ Columns:
 - `id` BIGSERIAL, primary key
 - `name` VARCHAR(50), not null
 - `org_id` BIGINT, not null, foreign key → `organisation(id)`
-- `idp_client_id` VARCHAR(50), not null — identity provider client id (e.g., Keycloak). Informational; not an FK
-- `schedule_type` VARCHAR(100), nullable — type of schedule, e.g., `cron`, `interval`
-- `schedule_expression` VARCHAR(255), nullable — schedule expression matching the chosen schedule_type
+- `idp_client_id` VARCHAR(50), not null: identity provider client id (e.g., Keycloak). Informational; not an FK
+- `schedule_type` VARCHAR(100), nullable: type of schedule, e.g., `cron`, `interval`
+- `schedule_expression` VARCHAR(255), nullable: schedule expression matching the chosen schedule_type
 
 Usage:
 - Participates in access grants via `product_consumer`.
@@ -234,7 +235,7 @@ Represents a category/type of Product (e.g., topic-based, file-based).
 Columns:
 - `id` BIGSERIAL, primary key
 - `name` VARCHAR(150), not null
-- `description` VARCHAR(255), nullable — brief description of the product type
+- `description` VARCHAR(255), nullable: brief description of the product type
 
 Usage:
 - Lookup table used to categorize products. Initial values seeded by migration: `topic` and `file`.
@@ -247,10 +248,11 @@ Represents a Product (e.g., a data stream or dataset) offered by a Producer.
 Columns:
 - `id` BIGSERIAL, primary key
 - `name` VARCHAR(50), not null
-- `topic` VARCHAR(150), not null — logical topic or channel for the product
+- `topic` VARCHAR(150), not null: logical topic or channel for the product
+- `description` TEXT, nullable: prose describing the product. Together with `name`, this is what discovery's free-text search matches against (`topic` and `source` are identifiers, not prose, and are deliberately not text-searched). Backfilled by data owners; existing rows have none
 - `producer_id` BIGINT, not null, foreign key → `producer(id)`
-- `product_type_id` BIGINT, nullable, foreign key → `product_type(id)` — categorization of the product
-- `source` VARCHAR(500), nullable — optional source identifier/URI for the product
+- `product_type_id` BIGINT, nullable, foreign key → `product_type(id)`: categorization of the product
+- `source` VARCHAR(500), nullable: optional source identifier/URI for the product
 
 Usage:
 - The resource being granted to Consumers via `product_consumer`.
@@ -265,12 +267,12 @@ Columns:
 - `id` BIGSERIAL, primary key
 - `product_id` BIGINT, not null, foreign key → `product(id)`
 - `consumer_id` BIGINT, not null, foreign key → `consumer(id)`
-- `granted_ts` TIMESTAMP, not null — timestamp when access was granted
-- `validity` NUMERIC, not null — validity period/units are application-defined
-- `schedule_type` VARCHAR(100), nullable — e.g., `cron`, `interval`
-- `schedule_expression` VARCHAR(255), nullable — expression matching the schedule_type
-- `destination` VARCHAR(500), nullable — optional destination identifier/URI for scheduled deliveries
-- `uq_product_consumer_pair` UNIQUE (`product_id`, `consumer_id`) — ensures one grant per pair
+- `granted_ts` TIMESTAMP, not null: timestamp when access was granted
+- `validity` NUMERIC, not null: validity period/units are application-defined
+- `schedule_type` VARCHAR(100), nullable: e.g., `cron`, `interval`
+- `schedule_expression` VARCHAR(255), nullable: expression matching the schedule_type
+- `destination` VARCHAR(500), nullable: optional destination identifier/URI for scheduled deliveries
+- `uq_product_consumer_pair` UNIQUE (`product_id`, `consumer_id`): ensures one grant per pair
 
 Notes:
 - Originally used a composite primary key (`product_id`, `consumer_id`); later replaced by surrogate `id` while preserving uniqueness via `uq_product_consumer_pair`.
@@ -286,9 +288,9 @@ Extensible attributes attached to a specific `product_consumer` grant (key/value
 
 Columns:
 - `id` BIGSERIAL, primary key
-- `name` VARCHAR(150), not null — attribute name/key
-- `type` VARCHAR(50), not null — attribute type (string indicator)
-- `value` VARCHAR(500), not null — attribute value
+- `name` VARCHAR(150), not null: attribute name/key
+- `type` VARCHAR(50), not null: attribute type (string indicator)
+- `value` VARCHAR(500), not null: attribute value
 - `product_consumer_id` BIGINT, not null, foreign key → `product_consumer(id)`
 
 Usage:
@@ -302,18 +304,18 @@ Tracks the current certificate state for each organisation. Each organisation ha
 Columns:
 - `id` BIGSERIAL, primary key
 - `organisation_id` BIGINT, not null, unique, foreign key → `organisation(id)`
-- `subject_dn` VARCHAR(500), nullable — X.500 distinguished name of the certificate subject
-- `serial_number` VARCHAR(150), nullable — certificate serial number
-- `is_renewable` BOOLEAN, not null, default FALSE — whether automatic renewal is enabled
-- `renewal_ttl` BIGINT, nullable — renewal time-to-live value
-- `type` VARCHAR(50), not null — certificate type (e.g., `MANUAL`, `BOOTSTRAP`, `AUTOMATED`)
-- `requested_at` TIMESTAMP, nullable — when the certificate was requested
-- `issued_at` TIMESTAMP, nullable — when the certificate was issued
-- `expires_at` TIMESTAMP, nullable — certificate expiry time
-- `revoked_at` TIMESTAMP, nullable — when the certificate was revoked (if applicable)
+- `subject_dn` VARCHAR(500), nullable: X.500 distinguished name of the certificate subject
+- `serial_number` VARCHAR(150), nullable: certificate serial number
+- `is_renewable` BOOLEAN, not null, default FALSE: whether automatic renewal is enabled
+- `renewal_ttl` BIGINT, nullable: renewal time-to-live value
+- `type` VARCHAR(50), not null: certificate type (e.g., `MANUAL`, `BOOTSTRAP`, `AUTOMATED`)
+- `requested_at` TIMESTAMP, nullable: when the certificate was requested
+- `issued_at` TIMESTAMP, nullable: when the certificate was issued
+- `expires_at` TIMESTAMP, nullable: certificate expiry time
+- `revoked_at` TIMESTAMP, nullable: when the certificate was revoked (if applicable)
 
 Constraints:
-- UNIQUE on `organisation_id` — one certificate record per organisation
+- UNIQUE on `organisation_id`: one certificate record per organisation
 - Index on `organisation_id`
 
 Usage:
@@ -327,10 +329,10 @@ Audit trail of certificate lifecycle events for each organisation certificate.
 Columns:
 - `id` BIGSERIAL, primary key
 - `organisation_certificate_id` BIGINT, not null, foreign key → `organisation_certificate(id)`
-- `type` VARCHAR(50), not null — certificate type at the time of the event
-- `event_type` VARCHAR(50), not null — the event that occurred (e.g., `ISSUED`, `RENEWED`, `EXPIRED`, `REVOKED`)
-- `event_time` TIMESTAMP, not null — when the event occurred
-- `performed_by` VARCHAR(255), nullable — identifier of the actor who triggered the event
+- `type` VARCHAR(50), not null: certificate type at the time of the event
+- `event_type` VARCHAR(50), not null: the event that occurred (e.g., `ISSUED`, `RENEWED`, `EXPIRED`, `REVOKED`)
+- `event_time` TIMESTAMP, not null: when the event occurred
+- `performed_by` VARCHAR(255), nullable: identifier of the actor who triggered the event
 
 Constraints:
 - Index on `organisation_certificate_id`
@@ -345,8 +347,8 @@ Which core entity types may carry dynamic policy attributes, and the table `poli
 
 Columns:
 - `id` BIGSERIAL, primary key
-- `code` VARCHAR(50), not null — unique scope identifier (e.g. `PRODUCT`)
-- `table_name` VARCHAR(150), not null — the table `policy_attribute_value.entity_id` is a row id in, for this scope
+- `code` VARCHAR(50), not null: unique scope identifier (e.g. `PRODUCT`)
+- `table_name` VARCHAR(150), not null: the table `policy_attribute_value.entity_id` is a row id in, for this scope
 - `description` VARCHAR(500), nullable
 
 Constraints:
@@ -418,7 +420,7 @@ Actual policy attribute values recorded against a specific entity.
 Columns:
 - `id` BIGSERIAL, primary key
 - `attribute_definition_scope_id` BIGINT, not null, foreign key → `policy_attribute_definition_scope(id)`
-- `entity_id` BIGINT, not null — polymorphic reference: the primary key of the row in the table named by the value's `policy_attribute_scope.table_name`. Not a declared foreign key, since the target table varies by scope.
+- `entity_id` BIGINT, not null. Polymorphic reference: the primary key of the row in the table named by the value's `policy_attribute_scope.table_name`. Not a declared foreign key, since the target table varies by scope.
 - `value` JSONB, not null
 - `is_deleted` BOOLEAN, not null, default FALSE
 - `created_at` TIMESTAMP, not null, default `now()`
@@ -428,20 +430,38 @@ Columns:
 
 Constraints:
 - Index on `entity_id` (`idx_policy_attribute_value__entity_id`)
-- Partial UNIQUE index on (`attribute_definition_scope_id`, `entity_id`, `value`) WHERE `is_deleted = FALSE` (`uq_policy_attr_value_live`) — an idempotency guard against persisting an exact-duplicate live value; it does not by itself enforce "one live value per entity" for single-valued attributes (that check spans `policy_attribute_definition.multi_valued` and is left to the service layer that writes these rows)
+- Partial UNIQUE index on (`attribute_definition_scope_id`, `entity_id`, `value`) WHERE `is_deleted = FALSE` (`uq_policy_attr_value_live`): an idempotency guard against persisting an exact-duplicate live value; it does not by itself enforce "one live value per entity" for single-valued attributes (that check spans `policy_attribute_definition.multi_valued` and is left to the service layer that writes these rows)
 
 Soft-delete triggers:
-- `trg_organisation_policy_attribute_value_soft_delete`, `trg_consumer_policy_attribute_value_soft_delete`, `trg_producer_policy_attribute_value_soft_delete`, `trg_product_policy_attribute_value_soft_delete`, `trg_product_consumer_policy_attribute_value_soft_delete` — one `AFTER DELETE` trigger per owning table (`organisation`, `consumer`, `producer`, `product`, `product_consumer`), all calling the shared function `fn_policy_attribute_value_soft_delete_on_entity_delete()`. When a row in one of those tables is deleted, every live (`is_deleted = FALSE`) `policy_attribute_value` row scoped to that table and entity id is set `is_deleted = TRUE` rather than deleted or left orphaned.
+- `trg_organisation_policy_attribute_value_soft_delete`, `trg_consumer_policy_attribute_value_soft_delete`, `trg_producer_policy_attribute_value_soft_delete`, `trg_product_policy_attribute_value_soft_delete`, `trg_product_consumer_policy_attribute_value_soft_delete`: one `AFTER DELETE` trigger per owning table (`organisation`, `consumer`, `producer`, `product`, `product_consumer`), all calling the shared function `fn_policy_attribute_value_soft_delete_on_entity_delete()`. When a row in one of those tables is deleted, every live (`is_deleted = FALSE`) `policy_attribute_value` row scoped to that table and entity id is set `is_deleted = TRUE` rather than deleted or left orphaned.
 
 Usage:
 - Stores the actual attribute values sent to the PDP (OPA) for policy decisions, keyed by which entity (organisation, consumer, producer, product, or subscription) they describe. Live rows are read per request and embedded in the decision input as `subject.organisation.attributes` (resolved from the token's organisation claim via `organisation_key`) and `resource.attributes`; the `value` JSONB keeps its type. A `multi_valued` attribute is stored as one row per value and all of its live rows are collected into a single array for the policy, so the partial unique index above (which permits many distinct live values per entity) is what makes multiple values possible. See [Policy Enforcement](POLICY_ENFORCEMENT.md).
 
 ---
 
+### policy_attribute_live_value (view)
+
+One row per **live** policy attribute value, already joined to its definition and scope, so a query can ask "does this entity carry attribute X with value Y" without repeating four joins. "Live" means neither the value, its definition, nor its scope binding is soft-deleted.
+
+Columns:
+- `scope_code`: the owning `policy_attribute_scope.code` (`PRODUCT`, `ORGANISATION`, …)
+- `entity_id`: the row id, in the table that scope names, the value is recorded against
+- `namespace`, `name`: the attribute's definition
+- `multi_valued`, `sensitive`: flags from the definition
+- `item`: one value as text (`'validated'`, `'42'`, `'true'`)
+- `item_type`: its JSON type (`string`, `number`, `boolean`), so a caller can compare it typed
+
+A multi-valued attribute is normally stored as one row per value, but a single row holding a JSON array is also accepted; **both conventions are flattened here**, so either way the view yields one row per value.
+
+Usage:
+- Product discovery builds its `WHERE` clause from this view (an attribute comparison compiles to an `EXISTS` over it, with the attribute *name* as a bound parameter, which is why a new attribute needs no code change) and loads each response's attribute maps from it, with masked and sensitive names excluded in SQL.
+
 ## Migration Notes
 - Schema is versioned and applied with Flyway on application startup.
 - Foreign keys enforce referential integrity among core entities.
-- Consider adding database indexes on foreign key columns (`producer.producer_id`, `consumer.org_id`, `product.producer_id`, `product_consumer.product_id`, `product_consumer.consumer_id`, `product_consumer_attribute.product_consumer_id`) to optimize query performance.
+- Foreign key columns are not indexed automatically by PostgreSQL. The ones product discovery joins on every search are indexed by `V20260918122000__add_product_discovery_indexes.sql`: `product.producer_id`, `producer.org_id`, `product_consumer.product_id` and `consumer.org_id`. Consider the same for `product_consumer.consumer_id` and `product_consumer_attribute.product_consumer_id` if query plans show it.
+- Discovery's free-text search is a leading-wildcard `LIKE` over `product.name` and `product.description`, which no b-tree index can serve. A `pg_trgm` GIN index is the remedy if `EXPLAIN` shows it is needed; `CREATE EXTENSION` needs a privileged role, so agree it with whoever owns the database.
 
 ## Data Protection and Security
 - Identity fields like `idp_client_id` are not foreign keys; they link to external IdP configuration (e.g., Keycloak) at the application layer.

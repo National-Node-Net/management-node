@@ -27,6 +27,10 @@ public class Product {
     @Column(name = "topic", nullable = false, length = 150)
     private String topic;
 
+    /** Prose describing the product; what discovery's free-text search reads. Nullable. */
+    @Column(name = "description")
+    private String description;
+
     @Column(name = "source", length = 500)
     private String source;
 

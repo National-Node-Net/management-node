@@ -62,38 +62,54 @@ Notes:
 
 ## Role requirements per API
 
-- Producer API: Federator clients may access Producer configuration only when their token contains the role `access_producer_configurations` under the `resource_access` for the audience/client `management-node`.
-  - Enforcement in code: `@PreAuthorize("hasAuthority('ROLE_management-node:access_producer_configurations')")` on `/api/v1/configuration/producer`.
+Every role below is a client role on `management-node`, so it reaches the token as
+`resource_access["management-node"].roles` and is enforced as the authority
+`ROLE_management-node:<role>`. Where an endpoint carries `@Policy`, the resource and action
+in that annotation select the rule that answers, never the URL, so renaming a path or
+versioning the API does not change which rule decides (see
+[Policy Enforcement](POLICY_ENFORCEMENT.md#dispatch)).
 
-- Consumer API: Federator clients may access Consumer configuration only when their token contains the role `access_consumer_configurations` under the `resource_access` for the audience/client `management-node`.
-  - Enforcement in code: `@PreAuthorize("hasAuthority('ROLE_management-node:access_consumer_configurations')")` on `/api/v1/configuration/consumer`.
+| API path | Required role | Policy rule | Policy resource | Action |
+|---|---|---|---|---|
+| `GET /api/v1/configuration/producer` | `access_producer_configurations` | `policies.configuration.fallback` (resource fallback) | `configuration` | `producer` |
+| `GET /api/v1/configuration/consumer` | `access_consumer_configurations` | `policies.configuration.fallback` (resource fallback) | `configuration` | `consumer` |
+| `GET /api/v1/certificate/keyPair` | `create_keys` | not annotated | n/a | n/a |
+| `POST /api/v1/certificate/csr/create` | `create_keys` | not annotated | n/a | n/a |
+| `POST /api/v1/certificate/csr/sign` | `sign_certificate` | not annotated | n/a | n/a |
+| `GET /api/v1/certificate/intermediate` | `access_public_certificates` | not annotated | n/a | n/a |
+| `POST /api/v1/certificate/bootstrap` | `request_bootstrap_certificate` | not annotated | n/a | n/a |
+| `POST /api/v1/product/discover` | `product_discovery` | `policies.product.discover` (exact) | `product` | `discover` |
+| `POST /api/v1/product/subscribe` | `product_subscribe` | `policies.product.subscribe` (exact) | `product` | `subscribe` |
+| `GET /api/v1/product/{productId}` | `product_view` | `policies.product.view` (exact) | `product` | `view` |
 
-- Key Pair / CSR Creation API: Clients may create RSA key pairs and certificate signing requests when their token contains the role `create_keys`.
-  - Enforcement in code: `@PreAuthorize("hasAuthority('ROLE_management-node:create_keys')")` on `GET /api/v1/certificate/keyPair` and `POST /api/v1/certificate/csr/create`.
+Notes the table cannot carry:
 
-- CSR Signing API: Clients may sign certificate signing requests when their token contains the role `sign_certificate`.
-  - Enforcement in code: `@PreAuthorize("hasAuthority('ROLE_management-node:sign_certificate')")` on `POST /api/v1/certificate/csr/sign`.
-
-- Intermediate Certificate API: Clients may retrieve the intermediate CA certificate when their token contains the role `access_public_certificates`.
-  - Enforcement in code: `@PreAuthorize("hasAuthority('ROLE_management-node:access_public_certificates')")` on `GET /api/v1/certificate/intermediate`.
-
-- Bootstrap Certificate API: The onboarding service account may request bootstrap certificate packages when its token contains the role `request_bootstrap_certificate`. The request body contains the target `organisationId` and a CSR. If no certificate record exists for the organisation, one is created automatically. This role is typically assigned only to the website backend service account, not to individual federator clients.
-  - Enforcement in code: `@PreAuthorize("hasAuthority('ROLE_management-node:request_bootstrap_certificate')")` on `POST /api/v1/certificate/bootstrap`.
-
-- Product Discovery API: Clients may discover the products they are authorised to see when their token contains the role `product_discovery`. Even with the role, policy applies on top of it (`@Policy(resource = "product", action = "discover")`): the `product.discover` rule first decides whether the caller may discover at all, and then filters results per product - the role only gates access to the endpoint itself (see [Policy Enforcement](POLICY_ENFORCEMENT.md#reference-endpoints)).
-  - Enforcement in code: `@PreAuthorize("hasAuthority('ROLE_management-node:product_discovery')")` on `POST /api/v1/product/discover`.
-
-- Product Subscription API: Clients may request a subscription of their organisation to a product when their token contains the role `product_subscribe`. The role only gates access to the endpoint; policy is then evaluated on top of it (`@Policy(resource = "product", action = "subscribe")`), and decides both whether the subscription is allowed and its terms - whether approval is required, the maximum validity and the permitted schedule types (see [Policy Enforcement](POLICY_ENFORCEMENT.md#reference-endpoints)).
-  - Enforcement in code: `@PreAuthorize("hasAuthority('ROLE_management-node:product_subscribe')")` on `POST /api/v1/product/subscribe`.
-
-- Product View API: Clients may retrieve a single product when their token contains the role `product_view`. Policy is then evaluated on top of the role check (`@Policy(resource = "product", action = "view")`): the `product.view` rule allows organisations cleared to `OFFICIAL-SENSITIVE` or higher and sets how much of the product they see.
-  - Enforcement in code: `@PreAuthorize("hasAuthority('ROLE_management-node:product_view')")` on `GET /api/v1/product/{productId}`.
-
-Where an endpoint is annotated `@Policy`, holding the role is necessary but not sufficient: a request with the role can still be refused with `403` by policy. Policy is only evaluated when `application.opa.enabled=true`; see [Policy Enforcement](POLICY_ENFORCEMENT.md).
+- **Holding the role is necessary but not sufficient** on an annotated endpoint: a request that
+  passes the role check can still be refused `403` by policy. Policy is only evaluated when
+  `application.opa.enabled=true`; see [Policy Enforcement](POLICY_ENFORCEMENT.md).
+- **Configuration endpoints** have no dedicated rule. `policies.configuration.fallback` allows,
+  and is a placeholder: who may call them is gated by the role and the client certificate
+  (`CertificateValidationInterceptor`, which applies to `/api/v1/configuration/**` only). It is
+  the first thing to replace with real rules.
+- **Certificate endpoints** are not annotated, so no decision is taken and the PDP is never
+  called for them, so only authentication and the role check apply.
+- **`request_bootstrap_certificate`** is for the website/onboarding backend service account, not
+  individual federator clients. The request body carries the target `organisationId` and a CSR;
+  if no certificate record exists for that organisation, one is created automatically.
+- **Discovery's decision is the query.** `product.discover` returns a *search contract*, saying which
+  products exist for the caller, what they may filter, sort and text-search on, and what is
+  withheld from each result, and the service compiles that contract into the SQL.
+- **View is discovery constrained to one product.** `product.view` applies the same caller gates
+  as `product.discover` (a known organisation, a UK jurisdiction, some clearance) and returns the
+  same contract, so a product the caller could not discover cannot be reached by its id either. A
+  product policy excludes is answered `404`, exactly as one that does not exist.
+- **Subscription terms come from policy**, not from Java: `product.subscribe` decides whether
+  approval is required, the maximum validity, and the permitted schedule types.
 
 ## How this maps to Keycloak
 
 - In Keycloak, roles are typically assigned to a client (here conceptually the `management-node` client) and appear in tokens under `resource_access["management-node"].roles`.
+- Tokens must also carry an `organisation` claim whose value is the organisation's key **as the database holds it** (`ENV`, `HEG`, `BCC`), not the client id (`FEDERATOR_ENV`). Policy resolves the calling organisation's attributes by matching it against `organisation.organisation_key`; a token without it is an unknown organisation, and the product rules refuse it with `organisation.missing`. The sample federator clients get it from a hardcoded claim mapper in `docker/keycloak/tofu`.
 - Ensure the token’s audience includes `management-node`. This can be achieved by:
   - Setting the client as an audience in the token via an Audience mapper, or
   - Using the `audience resolve`/`Full Scope Allowed` as per your realm design.
@@ -139,7 +155,7 @@ curl -k 'https://localhost:8090/api/v1/configuration/producer' \
   - CSR Signing API requires role: `sign_certificate`.
   - Intermediate Certificate API requires role: `access_public_certificates`.
   - Bootstrap Certificate API requires role: `request_bootstrap_certificate`.
-  - Product Discovery API requires role: `product_discovery` (plus per-product PDP authorisation, see [Policy Enforcement](POLICY_ENFORCEMENT.md)).
+  - Product Discovery API requires role: `product_discovery` (plus policy, which decides which products are returned and what is shown of each; see [Policy Enforcement](POLICY_ENFORCEMENT.md)).
   - Product Subscription API requires role: `product_subscribe` (plus policy, which also sets the subscription terms).
-  - Product View API requires role: `product_view` (plus policy; answered by the `product.view` rule).
+  - Product View API requires role: `product_view` (plus policy, which decides whether this product exists for the caller and what is shown of it; see [Policy Enforcement](POLICY_ENFORCEMENT.md)).
 - Swagger/OpenAPI: Use Swagger UI at `/swagger-ui.html` to explore and test with a valid token.
