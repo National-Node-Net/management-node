@@ -368,7 +368,7 @@ The application uses Keycloak for authentication and authorization. Follow these
    - Username: `admin`
    - Password: `password`
 
-   You must import your `client.p12` certificate into your browser before accessing the admin console, otherwise the request will be rejected by mTLS.
+   You must import your `client.p12` certificate into your browser before subscribing the admin console, otherwise the request will be rejected by mTLS.
 
    **Chrome:**
    1. Navigate to `chrome://certificate-manager/clientcerts/platformclientcerts`
@@ -427,30 +427,32 @@ If you prefer to set up the realm manually (updated for Keycloak 26.x):
 
 5. Add required roles to the client:
    - Go to **Clients** → **management-node** → **Roles** tab
-   - Click **Create role** and add the following roles:
-     - `access_producer_configurations` — access producer configuration endpoint
-     - `access_consumer_configurations` — access consumer configuration endpoint
-     - `create_keys` — generate key pairs and create CSRs
-     - `sign_certificate` — sign CSRs via the PKI engine
-     - `access_public_certificates` — retrieve the intermediate CA certificate
-     - `request_bootstrap_certificate` — issue bootstrap certificate packages (website service account only)
+   - Click **Create role** and add each of the following:
 
-   See [Authentication Requirements](docs/AUTHENTICATION_REQUIREMENTS.md) for full details on which roles map to which endpoints.
+   | Client role | Grants access to |
+   |---|---|
+   | `access_producer_configurations` | `GET /api/v1/configuration/producer` |
+   | `access_consumer_configurations` | `GET /api/v1/configuration/consumer` |
+   | `create_keys` | `GET /api/v1/certificate/keyPair`, `POST /api/v1/certificate/csr/create` |
+   | `sign_certificate` | `POST /api/v1/certificate/csr/sign` |
+   | `access_public_certificates` | `GET /api/v1/certificate/intermediate` |
+   | `request_bootstrap_certificate` | `POST /api/v1/certificate/bootstrap` (website/onboarding service account only) |
+   | `product_discovery` | `POST /api/v1/product/discover` |
+   | `product_subscribe` | `POST /api/v1/product/subscribe` |
+   | `product_view` | `GET /api/v1/product/{productId}` |
+
+   Holding the role is not always sufficient: the configuration and product endpoints are additionally
+   governed by policy. For the full mapping, including each endpoint's policy resource and action, see
+   [Authentication Requirements](docs/AUTHENTICATION_REQUIREMENTS.md#role-requirements-per-api).
 
 6. Assign roles to the service account:
    - Go to **Clients** → **management-node** → **Service accounts roles** tab
    - Click **Assign role**
    - Filter by **Filter by clients** and select **management-node**
-   - Check the roles needed for this client:
-     - `access_producer_configurations`
-     - `access_consumer_configurations`
-     - `create_keys`
-     - `sign_certificate`
-     - `access_public_certificates`
-     - `request_bootstrap_certificate`
+   - Check the roles needed for this client (the nine in the table above)
    - Click **Assign**
 
-   > **Note:** For local development, assign all 6 roles if you will be testing all endpoints with the single `management-node` client credentials. In production, roles should be split across separate clients (e.g. `request_bootstrap_certificate` only for the website/onboarding service).
+   > **Note:** For local development, assign all nine roles if you will be testing all endpoints with the single `management-node` client credentials. In production, roles should be split across separate clients (e.g. `request_bootstrap_certificate` only for the website/onboarding service).
 
 7. Create `src/main/resources/application-local.yml` with all local development overrides:
    ```yaml
@@ -510,7 +512,7 @@ If successful, you will receive a JSON response containing an `access_token` wit
 - ✅ Keycloak is properly configured
 - ✅ Service account has the required roles assigned
 
-## Vault Setup (Optional — required for Certificate Manager)
+## Vault Setup (Optional, required for Certificate Manager)
 
 This section is only needed if you plan to use the certificate endpoints (`/api/v1/certificate/*`) or run the federator-certificate-manager. If you only need the configuration endpoints, skip to [Building and Running with Maven](#building-and-running-with-maven).
 
@@ -567,7 +569,7 @@ docker exec vault vault operator init -key-shares=1 -key-threshold=1 -format=jso
 docker exec vault vault operator unseal <unseal_key>
 ```
 
-> **Note:** Vault seals itself whenever the container is stopped or restarted. You will need to run the unseal command again each time you bring the container back up. The init and PKI setup steps do not need to be repeated — only the unseal.
+> **Note:** Vault seals itself whenever the container is stopped or restarted. You will need to run the unseal command again each time you bring the container back up. The init and PKI setup steps do not need to be repeated, only the unseal.
 
 You can then access vault using the Web UI and the root token at [http://localhost:8200](http://localhost:8200). Add the Vault root token to your `application-local.yml`:
 
@@ -633,9 +635,9 @@ docker exec -e VAULT_TOKEN=$VAULT_TOKEN vault vault write pki-int/roles/default-
   allowed_other_sans="1.3.6.1.4.1.32473.1.1;utf8:*"
 ```
 
-- `allow_any_name=true` permits signing CSRs with any common name — appropriate for development. In production, restrict this to specific domains.
+- `allow_any_name=true` permits signing CSRs with any common name, which is appropriate for development. In production, restrict this to specific domains.
 - `key_type=any` allows both RSA and EC keys.
-- `allowed_other_sans` whitelists the bootstrap OID so the bootstrap flow can embed it in signed certificates. This matches the default `application.bootstrap.oid` value — if you override `BOOTSTRAP_OID`, update this Vault role to match.
+- `allowed_other_sans` whitelists the bootstrap OID so the bootstrap flow can embed it in signed certificates. This matches the default `application.bootstrap.oid` value, so if you override `BOOTSTRAP_OID`, update this Vault role to match.
 
 13. Verify the PKI engine is working by reading back the CA certificate:
 
@@ -674,7 +676,7 @@ curl -k https://localhost:8090/api/v1/certificate/keyPair \
 
 If this returns 200 with a JSON response containing the key pair, the Management Node is fully connected to Vault's PKI engine.
 
-> **Note:** This setup imports the development root CA directly at the `pki-int` mount point. For production, you would typically create a separate root CA and then generate an intermediate CA signed by it. Both configurations work with the Management Node — the only difference is whether `pki-int/cert/ca_chain` returns a chain or is empty.
+> **Note:** This setup imports the development root CA directly at the `pki-int` mount point. For production, you would typically create a separate root CA and then generate an intermediate CA signed by it. Both configurations work with the Management Node; the only difference is whether `pki-int/cert/ca_chain` returns a chain or is empty.
 
 ## Building and Running with Maven
 
@@ -785,7 +787,7 @@ curl -k https://localhost:8090/api/v1/configuration/consumer \
   -H "Authorization: Bearer $TOKEN" | jq .
 ```
 
-The configuration endpoints will return a **403 Forbidden** with `"No organisation certificate found"`. This is expected — the `management-node` client is not mapped to a Producer or Consumer organisation in the database. At this point the setup is confirmed working:
+The configuration endpoints will return a **403 Forbidden** with `"No organisation certificate found"`. This is expected, because the `management-node` client is not mapped to a Producer or Consumer organisation in the database. At this point the setup is confirmed working:
 - ✅ mTLS authentication is working (client certificates validated)
 - ✅ JWT token was issued with correct roles
 - ✅ Keycloak is properly configured
@@ -964,13 +966,26 @@ All protected endpoints require JWT bearer tokens. Tokens must:
 - Include the audience (aud) claim with value `account` (default Keycloak audience for service accounts).
 - Contain a `resource_access` claim with client-specific roles under `resource_access.management-node.roles`.
 
-**Required Client Roles:**
-- `access_producer_configurations` — access `/api/v1/configuration/producer`
-- `access_consumer_configurations` — access `/api/v1/configuration/consumer`
-- `create_keys` — `GET /api/v1/certificate/keyPair`, `POST /api/v1/certificate/csr/create`
-- `sign_certificate` — `POST /api/v1/certificate/csr/sign`
-- `access_public_certificates` — `GET /api/v1/certificate/intermediate`
-- `request_bootstrap_certificate` — `POST /api/v1/certificate/bootstrap`
+**Required client roles.** Each is a role on the `management-node` client, so it reaches the token
+as `resource_access["management-node"].roles` and is enforced as the authority
+`ROLE_management-node:<role>`.
+
+| Client role | Endpoint | Also governed by policy |
+|---|---|---|
+| `access_producer_configurations` | `GET /api/v1/configuration/producer` | yes |
+| `access_consumer_configurations` | `GET /api/v1/configuration/consumer` | yes |
+| `create_keys` | `GET /api/v1/certificate/keyPair`, `POST /api/v1/certificate/csr/create` | no |
+| `sign_certificate` | `POST /api/v1/certificate/csr/sign` | no |
+| `access_public_certificates` | `GET /api/v1/certificate/intermediate` | no |
+| `request_bootstrap_certificate` | `POST /api/v1/certificate/bootstrap` | no |
+| `product_discovery` | `POST /api/v1/product/discover` | yes |
+| `product_subscribe` | `POST /api/v1/product/subscribe` | yes |
+| `product_view` | `GET /api/v1/product/{productId}` | yes |
+
+Where the last column says yes, the role is necessary but not sufficient: a request carrying it can
+still be refused `403` by policy. The policy resource and action behind each of those endpoints are
+listed in [Authentication Requirements](docs/AUTHENTICATION_REQUIREMENTS.md#role-requirements-per-api),
+and the mechanism itself in [Policy Enforcement](docs/POLICY_ENFORCEMENT.md).
 
 **Token Structure Example:**
 ```json
