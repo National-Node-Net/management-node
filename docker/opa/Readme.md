@@ -19,8 +19,8 @@ docker compose logs -f opa
 
 | Port   | Purpose                                              |
 |--------|------------------------------------------------------|
-| `8181` | Policy API — the decision endpoint the service calls |
-| `8282` | Diagnostics only — `/health`, `/metrics`             |
+| `8181` | Policy API, the decision endpoint the service calls |
+| `8282` | Diagnostics only: `/health`, `/metrics`             |
 
 Override with `OPA_PORT`, `OPA_DIAGNOSTIC_PORT` or `OPA_LOG_LEVEL`.
 
@@ -33,7 +33,7 @@ Override with `OPA_PORT`, `OPA_DIAGNOSTIC_PORT` or `OPA_LOG_LEVEL`.
 
 Only controller methods annotated `@Policy(resource, action)` are sent here;
 `input.resource.kind` and `input.action` are those two values. The service never
-names a rule — the dispatcher picks it.
+names a rule; the dispatcher picks it.
 
 `PolicyDecisionClient` **fails closed**: if OPA is unreachable, or the answer
 cannot be read, the decision is DENY. Keep the container up while exercising
@@ -43,16 +43,18 @@ annotated endpoints. In non-local environments the URL must be `https://`.
 
 ```
 policies/
-  dispatch.rego                   package dispatch — the entrypoint
+  dispatch.rego                   package dispatch, the entrypoint
   lib/decision.rego               contract id, deny-shaped document, organisation helpers
-  lib/entitlements.rego           clearance, purposes, jurisdictions — facts every product rule reads
-  lib/product.rego                product fields, hidden fields by clearance, sensitive attributes
-  fallback.rego                   policies.fallback                — global fallback: deny
-  configuration/fallback.rego     policies.configuration.fallback  — allow (local placeholder)
-  product/fallback.rego           policies.product.fallback        — read-only for a known organisation
-  product/view.rego               policies.product.view            — view access by clearance
-  product/discover.rego           policies.product.discover        — search contract, per request and per candidate
-  product/subscribe.rego          policies.product.subscribe       — subscription and its terms
+  lib/entitlements.rego           what you are cleared to, purposes, jurisdictions: facts every rule reads
+  lib/product.rego                product fields and blocks, and which are hidden at each clearance
+  lib/product_access.rego         the whole product contract: the gates, what may be searched, which
+                                  products a caller may see (row_filter) and what is shown of each
+  fallback.rego                   policies.fallback                global fallback: deny
+  configuration/fallback.rego     policies.configuration.fallback  allow (local placeholder)
+  product/fallback.rego           policies.product.fallback        read-only for a known organisation
+  product/view.rego               policies.product.view            one product: discovery's decision, plus the access level it reports
+  product/discover.rego           policies.product.discover        search contract: what may be asked, shown and returned
+  product/subscribe.rego          policies.product.subscribe       subscription and its terms
   routing/data.json               data.routing
   *_test.rego                     unit tests (ignored by the server)
 ```
@@ -77,7 +79,7 @@ Every decision, whichever rule answered, has this shape:
 ```
 
 `reasons` are sorted, stable codes. `policy` is provenance added by the
-dispatcher — a rule cannot set it. `details` is rule-specific and is read into
+dispatcher, and a rule cannot set it. `details` is rule-specific and is read into
 the type named by `@Policy(details = ...)`. Attribute filtering
 (`allowed_filtered_attributes`, `denied_filtered_attributes`,
 `masked_filtered_attributes`) is not part of the envelope: a rule that needs it
@@ -89,8 +91,8 @@ For `(resource, action)` the dispatcher takes the first of:
 
 | # | Resolution          | Looks for                                          | Extra reason                 |
 |---|---------------------|----------------------------------------------------|------------------------------|
-| 1 | `route`             | enabled `data.routing.routes` entry, lowest `priority` | —                        |
-| 2 | `exact`             | `data.policies[resource][action]`                  | —                            |
+| 1 | `route`             | enabled `data.routing.routes` entry, lowest `priority` | none                     |
+| 2 | `exact`             | `data.policies[resource][action]`                  | none                         |
 | 3 | `resource_fallback` | `data.policies[resource].fallback`                 | `dispatch.resource_fallback` |
 | 4 | `global_fallback`   | `data.policies.fallback`                           | `dispatch.global_fallback`   |
 
@@ -135,7 +137,7 @@ Only the contract's fields are copied from a rule's `decision`, each type-checke
    ```
 
    Starting from `deny_shape` keeps the rule total: any field it does not set is
-   still present, and denied. Omit `policy` — the dispatcher adds it.
+   still present, and denied. Omit `policy`, since the dispatcher adds it.
 2. Add `<action>_test.rego` beside it, then run the checks below.
 3. Annotate the endpoint `@Policy(resource = "invoice", action = "read")`.
 
@@ -160,7 +162,7 @@ not passed on to exact or fallback resolution.
 
 ## Query it directly
 
-Subscribe — exact rule, terms in `details`:
+Subscribe, an exact rule with terms in `details`:
 
 ```bash
 curl -s -X POST localhost:8181/v1/data/dispatch/decision -d '{"input":{
@@ -173,18 +175,36 @@ curl -s -X POST localhost:8181/v1/data/dispatch/decision -d '{"input":{
 #      "details":{"max_validity_days":90,"permitted_schedule_types":["cron","interval"],"requires_approval":false}}}
 ```
 
-View — exact rule, access by clearance:
+View, an exact rule: discovery's decision for the same caller, plus `access_level`:
 
 ```bash
 curl -s -X POST localhost:8181/v1/data/dispatch/decision -d '{"input":{
-  "subject":{"organisation":{"key":"HEG","attributes":{"authorised_classifications":["OFFICIAL","OFFICIAL-SENSITIVE"]}}},
-  "resource":{"kind":"product"},"action":"view","request":{"method":"GET"}}}'
-# => {"result":{"allow":true,"reasons":[],
-#      "policy":{"id":"product.view","resolution":"exact","version":"policies.product.view/1.0.0"},
-#      "details":{"access_level":"summary","required_clearance":"OFFICIAL-SENSITIVE","withheld_fields":["configurations","consumers"]}}}
+  "subject":{"organisation":{"key":"HEG","attributes":{"authorised_classifications":["OFFICIAL","OFFICIAL-SENSITIVE"],
+    "permitted_purposes":["service_delivery","statistical_analysis"],"jurisdictions":["England","Scotland"]}}},
+  "resource":{"kind":"product"},"action":"view","request":{"method":"GET"}}}' | jq .result
+# => allow true, reasons [], policy {"id":"product.view","resolution":"exact","version":"policies.product.view/3.0.0"}
+#    details.access_level              "summary"
+#    details.masked_filtered_fields    ["consumers"]        (what the service withholds; access_level only reports it)
+#    details.visible_fields            the 14 names left of the vocabulary
+#    details.mask_sensitive_attributes true
+#    details.unmask_when               [{"names":["subscribedBy","consumers"],"when": organisation.key eq HEG}]
+#    details.row_filter                own products OR (identifiability in [...] AND quality in [...] AND no risk tags)
+#    details.obligations               ["aggregate_before_release","audit_access","mask_response"]
+#    details.filter_contract           "management-node.filter/1"
+#    details.max_page_size, text_search_fields, allowed/denied/masked field and attribute lists
+#                                      the rest of the same contract discovery is given
 ```
 
-An action with no rule of its own — answered by the product fallback:
+The whole document is `lib/product_access.rego`'s, the very decision
+`product.discover` returns for the same caller: same verdict, same reasons, same
+fifteen keys bar the one each rule adds: `evaluation` for discovery,
+`access_level` for view. The service AND-s `id eq {productId}` onto `row_filter`
+and answers `404` when nothing comes back, so a product excluded by policy cannot
+be told from one that does not exist. `view_test.rego` asserts the two decisions
+are equal for every sample organisation, so neither endpoint can drift from the
+other: view has no gate, no clearance floor and no method check of its own.
+
+An action with no rule of its own, answered by the product fallback:
 
 ```bash
 curl -s -X POST localhost:8181/v1/data/dispatch/decision -d '{"input":{
@@ -194,7 +214,7 @@ curl -s -X POST localhost:8181/v1/data/dispatch/decision -d '{"input":{
 #      "policy":{"id":"product.fallback","resolution":"resource_fallback",...},"details":{"access_level":"read"}}}
 ```
 
-Unknown resource — global fallback, denied:
+Unknown resource, so the global fallback denies:
 
 ```bash
 curl -s -X POST localhost:8181/v1/data/dispatch/decision -d '{"input":{
@@ -219,6 +239,11 @@ The image has no shell, so run the binary directly against the host tree:
 ```bash
 P="$PWD/policies:/p:ro"
 docker run --rm -v "$P" openpolicyagent/opa:1.20.2 check --strict /p
-docker run --rm -v "$P" openpolicyagent/opa:1.20.2 test -v /p
+docker run --rm -v "$P" openpolicyagent/opa:1.20.2 test --timeout 30s -v /p
 docker run --rm -v "$P" openpolicyagent/opa:1.20.2 fmt --diff /p   # no output = formatted
 ```
+
+`--timeout 30s` because several tests evaluate a whole decision per organisation per
+sample product: discovery's row filter against its own per-candidate verdict, and
+view's row filter and whole decision against discovery's. They take a few seconds each and tip over
+OPA's 5s default on a loaded machine, reported as `eval_cancel_error`.

@@ -14,4 +14,5 @@ contract := "management-node.decision/1"
 
 version := "policies.configuration.fallback/1.0.0"
 
+# Allowed, with no reasons and empty details - everything else deny_shape holds.
 decision := object.union(deny_shape, {"allow": true})

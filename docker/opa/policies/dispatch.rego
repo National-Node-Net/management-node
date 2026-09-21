@@ -29,35 +29,42 @@ import data.lib.decision.deny_shape
 # Entry point
 # ---------------------------------------------------------------------------
 
+# Read the rule below as a list of things that can be wrong, in order. The first one that is
+# true refuses the request; if none is, the rule that was selected answers it.
+#
+#   nothing answers this resource and action  ->  refuse, dispatch.no_policy
+#   a route names a rule that is not loaded   ->  refuse, dispatch.route_policy_missing
+#   the rule speaks a different contract      ->  refuse, dispatch.contract_mismatch
+#   the rule did not decide for this request  ->  refuse, dispatch.decision_undefined
+#   otherwise                                 ->  the rule's own answer
+#
+# Every one of these is a refusal rather than a fall-through to something more general, because
+# a broken rule quietly replaced by a fallback is a broken rule nobody notices.
+
 # METADATA
 # title: Dispatched decision
 # description: The selected rule's decision plus provenance, or a deny-shaped document.
 # entrypoint: true
-decision := object.union(deny_shape, {
-	"reasons": ["dispatch.no_policy"],
-	"policy": provenance,
-}) if {
+decision := refusal("dispatch.no_policy") if {
 	selection.resolution == "none"
-} else := object.union(deny_shape, {
-	"reasons": ["dispatch.route_policy_missing"],
-	"policy": provenance,
-}) if {
+} else := refusal("dispatch.route_policy_missing") if {
 	not module_present(selection.path)
-} else := object.union(deny_shape, {
-	"reasons": ["dispatch.contract_mismatch"],
-	"policy": provenance,
-}) if {
+} else := refusal("dispatch.contract_mismatch") if {
 	# object.get, not a plain reference: a module with no contract at all must mismatch,
 	# whereas `selected_module.contract != contract` would be undefined and let it through.
 	object.get(selected_module, "contract", null) != contract
-} else := object.union(deny_shape, {
-	"reasons": ["dispatch.decision_undefined"],
-	"policy": provenance,
-}) if {
+} else := refusal("dispatch.decision_undefined") if {
 	# object.get, not selected_module.decision: the compiler lifts a reference out of a function
 	# argument before applying `not`, so a missing key would fail this body instead of denying.
 	not is_object(object.get(selected_module, "decision", null))
 } else := delegated
+
+# A refusal says no, gives the one reason, and still records which rule was involved - so a
+# reader of the logs can tell these four apart afterwards.
+refusal(reason) := object.union(deny_shape, {
+	"reasons": [reason],
+	"policy": provenance,
+})
 
 # ---------------------------------------------------------------------------
 # Selection

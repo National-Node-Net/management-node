@@ -3,54 +3,60 @@
  * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
  * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
-
 package uk.gov.dbt.ndtp.ia.node.management.model.dto.product;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.List;
 import lombok.Builder;
 
 /**
- * Search criteria for {@code POST /v1/product/discover}: a free-text term and a set of named
- * filters.
+ * Search criteria for {@code POST /v1/product/discover}. Every member is optional; an empty
+ * request returns the first page of everything the caller may discover.
  *
  * <pre>
  * {
- *   "text": "this is sample text",
- *   "filters": { "key 1": "value", "key 2": [1234, 33, 222] }
+ *   "text": "flood",
+ *   "filters": [
+ *     { "field": "type", "values": ["topic"] },
+ *     { "attribute": "record_unit", "operator": "in", "values": ["property", "geographic_area"] }
+ *   ],
+ *   "sort": [{ "field": "name", "direction": "asc" }],
+ *   "page": 0,
+ *   "size": 20
  * }
  * </pre>
  *
- * <p>{@code filters} is deliberately untyped. Its keys are not fixed by this DTO, so a caller can
- * send a fact the API does not itself know about and a policy can still read it at
- * {@code input.request.body.filters}; a value may be a scalar or a list. Both fields are optional,
- * and an absent one means "no filter" on that dimension.
+ * <p>Criteria only ever narrow what the caller is already authorised to discover: filters are
+ * AND-ed with each other and with the policy's own row filter.
  *
- * <p>Criteria only ever narrow the set of products the requester is already authorised to
- * discover - they cannot widen it.
+ * <p>The sizes bounded here are the ones a caller controls, so an over-long term or an unbounded
+ * number of filters is a 400 rather than something forwarded to the PDP and the database.
  *
- * <p>{@code filters} is never null and never mutable: an omitted map reads as empty, so callers
- * of this DTO need no null check, and the map cannot be changed after binding.
- *
- * <p>The sizes bounded here are the ones a caller controls: an over-long term, an unbounded
- * number of filters, or an over-long filter name are rejected as a 400 rather than forwarded to
- * the PDP as part of {@code input.request.body}.
+ * @param text free-text term, matched as a case-insensitive substring of the product name or
+ *     description
+ * @param filters comparisons on product fields and policy attributes, all of which must hold
+ * @param sort sort keys, most significant first; by name when omitted
+ * @param page zero-based page number
+ * @param size page size; clamped to the maximum the policy allows the caller
  */
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record ProductDiscoveryRequestDTO(
-        @Size(max = 255) @Schema(description = "Free-text search term", example = "search term") String text,
-        @Size(max = 50)
-                @Schema(
-                        description = "Named filters; values may be a scalar or a list",
-                        example = "{\"attribute\": \"value\"}")
-                Map<@Size(max = 150) String, Object> filters) {
+        @Size(max = 255) @Schema(description = "Free-text term", example = "flood") String text,
+        @Valid @Size(max = 50) List<ProductDiscoveryFilterDTO> filters,
+        @Valid @Size(max = 3) List<ProductDiscoverySortDTO> sort,
+        @Min(0) @Schema(defaultValue = "0") Integer page,
+        @Min(1) @Schema(defaultValue = "20") Integer size) {
+
+    /** The request a caller makes by sending no body at all. */
+    public static final ProductDiscoveryRequestDTO EMPTY = new ProductDiscoveryRequestDTO(null, null, null, null, null);
 
     public ProductDiscoveryRequestDTO {
-        filters = filters == null ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(filters));
+        filters = filters == null ? List.of() : List.copyOf(filters);
+        sort = sort == null ? List.of() : List.copyOf(sort);
     }
 }
