@@ -106,15 +106,21 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
 
-      - name: Login to ghcr.io
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/ecr-access-for-github
+          aws-region: ${{ secrets.AWS_REGION }}
+          role-skip-session-tagging: true
+          role-duration-seconds: 3600
 
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      
       - name: Format repo name
-        run: echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+        run: |
+          REPO="${{ steps.login-ecr.outputs.registry }}/ndtp/management-node" >> ${GITHUB_ENV}
 
       - name: Get server jar
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
@@ -124,12 +130,17 @@ jobs:
           merge-multiple: true
 
       - name: Build Server Image
-        run: docker build --no-cache --build-arg JAR_NAME="management-node-${{ steps.get_version.outputs.project_version}}" -t ghcr.io/${REPO}/management-node:staged -f "${{ github.workspace }}/docker/Dockerfile" --target ${{ env.DOCKER_TARGET }} .
+        run: |
+
+          docker build --no-cache --build-arg JAR_NAME="management-node-${{ steps.get_version.outputs.project_version}}" \
+          -t "${REPO}:staged" \
+          -f "${{ github.workspace }}/docker/Dockerfile" \
+          --target ${{ inputs.docker_target }} .
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
-          image-ref: ghcr.io/${{ env.REPO }}/management-node:staged
+          image-ref: "${REPO}/management-node:staged"
           format: table
           exit-code: 1
           ignore-unfixed: true
@@ -138,4 +149,4 @@ jobs:
         continue-on-error: false
 
       - name: Clean up docker image
-        run: docker rmi ghcr.io/${REPO}/management-node:staged
+        run: docker rmi "${REPO}/management-node:staged"
