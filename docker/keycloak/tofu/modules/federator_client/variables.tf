@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-# © Crown Copyright 2025. This work has been developed by the National Digital Twin Programme and is legally attributed to the Department for Business and Trade (UK) as the governing entity.
+# © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
+# attributed to the Department for Business and Trade (UK) as the governing entity.
 
 variable "realm_id" {
   description = "Target realm where the client will be created"
@@ -131,4 +132,10 @@ variable "client_access_token_lifespan_seconds" {
   description = "Access token lifespan for this client (in seconds). Default 30 minutes (1800)."
   type        = number
   default     = 1800
+}
+
+variable "organisation" {
+  description = "Organisation key to put in the client's 'organisation' claim; must match organisation.organisation_key in the database (e.g. \"ENV\"). Null adds no claim."
+  type        = string
+  default     = null
 }

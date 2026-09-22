@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-# © Crown Copyright 2025. This work has been developed by the National Digital Twin Programme and is legally attributed to the Department for Business and Trade (UK) as the governing entity.
+# © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
+# attributed to the Department for Business and Trade (UK) as the governing entity.
 
 variable "keycloak_url" {
   description = "Keycloak base URL"
@@ -48,6 +49,9 @@ variable "federator_clients" {
   type = list(object({
     client = string
     roles  = optional(list(string), [])
+    # Organisation key for the client's "organisation" claim; must match
+    # organisation.organisation_key in the database (e.g. "ENV").
+    organisation = optional(string)
     mapped_client_roles = optional(list(object({
       client = string
       roles  = list(string)

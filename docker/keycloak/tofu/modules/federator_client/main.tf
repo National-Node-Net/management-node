@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-# © Crown Copyright 2025. This work has been developed by the National Digital Twin Programme and is legally attributed to the Department for Business and Trade (UK) as the governing entity.
+# © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
+# attributed to the Department for Business and Trade (UK) as the governing entity.
 
 resource "keycloak_openid_client" "this" {
   realm_id                     = var.realm_id
@@ -94,3 +95,24 @@ resource "keycloak_openid_client_service_account_role" "assign_custom_roles_to_s
 }
 
 
+
+# The organisation this client acts for, as a hard-coded claim on its tokens.
+#
+# The Management Node reads it into the principal, and policy resolves the calling
+# organisation's attributes by matching it against organisation.organisation_key - so the value
+# must be the key as the database holds it ("ENV"), not the client id ("FEDERATOR_ENV"). A client
+# without this claim is an unknown organisation, and every product rule refuses it.
+resource "keycloak_openid_hardcoded_claim_protocol_mapper" "organisation" {
+  count = var.organisation == null ? 0 : 1
+
+  realm_id         = var.realm_id
+  client_id        = keycloak_openid_client.this.id
+  name             = "organisation"
+  claim_name       = "organisation"
+  claim_value      = var.organisation
+  claim_value_type = "String"
+
+  add_to_id_token     = true
+  add_to_access_token = true
+  add_to_userinfo     = true
+}

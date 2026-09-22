@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-# © Crown Copyright 2025. This work has been developed by the National Digital Twin Programme and is legally attributed to the Department for Business and Trade (UK) as the governing entity.
+# © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
+# attributed to the Department for Business and Trade (UK) as the governing entity.
 
 keycloak_url            = "http://localhost:8080"
 keycloak_realm          = "master"
@@ -17,32 +18,35 @@ client_access_token_lifespan_seconds = 1800
 federator_clients = [
 
   {
-    client = "FEDERATOR_ENV"
-    roles  = ["FloodRiskMapZones"]
+    client       = "FEDERATOR_ENV"
+    organisation = "ENV"
+    roles        = ["FloodRiskMapZones"]
     mapped_client_roles = [
       {
         client = "management-node"
-        roles  = ["access_producer_configurations", "access_consumer_configurations", "sign_certificate", "access_public_certificates", "create_keys"]
+        roles  = ["access_producer_configurations", "access_consumer_configurations", "sign_certificate", "access_public_certificates", "create_keys", "product_discovery", "product_view", "product_subscribe"]
       }
     ]
   },
   {
-    client = "FEDERATOR_BCC"
-    roles  = ["PendingPlanningApplications"]
+    client       = "FEDERATOR_BCC"
+    organisation = "BCC"
+    roles        = ["PendingPlanningApplications"]
     mapped_client_roles = [
       {
         client = "management-node"
-        roles  = ["access_producer_configurations", "access_consumer_configurations", "sign_certificate", "access_public_certificates", "create_keys"]
+        roles  = ["access_producer_configurations", "access_consumer_configurations", "sign_certificate", "access_public_certificates", "create_keys", "product_discovery", "product_view", "product_subscribe"]
       }
     ]
   },
   {
-    client = "FEDERATOR_HEG"
-    roles  = ["BrownfieldLandAvailability"]
+    client       = "FEDERATOR_HEG"
+    organisation = "HEG"
+    roles        = ["BrownfieldLandAvailability"]
     mapped_client_roles = [
       {
         client = "management-node"
-        roles  = ["access_producer_configurations", "access_consumer_configurations", "sign_certificate", "access_public_certificates", "create_keys"]
+        roles  = ["access_producer_configurations", "access_consumer_configurations", "sign_certificate", "access_public_certificates", "create_keys", "product_discovery", "product_view", "product_subscribe"]
       }
     ]
   },
@@ -52,7 +56,7 @@ federator_clients = [
     mapped_client_roles = [
       {
         client = "management-node"
-        roles  = ["access_producer_configurations", "access_consumer_configurations", "sign_certificate", "access_public_certificates", "create_keys"]
+        roles  = ["access_producer_configurations", "access_consumer_configurations", "sign_certificate", "access_public_certificates", "create_keys", "product_discovery", "product_view", "product_subscribe"]
       }
     ]
   }
