@@ -22,7 +22,13 @@ import java.util.Objects;
  * @param detailsType the type the decision's details are read into; the generic
  *     {@link PolicyDecisionDetails} when the caller needs no typed details
  */
-public record PolicyTarget<D extends PolicyDecisionDetails>(String resource, String action, Class<D> detailsType) {
+public record PolicyTarget<D extends PolicyDecisionDetails>(
+        String resource, String action, Class<D> detailsType, boolean loadResource) {
+
+    /** A target that decides about a kind of thing, reading no entity. */
+    public PolicyTarget(String resource, String action, Class<D> detailsType) {
+        this(resource, action, detailsType, false);
+    }
 
     public PolicyTarget {
         Objects.requireNonNull(resource, "resource");

@@ -12,23 +12,40 @@ import jakarta.validation.constraints.Size;
 import lombok.Builder;
 
 /**
- * A request to subscribe the caller's organisation to a product. Mirrors the columns of a
- * {@code product_consumer} grant, so an accepted request maps onto one row.
+ * A request to subscribe the caller's organisation to a product.
  *
- * <p>The whole body reaches the PDP as {@code input.request.body}, so the subscription policy can
- * judge the terms being asked for - a schedule type the policy does not permit is refused before
- * the handler runs.
- *
- * @param productId the product to subscribe to
- * @param scheduleType how deliveries are scheduled, e.g. {@code cron} or {@code interval}
- * @param scheduleExpression the expression for that schedule type
- * @param destination where deliveries are sent
+ * <p>Only the product is required. The consumer is optional because most organisations run one,
+ * or nominate a default; naming one is for organisations that run several. The schedule fields are
+ * optional because a subscription without a stated schedule is still a valid subscription: the
+ * service applies {@link #DEFAULT_SCHEDULE_TYPE} and {@link #DEFAULT_SCHEDULE_EXPRESSION}.
  */
 @Builder
 public record ProductSubscriptionRequestDTO(
         @NotNull @Schema(description = "Product to subscribe to", example = "1") Long productId,
-        @Size(max = 100) @Schema(description = "Schedule type", example = "cron") String scheduleType,
-        @Size(max = 255) @Schema(description = "Schedule expression", example = "*/5 * * * *")
+        @Schema(description = "Consumer to subscribe. Omit to use the organisation's default consumer", example = "4")
+                Long consumerId,
+        @Size(max = 100) @Schema(description = "Schedule type", example = "interval", defaultValue = "interval")
+                String scheduleType,
+        @Size(max = 255) @Schema(description = "Schedule expression", example = "P1D", defaultValue = "P1D")
                 String scheduleExpression,
         @Size(max = 500) @Schema(description = "Delivery destination", example = "destination-uri")
-                String destination) {}
+                String destination) {
+
+    /** Applied when the caller states no schedule type. */
+    public static final String DEFAULT_SCHEDULE_TYPE = "interval";
+
+    /** Applied when the caller states no schedule expression: daily, as an ISO-8601 duration. */
+    public static final String DEFAULT_SCHEDULE_EXPRESSION = "P1D";
+
+    /** The stated schedule type, or the default when none was stated. */
+    public String scheduleTypeOrDefault() {
+        return scheduleType == null || scheduleType.isBlank() ? DEFAULT_SCHEDULE_TYPE : scheduleType.trim();
+    }
+
+    /** The stated schedule expression, or the default when none was stated. */
+    public String scheduleExpressionOrDefault() {
+        return scheduleExpression == null || scheduleExpression.isBlank()
+                ? DEFAULT_SCHEDULE_EXPRESSION
+                : scheduleExpression.trim();
+    }
+}

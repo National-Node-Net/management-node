@@ -51,7 +51,7 @@ test_exact_resolves_to_the_dedicated_rule if {
 
 	decision.policy.id == "product.subscribe"
 	decision.policy.resolution == "exact"
-	decision.policy.version == "policies.product.subscribe/2.0.0"
+	decision.policy.version == "policies.product.subscribe/4.0.0"
 }
 
 test_resource_fallback_answers_an_action_with_no_rule if {

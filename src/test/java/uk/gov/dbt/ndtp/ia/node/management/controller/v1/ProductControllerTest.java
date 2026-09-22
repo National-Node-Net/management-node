@@ -42,6 +42,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import uk.gov.dbt.ndtp.ia.node.management.config.OpaProperties;
 import uk.gov.dbt.ndtp.ia.node.management.exception.AccessRejectedException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.InvalidSearchCriteriaException;
+import uk.gov.dbt.ndtp.ia.node.management.exception.SubscriptionRejectedException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.handlers.GlobalExceptionHandler;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.DiscoveredProductDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductDiscoveryRequestDTO;
@@ -54,6 +55,7 @@ import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductDiscoveryP
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductSubscriptionPolicyDecisionDetails;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductViewPolicyDecisionDetails;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductDiscoveryService;
+import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductSubscriptionService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductViewService;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecision;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyProvenance;
@@ -80,6 +82,9 @@ class ProductControllerTest {
     @Mock
     private ProductViewService productViewService;
 
+    @Mock
+    private ProductSubscriptionService productSubscriptionService;
+
     private MockMvc mockMvc;
 
     @BeforeEach
@@ -89,7 +94,8 @@ class ProductControllerTest {
     }
 
     private MockMvc mockMvc(boolean opaEnabled) {
-        return MockMvcBuilders.standaloneSetup(new ProductController(productDiscoveryService, productViewService))
+        return MockMvcBuilders.standaloneSetup(
+                        new ProductController(productDiscoveryService, productViewService, productSubscriptionService))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(
                         new AuthenticationPrincipalArgumentResolver(),
@@ -356,58 +362,144 @@ class ProductControllerTest {
             Boolean requiresApproval) {
         return PolicyDecision.of(true, ProductSubscriptionPolicyDecisionDetails.class)
                 .withDetails(new ProductSubscriptionPolicyDecisionDetails(
-                        requiresApproval, 90, List.of("cron", "interval")));
+                        requiresApproval, 90, List.of("cron", "interval"), 90));
     }
 
     private static final String SUBSCRIPTION =
             """
             {"productId": 42, "scheduleType": "cron", "scheduleExpression": "*/5 * * * *"}""";
 
+    private static ProductSubscriptionResponseDTO recorded() {
+        return ProductSubscriptionResponseDTO.builder()
+                .subscriptionId(7L)
+                .productId(42L)
+                .consumerId(4L)
+                .consumerName("consumer-a")
+                .validityDays(90)
+                .maxValidityDays(90)
+                .scheduleType("cron")
+                .scheduleExpression("*/5 * * * *")
+                .permittedScheduleTypes(List.of("cron", "interval"))
+                .build();
+    }
+
+    /**
+     * The controller does not decide the outcome: it hands the request, the caller's organisation
+     * and the decision to the service and returns what comes back.
+     */
     @Test
-    void subscribe_withoutApprovalRequired_isAcceptedOnThePolicyTerms() throws Exception {
+    void subscribe_delegatesToTheServiceAndReturnsWhatItRecorded() throws Exception {
+        when(productSubscriptionService.subscribe(any(), any(), any())).thenReturn(recorded());
+
         mockMvc.perform(post("/api/v1/product/subscribe")
                         .requestAttr(PolicyDecision.REQUEST_ATTRIBUTE, subscribeDecision(false))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(SUBSCRIPTION))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.subscriptionId").value(7))
                 .andExpect(jsonPath("$.productId").value(42))
-                .andExpect(jsonPath("$.status").value(ProductSubscriptionResponseDTO.STATUS_ACCEPTED))
-                .andExpect(jsonPath("$.maxValidityDays").value(90))
+                .andExpect(jsonPath("$.consumerId").value(4))
+                .andExpect(jsonPath("$.validityDays").value(90))
                 .andExpect(jsonPath("$.permittedScheduleTypes[0]").value("cron"));
     }
 
+    /** The decision the enforcement point took is the one the service is given. */
     @Test
-    void subscribe_whenPolicyRequiresApproval_isPendingApproval() throws Exception {
+    void subscribe_passesThePolicyDecisionToTheService() throws Exception {
+        when(productSubscriptionService.subscribe(any(), any(), any())).thenReturn(recorded());
+        PolicyDecision<ProductSubscriptionPolicyDecisionDetails> decision = subscribeDecision(true);
+
+        mockMvc.perform(post("/api/v1/product/subscribe")
+                        .requestAttr(PolicyDecision.REQUEST_ATTRIBUTE, decision)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(SUBSCRIPTION))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<Optional<PolicyDecision<ProductSubscriptionPolicyDecisionDetails>>> captor =
+                ArgumentCaptor.forClass(Optional.class);
+        verify(productSubscriptionService).subscribe(any(), any(), captor.capture());
+        assertThat(captor.getValue()).containsSame(decision);
+    }
+
+    /** A subscription carries no status: it is recorded or the request fails. */
+    @Test
+    void subscribe_responseCarriesNoStatusField() throws Exception {
+        when(productSubscriptionService.subscribe(any(), any(), any())).thenReturn(recorded());
+
         mockMvc.perform(post("/api/v1/product/subscribe")
                         .requestAttr(PolicyDecision.REQUEST_ATTRIBUTE, subscribeDecision(true))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(SUBSCRIPTION))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value(ProductSubscriptionResponseDTO.STATUS_PENDING_APPROVAL));
+                .andExpect(jsonPath("$.status").doesNotExist())
+                .andExpect(jsonPath("$.subscriptionId").value(7));
     }
 
-    /** A missing approval flag is not read as "no approval needed". */
+    /** With policy switched off the service is still called, and told that nothing decided. */
     @Test
-    void subscribe_whenPolicyOmitsTheApprovalFlag_isPendingApproval() throws Exception {
-        mockMvc.perform(post("/api/v1/product/subscribe")
-                        .requestAttr(PolicyDecision.REQUEST_ATTRIBUTE, subscribeDecision(null))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(SUBSCRIPTION))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value(ProductSubscriptionResponseDTO.STATUS_PENDING_APPROVAL));
-    }
+    void subscribe_withPolicySwitchedOff_handsTheServiceAnEmptyDecision() throws Exception {
+        when(productSubscriptionService.subscribe(any(), any(), any())).thenReturn(recorded());
 
-    /** With policy switched off nothing set terms, so the request is held rather than accepted. */
-    @Test
-    void subscribe_withPolicySwitchedOff_isPendingApprovalWithNoTerms() throws Exception {
         mockMvc(false)
                 .perform(post("/api/v1/product/subscribe")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(SUBSCRIPTION))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value(ProductSubscriptionResponseDTO.STATUS_PENDING_APPROVAL))
-                .andExpect(jsonPath("$.maxValidityDays").doesNotExist())
-                .andExpect(jsonPath("$.permittedScheduleTypes").isEmpty());
+                .andExpect(jsonPath("$.status").doesNotExist());
+
+        ArgumentCaptor<Optional<PolicyDecision<ProductSubscriptionPolicyDecisionDetails>>> captor =
+                ArgumentCaptor.forClass(Optional.class);
+        verify(productSubscriptionService).subscribe(any(), any(), captor.capture());
+        assertThat(captor.getValue()).isEmpty();
+    }
+
+    /** A subscription that cannot be made is a 409, distinct from a policy refusal's 403. */
+    @Test
+    void subscribe_whenAlreadySubscribed_returns409WithTheMessage() throws Exception {
+        when(productSubscriptionService.subscribe(any(), any(), any()))
+                .thenThrow(new SubscriptionRejectedException(
+                        SubscriptionRejectedException.Reason.ALREADY_SUBSCRIBED,
+                        "Organisation 'ENV' is already subscribed to product 42 on consumer 'a' (id 4)"));
+
+        mockMvc.perform(post("/api/v1/product/subscribe")
+                        .requestAttr(PolicyDecision.REQUEST_ATTRIBUTE, subscribeDecision(false))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(SUBSCRIPTION))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("already subscribed")))
+                .andExpect(jsonPath("$.reasons").doesNotExist());
+    }
+
+    /** Several consumers and none named is the caller's to fix, so 400 rather than 409. */
+    @Test
+    void subscribe_whenSeveralConsumersAndNoneNamed_returns400() throws Exception {
+        when(productSubscriptionService.subscribe(any(), any(), any()))
+                .thenThrow(new SubscriptionRejectedException(
+                        SubscriptionRejectedException.Reason.AMBIGUOUS_CONSUMER,
+                        "Multiple consumers found, please specify consumer_id"));
+
+        mockMvc.perform(post("/api/v1/product/subscribe")
+                        .requestAttr(PolicyDecision.REQUEST_ATTRIBUTE, subscribeDecision(false))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(SUBSCRIPTION))
+                .andExpect(status().isBadRequest())
+                .andExpect(
+                        jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Multiple consumers found")));
+    }
+
+    /** An unknown product is a 404, as it is on the view endpoint. */
+    @Test
+    void subscribe_whenProductDoesNotExist_returns404() throws Exception {
+        when(productSubscriptionService.subscribe(any(), any(), any()))
+                .thenThrow(new SubscriptionRejectedException(
+                        SubscriptionRejectedException.Reason.PRODUCT_NOT_FOUND, "No such product: 42"));
+
+        mockMvc.perform(post("/api/v1/product/subscribe")
+                        .requestAttr(PolicyDecision.REQUEST_ATTRIBUTE, subscribeDecision(false))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(SUBSCRIPTION))
+                .andExpect(status().isNotFound());
     }
 
     @Test

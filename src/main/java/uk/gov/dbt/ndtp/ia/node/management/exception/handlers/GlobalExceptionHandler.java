@@ -44,6 +44,7 @@ import uk.gov.dbt.ndtp.ia.node.management.exception.CertificateSigningException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.ErrorResponse;
 import uk.gov.dbt.ndtp.ia.node.management.exception.InvalidSearchCriteriaException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.PkiException;
+import uk.gov.dbt.ndtp.ia.node.management.exception.SubscriptionRejectedException;
 
 /**
  * Turns every exception a controller throws into an {@link ErrorResponse}: a status, a message a
@@ -129,6 +130,39 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         log.warn("Invalid search criteria, error_id={}, path={}", errorId, request.getDescription(false), ex);
 
         return respond(HttpStatus.BAD_REQUEST, "Invalid search criteria: " + ex.getMessage(), errorId);
+    }
+
+    /**
+     * A subscription that cannot be made, as opposed to one that is not allowed.
+     *
+     * <p>The status follows the reason rather than the message: an existing subscription is a
+     * conflict, an unknown product is a 404, and everything else is a request the caller can
+     * correct. Policy refusals never reach here; they are {@code AccessRejectedException} and stay
+     * 403, so "you may not" and "that is already done" remain distinguishable.
+     *
+     * @param ex the rejection, carrying the reason and the message for the caller
+     * @param request the current request
+     * @return the status matching the reason, with that message and an error id
+     */
+    @ExceptionHandler(SubscriptionRejectedException.class)
+    public ResponseEntity<ErrorResponse> handleSubscriptionRejectedException(
+            SubscriptionRejectedException ex, WebRequest request) {
+
+        String errorId = generateErrorId();
+        HttpStatus status =
+                switch (ex.getReason()) {
+                    case ALREADY_SUBSCRIBED -> HttpStatus.CONFLICT;
+                    case PRODUCT_NOT_FOUND -> HttpStatus.NOT_FOUND;
+                    case NO_CONSUMER, AMBIGUOUS_CONSUMER, CONSUMER_NOT_OWNED -> HttpStatus.BAD_REQUEST;
+                };
+        log.warn(
+                "Subscription rejected reason={}, status={}, error_id={}, path={}",
+                ex.getReason(),
+                status.value(),
+                errorId,
+                request.getDescription(false));
+
+        return respond(status, ex.getMessage(), errorId);
     }
 
     @ExceptionHandler(AuthorizationDeniedException.class)

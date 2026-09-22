@@ -421,7 +421,8 @@ Every decision is a `POST` to `application.opa.decision-path` with a single JSON
 | `subject.organisation.attributes` | live `ORGANISATION`-scoped rows from `policy_attribute_value`, for the organisation that key identifies |
 | `action` | `@Policy.action`, by way of the `PolicyTarget` the enforcement point builds from it |
 | `resource.kind` | `@Policy.resource`, or the `PolicyTarget` resource |
-| `resource.id` | the entity id, when a decision concerns one entity. Null for whole-request decisions, which is every decision taken today |
+| `resource.id` | the entity id, when the request names one. Null for whole-request decisions, which is most of them |
+| `resource.fields` | the entity's own columns, named as the API names them, when an entity was loaded |
 | `resource.attributes` | live `PRODUCT`-scoped rows for that entity |
 | `request.headers` | allow-listed request headers (see below) |
 | `request.query` | parsed from the **query string**, every value of a repeated parameter kept, percent-decoded |
@@ -429,6 +430,50 @@ Every decision is a `POST` to `application.opa.decision-path` with a single JSON
 | `request.body` | the parsed request body as structured attributes (see below) |
 
 `action` and `resource.kind` never come from the URL, so `request.path` is informational: a rule may inspect it, but rule selection does not depend on it.
+
+### Loading the entity a decision is about
+
+Most endpoints decide about a *kind* of thing rather than one entity: discovery asks which products
+a caller may see, and view delegates the per-product question to the row filter compiled into its
+SQL. Neither reads the entity in Rego, so neither should pay to load one.
+
+Loading is therefore three independent things, each declared in one place:
+
+| Question | Answered by | How |
+|---|---|---|
+| Should this endpoint's rule see the entity? | the endpoint | `@Policy(loadResource = true)` |
+| Which entity does this request name? | `PolicyResourceIdExtractor` | one convention, any transport |
+| How is that kind read? | a `PolicyResourceLoader` | one implementation per kind |
+
+Separating them is what makes the mechanism consistent. The extractor looks for the id in the
+**path** first and then the **body**, by the same naming convention every time:
+
+1. path variable `<kind>Id`, then plain `id`
+2. body field `<kind>Id`, then plain `id`
+
+So `GET /api/v1/product/{productId}` and `POST /api/v1/product/subscribe` are found the same way,
+and a new kind needs no change: `consumerId` and `producerId` are located by the rule that locates
+`productId`. Adding a kind is a single class implementing `PolicyResourceLoader`.
+
+| Endpoint | `loadResource` | What the rule sees |
+|---|---|---|
+| `POST /api/v1/product/subscribe` | `true` | `resource.id`, `resource.fields`, `resource.attributes` |
+| `POST /api/v1/product/discover` | `false` | kind only, nothing read |
+| `GET /api/v1/product/{productId}` | `false` | kind only, nothing read |
+| `GET /api/v1/configuration/**` | `false` | kind only |
+
+Subscription is the case that needs it: `validity_days` is worked out from the product's
+identifiability and quality, and no SQL predicate does that work. View has an id to hand in its
+path and still does not load, for two reasons. Its rule reads nothing of the entity, so the read
+would be wasted; and `policies.product.discover` keys its per-candidate branch and its
+`evaluation` field on `input.resource.id`, so populating it for view would change discovery's side
+of the parity assertion in `view_test.rego`, which is the build-time guarantee that a product
+cannot be viewable without being discoverable. Turning it on for view is a one-word change plus a
+revision of that test, and should be done deliberately if a view rule ever needs product facts.
+
+An id that matches no entity loads nothing rather than failing: whether an unknown id is a refusal
+belongs to the rule and the handler, and failing the decision would report a missing entity as a
+`403`.
 
 ### Client and organisation both come from the principal
 
@@ -743,6 +788,13 @@ XACML's rule holds: **a Policy Enforcement Point that cannot fulfil an obligatio
 | `service_delivery` not held | `organisation.purpose_not_permitted` |
 | no `productId` in the body | `request.product_missing` |
 | `scheduleType` given and not permitted | `schedule.type_not_permitted` |
+| the caller's `jurisdictions` include Wales and the product's type is `topic` | `jurisdiction.topic_not_permitted:Wales Juristiction not allowed to access topics` |
+
+The last is the one refusal that reads the product's own type (`input.resource.fields.type`, from
+`product_type.name`), and the one that carries its caller-facing wording in the reason itself, in
+the `code:subject` form: the code before the colon stays the stable audit key, and the caller is
+shown the sentence after it in the `403`'s `reasons`. Holding Wales alongside other nations is
+enough to be refused; the sample organisation `ENV` (England and Wales) is the one this catches.
 
 `details` are returned whether allowed or denied:
 
@@ -751,8 +803,17 @@ XACML's rule holds: **a Policy Enforcement Point that cannot fulfil an obligatio
 | `requires_approval` | `requiresApproval` | `false` for a regulator (`regulatory_oversight`); otherwise `true` |
 | `max_validity_days` | `maxValidityDays` | 365 for research (`statistical_analysis`), otherwise 90 for a regulator, otherwise 30 |
 | `permitted_schedule_types` | `permittedScheduleTypes` | `["interval"]` for a local remit; otherwise `["cron", "interval"]` |
+| `validity_days` | `validityDays` | the grant actually made: the lower of `max_validity_days` and what the product's own attributes allow (30 days directly identifiable or unvalidated, 90 pseudonymised, 365 otherwise, 30 when the product has no attributes recorded) |
 
-The terms live in policy so the service applies what policy decided rather than restating those limits in Java. The handler reads them into `ProductSubscriptionResponseDTO`: `status` is `PENDING_APPROVAL` when approval is required and `ACCEPTED` otherwise, alongside `maxValidityDays` and `permittedScheduleTypes`.
+The terms live in policy so the service applies what policy decided rather than restating those limits in Java. `ProductSubscriptionService` records the grant in `product_consumer` with `validity_days` as its validity, and reports the terms in `ProductSubscriptionResponseDTO`.
+
+The response carries **no status**. A grant is recorded or the request fails, and once recorded it is in force: `product_consumer` has no status column and the configuration API does not filter on one. `requires_approval` is therefore still decided by the rule but nothing in the service acts on it; wiring it to anything would mean giving the schema an approval state it does not have.
+
+`validity_days` is the one term worked out from the **product** as well as the caller, which is why
+this is the endpoint whose body causes a product to be loaded (see [Loading the entity a decision is
+about](#loading-the-entity-a-decision-is-about)). The product can only shorten a grant, never
+extend one: a caller entitled to a year of a validated, anonymised feed is not entitled to a year
+of a provisional, directly identifiable one.
 
 ### `GET /api/v1/product/{productId}`: a search that returns one product
 

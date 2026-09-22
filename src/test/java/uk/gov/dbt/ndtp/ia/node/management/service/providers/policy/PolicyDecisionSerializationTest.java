@@ -36,7 +36,7 @@ class PolicyDecisionSerializationTest {
         PolicyInput input = new PolicyInput(
                 subject,
                 "discover",
-                new PolicyResource("product", "42", new LinkedHashMap<>(Map.of("tier", 3))),
+                PolicyResource.of("product", "42", Map.of(), new LinkedHashMap<>(Map.of("tier", 3))),
                 httpRequest);
 
         JsonNode json = objectMapper.readTree(objectMapper.writeValueAsString(new PolicyDecisionRequest(input)));

@@ -6,25 +6,33 @@
 
 package uk.gov.dbt.ndtp.ia.node.management.model.dto.product;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.LocalDateTime;
 import java.util.List;
 import lombok.Builder;
 
 /**
- * The outcome of a subscription request, shaped by the terms the subscription policy set.
+ * The outcome of a subscription request: what was granted, to which consumer, and on what terms.
  *
- * @param productId the product subscribed to
- * @param status {@code ACCEPTED}, or {@code PENDING_APPROVAL} when the policy requires approval
- * @param maxValidityDays the longest validity the policy allows for the grant
- * @param permittedScheduleTypes the schedule types the policy allows
+ * <p>The terms are reported rather than merely applied, so a caller can see the validity it was
+ * given and the schedule types it may use without asking again.
+ *
+ * <p>There is deliberately no status. A grant is recorded or the request fails, and once recorded
+ * it is in force: {@code product_consumer} has no status column and the configuration API does not
+ * filter on one, so a reported status could only ever have been advisory text that nothing read
+ * back. Reporting one would imply an approval state the system does not hold.
  */
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public record ProductSubscriptionResponseDTO(
-        Long productId, String status, Integer maxValidityDays, List<String> permittedScheduleTypes) {
-
-    public static final String STATUS_ACCEPTED = "ACCEPTED";
-    public static final String STATUS_PENDING_APPROVAL = "PENDING_APPROVAL";
-
-    public ProductSubscriptionResponseDTO {
-        permittedScheduleTypes = permittedScheduleTypes == null ? List.of() : List.copyOf(permittedScheduleTypes);
-    }
-}
+        @Schema(description = "The grant, once recorded") Long subscriptionId,
+        @Schema(description = "Product subscribed") Long productId,
+        @Schema(description = "Consumer the subscription was made for") Long consumerId,
+        @Schema(description = "Name of that consumer") String consumerName,
+        @Schema(description = "When the grant was made") LocalDateTime grantedAt,
+        @Schema(description = "Days the organisation may hold the product, as policy decided") Integer validityDays,
+        @Schema(description = "Ceiling the caller's purpose allows") Integer maxValidityDays,
+        @Schema(description = "Schedule type recorded") String scheduleType,
+        @Schema(description = "Schedule expression recorded") String scheduleExpression,
+        @Schema(description = "Schedule types policy permits") List<String> permittedScheduleTypes) {}

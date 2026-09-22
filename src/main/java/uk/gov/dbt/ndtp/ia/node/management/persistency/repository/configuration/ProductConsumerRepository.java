@@ -21,6 +21,23 @@ import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.Produ
 public interface ProductConsumerRepository extends JpaRepository<ProductConsumer, Long> {
 
     /**
+     * Whether this consumer already holds a grant on this product. The pair is unique in the
+     * database (uq_product_consumer_pair), so this is the check that turns a constraint violation
+     * into a message the caller can act on.
+     */
+    boolean existsByProductIdAndConsumerId(Long productId, Long consumerId);
+
+    /**
+     * Every grant this organisation already holds on this product, across all of its consumers.
+     * An organisation may subscribe one product on several consumers, so this can return more
+     * than one row; it is what lets the service name the consumers already subscribed.
+     */
+    @Query("SELECT pc FROM ProductConsumer pc JOIN FETCH pc.consumer c "
+            + "WHERE pc.product.id = :productId AND c.org.id = :orgId")
+    List<ProductConsumer> findByProductIdAndOrganisationId(
+            @Param("productId") Long productId, @Param("orgId") Long orgId);
+
+    /**
      * Finds and retrieves a list of {@link ProductConsumer} entities associated with the specified consumer ID.
      * This method employs a query that fetches details of product-consumer relationships, including associated
      * consumer, product, and any attributes linked to the product-consumer relationship.

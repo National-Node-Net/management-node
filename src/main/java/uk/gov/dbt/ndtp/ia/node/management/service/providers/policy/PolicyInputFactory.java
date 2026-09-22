@@ -13,6 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -54,14 +55,20 @@ public class PolicyInputFactory {
 
     private final OrganisationService organisationService;
     private final PolicyAttributeService policyAttributeService;
+    private final List<PolicyResourceLoader> resourceLoaders;
+    private final PolicyResourceIdExtractor resourceIdExtractor;
     private final Set<String> forwardedHeaders;
 
     public PolicyInputFactory(
             OrganisationService organisationService,
             PolicyAttributeService policyAttributeService,
+            List<PolicyResourceLoader> resourceLoaders,
+            PolicyResourceIdExtractor resourceIdExtractor,
             OpaProperties opaProperties) {
         this.organisationService = organisationService;
         this.policyAttributeService = policyAttributeService;
+        this.resourceLoaders = resourceLoaders == null ? List.of() : List.copyOf(resourceLoaders);
+        this.resourceIdExtractor = resourceIdExtractor;
         this.forwardedHeaders = opaProperties.forwardedHeaders() == null
                 ? Set.of()
                 : opaProperties.forwardedHeaders().stream()
@@ -90,8 +97,31 @@ public class PolicyInputFactory {
         return new PolicyInput(
                 buildSubject(request),
                 target.action(),
-                PolicyResource.ofKind(target.resource()),
+                buildResource(target, request, body),
                 buildRequest(request, body));
+    }
+
+    /**
+     * The entity the decision is about, when the endpoint asked for it and the request names one.
+     *
+     * <p>Three things must line up before anything is read, and each is declared in one place:
+     * the endpoint opts in with {@code @Policy(loadResource = true)}, the request carries an id
+     * that {@link PolicyResourceIdExtractor} recognises, and a loader claims the kind. Otherwise
+     * the resource is just its kind and no query runs.
+     */
+    private PolicyResource buildResource(PolicyTarget<?> target, HttpServletRequest request, Object body) {
+        String kind = target.resource();
+        if (!target.loadResource() || resourceIdExtractor == null) {
+            return PolicyResource.ofKind(kind);
+        }
+        return resourceIdExtractor
+                .extract(kind, request, body)
+                .flatMap(id -> resourceLoaders.stream()
+                        .filter(loader -> loader.supports(kind))
+                        .map(loader -> loader.load(kind, id))
+                        .flatMap(Optional::stream)
+                        .findFirst())
+                .orElseGet(() -> PolicyResource.ofKind(kind));
     }
 
     private PolicySubject buildSubject(HttpServletRequest request) {

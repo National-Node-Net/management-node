@@ -38,6 +38,13 @@ public class Consumer {
     @Column(name = "idp_client_id", nullable = false, length = 50)
     private String idpClientId;
 
+    /**
+     * Whether this consumer takes the subscriptions its organisation requests without naming one.
+     * At most one consumer per organisation may be the default, enforced by a partial unique index.
+     */
+    @Column(name = "is_default", nullable = false)
+    private boolean isDefault;
+
     @OneToMany(fetch = FetchType.LAZY)
     @JoinColumn(name = "consumer_id", referencedColumnName = "id", insertable = false, updatable = false)
     private List<ProductConsumer> productConsumers;

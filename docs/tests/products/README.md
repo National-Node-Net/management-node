@@ -17,9 +17,14 @@ them: **Objective → Preconditions → Test data → Given / When / Then**, the
 |---|---|---|
 | Product Discover | `POST /api/v1/product/discover` | [product-discover.md](product-discover.md) |
 | Product View | `GET /api/v1/product/{productId}` | [product-view.md](product-view.md) |
+| Product Subscribe | `POST /api/v1/product/subscribe` | [subscribe.md](subscribe.md) |
 
-More will be added here as they are written, one file per API. The certificate, configuration and
-subscription APIs are not yet covered.
+More will be added here as they are written, one file per API. The certificate and configuration
+APIs are not yet covered.
+
+Subscribe is the only one of the three that **writes**, and the only one that reads the caller's
+jurisdiction: an organisation covering Wales may not subscribe to a `topic` product. See
+[subscribe.md §4](subscribe.md#4-wales-may-not-take-topic-products).
 
 ## Read these two together
 

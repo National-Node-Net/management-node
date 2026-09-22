@@ -7,6 +7,7 @@
 package uk.gov.dbt.ndtp.ia.node.management.persistency.repository.configuration;
 
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -16,6 +17,15 @@ import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.Consu
 public interface ConsumerRepository extends JpaRepository<Consumer, Long> {
 
     List<Consumer> findByIdpClientId(String clientId);
+
+    /** Every consumer belonging to an organisation, whether or not it is the default. */
+    List<Consumer> findByOrgId(Long orgId);
+
+    /**
+     * The organisation's default consumer, if it has declared one. A partial unique index keeps
+     * this to at most one row, so an Optional is the honest return type.
+     */
+    Optional<Consumer> findByOrgIdAndIsDefaultTrue(Long orgId);
 
     /**
      * Retrieves a list of {@link Consumer} entities associated with the specified provider IDs.

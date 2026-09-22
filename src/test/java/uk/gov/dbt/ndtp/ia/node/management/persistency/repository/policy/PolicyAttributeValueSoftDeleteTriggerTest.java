@@ -32,9 +32,22 @@ import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.configuration.P
 import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.organisation.OrganisationRepository;
 
 /**
- * Verifies the migration's five {@code AFTER DELETE} triggers, which soft-delete
- * {@code policy_attribute_value} rows scoped to the deleted owning entity rather than
- * leaving them orphaned.
+ * What happens to an entity's policy attribute values when the entity is deleted.
+ *
+ * <p>Until {@code V20260922120000__drop_policy_attribute_soft_delete_trigger.sql} a database
+ * trigger marked them {@code is_deleted}. That function resolved its table names unqualified, so
+ * PL/pgSQL resolved them against the caller's {@code search_path}, and any session without the
+ * schema on its path could not delete from these tables at all. The triggers were dropped.
+ *
+ * <p>These tests pin what is true now: <strong>nothing cleans the values up</strong>.
+ * {@code policy_attribute_value.entity_id} is polymorphic, so it has no foreign key and no
+ * cascade, and the rows stay live after their entity is gone. They remain visible through
+ * {@code policy_attribute_live_value} and can still be matched by {@code entity_id}.
+ *
+ * <p>The tests are deliberately kept rather than deleted with the triggers: whatever deletes one
+ * of these entities is now responsible for soft-deleting its attribute values in the same
+ * transaction, and these assertions are what will fail if a trigger is quietly reintroduced or an
+ * application-side cleanup is added without updating the documented contract.
  */
 class PolicyAttributeValueSoftDeleteTriggerTest extends AbstractPostgresRepositoryTest {
 
@@ -150,7 +163,7 @@ class PolicyAttributeValueSoftDeleteTriggerTest extends AbstractPostgresReposito
     }
 
     @Test
-    void deletingOrganisation_softDeletesItsAttributeValues() {
+    void deletingOrganisation_leavesItsAttributeValuesLive() {
         Organisation organisation = persistOrganisation();
         PolicyAttributeDefinitionScope binding = bindingFor("ORGANISATION", "org-trigger-attr");
         Long valueId = persistLiveValue(binding, organisation.getId());
@@ -162,11 +175,11 @@ class PolicyAttributeValueSoftDeleteTriggerTest extends AbstractPostgresReposito
         assertThat(policyAttributeValueRepository.findById(valueId))
                 .isPresent()
                 .get()
-                .satisfies(v -> assertThat(v.getIsDeleted()).isTrue());
+                .satisfies(v -> assertThat(v.getIsDeleted()).isFalse());
     }
 
     @Test
-    void deletingConsumer_softDeletesItsAttributeValues() {
+    void deletingConsumer_leavesItsAttributeValuesLive() {
         Organisation organisation = persistOrganisation();
         Consumer consumer = persistConsumer(organisation);
         PolicyAttributeDefinitionScope binding = bindingFor("CONSUMER", "consumer-trigger-attr");
@@ -179,11 +192,11 @@ class PolicyAttributeValueSoftDeleteTriggerTest extends AbstractPostgresReposito
         assertThat(policyAttributeValueRepository.findById(valueId))
                 .isPresent()
                 .get()
-                .satisfies(v -> assertThat(v.getIsDeleted()).isTrue());
+                .satisfies(v -> assertThat(v.getIsDeleted()).isFalse());
     }
 
     @Test
-    void deletingProducer_softDeletesItsAttributeValues() {
+    void deletingProducer_leavesItsAttributeValuesLive() {
         Organisation organisation = persistOrganisation();
         Producer producer = persistProducer(organisation);
         PolicyAttributeDefinitionScope binding = bindingFor("PRODUCER", "producer-trigger-attr");
@@ -196,11 +209,11 @@ class PolicyAttributeValueSoftDeleteTriggerTest extends AbstractPostgresReposito
         assertThat(policyAttributeValueRepository.findById(valueId))
                 .isPresent()
                 .get()
-                .satisfies(v -> assertThat(v.getIsDeleted()).isTrue());
+                .satisfies(v -> assertThat(v.getIsDeleted()).isFalse());
     }
 
     @Test
-    void deletingProduct_softDeletesItsAttributeValues() {
+    void deletingProduct_leavesItsAttributeValuesLive() {
         Organisation organisation = persistOrganisation();
         Producer producer = persistProducer(organisation);
         Product product = persistProduct(producer);
@@ -214,11 +227,11 @@ class PolicyAttributeValueSoftDeleteTriggerTest extends AbstractPostgresReposito
         assertThat(policyAttributeValueRepository.findById(valueId))
                 .isPresent()
                 .get()
-                .satisfies(v -> assertThat(v.getIsDeleted()).isTrue());
+                .satisfies(v -> assertThat(v.getIsDeleted()).isFalse());
     }
 
     @Test
-    void deletingProductConsumer_softDeletesItsAttributeValues() {
+    void deletingProductConsumer_leavesItsAttributeValuesLive() {
         Organisation organisation = persistOrganisation();
         Producer producer = persistProducer(organisation);
         Product product = persistProduct(producer);
@@ -234,7 +247,7 @@ class PolicyAttributeValueSoftDeleteTriggerTest extends AbstractPostgresReposito
         assertThat(policyAttributeValueRepository.findById(valueId))
                 .isPresent()
                 .get()
-                .satisfies(v -> assertThat(v.getIsDeleted()).isTrue());
+                .satisfies(v -> assertThat(v.getIsDeleted()).isFalse());
     }
 
     @Test
