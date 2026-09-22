@@ -67,16 +67,6 @@ public class ProductSearchCriteriaFactory {
         return new ProductSearchCriteria(text, filters, sort, page, size);
     }
 
-    /**
-     * What a filter or a sort key points at. The name may be written either way policy writes it -
-     * qualified ({@code organisation.key}) or with an explicit {@code scope} - and both must mean the
-     * same thing, so it is read with {@link FilterTarget#parse}: a qualified name that the caller did
-     * not scope carries its own scope.
-     *
-     * <p>Reading it as a bare name instead would pass the permission check, because the allowed lists
-     * are spelt qualified, and then look for the name in the <em>product</em> scope - an attribute of
-     * the owning organisation would silently match nothing rather than be refused or answered.
-     */
     /** Each requested filter, with anything the contract does not allow recorded as a refusal. */
     private static List<FilterNode.Comparison> filters(
             ProductDiscoveryRequestDTO body,
@@ -119,6 +109,16 @@ public class ProductSearchCriteriaFactory {
         return sort;
     }
 
+    /**
+     * What a filter or a sort key points at. The name may be written either way policy writes it -
+     * qualified ({@code organisation.key}) or with an explicit {@code scope} - and both must mean the
+     * same thing, so it is read with {@link FilterTarget#parse}: a qualified name that the caller did
+     * not scope carries its own scope.
+     *
+     * <p>Reading it as a bare name instead would pass the permission check, because the allowed lists
+     * are spelt qualified, and then look for the name in the <em>product</em> scope - an attribute of
+     * the owning organisation would silently match nothing rather than be refused or answered.
+     */
     private static FilterTarget target(FilterScope scope, String field, String attribute, String what) {
         if (StringUtils.hasText(field) == StringUtils.hasText(attribute)) {
             throw new InvalidSearchCriteriaException("A " + what + " names exactly one of 'field' and 'attribute'");

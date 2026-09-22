@@ -40,17 +40,6 @@ import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecisio
  */
 @Component
 @Slf4j
-/*
- * Note on the {@code Optional<? extends PolicyDecision<...>>} parameters below.
- *
- * SonarCloud reports "Replace this type parametrization by the 'final' type PolicyDecision" on
- * each of them. That report is a false positive and the change does not compile. PolicyDecision
- * is a record, so it is final, but the outer wildcard is not about extending it: Optional is
- * invariant, so Optional<PolicyDecision<ProductViewPolicyDecisionDetails>> binds to
- * Optional<? extends PolicyDecision<? extends ProductPolicyContractDetails>> and not to
- * Optional<PolicyDecision<? extends ProductPolicyContractDetails>>. Removing "? extends" breaks
- * every caller in ProductDiscoveryServiceImpl and ProductViewServiceImpl.
- */
 public class ProductQueryPlanner {
 
     /** Logged, not returned: it says the policy is unusable, which is nothing a caller can act on. */
@@ -104,8 +93,8 @@ public class ProductQueryPlanner {
      *
      * @param what the endpoint asking, for the log line - e.g. {@code "Product discover"}
      */
-    public ProductSearchContract contractFor(
-            String what, Optional<? extends PolicyDecision<? extends ProductPolicyContractDetails>> decision) {
+    public <D extends ProductPolicyContractDetails> ProductSearchContract contractFor(
+            String what, Optional<PolicyDecision<D>> decision) {
         if (decision.isPresent()) {
             ProductSearchContract contract = ProductSearchContract.enforcing(decision.get());
             refuseUnfulfillableObligations(what, contract, decision);
@@ -131,10 +120,8 @@ public class ProductQueryPlanner {
      * A Policy Enforcement Point that cannot fulfil an obligation must not grant access, so an
      * obligation this service does not know refuses the request rather than being ignored.
      */
-    private void refuseUnfulfillableObligations(
-            String what,
-            ProductSearchContract contract,
-            Optional<? extends PolicyDecision<? extends ProductPolicyContractDetails>> decision) {
+    private <D extends ProductPolicyContractDetails> void refuseUnfulfillableObligations(
+            String what, ProductSearchContract contract, Optional<PolicyDecision<D>> decision) {
         List<String> unsupported = DiscoveryObligations.unsupported(contract.obligations());
         if (unsupported.isEmpty()) {
             return;
@@ -165,12 +152,12 @@ public class ProductQueryPlanner {
      * here is the contract's: a row filter or unmask condition naming something this service cannot
      * translate. That refuses the request - a policy that cannot be applied is never skipped.
      */
-    public ProductSearchQuery compile(
+    public <D extends ProductPolicyContractDetails> ProductSearchQuery compile(
             String what,
             ProductSearchContract contract,
             ProductSearchCriteria criteria,
             ProductProjection projection,
-            Optional<? extends PolicyDecision<? extends ProductPolicyContractDetails>> decision) {
+            Optional<PolicyDecision<D>> decision) {
         try {
             ProductSearchQuery query = queryBuilder.build(contract, criteria, projection);
             log.debug("{} query: {} parameters={}", what, query.pageSql(), query.parameters());
@@ -189,8 +176,8 @@ public class ProductQueryPlanner {
     }
 
     /** Which rule answered, for a log line; empty when no decision was taken. */
-    public static Map<String, String> provenance(
-            Optional<? extends PolicyDecision<? extends ProductPolicyContractDetails>> decision) {
+    public static <D extends ProductPolicyContractDetails> Map<String, String> provenance(
+            Optional<PolicyDecision<D>> decision) {
         return decision.map(taken -> Map.of(
                         "id", String.valueOf(taken.policy().id()),
                         "version", String.valueOf(taken.policy().version())))

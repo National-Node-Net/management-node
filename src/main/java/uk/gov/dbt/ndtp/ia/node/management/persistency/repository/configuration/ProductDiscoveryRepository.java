@@ -58,9 +58,43 @@ public class ProductDiscoveryRepository {
     private final NamedParameterJdbcTemplate jdbc;
     private final String schema;
 
+    /**
+     * The statements that never vary. Each is assembled once here, from the validated schema prefix
+     * and nothing else, so no statement is formatted at the point it is executed.
+     */
+    private final String sensitiveAttributeNamesSql;
+
+    private final String attributesBaseSql;
+
+    private final String grantsSql;
+    private final String subscribingOrganisationsSql;
+
     public ProductDiscoveryRepository(NamedParameterJdbcTemplate jdbc, DiscoverySchema schema) {
         this.jdbc = jdbc;
         this.schema = schema.prefix();
+        this.sensitiveAttributeNamesSql = "SELECT DISTINCT name FROM " + this.schema + "policy_attribute_definition"
+                + " WHERE sensitive = TRUE AND is_deleted = FALSE";
+        this.attributesBaseSql = "SELECT a.entity_id, a.name, a.multi_valued, a.item, a.item_type"
+                + " FROM " + this.schema + "policy_attribute_live_value a"
+                + " WHERE a.scope_code = :scope AND a.entity_id IN (:ids)";
+        this.grantsSql = "SELECT pc.id AS grant_id, pc.product_id, pc.granted_ts, pc.validity,"
+                + " pc.schedule_type, pc.schedule_expression,"
+                + " c.id AS consumer_id, c.name AS consumer_name,"
+                + " o.organisation_key, o.name AS organisation_name"
+                + " FROM " + this.schema + "product_consumer pc"
+                + " JOIN " + this.schema + "consumer c ON c.id = pc.consumer_id"
+                + " JOIN " + this.schema + "organisation o ON o.id = c.org_id"
+                + " WHERE pc.product_id IN (:ids)"
+                + " ORDER BY pc.product_id, c.name";
+        this.subscribingOrganisationsSql = "SELECT pc.product_id, o.organisation_key,"
+                + " o.name AS organisation_name,"
+                + " COUNT(DISTINCT c.id) AS consumers, MIN(pc.granted_ts) AS since"
+                + " FROM " + this.schema + "product_consumer pc"
+                + " JOIN " + this.schema + "consumer c ON c.id = pc.consumer_id"
+                + " JOIN " + this.schema + "organisation o ON o.id = c.org_id"
+                + " WHERE pc.product_id IN (:ids)"
+                + " GROUP BY pc.product_id, o.organisation_key, o.name"
+                + " ORDER BY pc.product_id, o.organisation_key";
     }
 
     /** One row per product of the page, keyed by the column aliases of {@link ProductSearchQuery}. */
@@ -91,9 +125,7 @@ public class ProductDiscoveryRepository {
         }
         MapSqlParameterSource parameters =
                 new MapSqlParameterSource().addValue("scope", scope.code()).addValue("ids", entityIds);
-        StringBuilder sql = new StringBuilder("SELECT a.entity_id, a.name, a.multi_valued, a.item, a.item_type"
-                + " FROM " + schema + "policy_attribute_live_value a"
-                + " WHERE a.scope_code = :scope AND a.entity_id IN (:ids)");
+        StringBuilder sql = new StringBuilder(attributesBaseSql);
         if (!maskedNames.isEmpty()) {
             sql.append(" AND a.name NOT IN (:masked)");
             parameters.addValue("masked", maskedNames);
@@ -118,9 +150,7 @@ public class ProductDiscoveryRepository {
 
     /** The names of the attributes the catalogue flags sensitive, whatever their scope. */
     public Set<String> findSensitiveAttributeNames() {
-        String sql = "SELECT DISTINCT name FROM " + schema + "policy_attribute_definition"
-                + " WHERE sensitive = TRUE AND is_deleted = FALSE";
-        return Set.copyOf(jdbc.queryForList(sql, Map.of(), String.class));
+        return Set.copyOf(jdbc.queryForList(sensitiveAttributeNamesSql, Map.of(), String.class));
     }
 
     /** Every grant on the given products, with its consumer and the consumer's organisation. */
@@ -128,17 +158,8 @@ public class ProductDiscoveryRepository {
         if (productIds.isEmpty()) {
             return List.of();
         }
-        String sql = "SELECT pc.id AS grant_id, pc.product_id, pc.granted_ts, pc.validity,"
-                + " pc.schedule_type, pc.schedule_expression,"
-                + " c.id AS consumer_id, c.name AS consumer_name,"
-                + " o.organisation_key, o.name AS organisation_name"
-                + " FROM " + schema + "product_consumer pc"
-                + " JOIN " + schema + "consumer c ON c.id = pc.consumer_id"
-                + " JOIN " + schema + "organisation o ON o.id = c.org_id"
-                + " WHERE pc.product_id IN (:ids)"
-                + " ORDER BY pc.product_id, c.name";
         return jdbc.query(
-                sql,
+                grantsSql,
                 Map.of("ids", productIds),
                 (row, index) -> new Grant(
                         row.getLong("grant_id"),
@@ -162,16 +183,8 @@ public class ProductDiscoveryRepository {
         if (productIds.isEmpty()) {
             return List.of();
         }
-        String sql = "SELECT pc.product_id, o.organisation_key, o.name AS organisation_name,"
-                + " COUNT(DISTINCT c.id) AS consumers, MIN(pc.granted_ts) AS since"
-                + " FROM " + schema + "product_consumer pc"
-                + " JOIN " + schema + "consumer c ON c.id = pc.consumer_id"
-                + " JOIN " + schema + "organisation o ON o.id = c.org_id"
-                + " WHERE pc.product_id IN (:ids)"
-                + " GROUP BY pc.product_id, o.organisation_key, o.name"
-                + " ORDER BY pc.product_id, o.organisation_key";
         return jdbc.query(
-                sql,
+                subscribingOrganisationsSql,
                 Map.of("ids", productIds),
                 (row, index) -> new SubscribingOrganisation(
                         row.getLong("product_id"),
