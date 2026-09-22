@@ -389,15 +389,15 @@ class ProductDiscoveryServiceImplTest {
                  "allowed_filtered_fields": ["name"],
                  "visible_fields": ["name"], "max_page_size": 20}""");
 
-        assertThatThrownBy(() -> service()
-                        .discover(
-                                ProductDiscoveryRequestDTO.builder()
-                                        .filters(List.of(ProductDiscoveryFilterDTO.builder()
-                                                .field("source")
-                                                .values(List.of("x"))
-                                                .build()))
-                                        .build(),
-                                decision(true, details)))
+        var service = service();
+        var request = ProductDiscoveryRequestDTO.builder()
+                .filters(List.of(ProductDiscoveryFilterDTO.builder()
+                        .field("source")
+                        .values(List.of("x"))
+                        .build()))
+                .build();
+        var taken = decision(true, details);
+        assertThatThrownBy(() -> service.discover(request, taken))
                 .isInstanceOf(AccessRejectedException.class)
                 .extracting(e -> ((AccessRejectedException) e).getReasons())
                 .isEqualTo(List.of("filter.field_not_permitted:source"));
@@ -417,7 +417,8 @@ class ProductDiscoveryServiceImplTest {
      */
     @Test
     void discover_policyOnButNoDecisionReachedTheHandler_refusesRatherThanSearchingUnrestricted() {
-        assertThatThrownBy(() -> service(true).discover(null, Optional.empty()))
+        var service = service(true);
+        assertThatThrownBy(() -> service.discover(null, Optional.empty()))
                 .isInstanceOf(AccessRejectedException.class)
                 .hasMessage("Access denied by policy")
                 .extracting(e -> ((AccessRejectedException) e).getReasons())

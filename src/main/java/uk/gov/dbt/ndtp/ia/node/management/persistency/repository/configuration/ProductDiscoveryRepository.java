@@ -29,6 +29,28 @@ import uk.gov.dbt.ndtp.ia.node.management.service.discovery.ProductSearchQuery;
  *
  * <p>Every method that loads related data takes the ids of a whole page, so a search costs a fixed
  * number of statements however many products it returns.
+ *
+ * <h2>Why the concatenated SQL here is not an injection risk</h2>
+ *
+ * <p>SonarCloud raises "Make sure using a dynamically formatted SQL query is safe here" on the
+ * statements below. It is a security hotspot to review rather than a defect, and the review is
+ * this:
+ *
+ * <ul>
+ *   <li><b>The only interpolated text is the schema prefix.</b> Nothing a caller sends is ever
+ *       concatenated into a statement. Every caller-supplied value is a bound parameter, and even
+ *       a policy attribute <em>name</em> is bound rather than interpolated.
+ *   <li><b>The prefix cannot carry a payload.</b> It comes from the
+ *       {@code spring.jpa.properties.hibernate.default_schema} property, not from a request, and
+ *       {@link DiscoverySchema} rejects anything that is not {@code [A-Za-z0-9_-]+} before quoting
+ *       it. A value containing a quote, a space, a semicolon or a comment marker fails startup.
+ *   <li><b>An identifier cannot be bound.</b> JDBC binds values, never table or schema names, so a
+ *       schema-qualified statement has to be assembled as text. There is no parameterised form of
+ *       this to move to.
+ * </ul>
+ *
+ * <p>The search statement itself is assembled in {@code ProductSearchQueryBuilder} from a closed
+ * registry of column names ({@code ProductField}), not from caller input.
  */
 @Repository
 public class ProductDiscoveryRepository {

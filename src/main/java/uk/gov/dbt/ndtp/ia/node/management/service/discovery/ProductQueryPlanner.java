@@ -40,6 +40,17 @@ import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecisio
  */
 @Component
 @Slf4j
+/*
+ * Note on the {@code Optional<? extends PolicyDecision<...>>} parameters below.
+ *
+ * SonarCloud reports "Replace this type parametrization by the 'final' type PolicyDecision" on
+ * each of them. That report is a false positive and the change does not compile. PolicyDecision
+ * is a record, so it is final, but the outer wildcard is not about extending it: Optional is
+ * invariant, so Optional<PolicyDecision<ProductViewPolicyDecisionDetails>> binds to
+ * Optional<? extends PolicyDecision<? extends ProductPolicyContractDetails>> and not to
+ * Optional<PolicyDecision<? extends ProductPolicyContractDetails>>. Removing "? extends" breaks
+ * every caller in ProductDiscoveryServiceImpl and ProductViewServiceImpl.
+ */
 public class ProductQueryPlanner {
 
     /** Logged, not returned: it says the policy is unusable, which is nothing a caller can act on. */

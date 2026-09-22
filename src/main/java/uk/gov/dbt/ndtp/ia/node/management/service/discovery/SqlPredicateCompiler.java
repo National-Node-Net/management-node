@@ -45,6 +45,7 @@ public class SqlPredicateCompiler {
 
     static final String TRUE = "1 = 1";
     static final String FALSE = "1 = 0";
+    private static final String AND = " AND ";
     private static final String LIKE_ESCAPE = " ESCAPE '\\'";
 
     private final String schemaPrefix;
@@ -65,7 +66,7 @@ public class SqlPredicateCompiler {
     public String compile(FilterNode node, SqlParameters parameters) {
         return switch (node) {
             case null -> throw new FilterCompilationException("The filter contains an empty node");
-            case FilterNode.Literal literal -> literal.value() ? TRUE : FALSE;
+            case FilterNode.Literal(boolean value) -> value ? TRUE : FALSE;
             case FilterNode.Group group -> group(group, parameters);
             case FilterNode.Comparison comparison -> comparison(comparison, parameters);
         };
@@ -78,7 +79,7 @@ public class SqlPredicateCompiler {
         }
         return group.nodes().stream()
                 .map(node -> compile(node, parameters))
-                .collect(Collectors.joining(and ? " AND " : " OR ", "(", ")"));
+                .collect(Collectors.joining(and ? AND : " OR ", "(", ")"));
     }
 
     private String comparison(FilterNode.Comparison comparison, SqlParameters parameters) {
@@ -199,7 +200,7 @@ public class SqlPredicateCompiler {
             case ALL_OF ->
                 values.isEmpty()
                         ? TRUE
-                        : "(SELECT COUNT(DISTINCT a.item)" + rows + " AND " + itemIn(values, parameters) + ") = "
+                        : "(SELECT COUNT(DISTINCT a.item)" + rows + AND + itemIn(values, parameters) + ") = "
                                 + parameters.bind(values.size());
             case CONTAINS ->
                 exists(rows, "LOWER(a.item) LIKE " + parameters.bind(containsPattern(comparison)) + LIKE_ESCAPE);
@@ -229,7 +230,7 @@ public class SqlPredicateCompiler {
     }
 
     private static String exists(String rows, String condition) {
-        return "EXISTS (SELECT 1" + rows + " AND " + condition + ")";
+        return "EXISTS (SELECT 1" + rows + AND + condition + ")";
     }
 
     private static String itemIn(Set<String> values, SqlParameters parameters) {

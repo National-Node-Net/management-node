@@ -402,7 +402,7 @@ class ProductSearchCriteriaFactoryTest {
 
         assertThat(criteria.text()).isEqualTo("flood");
         assertThat(criteria.filters())
-                .extracting(comparison -> comparison.target())
+                .extracting(FilterNode.Comparison::target)
                 .containsExactly(FilterTarget.ofField("name"), FilterTarget.ofAttribute("identifiability"));
         assertThat(criteria.sort()).containsExactly(ProductSearchCriteria.SortKey.byField(ProductField.NAME, false));
     }

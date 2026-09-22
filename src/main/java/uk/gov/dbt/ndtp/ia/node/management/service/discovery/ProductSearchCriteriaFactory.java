@@ -50,28 +50,8 @@ public class ProductSearchCriteriaFactory {
         ProductDiscoveryRequestDTO body = request == null ? ProductDiscoveryRequestDTO.EMPTY : request;
         List<String> refusals = new ArrayList<>();
 
-        List<FilterNode.Comparison> filters = new ArrayList<>();
-        for (ProductDiscoveryFilterDTO filter : body.filters()) {
-            FilterTarget target = target(filter.scope(), filter.field(), filter.attribute(), "filter");
-            if (permitted(target, contract, sensitiveAttributes)) {
-                filters.add(comparison(target, filter));
-            } else {
-                refusals.add((target.field() ? REASON_FIELD : REASON_ATTRIBUTE) + target.qualifiedName());
-            }
-        }
-
-        List<ProductSearchCriteria.SortKey> sort = new ArrayList<>();
-        for (ProductDiscoverySortDTO key : body.sort()) {
-            FilterTarget target = target(key.scope(), key.field(), key.attribute(), "sort key");
-            if (permitted(target, contract, sensitiveAttributes)) {
-                sort.add(sortKey(target, key.descending()));
-            } else {
-                refusals.add(REASON_SORT + target.qualifiedName());
-            }
-        }
-        if (sort.isEmpty()) {
-            sort.add(ProductSearchCriteria.SortKey.byField(ProductField.NAME, false));
-        }
+        List<FilterNode.Comparison> filters = filters(body, contract, sensitiveAttributes, refusals);
+        List<ProductSearchCriteria.SortKey> sort = sortKeys(body, contract, sensitiveAttributes, refusals);
 
         String text = StringUtils.hasText(body.text()) ? body.text().trim() : null;
         if (text != null && contract.textSearchFields().isEmpty()) {
@@ -97,6 +77,48 @@ public class ProductSearchCriteriaFactory {
      * are spelt qualified, and then look for the name in the <em>product</em> scope - an attribute of
      * the owning organisation would silently match nothing rather than be refused or answered.
      */
+    /** Each requested filter, with anything the contract does not allow recorded as a refusal. */
+    private static List<FilterNode.Comparison> filters(
+            ProductDiscoveryRequestDTO body,
+            ProductSearchContract contract,
+            Set<String> sensitiveAttributes,
+            List<String> refusals) {
+        List<FilterNode.Comparison> filters = new ArrayList<>();
+        for (ProductDiscoveryFilterDTO filter : body.filters()) {
+            FilterTarget target = target(filter.scope(), filter.field(), filter.attribute(), "filter");
+            if (permitted(target, contract, sensitiveAttributes)) {
+                filters.add(comparison(target, filter));
+            } else {
+                refusals.add((target.field() ? REASON_FIELD : REASON_ATTRIBUTE) + target.qualifiedName());
+            }
+        }
+        return filters;
+    }
+
+    /**
+     * Each requested sort key, with anything the contract does not allow recorded as a refusal.
+     * Falls back to name ascending, so a page is always ordered.
+     */
+    private static List<ProductSearchCriteria.SortKey> sortKeys(
+            ProductDiscoveryRequestDTO body,
+            ProductSearchContract contract,
+            Set<String> sensitiveAttributes,
+            List<String> refusals) {
+        List<ProductSearchCriteria.SortKey> sort = new ArrayList<>();
+        for (ProductDiscoverySortDTO key : body.sort()) {
+            FilterTarget target = target(key.scope(), key.field(), key.attribute(), "sort key");
+            if (permitted(target, contract, sensitiveAttributes)) {
+                sort.add(sortKey(target, key.descending()));
+            } else {
+                refusals.add(REASON_SORT + target.qualifiedName());
+            }
+        }
+        if (sort.isEmpty()) {
+            sort.add(ProductSearchCriteria.SortKey.byField(ProductField.NAME, false));
+        }
+        return sort;
+    }
+
     private static FilterTarget target(FilterScope scope, String field, String attribute, String what) {
         if (StringUtils.hasText(field) == StringUtils.hasText(attribute)) {
             throw new InvalidSearchCriteriaException("A " + what + " names exactly one of 'field' and 'attribute'");

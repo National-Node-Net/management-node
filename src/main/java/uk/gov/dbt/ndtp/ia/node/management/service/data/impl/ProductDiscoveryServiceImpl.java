@@ -18,6 +18,7 @@ import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.configuration.P
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductDiscoveryService;
 import uk.gov.dbt.ndtp.ia.node.management.service.discovery.DiscoveredProductAssembler;
 import uk.gov.dbt.ndtp.ia.node.management.service.discovery.DiscoveryObligations;
+import uk.gov.dbt.ndtp.ia.node.management.service.discovery.ProductField;
 import uk.gov.dbt.ndtp.ia.node.management.service.discovery.ProductProjection;
 import uk.gov.dbt.ndtp.ia.node.management.service.discovery.ProductQueryPlanner;
 import uk.gov.dbt.ndtp.ia.node.management.service.discovery.ProductSearchContract;
@@ -141,7 +142,7 @@ public class ProductDiscoveryServiceImpl implements ProductDiscoveryService {
                 .filterableFields(contract.filterableFields())
                 .filterableAttributes(contract.filterableAttributes())
                 .textSearchFields(contract.textSearchFields().stream()
-                        .map(field -> field.apiName())
+                        .map(ProductField::apiName)
                         .toList())
                 .maskedFields(contract.maskedFields())
                 .maskedAttributes(contract.maskedAttributes())

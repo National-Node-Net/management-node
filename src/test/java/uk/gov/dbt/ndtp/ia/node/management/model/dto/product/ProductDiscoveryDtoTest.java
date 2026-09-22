@@ -121,8 +121,10 @@ class ProductDiscoveryDtoTest {
 
         // The DTO copied the list, so a later change to the caller's list cannot alter the criteria.
         assertThat(dto.filters()).hasSize(1);
-        assertThatThrownBy(() -> dto.filters().add(null)).isInstanceOf(UnsupportedOperationException.class);
-        assertThatThrownBy(() -> dto.sort().add(null)).isInstanceOf(UnsupportedOperationException.class);
+        var filtersView = dto.filters();
+        var sortView = dto.sort();
+        assertThatThrownBy(() -> filtersView.add(null)).isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> sortView.add(null)).isInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
@@ -131,7 +133,8 @@ class ProductDiscoveryDtoTest {
                 ProductDiscoveryFilterDTO.builder().attribute("record_unit").build();
 
         assertThat(filter.values()).isNotNull().isEmpty();
-        assertThatThrownBy(() -> filter.values().add("v")).isInstanceOf(UnsupportedOperationException.class);
+        var valuesView = filter.values();
+        assertThatThrownBy(() -> valuesView.add("v")).isInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
@@ -226,9 +229,8 @@ class ProductDiscoveryDtoTest {
         assertThat(dto.products()).isNotNull().isEmpty();
 
         String json = objectMapper.writeValueAsString(dto);
-        assertThat(json).contains("\"products\":[]");
         // page and policy are absent rather than null when there is nothing to say.
-        assertThat(json).doesNotContain("\"page\"").doesNotContain("\"policy\"");
+        assertThat(json).contains("\"products\":[]").doesNotContain("\"page\"").doesNotContain("\"policy\"");
     }
 
     @Test
@@ -245,10 +247,11 @@ class ProductDiscoveryDtoTest {
 
         String json = objectMapper.writeValueAsString(dto);
 
-        // The id is what the caller passes to the view and subscribe endpoints, so it is returned.
-        assertThat(json).contains("\"id\":99").contains("\"name\":\"Alpha\"").contains("\"topic\":\"topic-1\"");
-        // A member policy withheld is never read, so it is simply absent.
-        assertThat(json).doesNotContain("\"description\"").doesNotContain("\"producer\"");
+        // The id is what the caller passes to the view and subscribe endpoints, so it is
+        // returned; a member policy withheld is never read, so it is simply absent.
+        assertThat(json)
+                .contains("\"id\":99", "\"name\":\"Alpha\"", "\"topic\":\"topic-1\"")
+                .doesNotContain("\"description\"", "\"producer\"");
     }
 
     @Test

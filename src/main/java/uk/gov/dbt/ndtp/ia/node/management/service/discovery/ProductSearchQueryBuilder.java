@@ -70,6 +70,32 @@ public class ProductSearchQueryBuilder {
         return new ProductSearchQuery(pageSql, countSql, parameters.asMap());
     }
 
+    /**
+     * Adds the {@code SELECT} entry for one field, and adds nothing when the field is not read at
+     * all. A field this endpoint does not return is not selected, so it is never read: the
+     * projection narrows exactly the way masking does, and for the same reason.
+     */
+    private static void addColumnFor(
+            ProductField field,
+            ProductSearchContract contract,
+            ProductProjection projection,
+            List<String> unmaskConditions,
+            List<String> columns) {
+        if (!field.isSelected() || !projection.includes(field)) {
+            return;
+        }
+        if (isShownOnEveryProduct(contract, field)) {
+            columns.add(field.column() + " AS " + field.alias());
+            return;
+        }
+        // Withheld in general - but a rule may still show it on the products matching a
+        // condition, and then the column is read only for those.
+        String shownWhen = conditionsUnmasking(field, contract.unmaskRules(), unmaskConditions);
+        if (!shownWhen.isEmpty()) {
+            columns.add("CASE WHEN " + shownWhen + " THEN " + field.column() + " END AS " + field.alias());
+        }
+    }
+
     private static String selectList(
             ProductSearchContract contract, ProductProjection projection, List<String> unmaskConditions) {
         List<String> columns = new ArrayList<>();
@@ -78,21 +104,7 @@ public class ProductSearchQueryBuilder {
         columns.add("pr.id AS " + ProductSearchQuery.PRODUCER_ID);
 
         for (ProductField field : ProductField.values()) {
-            // A field this endpoint does not return is not selected, so it is never read - the
-            // projection narrows exactly the way masking does, and for the same reason.
-            if (!field.isSelected() || !projection.includes(field)) {
-                continue;
-            }
-            if (isShownOnEveryProduct(contract, field)) {
-                columns.add(field.column() + " AS " + field.alias());
-                continue;
-            }
-            // Withheld in general - but a rule may still show it on the products matching a
-            // condition, and then the column is read only for those.
-            String shownWhen = conditionsUnmasking(field, contract.unmaskRules(), unmaskConditions);
-            if (!shownWhen.isEmpty()) {
-                columns.add("CASE WHEN " + shownWhen + " THEN " + field.column() + " END AS " + field.alias());
-            }
+            addColumnFor(field, contract, projection, unmaskConditions, columns);
         }
         for (int i = 0; i < unmaskConditions.size(); i++) {
             columns.add("CASE WHEN " + unmaskConditions.get(i) + " THEN TRUE ELSE FALSE END AS "

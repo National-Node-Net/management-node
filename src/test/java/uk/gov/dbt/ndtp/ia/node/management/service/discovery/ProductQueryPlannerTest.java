@@ -191,7 +191,8 @@ class ProductQueryPlannerTest {
      */
     @Test
     void contractFor_noDecisionAndPolicyOn_refusesWithEnforcementMissing() {
-        assertThatThrownBy(() -> planner(true).contractFor(WHAT, Optional.empty()))
+        var planner = planner(true);
+        assertThatThrownBy(() -> planner.contractFor(WHAT, Optional.empty()))
                 .isInstanceOf(AccessRejectedException.class)
                 .hasMessage(REFUSAL_MESSAGE)
                 .extracting(e -> ((AccessRejectedException) e).getReasons())
@@ -201,7 +202,8 @@ class ProductQueryPlannerTest {
 
     @Test
     void contractFor_refusal_carriesAnErrorIdSoTheResponseCanBeTracedToTheLog() {
-        assertThatThrownBy(() -> planner(true).contractFor(WHAT, Optional.empty()))
+        var plannerEnforcing = planner(true);
+        assertThatThrownBy(() -> plannerEnforcing.contractFor(WHAT, Optional.empty()))
                 .asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.type(AccessRejectedException.class))
                 .extracting(AccessRejectedException::getErrorId)
                 .asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.STRING)
@@ -276,7 +278,9 @@ class ProductQueryPlannerTest {
                 {"row_filter": {"type": "literal", "value": true},
                  "obligations": ["audit_access", "encrypt_at_rest"]}""");
 
-        assertThatThrownBy(() -> planner().contractFor(WHAT, decision(true, details)))
+        var planner = planner();
+        var taken = decision(true, details);
+        assertThatThrownBy(() -> planner.contractFor(WHAT, taken))
                 .isInstanceOf(AccessRejectedException.class)
                 .hasMessage(REFUSAL_MESSAGE)
                 .extracting(e -> ((AccessRejectedException) e).getReasons())

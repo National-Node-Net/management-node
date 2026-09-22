@@ -154,7 +154,8 @@ class SqlPredicateCompilerTest {
 
     @Test
     void compile_operatorThatDoesNotApplyToAField_throws() {
-        assertThatThrownBy(() -> compile(field("name", ComparisonOperator.ALL_OF, "a")))
+        FilterNode.Comparison comparison = field("name", ComparisonOperator.ALL_OF, "a");
+        assertThatThrownBy(() -> compile(comparison))
                 .isInstanceOf(FilterCompilationException.class)
                 .hasMessageContaining("all_of")
                 .hasMessageContaining("does not apply to the field 'name'");
@@ -162,14 +163,16 @@ class SqlPredicateCompilerTest {
 
     @Test
     void compile_orderingOperatorOnAField_throws() {
-        assertThatThrownBy(() -> compile(field("name", ComparisonOperator.GT, 3)))
+        FilterNode.Comparison comparison = field("name", ComparisonOperator.GT, 3);
+        assertThatThrownBy(() -> compile(comparison))
                 .isInstanceOf(FilterCompilationException.class)
                 .hasMessageContaining("does not apply to the field 'name'");
     }
 
     @Test
     void compile_unknownFieldName_throws() {
-        assertThatThrownBy(() -> compile(field("secret_column", ComparisonOperator.EQ, "x")))
+        FilterNode.Comparison comparison = field("secret_column", ComparisonOperator.EQ, "x");
+        assertThatThrownBy(() -> compile(comparison))
                 .isInstanceOf(FilterCompilationException.class)
                 .hasMessageContaining("'secret_column' is not a field products can be filtered on");
     }
@@ -177,14 +180,16 @@ class SqlPredicateCompilerTest {
     /** A field that exists but is only ever returned must not become a filter. */
     @Test
     void compile_fieldThatIsNotFilterable_throws() {
-        assertThatThrownBy(() -> compile(field("producer.name", ComparisonOperator.EQ, "x")))
+        FilterNode.Comparison comparison = field("producer.name", ComparisonOperator.EQ, "x");
+        assertThatThrownBy(() -> compile(comparison))
                 .isInstanceOf(FilterCompilationException.class)
                 .hasMessageContaining("'producer.name' is not a field products can be filtered on");
     }
 
     @Test
     void compile_operatorGivenTheWrongNumberOfValues_throws() {
-        assertThatThrownBy(() -> compile(field("name", ComparisonOperator.EQ, "a", "b")))
+        FilterNode.Comparison comparison = field("name", ComparisonOperator.EQ, "a", "b");
+        assertThatThrownBy(() -> compile(comparison))
                 .isInstanceOf(FilterCompilationException.class)
                 .hasMessageContaining("was given 2 value(s)");
     }
@@ -202,8 +207,7 @@ class SqlPredicateCompilerTest {
     void compile_numericFieldEq_comparesTheColumnWithoutLowerCasingIt() {
         String sql = compile(field("id", ComparisonOperator.EQ, 3L));
 
-        assertThat(sql).isEqualTo("p.id IN (:p0)");
-        assertThat(sql).doesNotContain("LOWER(p.id)", "LOWER(");
+        assertThat(sql).isEqualTo("p.id IN (:p0)").doesNotContain("LOWER(p.id)", "LOWER(");
         assertThat(parameters.asMap()).containsExactly(entry("p0", Set.of(new BigDecimal("3"))));
     }
 
@@ -220,8 +224,7 @@ class SqlPredicateCompilerTest {
     void compile_numericFieldNeq_alsoMatchesRowsWhereTheColumnIsNullAndDoesNotLowerCase() {
         String sql = compile(field("id", ComparisonOperator.NEQ, 3));
 
-        assertThat(sql).isEqualTo("(p.id IS NULL OR p.id NOT IN (:p0))");
-        assertThat(sql).doesNotContain("LOWER(p.id)");
+        assertThat(sql).isEqualTo("(p.id IS NULL OR p.id NOT IN (:p0))").doesNotContain("LOWER(p.id)");
         assertThat(parameters.asMap()).containsExactly(entry("p0", Set.of(new BigDecimal("3"))));
     }
 
@@ -262,14 +265,16 @@ class SqlPredicateCompilerTest {
     /** A non-numeric operand fails the compilation, rather than being handed to the database. */
     @Test
     void compile_numericFieldWithANonNumericValue_throws() {
-        assertThatThrownBy(() -> compile(field("id", ComparisonOperator.EQ, "abc")))
+        FilterNode.Comparison comparison = field("id", ComparisonOperator.EQ, "abc");
+        assertThatThrownBy(() -> compile(comparison))
                 .isInstanceOf(FilterCompilationException.class)
                 .hasMessageContaining("needs a number, not 'abc'");
     }
 
     @Test
     void compile_numericFieldWithOneNonNumericValueAmongNumbers_throws() {
-        assertThatThrownBy(() -> compile(field("id", ComparisonOperator.IN, 1, "two", 3)))
+        FilterNode.Comparison comparison = field("id", ComparisonOperator.IN, 1, "two", 3);
+        assertThatThrownBy(() -> compile(comparison))
                 .isInstanceOf(FilterCompilationException.class)
                 .hasMessageContaining("needs a number, not 'two'");
     }
@@ -277,7 +282,8 @@ class SqlPredicateCompilerTest {
     /** {@code contains} is a substring test; it has no meaning on a number. */
     @Test
     void compile_containsOnANumericField_throws() {
-        assertThatThrownBy(() -> compile(field("id", ComparisonOperator.CONTAINS, "3")))
+        FilterNode.Comparison comparison = field("id", ComparisonOperator.CONTAINS, "3");
+        assertThatThrownBy(() -> compile(comparison))
                 .isInstanceOf(FilterCompilationException.class)
                 .hasMessageContaining("contains")
                 .hasMessageContaining("does not apply to the field 'id'");
@@ -341,7 +347,8 @@ class SqlPredicateCompilerTest {
 
     @Test
     void compile_subscribedByWithAnInapplicableOperator_throws() {
-        assertThatThrownBy(() -> compile(field("subscribedBy", ComparisonOperator.CONTAINS, "EN")))
+        FilterNode.Comparison comparison = field("subscribedBy", ComparisonOperator.CONTAINS, "EN");
+        assertThatThrownBy(() -> compile(comparison))
                 .isInstanceOf(FilterCompilationException.class)
                 .hasMessageContaining("does not apply to the field 'subscribedBy'");
     }
@@ -433,7 +440,8 @@ class SqlPredicateCompilerTest {
 
     @Test
     void compile_orderingOperatorWithANonNumericValue_throws() {
-        assertThatThrownBy(() -> compile(attribute("refresh_days", ComparisonOperator.GT, "soon")))
+        FilterNode.Comparison comparison = attribute("refresh_days", ComparisonOperator.GT, "soon");
+        assertThatThrownBy(() -> compile(comparison))
                 .isInstanceOf(FilterCompilationException.class)
                 .hasMessageContaining("needs a number, not 'soon'");
     }
@@ -480,8 +488,9 @@ class SqlPredicateCompilerTest {
 
         String sql = compile(attribute(hostile, ComparisonOperator.IN, "x"));
 
-        assertThat(sql).isEqualTo("EXISTS (SELECT 1" + productRows(":p0", ":p1") + " AND a.item IN (:p2))");
-        assertThat(sql).doesNotContain("DROP TABLE", "--", "'");
+        assertThat(sql)
+                .isEqualTo("EXISTS (SELECT 1" + productRows(":p0", ":p1") + " AND a.item IN (:p2))")
+                .doesNotContain("DROP TABLE", "--", "'");
         assertThat(parameters.asMap()).containsEntry("p1", hostile);
     }
 

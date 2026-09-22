@@ -72,7 +72,6 @@ import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyProvena
 @ExtendWith(MockitoExtension.class)
 class ProductViewServiceImplTest {
 
-    private static final int DEFAULT_MAX_PAGE_SIZE = ProductSearchContract.DEFAULT_MAX_PAGE_SIZE;
     private static final long PRODUCT_ID = 3L;
 
     @Mock
@@ -465,7 +464,8 @@ class ProductViewServiceImplTest {
      */
     @Test
     void view_policyOnButNoDecisionReachedTheHandler_refusesAndReadsNothing() {
-        assertThatThrownBy(() -> service(true).view(PRODUCT_ID, Optional.empty()))
+        var service = service(true);
+        assertThatThrownBy(() -> service.view(PRODUCT_ID, Optional.empty()))
                 .isInstanceOf(AccessRejectedException.class)
                 .hasMessage("Access denied by policy")
                 .extracting(e -> ((AccessRejectedException) e).getReasons())
@@ -483,7 +483,8 @@ class ProductViewServiceImplTest {
                  "visible_fields": ["name"],
                  "obligations": ["audit_access", "encrypt_at_rest"]}""");
 
-        assertThatThrownBy(() -> service().view(PRODUCT_ID, decision))
+        var service = service();
+        assertThatThrownBy(() -> service.view(PRODUCT_ID, decision))
                 .isInstanceOf(AccessRejectedException.class)
                 .hasMessage("Access denied by policy")
                 .extracting(e -> ((AccessRejectedException) e).getReasons())
@@ -502,7 +503,8 @@ class ProductViewServiceImplTest {
                                 "operator": "eq", "values": ["x"]},
                  "visible_fields": ["name"]}""");
 
-        assertThatThrownBy(() -> service().view(PRODUCT_ID, decision))
+        var service = service();
+        assertThatThrownBy(() -> service.view(PRODUCT_ID, decision))
                 .isInstanceOf(AccessRejectedException.class)
                 .extracting(e -> ((AccessRejectedException) e).getReasons())
                 .isEqualTo(List.of(ProductQueryPlanner.REASON_ROW_FILTER_UNCOMPILABLE));
