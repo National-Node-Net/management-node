@@ -32,8 +32,8 @@ cd ./certs
 ls ./client-org2 
 client-org2.crt  client-org2.csr  client-org2.key  client-org2-keystore.jks  client-org2.p12  client-org2.srl  client.p12
 
-# patch the application ( you will will only need to patch the mamangement node 1 time - for subsequent runs say no)
-./update-k8s-secrets.sh --certname client-org2 --namespace ia-federation-org2 --certdir ./client-org2 --patch-management-node false
+# patch the application (you will only need to patch the management node 1 time - for subsequent runs say no)
+./update-k8s-secrets.sh --certname client-org2 --namespace ia-federation-org2 --certdir ./client-org2 --federation-deployment federator-client-org2-client --patch-management-node false
 ```
 
 ## Scripts
@@ -110,7 +110,8 @@ Example:
   --yes \
   --namespace ia-federation \
   --certname client-org1 \
-  --certdir client-org1
+  --certdir client-org1 \
+  --federation-deployment federator-client-org1-client
 ```
 
 By default, it patches:
@@ -133,10 +134,12 @@ Useful options:
 - `--management-namespace <namespace>` sets the management namespace. Default: `ia-management-node`.
 - `--certname <name>` sets the certificate file prefix. Required.
 - `--certdir <dir>` points to the generated certificate directory. Required.
+- `--federation-deployment <name>` sets the federation deployment restarted at the end. Required.
 - `--client-p12-secret <name>` overrides the PKCS#12 secret name. Default: `federation-client-p12`.
 - `--federation-cert-secret <name>` overrides the federation JKS secret name. Default: `federation-cert`.
 - `--management-node-cert-secret <name>` overrides the management node JKS secret name. Default: `management-node-cert`.
 - `--management-node-deployment <name>` overrides the management deployment restarted at the end. Default: `management-node-api`.
+- `--patch-management-node <true|false>` controls whether the management node secret and deployment are patched. Default: `true`.
 
 Safety behavior:
 
@@ -171,7 +174,8 @@ kubectl config current-context
 ./update-k8s-secrets.sh \
   --namespace ia-federation \
   --certname client-org1 \
-  --certdir client-org1
+  --certdir client-org1 \
+  --federation-deployment federator-client-org1-client
 ```
 
 4. Confirm the rollout status:

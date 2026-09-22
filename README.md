@@ -134,8 +134,8 @@ cd ./certs
 ls ./client-org2 
 client-org2.crt  client-org2.csr  client-org2.key  client-org2-keystore.jks  client-org2.p12  client-org2.srl  client.p12
 
-# patch the application ( you will will only need to patch the mamangement node 1 time - for subsequent runs say no)
-./update-k8s-secrets.sh --certname client-org2 --namespace ia-federation-org2 --certdir ./client-org2 --patch-management-node false
+# patch the application (you will only need to patch the management node 1 time - for subsequent runs say no)
+./update-k8s-secrets.sh --certname client-org2 --namespace ia-federation-org2 --certdir ./client-org2 --federation-deployment federator-client-org2-client --patch-management-node false
 
 ```
 

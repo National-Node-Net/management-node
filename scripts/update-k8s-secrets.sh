@@ -26,7 +26,7 @@ Required:
   --federation-deployment <name>          Federation deployment to restart
 
 Options:
-  --yes                                   Apply changes after showing the plan
+  --yes                                   Continue after showing the plan
   --management-namespace <namespace>      Default: $MANAGEMENT_NAMESPACE
   --client-p12-secret <name>              Default: $CLIENT_P12_SECRET
   --federation-cert-secret <name>         Default: $FEDERATION_CERT_SECRET
@@ -36,7 +36,7 @@ Options:
   --help                                  Show this help
 
 Example:
-  ./update-k8s-secrets.sh --namespace ia-federation --certname client-org1 --certdir client-org1 --federation-deployment federator-client-org1-client
+  ./update-k8s-secrets.sh --yes --namespace ia-federation --certname client-org1 --certdir client-org1 --federation-deployment federator-client-org1-client
 EOF
 }
 
