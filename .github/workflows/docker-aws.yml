@@ -57,7 +57,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/ecr-access-for-github
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID || vars.AWS_ACCOUNT_ID }}:role/ecr-access-for-github
           aws-region: ${{ secrets.AWS_REGION }}
           role-skip-session-tagging: true
           role-duration-seconds: 3600
@@ -68,7 +68,7 @@ jobs:
 
       - name: Format repo name
         run: |
-          REPO="${{ steps.login-ecr.outputs.registry }}/ndtp/management-node" >> ${GITHUB_ENV}
+          echo "REPO=${{ steps.login-ecr.outputs.registry }}/ndtp/management-node" >> "$GITHUB_ENV"
     
       - name: Get server and client jars
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
@@ -85,7 +85,7 @@ jobs:
       - name: Run Trivy Scan on Server Docker Image
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
-          image-ref: "${REPO}:staged"
+          image-ref: "${{ steps.login-ecr.outputs.registry }}/ndtp/management-node:staged"
           format: "table"
           exit-code: "1"
           ignore-unfixed: true
