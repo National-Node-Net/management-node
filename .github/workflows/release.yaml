@@ -104,11 +104,11 @@ jobs:
           VERSION="${BRANCH#release/}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-  release-aws:
+  release-ghcr:
     permissions:
       contents: read
-      id-token: write
-    name: "Build and release docker images to AWS with tags '${{ needs.prepare-release.outputs.image_tag }} latest'"
+      packages: write
+    name: "Build and release docker images to GHCR with tags '${{ needs.prepare-release.outputs.image_tag }} latest'"
     needs:
      - verify
      - prepare-release
@@ -126,7 +126,7 @@ jobs:
       contents: read
       packages: write
     name: Publish to github packages
-    needs: release-aws
+    needs: release-ghcr
     runs-on: ubuntu-latest
     env:
       GH_PACKAGES_PAT: ${{ secrets.GH_PACKAGES_PAT }}
@@ -156,7 +156,7 @@ jobs:
     name: Artifact cleanup
     runs-on: ubuntu-latest
     needs:
-      - release-aws
+      - release-ghcr
       - verify
     if: ${{ needs.verify.result == 'success' }}
     steps:

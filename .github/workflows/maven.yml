@@ -7,12 +7,10 @@ name: automated tests and development image
 on:
   push:
     branches:
-      - feature/dpav3194-push-to-aws-and-tag-with-time
-      # - 'develop'
+      - 'develop'
       - 'main'
   pull_request:
     branches:
-      - feature/dpav3194-push-to-aws-and-tag-with-time
       - 'develop'
       - 'main'
   workflow_dispatch:
@@ -100,7 +98,7 @@ jobs:
       contents: read
       id-token: write
     # call the reusable workflow; it downloads the uploaded jar, then builds, scans, tags, and pushes the image.
-    uses: ./.github/workflows/docker-ghcr.yml
+    uses: ./.github/workflows/docker-aws.yml
     secrets: inherit
     with:
       image_tag: "${{ needs.build.outputs.image_tag }},dev-latest"
