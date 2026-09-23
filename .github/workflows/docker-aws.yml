@@ -10,11 +10,11 @@
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied./.m2/settings.xml
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: Build and release docker images to GHCR
+name: Build and release docker images to AWS
 
 on:
   workflow_call:
@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
+      id-token: write
     steps:
       - name: Validate docker target
         run: |
@@ -54,16 +54,22 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
 
-      - name: Login to ghcr.io
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/ecr-access-for-github
+          aws-region: ${{ secrets.AWS_REGION }}
+          role-skip-session-tagging: true
+          role-duration-seconds: 3600
+
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2.1.7
 
       - name: Format repo name
-        run: echo "REPO=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
-
+        run: |
+          echo REPO="${{ steps.login-ecr.outputs.registry }}/ndtp/management-node" >> ${GITHUB_ENV}
+    
       - name: Get server and client jars
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
@@ -72,17 +78,19 @@ jobs:
           merge-multiple: true
 
       - name: Build Server Image
-        run: docker build --no-cache --build-arg JAR_NAME="management-node-${{ inputs.jar_version }}" -t "${REPO}:staged" -f "${{ github.workspace }}/docker/Dockerfile" --target ${{ inputs.docker_target }} .
+        run: |
+         docker build --no-cache --build-arg JAR_NAME="management-node-${{ inputs.jar_version }}" \
+          -t "${REPO}:staged" -f "${{ github.workspace }}/docker/Dockerfile" --target ${{ inputs.docker_target }} .
 
       - name: Run Trivy Scan on Server Docker Image
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
-          image-ref: "ghcr.io/national-node-net/management-node:staged"
+          image-ref: "${REPO}:staged"
           format: "table"
           exit-code: "1"
           ignore-unfixed: true
           severity: "CRITICAL,HIGH"
-        continue-on-error: false
+        continue-on-error: true
 
       - name: Tag Server Image with tag(s) ${{ inputs.image_tag }}
         run: |

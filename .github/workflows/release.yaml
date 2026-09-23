@@ -45,7 +45,6 @@ jobs:
   verify:
     permissions:
       contents: read
-      packages: write
       id-token: write
     runs-on: ubuntu-latest
     if: |
@@ -55,21 +54,29 @@ jobs:
       project_version: ${{ steps.get-version.outputs.project_version }}
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+
       - name: Setup Java/Maven
+        # Configure Maven credentials used when publishing to GitHub Packages.
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
         with:
           java-version: 21
           distribution: "temurin"
           cache: maven
           server-password: "GH_PACKAGES_PAT"
+
       - name: Get version
+        # The version identifies both the JAR artifact and the image build input.
         id: get-version
         run: echo project_version=$(./mvnw $MAVEN_CLI_OPTS help:evaluate -Dexpression=project.version -q -DforceStdout) >> $GITHUB_OUTPUT
+
       - name: Build packages
+        # Create the JAR that the separate Docker job will consume.
         env:
           GH_PACKAGES_PAT: ${{ secrets.GH_PACKAGES_PAT }}
         run: ./mvnw $MAVEN_CLI_OPTS package
+
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        # Jobs use separate runners, so archive the JAR for the Docker workflow.
         name: Persist server
         id: persist-server
         with:
@@ -78,33 +85,19 @@ jobs:
           retention-days: 1
 
 
-  publish:
+  prepare-release:
     permissions:
       contents: read
-      packages: write
-      id-token: write
     outputs:
       image_tag: ${{ steps.get_version.outputs.version }}
-    name: Publish to github packages
+    name: Prepare release metadata
     needs: verify
     runs-on: ubuntu-latest
-    env:
-      GITHUB_ACTOR: ${{ github.actor }}
-      GH_PACKAGES_PAT: ${{ secrets.GH_PACKAGES_PAT }}
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
-      - name: Setup Java/Maven
-        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
-        with:
-          java-version: 21
-          distribution: "temurin"
-          cache: maven
-          server-password: "GH_PACKAGES_PAT"
-      - name: Build packages
-        run: ./mvnw $MAVEN_CLI_OPTS package -DskipTests
-      - name: Publish package
-        run: ./mvnw $MAVEN_CLI_OPTS package -DskipTests
+
       - name: get image tag from branch
+        # Strip the release prefix to obtain the container's release tag.
         id: get_version
         run: |
           BRANCH="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
@@ -115,18 +108,44 @@ jobs:
     permissions:
       contents: read
       packages: write
-      id-token: write
-    name: "Build and release docker images to GHCR with tags '${{ needs.publish.outputs.image_tag }} latest'"
+    name: "Build and release docker images to GHCR with tags '${{ needs.prepare-release.outputs.image_tag }} latest'"
     needs:
      - verify
-     - publish
+     - prepare-release
+    # Build, scan, tag, and push the container before publishing the Maven package.
     uses: ./.github/workflows/docker-ghcr.yml
     secrets: inherit
     with:
-      image_tag: "${{ needs.publish.outputs.image_tag }},latest"
+      image_tag: "${{ needs.prepare-release.outputs.image_tag }},latest"
       jar_version: ${{ needs.verify.outputs.project_version }}
       dry_run: false
       docker_target: management-node
+
+  publish:
+    permissions:
+      contents: read
+      packages: write
+    name: Publish to github packages
+    needs: release-ghcr
+    runs-on: ubuntu-latest
+    env:
+      GH_PACKAGES_PAT: ${{ secrets.GH_PACKAGES_PAT }}
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+
+      - name: Setup Java/Maven
+        # Configure the github Maven server used by the deploy command below.
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+        with:
+          java-version: 21
+          distribution: "temurin"
+          cache: maven
+          server-id: github
+          server-password: "GH_PACKAGES_PAT"
+
+      - name: Publish package
+        # This runs only after the container workflow has completed successfully.
+        run: ./mvnw $MAVEN_CLI_OPTS deploy -DskipTests -DaltDeploymentRepository=github::https://maven.pkg.github.com/$GITHUB_REPOSITORY
 
   cleanup:
     permissions:
@@ -142,6 +161,7 @@ jobs:
     if: ${{ needs.verify.result == 'success' }}
     steps:
       - uses: geekyeggo/delete-artifact@f275313e70c08f6120db482d7a6b98377786765b # v5.1.0
+        # Remove the short-lived JAR once the image release pipeline is complete.
         name: Delete server artifact
         with:
           name: management-node-${{ needs.verify.outputs.project_version }}.jar
