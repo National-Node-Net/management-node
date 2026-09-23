@@ -55,7 +55,7 @@ jobs:
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/ecr-access-for-github
           aws-region: ${{ secrets.AWS_REGION }}
@@ -64,7 +64,7 @@ jobs:
 
       - name: Login to ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2.1.7
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2.1.7
 
       - name: Format repo name
         run: |
