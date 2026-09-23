@@ -7,10 +7,12 @@ name: automated tests and development image
 on:
   push:
     branches:
+      - feature/dpav3194-push-to-aws-and-tag-with-time
       - 'develop'
       - 'main'
   pull_request:
     branches:
+      - feature/dpav3194-push-to-aws-and-tag-with-time
       - 'develop'
       - 'main'
   workflow_dispatch:
