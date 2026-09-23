@@ -54,10 +54,23 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
 
+      - name: Resolve AWS account ID
+        id: aws-account
+        env:
+          AWS_ACCOUNT_ID_SECRET: ${{ secrets.AWS_ACCOUNT_ID }}
+          AWS_ACCOUNT_ID_VAR: ${{ vars.AWS_ACCOUNT_ID }}
+        run: |
+          account_id="${AWS_ACCOUNT_ID_SECRET:-$AWS_ACCOUNT_ID_VAR}"
+          if [[ -z "$account_id" ]]; then
+            echo "AWS account ID is not configured. Set secrets.AWS_ACCOUNT_ID or vars.AWS_ACCOUNT_ID."
+            exit 1
+          fi
+          echo "value=$account_id" >> "$GITHUB_OUTPUT"
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID || vars.AWS_ACCOUNT_ID }}:role/ecr-access-for-github
+          role-to-assume: arn:aws:iam::${{ steps.aws-account.outputs.value }}:role/ecr-access-for-github
           aws-region: ${{ secrets.AWS_REGION }}
           role-skip-session-tagging: true
           role-duration-seconds: 3600

@@ -93,7 +93,9 @@ jobs:
 
   release-aws:
     name: build and release development image
-    needs: build
+    needs:
+      - build
+      - lint
     permissions:
       contents: read
       id-token: write
