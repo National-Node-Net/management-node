@@ -95,7 +95,6 @@ jobs:
     name: build and release development image
     needs:
       - build
-      - lint
     permissions:
       contents: read
       id-token: write

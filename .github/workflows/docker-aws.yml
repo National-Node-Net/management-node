@@ -10,7 +10,7 @@
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied./.m2/settings.xml
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
@@ -82,15 +82,15 @@ jobs:
          docker build --no-cache --build-arg JAR_NAME="management-node-${{ inputs.jar_version }}" \
           -t "${REPO}:staged" -f "${{ github.workspace }}/docker/Dockerfile" --target ${{ inputs.docker_target }} .
 
-      # - name: Run Trivy Scan on Server Docker Image
-      #   uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
-      #   with:
-      #     image-ref: "${REPO}:staged"
-      #     format: "table"
-      #     exit-code: "1"
-      #     ignore-unfixed: true
-      #     severity: "CRITICAL,HIGH"
-      #   continue-on-error: true
+      - name: Run Trivy Scan on Server Docker Image
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          image-ref: "${REPO}:staged"
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: "CRITICAL,HIGH"
+        continue-on-error: true
 
       - name: Tag Server Image with tag(s) ${{ inputs.image_tag }}
         run: |
