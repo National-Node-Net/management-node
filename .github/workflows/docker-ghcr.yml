@@ -69,7 +69,7 @@ jobs:
 
       - name: Format repo name
         run: |
-          REPO="${{ steps.login-ecr.outputs.registry }}/ndtp/secure-agent-graph" >> ${GITHUB_ENV}
+          REPO="${{ steps.login-ecr.outputs.registry }}/ndtp/management-node" >> ${GITHUB_ENV}
     
       - name: Get server and client jars
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
@@ -81,9 +81,7 @@ jobs:
       - name: Build Server Image
         run: |
          docker build --no-cache --build-arg JAR_NAME="management-node-${{ inputs.jar_version }}" \
-          -t "${REPO}:staged" \
-          -f "${{ github.workspace }}/docker/Dockerfile" 
-          --target ${{ inputs.docker_target }} .
+          -t "${REPO}:staged" -f "${{ github.workspace }}/docker/Dockerfile" --target ${{ inputs.docker_target }} .
 
       - name: Run Trivy Scan on Server Docker Image
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
@@ -97,11 +95,9 @@ jobs:
 
       - name: Tag Server Image with tag(s) ${{ inputs.image_tag }}
         run: |
-          ./.github/actions/docker-tags.sh "${REPO}" "${{ inputs.image_tag }},dev-latest"
+          ./.github/actions/docker-tags.sh "${REPO}" "${{ inputs.image_tag }}"
           docker rmi "${REPO}:staged"
 
       - name: Push Server Image
         if: ${{ !inputs.dry_run }}
         run: docker push --all-tags "${REPO}"
-
-

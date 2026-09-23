@@ -2,21 +2,7 @@
 # © Crown Copyright 2025. This work has been developed by the National Digital Twin Programme
 # and is legally attributed to the Department for Business and Trade (UK) as the governing entity.
 
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
-
-name: Automated tests
+name: automated tests and development image
 
 on:
   push:
@@ -27,14 +13,10 @@ on:
     branches:
       - 'develop'
       - 'main'
-  workflow_call:
-
-
+  workflow_dispatch:
 
 env:
   MAVEN_CLI_OPTS: "--batch-mode --no-transfer-progress"
-  DOCKER_TARGET: management-node
-  GITHUB_REPOSITORY: ${{ github.repository }}
 
 jobs:
   build:
@@ -42,111 +24,81 @@ jobs:
       contents: read
       pull-requests: read
     runs-on: ubuntu-22.04
+    outputs:
+      project_version: ${{ steps.image.outputs.project_version }}
+      image_tag: ${{ steps.image.outputs.image_tag }}
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - name: checkout code
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
-          # Full history is recommended for accurate Sonar analysis and PR decoration
+          # retain history for sonar analysis and pull-request decoration.
           fetch-depth: 0
-      - name: Set up JDK 21
+
+      - name: set up jdk 21
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
         with:
           java-version: '21'
           distribution: 'temurin'
           cache: maven
           server-password: 'GH_PACKAGES_PAT'
-      - name: Build and Test
+      
+      - name: build and test
         env:
           GH_PACKAGES_PAT: ${{ secrets.GH_PACKAGES_PAT }}
         run: ./mvnw $MAVEN_CLI_OPTS verify
-      - name: Code Coverage
+
+      - name: code coverage
         env:
           GH_PACKAGES_PAT: ${{ secrets.GH_PACKAGES_PAT }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_N3 }}
         run: ./mvnw $MAVEN_CLI_OPTS verify -Dsonar.projectKey=National-Node-Net_management-node -Dsonar.organization=national-node-net -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
-      - name: Verify JaCoCo XML exists
-        run: ls -l target/site/jacoco/jacoco.xml
+        
+      - name: set image metadata
+        id: image
+        # expose values needed by the separate docker workflow.
+        run: |
+          version=$(./mvnw $MAVEN_CLI_OPTS help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "project_version=$version" >> "$GITHUB_OUTPUT"
+          echo "image_tag=$version-$(date -u +%Y%m%d%H%M%S)" >> "$GITHUB_OUTPUT"
+
+      - name: upload server jar
+        # make the jar available to the docker job, which runs on a new runner.
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: management-node-${{ steps.image.outputs.project_version }}.jar
+          path: target/management-node-${{ steps.image.outputs.project_version }}.jar
+          retention-days: 1
+
   lint:
     permissions:
       contents: read
       pull-requests: read
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
-      - name: Set up JDK 21
+      - name: checkout code
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+
+      - name: set up jdk 21
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
         with:
           java-version: '21'
           distribution: 'temurin'
           cache: maven
           server-password: 'GH_PACKAGES_PAT'
-      - name: Lint
+          
+      - name: lint
         env:
           GH_PACKAGES_PAT: ${{ secrets.GH_PACKAGES_PAT }}
         run: ./mvnw $MAVEN_CLI_OPTS spotless:check
-  security-scanning:
-    permissions:
-      contents: read
-      pull-requests: read
-    runs-on: ubuntu-latest
+
+  release-aws:
+    name: build and release development image
     needs: build
-    steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
-      - name: Set up JDK 21
-        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: maven
-          server-password: 'GH_PACKAGES_PAT'
-    
-      - name: Get version
-        id: get_version
-        run: echo project_version=$(./mvnw $MAVEN_CLI_OPTS help:evaluate -Dexpression=project.version -q -DforceStdout) >> $GITHUB_OUTPUT
-
-      - name: Checkout repo
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/ecr-access-for-github
-          aws-region: ${{ secrets.AWS_REGION }}
-          role-skip-session-tagging: true
-          role-duration-seconds: 3600
-
-      - name: Login to ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-      
-      - name: Format repo name
-        run: |
-          REPO="${{ steps.login-ecr.outputs.registry }}/ndtp/management-node" >> ${GITHUB_ENV}
-
-      - name: Get server jar
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
-        with:
-          pattern: management-node-*.jar
-          path: target
-          merge-multiple: true
-
-      - name: Build Server Image
-        run: |
-
-          docker build --no-cache --build-arg JAR_NAME="management-node-${{ steps.get_version.outputs.project_version}}" \
-          -t "${REPO}:staged" \
-          -f "${{ github.workspace }}/docker/Dockerfile" \
-          --target ${{ inputs.docker_target }} .
-
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
-        with:
-          image-ref: "${REPO}/management-node:staged"
-          format: table
-          exit-code: 1
-          ignore-unfixed: true
-          severity: "CRITICAL,HIGH"
-          trivyignores: .trivyignore
-        continue-on-error: false
-
-      - name: Clean up docker image
-        run: docker rmi "${REPO}/management-node:staged"
+    # call the reusable workflow; it downloads the uploaded jar, then builds, scans, tags, and pushes the image.
+    uses: ./.github/workflows/docker-ghcr.yml
+    secrets: inherit
+    with:
+      image_tag: "${{ needs.build.outputs.image_tag }},dev-latest"
+      jar_version: ${{ needs.build.outputs.project_version }}
+      dry_run: false
+      docker_target: management-node
