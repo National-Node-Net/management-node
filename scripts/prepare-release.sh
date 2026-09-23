@@ -9,19 +9,17 @@
 #   5. Commit and push the preparation branch.
 #   6. Open a pull request into develop.
 #
-# After the PR is reviewed and merged, create release/<version> from develop
-# with no further commits, then open its pull request into main. The release
-# and publish-github-release workflows publish the container, Git tag, GitHub
-# Release, and SBOM.
+# After the PR is reviewed and merged, build-and-push-dev-container.yml
+# publishes the development image. Create release/<version> from develop with
+# no further commits, then open its pull request into main to publish the
+# formal release via publish-github-release.yml.
 
 set -euo pipefail
-
-GITHUB_REPOSITORY="National-Node-Net/management-node"
 
 usage() {
   echo "Usage: $0 <release-version> [--no-edit-changelog]"
   echo
-  echo "Example: $0 1.2.3 --no-edit-changelog"
+  echo "Example: $0 0.90.4 --no-edit-changelog"
   echo 
   echo "Requirements: Docker, git, and the GitHub CLI (gh)."
   echo "Java and Maven do not need to be installed; Maven runs in Docker."
@@ -35,6 +33,7 @@ fi
 version="$1"
 prepare_branch="feature/prepare-release-${version}"
 edit_changelog=true
+githubrepo="National-Node-Net/management-node"
 
 if [[ $# -eq 2 ]]; then
   if [[ "$2" != "--no-edit-changelog" ]]; then
@@ -48,6 +47,13 @@ fi
 for command in git docker gh; do
   if ! command -v "$command" >/dev/null 2>&1; then
     echo "Required command not found: $command" >&2
+    exit 1
+  fi
+done
+
+for required_file in pom.xml CHANGELOG.md; do
+  if [[ ! -f "${required_file}" ]]; then
+    echo "Required project file not found: ${required_file}" >&2
     exit 1
   fi
 done
@@ -80,16 +86,16 @@ docker run --rm \
     -DnewVersion="${version}" \
     -DgenerateBackupPoms=false
 
+if [[ "${edit_changelog}" == true ]]; then
+  read -r -a editor_command <<< "${VISUAL:-${EDITOR:-vi}}"
+  "${editor_command[@]}" CHANGELOG.md
+fi
+
 if git diff --quiet -- pom.xml; then
   echo "The project POM is already at version ${version}; nothing to commit." >&2
   git switch develop
   git branch -d "${prepare_branch}"
   exit 1
-fi
-
-if [[ "${edit_changelog}" == true ]]; then
-  read -r -a editor_command <<< "${VISUAL:-${EDITOR:-vi}}"
-  "${editor_command[@]}" CHANGELOG.md
 fi
 
 git add pom.xml CHANGELOG.md
@@ -108,18 +114,11 @@ This PR was generated from script \`/scripts/prepare-release.sh\`.
 
        git switch develop
        git pull --ff-only origin develop
-
-3. Create and push the release branch from \`develop\`. Do not make any commits
-   on the release branch:
-
        git switch -c release/${version}
        git push --set-upstream origin release/${version}
+       gh pr create --base main --head release/${version} --title "Release ${version}" --body "Release ${version}" --repo "$githubrepo"
 
-4. Open the release PR into \`main\`:
-
-       gh pr create --base main --head release/${version} --title "Release ${version}" --body "Release ${version}." --repo "${GITHUB_REPOSITORY}"
-
-5. Review and merge the \`release/${version}\` PR into \`main\`.
+3. Review and merge the \`release/${version}\` PR into \`main\`.
 
 Merging the release PR creates Git tag \`v${version}\`, publishes GitHub
 Release \`v${version}\`, and builds the release container tagged \`${version}\`.
@@ -131,6 +130,6 @@ gh pr create \
   --head "${prepare_branch}" \
   --title "chore: prepare release ${version}" \
   --body "$body_text" \
-  --repo "${GITHUB_REPOSITORY}"
+  --repo "$githubrepo"
 
 echo "Preparation PR created. After it is reviewed and merged, create release/${version} from develop."
