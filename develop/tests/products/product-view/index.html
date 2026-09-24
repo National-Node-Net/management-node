@@ -1,0 +1,3290 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Management Node is is the control plane for the National Digital Twin Programme IA Node Net.">
+      
+      
+        <meta name="author" content="NDTP">
+      
+      
+        <link rel="canonical" href="https://docs.ndtp.co.uk/develop/tests/products/product-view/">
+      
+      
+        <link rel="prev" href="../product-discover/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/android-chrome-512x512-1-150x150.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Product View API: Test Requirement Specification - Management-Node Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#product-view-api-test-requirement-specification" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="Management-Node Documentation" class="md-header__button md-logo" aria-label="Management-Node Documentation" data-md-component="logo">
+      
+  <img src="../../../assets/light-page_header_logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Management-Node Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Product View API: Test Requirement Specification
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="Management-Node Documentation" class="md-nav__button md-logo" aria-label="Management-Node Documentation" data-md-component="logo">
+      
+  <img src="../../../assets/light-page_header_logo.png" alt="logo">
+
+    </a>
+    Management-Node Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    README
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../AUTHENTICATION_REQUIREMENTS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication Requirements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../BOOTSTRAP_ONBOARDING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bootstrap Onboarding Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../DATABASE_SCHEMA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../DISCOVERY_TEST_SCENARIOS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Discovery and View: Test Scenarios
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../JACOCO_COVERAGE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JaCoCo Code Coverage Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../MOCKITO_USAGE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockito Testing Tool Usage Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../MTLS_CONFIGURATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MTLS Configuration Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../POLICY_ENFORCEMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Policy Enforcement
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../entity-dto-converter-pattern/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entity-DTO Converter Pattern
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../jobs-scheduler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Jobs Scheduler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tests
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tests
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12_1" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Products
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_12_1" id="__nav_12_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_12_1_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_12_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Products
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../product-discover/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Discover: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product View API: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product View API: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-what-this-api-does" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. What this API does
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. What this API does">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-the-one-thing-to-understand-view-is-discover-constrained-to-one-product" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 The one thing to understand: view is discover, constrained to one product
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-what-policy-decides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 What policy decides
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13-status-codes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.3 Status codes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#14-the-response" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.4 The response
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#15-access_level-is-reported-not-enforced" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.5 access_level is reported, not enforced
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-before-you-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Before you start
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Before you start">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 Environment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-never-hardcode-a-product-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 Never hardcode a product id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-helpers-used-throughout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 Helpers used throughout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#24-who-is-who-and-what-each-caller-should-see" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.4 Who is who, and what each caller should see
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-test-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Test cases
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Test cases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#v1-a-discoverable-product-returns-200-with-the-full-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V1: A discoverable product returns 200 with the full model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v2-you-can-view-exactly-what-you-can-discover" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V2: You can view exactly what you can discover
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v3-a-product-the-caller-cannot-discover-returns-404" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V3: A product the caller cannot discover returns 404
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v4-a-non-existent-id-returns-404" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V4: A non-existent id returns 404
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v5-the-two-404s-are-indistinguishable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V5: The two 404s are indistinguishable
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v6-masking-per-organisation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V6: Masking per organisation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v7-an-organisation-sees-its-own-products-unmasked" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V7: An organisation sees its own products unmasked
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v8-sensitive-attributes-are-withheld-below-secret-in-every-attributes-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V8: Sensitive attributes are withheld below SECRET, in every attributes map
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v9-a-viewed-product-agrees-with-the-same-product-in-a-discover-result" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V9: A viewed product agrees with the same product in a discover result
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v10-access_level-is-reported-not-enforced" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V10: access_level is reported, not enforced
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v11-a-non-numeric-id-returns-400" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V11: A non-numeric id returns 400
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v12-no-token-returns-401" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V12: No token returns 401
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v13-a-token-without-the-product_view-role-returns-403-role-not-a-policy-403" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V13: A token without the product_view role returns 403 (role), not a policy 403
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v14-caller-level-policy-403-organisationmissing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V14: Caller-level policy 403: organisation.missing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v15-caller-level-policy-403-jurisdiction-and-clearance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V15: Caller-level policy 403: jurisdiction and clearance
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v16-policy-switched-off-every-real-id-returns-200-nothing-masked" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V16: Policy switched off: every real id returns 200, nothing masked
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v17-connection-details-and-delivery-destinations-are-never-returned" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V17: Connection details and delivery destinations are never returned
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v18-the-audit-obligation-is-honoured" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V18: The audit obligation is honoured
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-edge-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Edge cases
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Edge cases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#e1-id-0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E1: Id 0
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#e2-negative-ids" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E2: Negative ids
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#e3-very-large-ids" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E3: Very large ids
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#e4-a-product-that-exists-but-whose-owning-organisation-the-caller-cannot-reach" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E4: A product that exists but whose owning organisation the caller cannot reach
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#e5-head-versus-get" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E5: HEAD versus GET
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#e6-trailing-slash-and-missing-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E6: Trailing slash and missing id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#e7-a-product-with-a-null-description-or-no-product-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E7: A product with a NULL description or no product type
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#e8-an-id-with-whitespace-a-sign-or-a-decimal-point" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E8: An id with whitespace, a sign, or a decimal point
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#e9-repeatability-and-caching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E9: Repeatability and caching
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-things-that-should-never-happen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Things that should never happen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-related-documents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Related documents
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-what-this-api-does" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. What this API does
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. What this API does">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-the-one-thing-to-understand-view-is-discover-constrained-to-one-product" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 The one thing to understand: view is discover, constrained to one product
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-what-policy-decides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 What policy decides
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13-status-codes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.3 Status codes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#14-the-response" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.4 The response
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#15-access_level-is-reported-not-enforced" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.5 access_level is reported, not enforced
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-before-you-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Before you start
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Before you start">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 Environment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-never-hardcode-a-product-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 Never hardcode a product id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-helpers-used-throughout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 Helpers used throughout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#24-who-is-who-and-what-each-caller-should-see" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.4 Who is who, and what each caller should see
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-test-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Test cases
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Test cases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#v1-a-discoverable-product-returns-200-with-the-full-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V1: A discoverable product returns 200 with the full model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v2-you-can-view-exactly-what-you-can-discover" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V2: You can view exactly what you can discover
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v3-a-product-the-caller-cannot-discover-returns-404" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V3: A product the caller cannot discover returns 404
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v4-a-non-existent-id-returns-404" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V4: A non-existent id returns 404
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v5-the-two-404s-are-indistinguishable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V5: The two 404s are indistinguishable
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v6-masking-per-organisation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V6: Masking per organisation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v7-an-organisation-sees-its-own-products-unmasked" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V7: An organisation sees its own products unmasked
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v8-sensitive-attributes-are-withheld-below-secret-in-every-attributes-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V8: Sensitive attributes are withheld below SECRET, in every attributes map
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v9-a-viewed-product-agrees-with-the-same-product-in-a-discover-result" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V9: A viewed product agrees with the same product in a discover result
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v10-access_level-is-reported-not-enforced" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V10: access_level is reported, not enforced
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v11-a-non-numeric-id-returns-400" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V11: A non-numeric id returns 400
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v12-no-token-returns-401" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V12: No token returns 401
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v13-a-token-without-the-product_view-role-returns-403-role-not-a-policy-403" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V13: A token without the product_view role returns 403 (role), not a policy 403
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v14-caller-level-policy-403-organisationmissing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V14: Caller-level policy 403: organisation.missing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v15-caller-level-policy-403-jurisdiction-and-clearance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V15: Caller-level policy 403: jurisdiction and clearance
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v16-policy-switched-off-every-real-id-returns-200-nothing-masked" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V16: Policy switched off: every real id returns 200, nothing masked
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v17-connection-details-and-delivery-destinations-are-never-returned" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V17: Connection details and delivery destinations are never returned
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v18-the-audit-obligation-is-honoured" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V18: The audit obligation is honoured
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-edge-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Edge cases
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Edge cases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#e1-id-0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E1: Id 0
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#e2-negative-ids" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E2: Negative ids
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#e3-very-large-ids" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E3: Very large ids
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#e4-a-product-that-exists-but-whose-owning-organisation-the-caller-cannot-reach" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E4: A product that exists but whose owning organisation the caller cannot reach
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#e5-head-versus-get" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E5: HEAD versus GET
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#e6-trailing-slash-and-missing-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E6: Trailing slash and missing id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#e7-a-product-with-a-null-description-or-no-product-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E7: A product with a NULL description or no product type
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#e8-an-id-with-whitespace-a-sign-or-a-decimal-point" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E8: An id with whitespace, a sign, or a decimal point
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#e9-repeatability-and-caching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E9: Repeatability and caching
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-things-that-should-never-happen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Things that should never happen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-related-documents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Related documents
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="../../.." class="md-path__link">
+        
+  <span class="md-ellipsis">
+    README
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Tests
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Products
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="product-view-api-test-requirement-specification">Product View API: Test Requirement Specification</h1>
+<p><strong>Repository:</strong> <code>management-node</code>
+<strong>Endpoint:</strong> <code>GET /api/v1/product/{productId}</code> (<code>ProductController.viewProduct</code>)
+<strong>Role required:</strong> <code>product_view</code>
+<strong>SPDX-License-Identifier:</strong> <code>Apache-2.0 AND OGL-UK-3.0</code></p>
+<hr />
+<p>This is the formal test specification for the <strong>Product View</strong> API: what the endpoint does, what
+policy governs it, and every permutation a manual tester should exercise.</p>
+<p>It is a <strong>sibling</strong> of <a href="../product-discover/"><code>product-discover.md</code></a> and a formal counterpart to the
+informal walkthrough in <a href="../../../DISCOVERY_TEST_SCENARIOS/"><code>../../DISCOVERY_TEST_SCENARIOS.md</code></a>
+§5a (scenarios S17–S22). Those scenarios are a guided tour; this document is the checklist. It
+<strong>reuses</strong> that document's setup (§2), token recipe and "who is who" (§3, §3.1), and sample
+catalogue (§4) rather than repeating them; read §2–§4 there once, then work through §3 below.</p>
+<h2 id="contents">Contents</h2>
+<ul>
+<li><a href="#1-what-this-api-does">1. What this API does</a></li>
+<li><a href="#11-the-one-thing-to-understand-view-is-discover-constrained-to-one-product">1.1 The one thing to understand: view is discover, constrained to one product</a></li>
+<li><a href="#12-what-policy-decides">1.2 What policy decides</a></li>
+<li><a href="#13-status-codes">1.3 Status codes</a></li>
+<li><a href="#14-the-response">1.4 The response</a></li>
+<li><a href="#15-access_level-is-reported-not-enforced">1.5 <code>access_level</code> is reported, not enforced</a></li>
+<li><a href="#2-before-you-start">2. Before you start</a></li>
+<li><a href="#21-environment">2.1 Environment</a></li>
+<li><a href="#22-never-hardcode-a-product-id">2.2 Never hardcode a product id</a></li>
+<li><a href="#23-helpers-used-throughout">2.3 Helpers used throughout</a></li>
+<li><a href="#24-who-is-who-and-what-each-caller-should-see">2.4 Who is who, and what each caller should see</a></li>
+<li><a href="#3-test-cases">3. Test cases</a></li>
+<li><a href="#4-edge-cases">4. Edge cases</a></li>
+<li><a href="#5-things-that-should-never-happen">5. Things that should never happen</a></li>
+<li><a href="#6-related-documents">6. Related documents</a></li>
+</ul>
+<hr />
+<h2 id="1-what-this-api-does">1. What this API does</h2>
+<p><code>GET /api/v1/product/{productId}</code> returns <strong>one data product, as much of it as policy permits</strong>.</p>
+<ul>
+<li>Authentication: OAuth2 JWT bearer token, <code>aud</code> including <code>management-node</code>.</li>
+<li>Authorization: the client role <code>management-node:product_view</code>.</li>
+<li>Policy: <code>@Policy(resource = "product", action = "view")</code>, answered by the Rego module
+  <code>policies.product.view</code> (<code>docker/opa/policies/product/view.rego</code>).</li>
+<li>No request body, no query parameters. Exactly one id, matched exactly.</li>
+<li>Response: <code>DiscoveredProductDTO</code>, the <strong>whole</strong> product object model, which is the same type
+  discovery returns.</li>
+</ul>
+<h3 id="11-the-one-thing-to-understand-view-is-discover-constrained-to-one-product">1.1 The one thing to understand: view is discover, constrained to one product</h3>
+<p><strong>View is a replica of discover.</strong> There are exactly two differences:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><code>POST /api/v1/product/discover</code></th>
+<th><code>GET /api/v1/product/{productId}</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>how many products</td>
+<td>a page of them</td>
+<td>exactly one, by id</td>
+</tr>
+<tr>
+<td>how much of each</td>
+<td>a <strong>summary</strong> (<code>id</code>, <code>name</code>, <code>description</code>, <code>type</code>, and the owning <code>organisation</code>'s <code>key</code> and <code>name</code>)</td>
+<td>the <strong>whole</strong> object model</td>
+</tr>
+</tbody>
+</table>
+<p>Everything else is shared, and shared <strong>from one definition</strong> rather than two that happen to agree:
+<code>docker/opa/policies/lib/product_access.rego</code> holds the caller gates, the refusal reasons, the row
+filter and the masking, and both <code>policies.product.discover</code> and <code>policies.product.view</code> are that
+module. On the Java side both endpoints go through the same <code>ProductQueryPlanner</code>,
+<code>ProductSearchQueryBuilder</code>, <code>ProductDiscoveryRepository</code> and <code>DiscoveredProductAssembler</code>; the view
+service adds one condition, <code>id = :productId</code>, AND-ed onto the policy's row filter.</p>
+<p>Two consequences, and they are what most of this document tests:</p>
+<ol>
+<li><strong>If you can discover a product, you can view it. If you cannot discover it, view answers
+   <code>404</code>.</strong> A product id is not a way around discovery's filtering.</li>
+<li><strong>A product excluded by policy and a product that does not exist are deliberately
+   indistinguishable</strong>: both <code>404</code>, with identical (empty) bodies.</li>
+</ol>
+<blockquote>
+<p><strong>Why <code>404</code> and not <code>403</code> for a withheld product.</strong> A <code>403</code> there would turn an id into a probe
+for what exists: <code>403</code> would mean "it exists and is not yours", <code>404</code> "it does not exist", and a
+caller could enumerate the catalogue one id at a time. The caller is already allowed to <em>ask</em>,
+that is what the role check and the caller-level policy check decide, so the per-product answer
+must not distinguish the two. This is a non-disclosure guarantee, not an oversight, and it has a
+test case of its own (<a href="#v5--the-two-404s-are-indistinguishable">V5</a>).</p>
+</blockquote>
+<h3 id="12-what-policy-decides">1.2 What policy decides</h3>
+<p>Policy controls three separate things. Keeping them apart makes most surprises self-explaining.</p>
+<table>
+<thead>
+<tr>
+<th>Policy controls</th>
+<th>Mechanism</th>
+<th>Effect when it says no</th>
+<th>How you see it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>whether this <strong>caller</strong> may view at all</td>
+<td>the three caller gates</td>
+<td>the request is refused before any product is looked at</td>
+<td><code>403 "Access denied by policy"</code> with <code>reasons</code></td>
+</tr>
+<tr>
+<td>which products <strong>exist</strong> for this caller</td>
+<td><code>row_filter</code>, the query's <code>WHERE</code> clause</td>
+<td>the product is not found</td>
+<td><code>404</code>, empty body</td>
+</tr>
+<tr>
+<td>what is <strong>shown</strong> of the product</td>
+<td><code>masked_filtered_fields</code>, <code>mask_sensitive_attributes</code>, <code>unmask_when</code></td>
+<td>that member is absent from the JSON</td>
+<td>the key is simply not there</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The three caller gates are exactly discover's three</strong>, from the shared module:</p>
+<table>
+<thead>
+<tr>
+<th>Reason</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>organisation.missing</code></td>
+<td>the token carried no <code>organisation</code> claim, so the calling organisation could not be named</td>
+</tr>
+<tr>
+<td><code>organisation.jurisdiction_not_permitted</code></td>
+<td>the organisation's <code>jurisdictions</code> include no UK nation</td>
+</tr>
+<tr>
+<td><code>organisation.clearance_missing</code></td>
+<td>the organisation holds no <code>authorised_classifications</code> at all, not even <code>OFFICIAL</code></td>
+</tr>
+</tbody>
+</table>
+<p>There is <strong>no clearance floor on view</strong>. <code>OFFICIAL</code> is enough, so Bristol City Council (BCC), the
+lowest-cleared sample organisation, is allowed to view. What a clearance costs a caller is
+<strong>fields, not the endpoint</strong>.</p>
+<p>There is <strong>no method gate</strong> on the view rule either: the endpoint is a <code>@GetMapping</code>, so nothing
+but <code>GET</code> (and <code>HEAD</code>) can reach the rule.</p>
+<h3 id="13-status-codes">1.3 Status codes</h3>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>When</th>
+<th>Body</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>200</code></td>
+<td>the caller may view the product and it exists</td>
+<td>the product, with withheld members absent</td>
+</tr>
+<tr>
+<td><code>400</code></td>
+<td><code>{productId}</code> is not a whole number</td>
+<td><code>{"status":400,"message":"Invalid value for 'productId'","errorId":"…"}</code></td>
+</tr>
+<tr>
+<td><code>401</code></td>
+<td>no token, or an invalid/expired one</td>
+<td><strong>empty</strong>, answered by the security filter chain, with a <code>WWW-Authenticate: Bearer</code> header</td>
+</tr>
+<tr>
+<td><code>403</code> (role)</td>
+<td>the token lacks <code>management-node:product_view</code></td>
+<td><code>{"status":403,"message":"Access denied: insufficient permissions for this operation","errorId":"…"}</code>, with <strong>no <code>reasons</code> key</strong></td>
+</tr>
+<tr>
+<td><code>403</code> (policy)</td>
+<td>a caller-level gate refused: <code>organisation.missing</code>, <code>organisation.jurisdiction_not_permitted</code>, <code>organisation.clearance_missing</code></td>
+<td><code>{"status":403,"message":"Access denied by policy","reasons":[…],"errorId":"…"}</code></td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td>the product does not exist <strong>or</strong> the row filter excludes it</td>
+<td><strong>empty</strong></td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>never, for anything in this document</td>
+<td>n/a</td>
+</tr>
+</tbody>
+</table>
+<p>The two <code>403</code>s are answered by different layers and are told apart by the <strong>message</strong> and by the
+presence of <code>reasons</code>. Enforcement order is: authentication → role → policy → handler, and a
+request refused at one step never reaches the next, so a caller without the role is never sent to
+the PDP at all.</p>
+<h3 id="14-the-response">1.4 The response</h3>
+<p><code>200</code> returns the <strong>full</strong> object model, as far as policy permits:</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"FloodRiskMapZones"</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Flood risk zones for England and Wales …"</span><span class="p">,</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="nt">"topic"</span><span class="p">:</span><span class="w"> </span><span class="s2">"topic.FloodRiskMapZones"</span><span class="p">,</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"topic"</span><span class="p">,</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="nt">"source"</span><span class="p">:</span><span class="w"> </span><span class="s2">"kafka://…"</span><span class="p">,</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="nt">"attributes"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"identifiability"</span><span class="p">:</span><span class="w"> </span><span class="s2">"non_personal"</span><span class="p">,</span><span class="w"> </span><span class="nt">"quality_designation"</span><span class="p">:</span><span class="w"> </span><span class="s2">"validated"</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">  </span><span class="nt">"organisation"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="nt">"key"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ENV"</span><span class="p">,</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Environment Agency"</span><span class="p">,</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="nt">"attributes"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"jurisdictions"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"England"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Wales"</span><span class="p">],</span><span class="w"> </span><span class="nt">"authorised_classifications"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"OFFICIAL"</span><span class="p">,</span><span class="w"> </span><span class="s2">"SECRET"</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">  </span><span class="p">},</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">  </span><span class="nt">"producer"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">    </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ENV-PRODUCER-1"</span><span class="p">,</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">    </span><span class="nt">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"…"</span><span class="p">,</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">    </span><span class="nt">"active"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">    </span><span class="nt">"attributes"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">  </span><span class="p">},</span>
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">  </span><span class="nt">"consumers"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">    </span><span class="p">{</span>
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">      </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"HEG-CONSUMER-1"</span><span class="p">,</span>
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">      </span><span class="nt">"organisation"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"key"</span><span class="p">:</span><span class="w"> </span><span class="s2">"HEG"</span><span class="p">,</span><span class="w"> </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Homes England"</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="w">      </span><span class="nt">"attributes"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="w">      </span><span class="nt">"subscription"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="w">        </span><span class="nt">"grantedAt"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-02-11T07:00:00"</span><span class="p">,</span>
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="w">        </span><span class="nt">"validity"</span><span class="p">:</span><span class="w"> </span><span class="mi">365</span><span class="p">,</span>
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="w">        </span><span class="nt">"scheduleType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"cron"</span><span class="p">,</span>
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a><span class="w">        </span><span class="nt">"scheduleExpression"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0 0 * * *"</span><span class="p">,</span>
+</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a><span class="w">        </span><span class="nt">"attributes"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a><span class="w">      </span><span class="p">}</span>
+</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a><span class="w">  </span><span class="p">],</span>
+</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a><span class="w">  </span><span class="nt">"subscribedBy"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a><span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">"key"</span><span class="p">:</span><span class="w"> </span><span class="s2">"HEG"</span><span class="p">,</span><span class="w"> </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Homes England"</span><span class="p">,</span><span class="w"> </span><span class="nt">"consumers"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"since"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-02-11T07:00:00"</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a><span class="w">  </span><span class="p">]</span>
+</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Rules that hold for every <code>200</code>:</p>
+<ul>
+<li><strong>A withheld member is absent: never <code>null</code>, never <code>[]</code>, never <code>{}</code>.</strong> The DTO is
+  <code>@JsonInclude(NON_NULL)</code>, and more importantly a withheld member is <strong>never read from the
+  database</strong> in the first place: masking is applied by not selecting the column and not running the
+  block's query.</li>
+<li><strong><code>id</code> is always present.</strong> It is what you pass to <code>GET /{productId}</code> and to
+  <code>POST /api/v1/product/subscribe</code>.</li>
+<li><strong>Producer connection details are never returned at all</strong>: <code>host</code>, <code>port</code>, <code>tls</code> and
+  <code>idp_client_id</code> are not members of the model, for any caller, at any clearance.</li>
+<li><strong>A subscription's <code>destination</code> is never returned at all</strong>, for the same reason.</li>
+<li>A nested <code>consumers[].organisation</code> carries <code>key</code> and <code>name</code> only; it never carries <code>attributes</code>.</li>
+<li>Attribute maps keep their JSON types: a multi-valued attribute is an array, a number stays a
+  number.</li>
+<li>The response carries <strong>no <code>policy</code> block</strong>. Discovery's response has one (it is how a UI builds a
+  filter panel); view returns the bare product.</li>
+</ul>
+<p>What is masked depends only on the caller's clearance, and is the same list discovery applies:</p>
+<table>
+<thead>
+<tr>
+<th>Caller</th>
+<th>clearance</th>
+<th>masked fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ENV</strong></td>
+<td>SECRET</td>
+<td><em>(nothing)</em></td>
+</tr>
+<tr>
+<td><strong>HEG</strong></td>
+<td>OFFICIAL-SENSITIVE</td>
+<td><code>consumers</code></td>
+</tr>
+<tr>
+<td><strong>BCC</strong></td>
+<td>OFFICIAL</td>
+<td><code>consumers</code>, <code>policyAttributes</code>, <code>source</code>, <code>subscribedBy</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>policyAttributes</code> is the block name for the <strong>product's own</strong> <code>attributes</code> map. The
+<code>organisation.attributes</code> and <code>producer.attributes</code> maps are governed separately, by
+<code>mask_sensitive_attributes</code> (§<a href="#v8--sensitive-attributes-are-withheld-below-secret-in-every-attributes-map">V8</a>).</p>
+<p><strong>One exception, and it is important:</strong> an organisation always sees <code>consumers</code> and <code>subscribedBy</code>
+on <strong>its own</strong> products, even when those members are masked for it in general. The rule ships an
+<code>unmask_when</code> clause for exactly that, evaluated per product by the database.</p>
+<h3 id="15-access_level-is-reported-not-enforced">1.5 <code>access_level</code> is reported, not enforced</h3>
+<p>The decision's <code>details.access_level</code> reports the tier the caller was granted:</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>full</code></td>
+<td>clearance SECRET or above</td>
+</tr>
+<tr>
+<td><code>summary</code></td>
+<td>clearance OFFICIAL-SENSITIVE</td>
+</tr>
+<tr>
+<td><code>basic</code></td>
+<td>clearance OFFICIAL</td>
+</tr>
+<tr>
+<td><code>none</code></td>
+<td>the request was refused</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Nothing branches on it.</strong> It does not appear in the response body, and it does not change what is
+returned; what is actually withheld is the masking lists. Two mechanisms for "show less" is how
+they come to disagree, so there is only one, and <code>access_level</code> is carried so a client can tell the
+caller which tier it holds and so the log records it.</p>
+<p>Do not expect a body to change because <code>access_level</code> changed. You can see the value in the
+service log (<code>Product view policy decision … accessLevel=…</code> at <code>DEBUG</code>, and
+<code>Product view audit … accessLevel=…</code> at <code>INFO</code>), or in the PDP decision log when
+<code>application.opa.log-output</code> is on.</p>
+<hr />
+<h2 id="2-before-you-start">2. Before you start</h2>
+<h3 id="21-environment">2.1 Environment</h3>
+<p>Follow <a href="../../../DISCOVERY_TEST_SCENARIOS/#2-setting-up"><code>DISCOVERY_TEST_SCENARIOS.md</code> §2</a> exactly:
+Keycloak + Postgres + OPA up, the <code>product_view</code> role assigned, an <code>organisation</code> claim on each
+federator client, the sample data loaded (17 products), and the application running over mTLS on
+<code>https://localhost:8090</code>.</p>
+<p>Two things that will otherwise waste an afternoon:</p>
+<ul>
+<li><strong>OPA fails closed.</strong> If OPA is not running, every view request returns <code>403</code>. Check
+  <code>curl -s http://localhost:8181/health</code> before reporting anything.</li>
+<li><strong>The organisation comes from the token, not from the request.</strong> Getting the same answer for all
+  three callers almost always means you sent the same token three times. See
+  <a href="../../../DISCOVERY_TEST_SCENARIOS/#31-who-is-who">§3.1 "Who is who"</a>.</li>
+</ul>
+<p>Unless a test case says otherwise, run with policy enforcement <strong>on</strong>:</p>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">application</span><span class="p">:</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">opa</span><span class="p">:</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">          </span><span class="c1"># or OPA_ENABLED=true</span>
+</span></code></pre></div>
+<h3 id="22-never-hardcode-a-product-id">2.2 Never hardcode a product id</h3>
+<blockquote>
+<p><strong>Product ids differ between environments.</strong> They are PostgreSQL sequence values: a freshly
+migrated database, a re-seeded one, and the environment the next tester uses will not agree on
+which id is <code>FloodRiskMapZones</code>. An id that is <code>3</code> for you may be <code>20</code> for someone else, or may
+not exist at all.</p>
+</blockquote>
+<p><strong>Always take the id from a discover response first.</strong> That is also the natural workflow this
+endpoint is designed for: discover returns summaries carrying <code>id</code>, and the caller opens one.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># the id of a named product, for this caller, in this environment</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>id_of<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w">   </span><span class="c1"># id_of &lt;TOKEN&gt; &lt;product name&gt;</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$1</span><span class="s2">"</span><span class="w"> </span><span class="s2">"{\"text\":\"</span><span class="nv">$2</span><span class="s2">\"}"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span>--arg<span class="w"> </span>n<span class="w"> </span><span class="s2">"</span><span class="nv">$2</span><span class="s2">"</span><span class="w"> </span><span class="s1">'.products[] | select(.name == $n) | .id'</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="o">}</span>
+</span></code></pre></div>
+<p>Every test case below names products, never ids, and tells you which caller to resolve the id as.</p>
+<h3 id="23-helpers-used-throughout">2.3 Helpers used throughout</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>get_token<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w">   </span><span class="c1"># get_token &lt;client id&gt;</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span>curl<span class="w"> </span>-sk<span class="w"> </span>--cert<span class="w"> </span>client.crt<span class="w"> </span>--key<span class="w"> </span>client.key<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="s1">'https://localhost:8443/realms/mng-node/protocol/openid-connect/token'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span>-d<span class="w"> </span><span class="s2">"client_id=</span><span class="nv">$1</span><span class="s2">"</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'grant_type=client_credentials'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span>.access_token
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="o">}</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>discover<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w">    </span><span class="c1"># discover &lt;TOKEN&gt; '&lt;json body&gt;'</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">  </span>curl<span class="w"> </span>-sk<span class="w"> </span>--cert<span class="w"> </span>client.crt<span class="w"> </span>--key<span class="w"> </span>client.key<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">    </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s1">'https://localhost:8090/api/v1/product/discover'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">    </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$1</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">    </span>-d<span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">2</span><span class="k">:-</span><span class="se">\{\}</span><span class="si">}</span><span class="s2">"</span>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="o">}</span>
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>view<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w">        </span><span class="c1"># view &lt;TOKEN&gt; &lt;productId&gt;  -&gt; status code only</span>
+</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">  </span>curl<span class="w"> </span>-sk<span class="w"> </span>--cert<span class="w"> </span>client.crt<span class="w"> </span>--key<span class="w"> </span>client.key<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code}\n'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">    </span><span class="s2">"https://localhost:8090/api/v1/product/</span><span class="nv">$2</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$1</span><span class="s2">"</span>
+</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="o">}</span>
+</span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>
+</span><span id="__span-3-19"><a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>view_body<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w">   </span><span class="c1"># view_body &lt;TOKEN&gt; &lt;productId&gt;  -&gt; body</span>
+</span><span id="__span-3-20"><a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="w">  </span>curl<span class="w"> </span>-sk<span class="w"> </span>--cert<span class="w"> </span>client.crt<span class="w"> </span>--key<span class="w"> </span>client.key<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-21"><a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="w">    </span><span class="s2">"https://localhost:8090/api/v1/product/</span><span class="nv">$2</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$1</span><span class="s2">"</span>
+</span><span id="__span-3-22"><a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span class="o">}</span>
+</span><span id="__span-3-23"><a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a>
+</span><span id="__span-3-24"><a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a>view_full<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w">   </span><span class="c1"># view_full &lt;TOKEN&gt; &lt;productId&gt;  -&gt; status, headers and body</span>
+</span><span id="__span-3-25"><a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a><span class="w">  </span>curl<span class="w"> </span>-sk<span class="w"> </span>--cert<span class="w"> </span>client.crt<span class="w"> </span>--key<span class="w"> </span>client.key<span class="w"> </span>-i<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-26"><a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a><span class="w">    </span><span class="s2">"https://localhost:8090/api/v1/product/</span><span class="nv">$2</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$1</span><span class="s2">"</span>
+</span><span id="__span-3-27"><a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a><span class="o">}</span>
+</span><span id="__span-3-28"><a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a>
+</span><span id="__span-3-29"><a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a><span class="nv">ENV_TOKEN</span><span class="o">=</span><span class="k">$(</span>get_token<span class="w"> </span>FEDERATOR_ENV<span class="k">)</span>
+</span><span id="__span-3-30"><a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a><span class="nv">HEG_TOKEN</span><span class="o">=</span><span class="k">$(</span>get_token<span class="w"> </span>FEDERATOR_HEG<span class="k">)</span>
+</span><span id="__span-3-31"><a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a><span class="nv">BCC_TOKEN</span><span class="o">=</span><span class="k">$(</span>get_token<span class="w"> </span>FEDERATOR_BCC<span class="k">)</span>
+</span></code></pre></div>
+<h3 id="24-who-is-who-and-what-each-caller-should-see">2.4 Who is who, and what each caller should see</h3>
+<p>From <a href="../../../DISCOVERY_TEST_SCENARIOS/#4-the-sample-catalogue"><code>DISCOVERY_TEST_SCENARIOS.md</code> §4</a>,
+the attributes below are the only reason the three callers differ.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>ENV (Environment Agency)</th>
+<th>HEG (Homes England)</th>
+<th>BCC (Bristol City Council)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>organisation</code> claim</td>
+<td><code>ENV</code></td>
+<td><code>HEG</code></td>
+<td><code>BCC</code></td>
+</tr>
+<tr>
+<td>clearance</td>
+<td><strong>SECRET</strong></td>
+<td><strong>OFFICIAL-SENSITIVE</strong></td>
+<td><strong>OFFICIAL</strong></td>
+</tr>
+<tr>
+<td>purposes</td>
+<td>service delivery, regulatory oversight</td>
+<td>service delivery, statistical analysis</td>
+<td>service delivery</td>
+</tr>
+<tr>
+<td>jurisdictions</td>
+<td>England, Wales</td>
+<td>England, Scotland</td>
+<td>England, <strong>Bristol</strong> (local remit)</td>
+</tr>
+<tr>
+<td>owns</td>
+<td>6 products</td>
+<td>6 products</td>
+<td>5 products</td>
+</tr>
+<tr>
+<td><strong>discovers / views</strong></td>
+<td><strong>15</strong> of 17</td>
+<td><strong>12</strong> of 17</td>
+<td><strong>8</strong> of 17</td>
+</tr>
+<tr>
+<td><code>access_level</code> reported</td>
+<td><code>full</code></td>
+<td><code>summary</code></td>
+<td><code>basic</code></td>
+</tr>
+<tr>
+<td>masked fields</td>
+<td><em>(none)</em></td>
+<td><code>consumers</code></td>
+<td><code>consumers</code>, <code>policyAttributes</code>, <code>source</code>, <code>subscribedBy</code></td>
+</tr>
+<tr>
+<td><code>mask_sensitive_attributes</code></td>
+<td><code>false</code></td>
+<td><code>true</code></td>
+<td><code>true</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>These counts were measured against the real policy and a real database. <strong>Every organisation
+views exactly what it discovers: ENV 15, HEG 12, BCC 8.</strong> If your numbers differ, work through
+<a href="../../../DISCOVERY_TEST_SCENARIOS/#0-if-all-three-organisations-return-the-same-products"><code>DISCOVERY_TEST_SCENARIOS.md</code> §0</a>
+before reporting a bug; the usual cause is one identity sent three times.</p>
+</blockquote>
+<p>The 17 products and their attributes are tabulated in
+<a href="../../../DISCOVERY_TEST_SCENARIOS/#42-the-17-products"><code>DISCOVERY_TEST_SCENARIOS.md</code> §4.2</a>. Four
+are deliberately awkward and are used by the cases below:</p>
+<table>
+<thead>
+<tr>
+<th>Product</th>
+<th>Owner</th>
+<th>Why it is useful here</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>FloodRiskMapZones</code></td>
+<td>ENV</td>
+<td>discoverable by <strong>all three</strong>; the masking comparison (<a href="#v6--masking-per-organisation">V6</a>)</td>
+</tr>
+<tr>
+<td><code>PendingPlanningApplications</code></td>
+<td>BCC</td>
+<td>directly identifiable <strong>and</strong> risk-tagged; only BCC sees it, and only because it owns it (<a href="#v7--an-organisation-sees-its-own-products-unmasked">V7</a>)</td>
+</tr>
+<tr>
+<td><code>HelpToBuyApplicants</code></td>
+<td>HEG</td>
+<td>carries the <strong>sensitive</strong> attribute <code>population_risk_tags</code> (<a href="#v8--sensitive-attributes-are-withheld-below-secret-in-every-attributes-map">V8</a>)</td>
+</tr>
+<tr>
+<td><code>ScotlandLandRegisterExtract</code></td>
+<td>HEG</td>
+<td>harmless data BCC still cannot reach; jurisdiction alone (<a href="#v3--a-product-the-caller-cannot-discover-returns-404">V3</a>)</td>
+</tr>
+<tr>
+<td><code>Bristol_Cycle%Counts</code></td>
+<td>BCC</td>
+<td><strong>no description and no product type</strong> (<a href="#e7--a-product-with-a-null-description-or-no-product-type">E7</a>)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-test-cases">3. Test cases</h2>
+<p>Each case states what it proves, what must be true first, the data to use, the steps, and <strong>why</strong>,
+so that when an answer differs you can tell a bug from a data change.</p>
+<hr />
+<h3 id="v1-a-discoverable-product-returns-200-with-the-full-model">V1: A discoverable product returns 200 with the full model</h3>
+<p><strong>Objective.</strong> Confirm the happy path for each of the three callers, and that the response is the
+whole object model rather than a discovery summary.</p>
+<p><strong>Preconditions.</strong> Policy on; OPA healthy; token carries <code>product_view</code> and an <code>organisation</code> claim.</p>
+<p><strong>Test data.</strong> <code>FloodRiskMapZones</code> (ENV's, discoverable by all three). Resolve its id <strong>as the
+caller under test</strong>.</p>
+<p><strong>Given–When–Then.</strong></p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">for</span><span class="w"> </span>t<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$HEG_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nv">id</span><span class="o">=</span><span class="k">$(</span>id_of<span class="w"> </span><span class="s2">"</span><span class="nv">$t</span><span class="s2">"</span><span class="w"> </span>FloodRiskMapZones<span class="k">)</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"id=</span><span class="nv">$id</span><span class="s2"> status=</span><span class="k">$(</span>view<span class="w"> </span><span class="s2">"</span><span class="nv">$t</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="k">)</span><span class="s2">"</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span>view_body<span class="w"> </span><span class="s2">"</span><span class="nv">$t</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'keys'</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="k">done</span>
+</span></code></pre></div>
+<ul>
+<li><strong>Given</strong> a caller whose token carries <code>product_view</code> and an <code>organisation</code> claim,</li>
+<li><strong>When</strong> it requests a product it can discover,</li>
+<li><strong>Then</strong> the response is <code>200 application/json</code>, the body is a single JSON object (not a list, not
+  a page), <code>id</code> equals the id requested, and <code>name</code>, <code>description</code>, <code>topic</code>, <code>type</code> and
+  <code>organisation</code> are present for every caller.</li>
+<li><strong>And</strong> the body carries members a discover result does not: <code>producer</code> for every caller, plus
+  <code>consumers</code> / <code>subscribedBy</code> / <code>attributes</code> where the caller's clearance permits (<a href="#v6--masking-per-organisation">V6</a>).</li>
+<li><strong>And</strong> there is <strong>no</strong> <code>page</code> object and <strong>no</strong> <code>policy</code> object.</li>
+</ul>
+<p><strong>Why.</strong> This is the endpoint's contract: one product, whole model, <code>200</code>. <code>producer</code> appearing here
+and never in a discover result is the clearest single signal that you are looking at the view
+projection (<code>ProductProjection.FULL</code>) and not a summary.</p>
+<hr />
+<h3 id="v2-you-can-view-exactly-what-you-can-discover">V2: You can view exactly what you can discover</h3>
+<p><strong>Objective.</strong> Prove the central guarantee across a caller's <strong>whole</strong> catalogue, not one product.</p>
+<p><strong>Preconditions.</strong> Policy on. Run it for each of the three callers.</p>
+<p><strong>Test data.</strong> Every id in the caller's discover result, and every id in ENV's larger catalogue that
+the caller's result does not contain.</p>
+<p><strong>Given–When–Then.</strong></p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nv">T</span><span class="o">=</span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w">          </span><span class="c1"># repeat with $HEG_TOKEN and $ENV_TOKEN</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="c1"># 1. every id this caller discovers must be 200</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="nv">mine</span><span class="o">=</span><span class="k">$(</span>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$T</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">'.products[].id'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sort<span class="w"> </span>-n<span class="k">)</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="k">for</span><span class="w"> </span>id<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="nv">$mine</span><span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"discoverable </span><span class="nv">$id</span><span class="s2"> -&gt; </span><span class="k">$(</span>view<span class="w"> </span><span class="s2">"</span><span class="nv">$T</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="k">)</span><span class="s2">"</span><span class="p">;</span><span class="w"> </span><span class="k">done</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="c1"># 2. every id it does NOT discover must be 404 - take them from ENV's larger catalogue</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="k">for</span><span class="w"> </span>id<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">'.products[].id'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sort<span class="w"> </span>-n<span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">  </span>grep<span class="w"> </span>-qx<span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="w"> </span><span class="o">&lt;&lt;&lt;</span><span class="s2">"</span><span class="nv">$mine</span><span class="s2">"</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"NOT discoverable </span><span class="nv">$id</span><span class="s2"> -&gt; </span><span class="k">$(</span>view<span class="w"> </span><span class="s2">"</span><span class="nv">$T</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="k">)</span><span class="s2">"</span>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="k">done</span>
+</span></code></pre></div>
+<ul>
+<li><strong>Given</strong> the set of products a caller discovers,</li>
+<li><strong>When</strong> each id in that set is viewed, <strong>Then</strong> every one returns <code>200</code>.</li>
+<li><strong>And when</strong> each id outside that set is viewed, <strong>Then</strong> every one returns <code>404</code>.</li>
+<li><strong>Expected totals:</strong> ENV 15 × <code>200</code>, HEG 12 × <code>200</code>, BCC 8 × <code>200</code>. In loop 2, BCC should produce
+  <code>404</code> for the 7 ids ENV discovers that BCC does not.</li>
+</ul>
+<p><strong>Why.</strong> A single <code>200</code> in loop 2 is a serious defect: it would mean an id is a way around
+discovery's filtering, which is exactly the hole this endpoint's row filter exists to close. A
+<code>404</code> in loop 1 is equally a defect in the other direction: "discoverable but not viewable" is
+incoherent, since both come from one Rego definition.</p>
+<hr />
+<h3 id="v3-a-product-the-caller-cannot-discover-returns-404">V3: A product the caller cannot discover returns 404</h3>
+<p><strong>Objective.</strong> The row filter, on one named product, so a failure is diagnosable rather than a count.</p>
+<p><strong>Preconditions.</strong> Policy on.</p>
+<p><strong>Test data.</strong> <code>ScotlandLandRegisterExtract</code> (HEG's). Resolve its id <strong>as HEG</strong>, since BCC cannot
+discover it, so BCC cannot resolve it.</p>
+<p><strong>Given–When–Then.</strong></p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nv">id</span><span class="o">=</span><span class="k">$(</span>id_of<span class="w"> </span><span class="s2">"</span><span class="nv">$HEG_TOKEN</span><span class="s2">"</span><span class="w"> </span>ScotlandLandRegisterExtract<span class="k">)</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>view<span class="w"> </span><span class="s2">"</span><span class="nv">$HEG_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="w">     </span><span class="c1"># its owner</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>view<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="w">     </span><span class="c1"># England+Wales, national remit</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>view<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="w">     </span><span class="c1"># local remit: Bristol and England</span>
+</span></code></pre></div>
+<ul>
+<li><strong>Given</strong> a product covering Scotland only,</li>
+<li><strong>When</strong> HEG (its owner, and covering Scotland) views it, <strong>Then</strong> <code>200</code>.</li>
+<li><strong>When</strong> ENV views it, <strong>Then</strong> <code>200</code>, since ENV has a national remit, so no jurisdiction condition is
+  applied to it.</li>
+<li><strong>When</strong> BCC views it, <strong>Then</strong> <code>404</code> with an <strong>empty body</strong>, since BCC has a local remit, and the
+  product's coverage does not overlap Bristol or England.</li>
+</ul>
+<p><strong>Why.</strong> Nothing about this product is sensitive: it is anonymised and validated. It is withheld
+from BCC by <strong>jurisdiction alone</strong>, which makes it the cleanest proof that the row filter, not the
+clearance gate, is what produces the <code>404</code>. If BCC gets <code>200</code>, the row filter is not reaching the
+view query.</p>
+<hr />
+<h3 id="v4-a-non-existent-id-returns-404">V4: A non-existent id returns 404</h3>
+<p><strong>Objective.</strong> Baseline for <a href="#v5--the-two-404s-are-indistinguishable">V5</a>.</p>
+<p><strong>Preconditions.</strong> Policy on. Confirm the id really does not exist:
+<code>SELECT count(*) FROM mn.product WHERE id = 999999;</code> → <code>0</code>.</p>
+<p><strong>Test data.</strong> <code>999999</code>.</p>
+<p><strong>Given–When–Then.</strong></p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>view_full<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="m">999999</span>
+</span></code></pre></div>
+<ul>
+<li><strong>Given</strong> an id no product has,</li>
+<li><strong>When</strong> any authorised caller views it,</li>
+<li><strong>Then</strong> <code>404</code>, with an <strong>empty body</strong> (<code>Content-Length: 0</code>) and no JSON.</li>
+</ul>
+<p><strong>Why.</strong> The endpoint's own <code>404</code> is the framework's bare <code>notFound()</code>, not an error document. That
+matters for the next case: the two <code>404</code>s can only be identical if neither carries a body that
+could differ.</p>
+<hr />
+<h3 id="v5-the-two-404s-are-indistinguishable">V5: The two 404s are indistinguishable</h3>
+<p><strong>Objective.</strong> The non-disclosure guarantee: a caller cannot tell "withheld" from "does not exist".</p>
+<p><strong>Preconditions.</strong> Policy on; <a href="#v3--a-product-the-caller-cannot-discover-returns-404">V3</a> and
+<a href="#v4--a-non-existent-id-returns-404">V4</a> both pass.</p>
+<p><strong>Test data.</strong> As BCC: the id of <code>ScotlandLandRegisterExtract</code> (exists, withheld) and <code>999999</code>
+(does not exist).</p>
+<p><strong>Given–When–Then.</strong></p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nv">withheld</span><span class="o">=</span><span class="k">$(</span>id_of<span class="w"> </span><span class="s2">"</span><span class="nv">$HEG_TOKEN</span><span class="s2">"</span><span class="w"> </span>ScotlandLandRegisterExtract<span class="k">)</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>view_full<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$withheld</span><span class="s2">"</span><span class="w"> </span>&gt;<span class="w"> </span>/tmp/withheld.txt
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>view_full<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="m">999999</span><span class="w">      </span>&gt;<span class="w"> </span>/tmp/missing.txt
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>diff<span class="w"> </span>/tmp/withheld.txt<span class="w"> </span>/tmp/missing.txt<span class="w">      </span><span class="c1"># expect: no differences except Date/traceparent-style headers</span>
+</span></code></pre></div>
+<ul>
+<li><strong>Given</strong> one id that exists but is excluded by the caller's row filter, and one that does not
+  exist at all,</li>
+<li><strong>When</strong> the same caller views both,</li>
+<li><strong>Then</strong> both return <code>404</code>, both bodies are empty, and the responses differ in nothing the caller
+  could key on: no <code>reasons</code>, no <code>errorId</code>, no differing message, no differing content type, and
+  <strong>no difference in status</strong>.</li>
+<li><strong>And</strong> neither is a <code>403</code>.</li>
+</ul>
+<p><strong>Why.</strong> This is a deliberate design decision (<code>product_view_requirement.md</code> §6.3, decision <strong>D1</strong>),
+not an oversight. A <code>403</code> for the withheld one would mean "it exists and is not yours", making an id
+an oracle for the existence of products the caller may not discover. The caller was already allowed
+to <em>ask</em>, since the role check and the caller-level policy check decide that, so the per-product answer
+must reveal nothing further. <strong>Any difference between these two responses is a disclosure bug and
+should be raised at high severity.</strong></p>
+<blockquote>
+<p>The distinction <em>is</em> recorded, where it belongs: the service logs
+<code>Product view audit … productId=… found=false</code> for both, and only the operator can see which was
+which.</p>
+</blockquote>
+<hr />
+<h3 id="v6-masking-per-organisation">V6: Masking per organisation</h3>
+<p><strong>Objective.</strong> Confirm that what each clearance withholds is exactly what discovery withholds.</p>
+<p><strong>Preconditions.</strong> Policy on.</p>
+<p><strong>Test data.</strong> <code>FloodRiskMapZones</code>, discoverable by all three, and owned by ENV, so the
+own-product unmasking of <a href="#v7--an-organisation-sees-its-own-products-unmasked">V7</a> does <strong>not</strong>
+apply to HEG or BCC here.</p>
+<p><strong>Given–When–Then.</strong></p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">for</span><span class="w"> </span>t<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$HEG_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="nv">id</span><span class="o">=</span><span class="k">$(</span>id_of<span class="w"> </span><span class="s2">"</span><span class="nv">$t</span><span class="s2">"</span><span class="w"> </span>FloodRiskMapZones<span class="k">)</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span>view_body<span class="w"> </span><span class="s2">"</span><span class="nv">$t</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'{</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="s1">      has_source:       has("source"),</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="s1">      has_attributes:   has("attributes"),</span>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="s1">      has_consumers:    has("consumers"),</span>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="s1">      has_subscribedBy: has("subscribedBy"),</span>
+</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="s1">      has_producer:     has("producer"),</span>
+</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="s1">      has_organisation: has("organisation")</span>
+</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="s1">  }'</span>
+</span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="k">done</span>
+</span></code></pre></div>
+<ul>
+<li><strong>Given</strong> one product and three callers of different clearance,</li>
+<li><strong>When</strong> each views it,</li>
+<li><strong>Then</strong> the members present are exactly:</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Member</th>
+<th>ENV (SECRET)</th>
+<th>HEG (OFFICIAL-SENSITIVE)</th>
+<th>BCC (OFFICIAL)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id</code>, <code>name</code>, <code>description</code>, <code>topic</code>, <code>type</code></td>
+<td>present</td>
+<td>present</td>
+<td>present</td>
+</tr>
+<tr>
+<td><code>organisation</code> (<code>key</code>, <code>name</code>)</td>
+<td>present</td>
+<td>present</td>
+<td>present</td>
+</tr>
+<tr>
+<td><code>producer</code> (<code>name</code>, <code>description</code>, <code>active</code>)</td>
+<td>present</td>
+<td>present</td>
+<td>present</td>
+</tr>
+<tr>
+<td><code>source</code></td>
+<td>present</td>
+<td>present</td>
+<td><strong>absent</strong></td>
+</tr>
+<tr>
+<td><code>attributes</code> (the product's own)</td>
+<td>present</td>
+<td>present</td>
+<td><strong>absent</strong></td>
+</tr>
+<tr>
+<td><code>consumers</code></td>
+<td>present</td>
+<td><strong>absent</strong></td>
+<td><strong>absent</strong></td>
+</tr>
+<tr>
+<td><code>subscribedBy</code></td>
+<td>present</td>
+<td>present</td>
+<td><strong>absent</strong></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>And</strong> every absent member is <strong>absent</strong>, not <code>null</code>, not <code>[]</code>, not <code>{}</code>. <code>jq 'has("source")'</code>
+  must be <code>false</code>, never <code>true</code> with a null value.</li>
+</ul>
+<p><strong>Why.</strong> These are the <code>hidden_fields</code> of <code>lib/product.rego</code>, applied identically to both endpoints.
+Compare this table with
+<a href="../../../DISCOVERY_TEST_SCENARIOS/#s2--the-same-product-seen-differently"><code>DISCOVERY_TEST_SCENARIOS.md</code> S2</a>:
+it is the same table, which is the point. Anyone who may see a product may see <strong>whose</strong> it is:
+<code>organisation</code> and <code>producer</code> are in nobody's masked list.</p>
+<blockquote>
+<p><code>organisation.attributes</code> and <code>producer.attributes</code> are governed separately, by sensitivity rather
+than by the masked-field list; see <a href="#v8--sensitive-attributes-are-withheld-below-secret-in-every-attributes-map">V8</a>.</p>
+</blockquote>
+<hr />
+<h3 id="v7-an-organisation-sees-its-own-products-unmasked">V7: An organisation sees its own products unmasked</h3>
+<p><strong>Objective.</strong> The <code>unmask_when</code> rule: a member masked for a caller in general is still shown on
+that caller's <strong>own</strong> products.</p>
+<p><strong>Preconditions.</strong> Policy on.</p>
+<p><strong>Test data.</strong> <code>PendingPlanningApplications</code>, BCC's own, directly identifiable, tagged
+<code>domestic_abuse_survivors</code> and <code>protected_witnesses</code>. Only BCC can reach it, and only because it
+owns it. Compare with <code>FloodRiskMapZones</code>, which BCC can also view but does not own.</p>
+<p><strong>Given–When–Then.</strong></p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nv">own</span><span class="o">=</span><span class="k">$(</span>id_of<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span>PendingPlanningApplications<span class="k">)</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="nv">other</span><span class="o">=</span><span class="k">$(</span>id_of<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span>FloodRiskMapZones<span class="k">)</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>view_body<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$own</span><span class="s2">"</span><span class="w">   </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'{name, has_consumers: has("consumers"), has_subscribedBy: has("subscribedBy"), has_source: has("source"), has_attributes: has("attributes")}'</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>view_body<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$other</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'{name, has_consumers: has("consumers"), has_subscribedBy: has("subscribedBy")}'</span>
+</span></code></pre></div>
+<ul>
+<li><strong>Given</strong> BCC, for which <code>consumers</code> and <code>subscribedBy</code> are masked in general (<a href="#v6--masking-per-organisation">V6</a>),</li>
+<li><strong>When</strong> it views <strong>its own</strong> product,</li>
+<li><strong>Then</strong> <code>200</code>, and <code>consumers</code> and <code>subscribedBy</code> are <strong>present</strong>.</li>
+<li><strong>And</strong> <code>source</code> and <code>attributes</code> remain <strong>absent</strong> even on its own product; those two are masked
+  outright and are not part of the unmask rule.</li>
+<li><strong>And when</strong> the same caller views a product it does not own, <strong>Then</strong> <code>consumers</code> and
+  <code>subscribedBy</code> are absent again, in the same session, with the same token.</li>
+</ul>
+<p><strong>Why.</strong> <code>unmask_when</code> names <code>["subscribedBy", "consumers"]</code> with the condition
+"<code>organisation.key</code> equals the caller's own", and the database evaluates it <strong>per product</strong> in the
+same query that finds them. This is also why BCC reaches this product at all: the row filter admits
+an organisation's own products as a first branch, whatever their attributes say. If the own product
+shows nothing extra, the unmask column is not being applied; if the non-owned product also shows
+<code>consumers</code>, the masking is not being applied at all.</p>
+<hr />
+<h3 id="v8-sensitive-attributes-are-withheld-below-secret-in-every-attributes-map">V8: Sensitive attributes are withheld below SECRET, in every attributes map</h3>
+<p><strong>Objective.</strong> <code>mask_sensitive_attributes</code> applies to <strong>all</strong> attribute maps (product,
+organisation, producer, consumer and subscription) and is driven by the attribute catalogue, not
+by a list in the rule.</p>
+<p><strong>Preconditions.</strong> Policy on. The sample data flags three attribute definitions <code>sensitive</code>:
+<code>population_risk_tags</code> (product scope), <code>authorised_classifications</code> and <code>permitted_purposes</code>
+(organisation scope). Confirm with:</p>
+<div class="language-sql highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="k">SELECT</span><span class="w"> </span><span class="n">namespace</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="k">sensitive</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">mn</span><span class="p">.</span><span class="n">policy_attribute_definition</span><span class="w"> </span><span class="k">WHERE</span><span class="w"> </span><span class="k">sensitive</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">TRUE</span><span class="p">;</span>
+</span></code></pre></div>
+<p><strong>Test data.</strong> <code>HelpToBuyApplicants</code>, HEG's own, carrying <code>population_risk_tags: ["children"]</code>.
+Viewable by ENV (SECRET) and by HEG (its owner).</p>
+<p><strong>Given–When–Then.</strong></p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nv">id_env</span><span class="o">=</span><span class="k">$(</span>id_of<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span>HelpToBuyApplicants<span class="k">)</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="nv">id_heg</span><span class="o">=</span><span class="k">$(</span>id_of<span class="w"> </span><span class="s2">"</span><span class="nv">$HEG_TOKEN</span><span class="s2">"</span><span class="w"> </span>HelpToBuyApplicants<span class="k">)</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>view_body<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id_env</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'{product: (.attributes|keys), org: (.organisation.attributes|keys)}'</span>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>view_body<span class="w"> </span><span class="s2">"</span><span class="nv">$HEG_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id_heg</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'{product: (.attributes|keys), org: (.organisation.attributes|keys)}'</span>
+</span></code></pre></div>
+<ul>
+<li><strong>Given</strong> an attribute whose definition is flagged <code>sensitive</code>,</li>
+<li><strong>When</strong> ENV (SECRET, <code>mask_sensitive_attributes: false</code>) views the product,</li>
+<li><strong>Then</strong> <code>attributes</code> <strong>contains</strong> <code>population_risk_tags</code>, and <code>organisation.attributes</code>
+  <strong>contains</strong> <code>authorised_classifications</code> and <code>permitted_purposes</code>.</li>
+<li><strong>When</strong> HEG (OFFICIAL-SENSITIVE, <code>mask_sensitive_attributes: true</code>) views the same product,</li>
+<li><strong>Then</strong> <code>attributes</code> is present (HEG does not mask <code>policyAttributes</code>) but <strong>does not contain</strong>
+  <code>population_risk_tags</code>; and <code>organisation.attributes</code> <strong>does not contain</strong>
+  <code>authorised_classifications</code> or <code>permitted_purposes</code>, while non-sensitive ones such as
+  <code>jurisdictions</code> remain.</li>
+<li><strong>And</strong> the same holds for <code>producer.attributes</code>, <code>consumers[].attributes</code> and
+  <code>consumers[].subscription.attributes</code> where those blocks are visible to the caller.</li>
+</ul>
+<p><strong>Why.</strong> Which attributes are sensitive is <strong>data</strong> (<code>policy_attribute_definition.sensitive</code>); the
+rule only says whether <em>this</em> caller has them withheld. Flagging a new attribute sensitive therefore
+takes effect on the next request with no Rego and no Java change, so this case is also the
+regression test for that. A sensitive name appearing for HEG means the sensitivity flag is not
+reaching the attribute query.</p>
+<blockquote>
+<p>Useful contrast: BCC has <code>policyAttributes</code> masked outright, so its product <code>attributes</code> map is
+absent entirely (<a href="#v6--masking-per-organisation">V6</a>), a stronger withholding than sensitivity
+filtering, and it applies before it.</p>
+</blockquote>
+<hr />
+<h3 id="v9-a-viewed-product-agrees-with-the-same-product-in-a-discover-result">V9: A viewed product agrees with the same product in a discover result</h3>
+<p><strong>Objective.</strong> The two endpoints return the same object model, so the members they share must match
+exactly, value for value, not merely "look similar".</p>
+<p><strong>Preconditions.</strong> Policy on. Run for each caller.</p>
+<p><strong>Test data.</strong> Any product the caller discovers; do it for several.</p>
+<p><strong>Given–When–Then.</strong></p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nv">T</span><span class="o">=</span><span class="s2">"</span><span class="nv">$HEG_TOKEN</span><span class="s2">"</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$T</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-c<span class="w"> </span><span class="s1">'.products[]'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="k">while</span><span class="w"> </span><span class="nb">read</span><span class="w"> </span>-r<span class="w"> </span>summary<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span><span class="nv">id</span><span class="o">=</span><span class="k">$(</span>jq<span class="w"> </span>-r<span class="w"> </span>.id<span class="w"> </span><span class="o">&lt;&lt;&lt;</span><span class="s2">"</span><span class="nv">$summary</span><span class="s2">"</span><span class="k">)</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">  </span><span class="nv">viewed</span><span class="o">=</span><span class="k">$(</span>view_body<span class="w"> </span><span class="s2">"</span><span class="nv">$T</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="k">)</span>
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">  </span>jq<span class="w"> </span>-n<span class="w"> </span>--argjson<span class="w"> </span>a<span class="w"> </span><span class="s2">"</span><span class="nv">$summary</span><span class="s2">"</span><span class="w"> </span>--argjson<span class="w"> </span>b<span class="w"> </span><span class="s2">"</span><span class="nv">$viewed</span><span class="s2">"</span><span class="w"> </span><span class="s1">'</span>
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="s1">    def shared($x): {</span>
+</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="s1">      id:          $x.id,</span>
+</span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="s1">      name:        $x.name,</span>
+</span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="s1">      description: $x.description,</span>
+</span><span id="__span-13-10"><a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="s1">      type:        $x.type,</span>
+</span><span id="__span-13-11"><a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="s1">      orgKey:      $x.organisation.key,</span>
+</span><span id="__span-13-12"><a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a><span class="s1">      orgName:     $x.organisation.name</span>
+</span><span id="__span-13-13"><a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a><span class="s1">    };</span>
+</span><span id="__span-13-14"><a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a><span class="s1">    {id: $a.id, same: (shared($a) == shared($b))}'</span>
+</span><span id="__span-13-15"><a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a><span class="k">done</span>
+</span></code></pre></div>
+<p>Every line must report <code>"same": true</code>.</p>
+<ul>
+<li><strong>Given</strong> a product returned in a discover page,</li>
+<li><strong>When</strong> the same product is viewed by the same caller,</li>
+<li><strong>Then</strong> every member the summary carries (<code>id</code>, <code>name</code>, <code>description</code>, <code>type</code>,
+  <code>organisation.key</code>, <code>organisation.name</code>) has an identical value in the viewed object.
+  (Compare those members individually, not the whole <code>organisation</code> object: the view adds
+  <code>organisation.attributes</code>, which the summary deliberately omits.)</li>
+<li><strong>And</strong> the viewed object carries <strong>strictly more</strong>: <code>topic</code>, <code>producer</code>, and whatever of
+  <code>source</code>, <code>attributes</code>, <code>consumers</code>, <code>subscribedBy</code> and the attribute maps the caller's clearance
+  permits.</li>
+<li><strong>And</strong> the viewed object never carries <strong>less</strong> than the summary.</li>
+</ul>
+<p><strong>Why.</strong> One object model, one assembler, one set of masking rules. A divergence here means the two
+endpoints have grown separate paths, which is the failure mode the shared design exists to
+prevent. Note that <code>organisation.attributes</code> being absent from the <em>summary</em> and present in the
+<em>view</em> is <strong>not</strong> a divergence: a search deliberately carries the organisation block without its
+attributes, to avoid an extra statement per page.</p>
+<hr />
+<h3 id="v10-access_level-is-reported-not-enforced">V10: <code>access_level</code> is reported, not enforced</h3>
+<p><strong>Objective.</strong> Stop a tester expecting the response body to change with <code>access_level</code>.</p>
+<p><strong>Preconditions.</strong> Policy on, and <code>application.opa.log-output: true</code> (or the service log at <code>DEBUG</code>
+for <code>uk.gov.dbt.ndtp.ia.node.management</code>).</p>
+<p><strong>Test data.</strong> <code>FloodRiskMapZones</code>, viewed by each caller.</p>
+<p><strong>Given–When–Then.</strong></p>
+<ul>
+<li><strong>Given</strong> three callers at three clearances,</li>
+<li><strong>When</strong> each views the same product and you read the decision from the log,</li>
+<li><strong>Then</strong> the decision's <code>details.access_level</code> is <code>full</code> for ENV, <code>summary</code> for HEG, <code>basic</code> for
+  BCC.</li>
+<li><strong>And</strong> <code>access_level</code> appears <strong>nowhere in the response body</strong>; <code>jq 'has("access_level")'</code> is
+  <code>false</code> and <code>jq 'has("accessLevel")'</code> is <code>false</code>.</li>
+<li><strong>And</strong> the difference in what each body contains is explained entirely by the masked-field lists
+  of <a href="#v6--masking-per-organisation">V6</a>, not by <code>access_level</code>.</li>
+<li><strong>And</strong> for a refused caller (<a href="#v14--caller-level-policy-403-organisationmissing">V14</a>), the
+  decision reports <code>access_level: "none"</code> and the response is a <code>403</code>, not a reduced <code>200</code>.</li>
+</ul>
+<p><strong>Why.</strong> Decision <strong>D4</strong> of the design: <code>access_level</code> was retired as a control and kept as a
+report, because two mechanisms for "show less" is how they come to disagree. It is carried so a
+client can tell the caller which tier it holds. Treat "the body did not change when access_level
+changed" as <strong>correct</strong>.</p>
+<hr />
+<h3 id="v11-a-non-numeric-id-returns-400">V11: A non-numeric id returns 400</h3>
+<p><strong>Objective.</strong> Type conversion happens before policy, and reports the parameter, not the value.</p>
+<p><strong>Preconditions.</strong> A valid token with the <code>product_view</code> role.</p>
+<p><strong>Test data.</strong> <code>abc</code>.</p>
+<p><strong>Given–When–Then.</strong></p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span>--cert<span class="w"> </span>client.crt<span class="w"> </span>--key<span class="w"> </span>client.key<span class="w"> </span>-w<span class="w"> </span><span class="s1">'\n%{http_code}\n'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">  </span><span class="s1">'https://localhost:8090/api/v1/product/abc'</span><span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span>
+</span></code></pre></div>
+<ul>
+<li><strong>Given</strong> a path variable that is not a whole number,</li>
+<li><strong>When</strong> the request is made,</li>
+<li><strong>Then</strong> <code>400</code>, body
+  <code>{"status":400,"message":"Invalid value for 'productId'","errorId":"…"}</code>.</li>
+<li><strong>And</strong> the message names the <strong>parameter</strong>, never the value the caller sent, and never the
+  handler or the exception.</li>
+<li><strong>And</strong> no PDP decision is logged for this request.</li>
+</ul>
+<p><strong>Why.</strong> Spring's type conversion refuses the request before the handler is invoked, so policy never
+sees it. A <code>403</code> or <code>500</code> here would mean the request got further than it should. Note this is one
+of the few cases where the caller learns something specific, and it is safe, because the caller
+supplied the value.</p>
+<hr />
+<h3 id="v12-no-token-returns-401">V12: No token returns 401</h3>
+<p><strong>Objective.</strong> Authentication is step one; nothing below it runs.</p>
+<p><strong>Preconditions.</strong> None beyond a running service.</p>
+<p><strong>Test data.</strong> A real product id (any), and no <code>Authorization</code> header.</p>
+<p><strong>Given–When–Then.</strong></p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nv">id</span><span class="o">=</span><span class="k">$(</span>id_of<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span>FloodRiskMapZones<span class="k">)</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>curl<span class="w"> </span>-sk<span class="w"> </span>--cert<span class="w"> </span>client.crt<span class="w"> </span>--key<span class="w"> </span>client.key<span class="w"> </span>-i<span class="w"> </span><span class="s2">"https://localhost:8090/api/v1/product/</span><span class="nv">$id</span><span class="s2">"</span>
+</span></code></pre></div>
+<ul>
+<li><strong>Given</strong> no bearer token (repeat with a malformed token and with an expired one),</li>
+<li><strong>When</strong> the request is made,</li>
+<li><strong>Then</strong> <code>401</code>, with a <code>WWW-Authenticate: Bearer</code> header and <strong>no JSON body</strong>, from the security
+  filter chain answers, not the application's exception handler.</li>
+<li><strong>And</strong> the response is <code>401</code> whether or not the id exists: an unauthenticated caller learns
+  nothing about the catalogue.</li>
+</ul>
+<p><strong>Why.</strong> Enforcement order. A <code>403</code> here would mean the token was accepted; a <code>404</code> would mean the
+handler ran without authentication.</p>
+<hr />
+<h3 id="v13-a-token-without-the-product_view-role-returns-403-role-not-a-policy-403">V13: A token without the <code>product_view</code> role returns 403 (role), not a policy 403</h3>
+<p><strong>Objective.</strong> Distinguish the role refusal from the policy refusal; they look alike and are
+diagnosed differently.</p>
+<p><strong>Preconditions.</strong> A client whose service account holds <code>product_discovery</code> but <strong>not</strong>
+<code>product_view</code>. Easiest in the Keycloak admin console: on <code>FEDERATOR_BCC</code>'s service account, remove
+the <code>product_view</code> client role, take a fresh token, and restore it afterwards.</p>
+<p><strong>Test data.</strong> A product the caller <em>can</em> discover, so the only thing missing is the role.</p>
+<p><strong>Given–When–Then.</strong></p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="nv">NO_VIEW</span><span class="o">=</span><span class="k">$(</span>get_token<span class="w"> </span>FEDERATOR_BCC<span class="k">)</span><span class="w">          </span><span class="c1"># after removing the role</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">"</span><span class="nv">$NO_VIEW</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>cut<span class="w"> </span>-d.<span class="w"> </span>-f2<span class="w"> </span><span class="p">|</span><span class="w"> </span>base64<span class="w"> </span>-d<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'.resource_access."management-node".roles'</span>
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="nv">id</span><span class="o">=</span><span class="k">$(</span>id_of<span class="w"> </span><span class="s2">"</span><span class="nv">$NO_VIEW</span><span class="s2">"</span><span class="w"> </span>FloodRiskMapZones<span class="k">)</span><span class="w">    </span><span class="c1"># discovery still works</span>
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>view_body<span class="w"> </span><span class="s2">"</span><span class="nv">$NO_VIEW</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq
+</span></code></pre></div>
+<ul>
+<li><strong>Given</strong> a valid token without <code>management-node:product_view</code>,</li>
+<li><strong>When</strong> the product is viewed,</li>
+<li><strong>Then</strong> <code>403</code> with
+  <code>{"status":403,"message":"Access denied: insufficient permissions for this operation","errorId":"…"}</code>.</li>
+<li><strong>And</strong> the body carries <strong>no <code>reasons</code> key at all</strong>; that field appears only on policy refusals.</li>
+<li><strong>And</strong> no decision is sent to the PDP: nothing appears in the OPA decision log, and no
+  <code>Product view policy decision</code> line is written.</li>
+</ul>
+<p><strong>Why.</strong> The role check runs <strong>before</strong> policy, so a caller without the role is never judged by
+policy. The two <code>403</code>s are told apart by the message and by the presence of <code>reasons</code>; confusing
+them sends a tester looking at Rego when the fix is in Keycloak. Contrast with
+<a href="#v14--caller-level-policy-403-organisationmissing">V14</a>.</p>
+<hr />
+<h3 id="v14-caller-level-policy-403-organisationmissing">V14: Caller-level policy 403: <code>organisation.missing</code></h3>
+<p><strong>Objective.</strong> The first caller gate, and the practical way to trigger it.</p>
+<p><strong>Preconditions.</strong> A token carrying <code>product_view</code> but <strong>no</strong> <code>organisation</code> claim. In the Keycloak
+admin console: on the federator client's dedicated scope, disable the hardcoded <code>organisation</code>
+claim mapper, take a fresh token, and re-enable it afterwards. Verify:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">"</span><span class="nv">$NO_ORG</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>cut<span class="w"> </span>-d.<span class="w"> </span>-f2<span class="w"> </span><span class="p">|</span><span class="w"> </span>base64<span class="w"> </span>-d<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'{organisation, roles: .resource_access."management-node".roles}'</span>
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="c1"># organisation must be null; roles must include product_view</span>
+</span></code></pre></div>
+<p><strong>Test data.</strong> Any id, existing or not; the answer must be the same.</p>
+<p><strong>Given–When–Then.</strong></p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>view_body<span class="w"> </span><span class="s2">"</span><span class="nv">$NO_ORG</span><span class="s2">"</span><span class="w"> </span><span class="m">1</span><span class="w">      </span><span class="p">|</span><span class="w"> </span>jq
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>view_body<span class="w"> </span><span class="s2">"</span><span class="nv">$NO_ORG</span><span class="s2">"</span><span class="w"> </span><span class="m">999999</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq
+</span></code></pre></div>
+<ul>
+<li><strong>Given</strong> an authenticated caller holding the role but no organisation,</li>
+<li><strong>When</strong> any product is viewed,</li>
+<li><strong>Then</strong> <code>403</code> with
+  <code>{"status":403,"message":"Access denied by policy","reasons":["organisation.missing"],"errorId":"…"}</code>.</li>
+<li><strong>And</strong> the same <code>403</code> is returned for an id that exists and for one that does not; no product is
+  looked at, so nothing about the catalogue is revealed.</li>
+<li><strong>And</strong> <code>POST /api/v1/product/discover</code> with the same token is refused with the <strong>same reason</strong>.</li>
+</ul>
+<p><strong>Why.</strong> The gate is caller-level: it is decided before any product is considered, which is why it
+is a <code>403</code> and not a <code>404</code>. <code>EnhancedPrincipal</code> substitutes an internal sentinel when the claim is
+missing, and that sentinel is deliberately <strong>not</strong> forwarded to the PDP, so the rule sees a null
+key and reports <code>organisation.missing</code>. That discover reports the same reason is the shared
+definition working.</p>
+<hr />
+<h3 id="v15-caller-level-policy-403-jurisdiction-and-clearance">V15: Caller-level policy 403: jurisdiction and clearance</h3>
+<p><strong>Objective.</strong> The other two caller gates, and that they are the same three discover applies.</p>
+<p><strong>Preconditions.</strong> A token whose <code>organisation</code> claim is a non-empty string that matches <strong>no</strong>
+<code>organisation.organisation_key</code> row, for example <code>NOSUCH</code>. Set the hardcoded claim mapper's value
+to <code>NOSUCH</code> in Keycloak, take a fresh token, restore afterwards.</p>
+<p><strong>Test data.</strong> Any id.</p>
+<p><strong>Given–When–Then.</strong></p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>view_body<span class="w"> </span><span class="s2">"</span><span class="nv">$UNKNOWN_ORG</span><span class="s2">"</span><span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>discover<span class="w">  </span><span class="s2">"</span><span class="nv">$UNKNOWN_ORG</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w">       </span><span class="c1"># same reasons</span>
+</span></code></pre></div>
+<ul>
+<li><strong>Given</strong> an organisation key that resolves to no row, so the caller has <strong>no attributes at all</strong>,</li>
+<li><strong>When</strong> any product is viewed,</li>
+<li><strong>Then</strong> <code>403 "Access denied by policy"</code> whose <code>reasons</code> contain <strong>both</strong>
+  <code>organisation.jurisdiction_not_permitted</code> (no UK nation in its jurisdictions) <strong>and</strong>
+  <code>organisation.clearance_missing</code> (no authorised classifications).</li>
+<li><strong>And</strong> <code>reasons</code> does <strong>not</strong> contain <code>organisation.missing</code>; the key was present, just unknown.</li>
+<li><strong>And</strong> discover with the same token returns the same reasons.</li>
+<li><strong>And</strong> the reasons are <strong>sorted and de-duplicated</strong>: every failing condition is reported at once,
+  so a caller can fix them all together.</li>
+</ul>
+<p>An equivalent, data-driven way to provoke each gate separately, if you prefer changing the database
+to changing Keycloak:</p>
+<table>
+<thead>
+<tr>
+<th>To provoke</th>
+<th>Soft-delete, for that organisation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>organisation.clearance_missing</code></td>
+<td>its <code>authorised_classifications</code> values in <code>policy_attribute_value</code></td>
+</tr>
+<tr>
+<td><code>organisation.jurisdiction_not_permitted</code></td>
+<td>its <code>jurisdictions</code> values (or replace them with a non-UK value)</td>
+</tr>
+</tbody>
+</table>
+<p>Set <code>is_deleted = TRUE</code> rather than deleting, and restore afterwards; attributes are read live per
+request, so the change takes effect on the next call with no restart.</p>
+<p><strong>Why.</strong> These three gates live in <code>lib/product_access.rego</code> and are shared verbatim between the two
+endpoints. A gate that refuses view but not discover (or the reverse) is a defect, not a policy
+choice; <code>view_test.rego</code> asserts the two decisions' reasons are identical for every sample
+organisation.</p>
+<hr />
+<h3 id="v16-policy-switched-off-every-real-id-returns-200-nothing-masked">V16: Policy switched off: every real id returns 200, nothing masked</h3>
+<p><strong>Objective.</strong> The master switch is a first-class supported mode, and view must work in it, not
+fail, and not quietly return nothing.</p>
+<p><strong>Preconditions.</strong> Restart with <code>OPA_ENABLED=false</code>. OPA may be stopped as well; nothing should call
+it. At startup the log must carry the documented warning that policy will <strong>not</strong> be evaluated.</p>
+<p><strong>Test data.</strong> Ids that exist (take them from any caller's discover, which now returns all 17) and
+one that does not.</p>
+<p><strong>Given–When–Then.</strong></p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="nv">OPA_ENABLED</span><span class="o">=</span><span class="nb">false</span><span class="w"> </span>./mvnw<span class="w"> </span>spring-boot:run<span class="w"> </span>-Dspring-boot.run.profiles<span class="o">=</span><span class="nb">local</span>
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>
+</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'.page.totalElements'</span><span class="w">      </span><span class="c1"># expect 17</span>
+</span><span id="__span-20-4"><a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="k">for</span><span class="w"> </span>id<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">'.products[].id'</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-20-5"><a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="w">  </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2"> -&gt; </span><span class="k">$(</span>view<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="k">)</span><span class="s2">"</span>
+</span><span id="__span-20-6"><a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="k">done</span>
+</span><span id="__span-20-7"><a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a>view<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="m">999999</span>
+</span><span id="__span-20-8"><a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a>view_body<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="k">$(</span>id_of<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span>FloodRiskMapZones<span class="k">)</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'keys'</span>
+</span></code></pre></div>
+<ul>
+<li><strong>Given</strong> <code>application.opa.enabled=false</code>,</li>
+<li><strong>When</strong> any authorised caller views any existing product,</li>
+<li><strong>Then</strong> <code>200</code>, <strong>including</strong> products policy would have withheld, for <strong>every</strong> caller.</li>
+<li><strong>And</strong> nothing is masked: <code>source</code>, <code>attributes</code>, <code>consumers</code>, <code>subscribedBy</code>,
+  <code>organisation.attributes</code> and <code>producer.attributes</code> are all present for BCC, and sensitive
+  attributes are <strong>not</strong> withheld.</li>
+<li><strong>And</strong> <code>404</code> is returned only for ids that genuinely do not exist.</li>
+<li><strong>And</strong> no decision is sent to the PDP, and no <code>Product view audit</code> line is written (the
+  <code>audit_access</code> obligation comes from the decision, and there is none).</li>
+<li><strong>Finally</strong>, switch the policy back on and confirm the differences return.</li>
+</ul>
+<p><strong>Why.</strong> With the switch off no decision is taken at all; the handler receives an empty <code>Optional</code>
+and the read runs with the open contract. This is documented behaviour, not a bug, but it means
+<strong>any environment relying on policy must have the switch on</strong>. Verify the startup warning is present
+so an operator cannot miss it.</p>
+<blockquote>
+<p>The opposite case is deliberately <em>not</em> permissive: if the switch is <strong>on</strong> and a decision still
+does not reach the handler, the request is refused with <code>403</code> and <code>policy.enforcement_missing</code>
+logged at <code>ERROR</code>. "Policy is on but silently not applied" cannot present as a successful view.</p>
+</blockquote>
+<hr />
+<h3 id="v17-connection-details-and-delivery-destinations-are-never-returned">V17: Connection details and delivery destinations are never returned</h3>
+<p><strong>Objective.</strong> Two things are outside the model entirely, for every caller at every clearance; this
+is not masking, it is absence by design.</p>
+<p><strong>Preconditions.</strong> Policy on.</p>
+<p><strong>Test data.</strong> A product with at least one consumer, viewed by <strong>ENV</strong> (SECRET, the caller that
+sees the most).</p>
+<p><strong>Given–When–Then.</strong></p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="nv">id</span><span class="o">=</span><span class="k">$(</span>id_of<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span>BristolAirQualitySensors<span class="k">)</span>
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>view_body<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'{</span>
+</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="s1">  producer_keys: (.producer | keys),</span>
+</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="s1">  subscription_keys: ([.consumers[].subscription | keys] | add | unique),</span>
+</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="s1">  consumer_org_keys: ([.consumers[].organisation | keys] | add | unique)</span>
+</span><span id="__span-21-6"><a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="s1">}'</span>
+</span></code></pre></div>
+<ul>
+<li><strong>Given</strong> the highest-cleared caller, viewing a product whose consumers it can see,</li>
+<li><strong>When</strong> the response is inspected,</li>
+<li><strong>Then</strong> <code>producer</code> carries exactly <code>name</code>, <code>description</code>, <code>active</code>, <code>attributes</code>, and <strong>no</strong>
+  <code>host</code>, <code>port</code>, <code>tls</code> or <code>idpClientId</code>.</li>
+<li><strong>And</strong> no <code>consumers[].subscription</code> carries a <code>destination</code>.</li>
+<li><strong>And</strong> <code>consumers[].organisation</code> carries <code>key</code> and <code>name</code> only, never <code>attributes</code>.</li>
+</ul>
+<p><strong>Why.</strong> These are deliberately not part of the product model, so no clearance and no policy change
+can reveal them. If one appears, the DTO or the projection has changed, and the change needs
+reviewing on disclosure grounds: a <code>200</code> looks entirely normal while carrying it.</p>
+<hr />
+<h3 id="v18-the-audit-obligation-is-honoured">V18: The audit obligation is honoured</h3>
+<p><strong>Objective.</strong> Policy's <code>audit_access</code> obligation produces one audit line per view, and it is the
+only place where a withheld product and a missing one are distinguishable.</p>
+<p><strong>Preconditions.</strong> Policy on; service log at <code>INFO</code>.</p>
+<p><strong>Test data.</strong> One <code>200</code>, one policy-withheld <code>404</code>, one non-existent <code>404</code>; reuse
+<a href="#v3--a-product-the-caller-cannot-discover-returns-404">V3</a> and
+<a href="#v4--a-non-existent-id-returns-404">V4</a>.</p>
+<p><strong>Given–When–Then.</strong></p>
+<ul>
+<li><strong>Given</strong> a decision carrying the <code>audit_access</code> obligation (every allowed decision does),</li>
+<li><strong>When</strong> each of the three requests is made,</li>
+<li><strong>Then</strong> the log carries one line per request of the form
+  <code>Product view audit policy={id=product.view, version=policies.product.view/3.0.0} productId=&lt;id&gt; found=&lt;true|false&gt; accessLevel=&lt;…&gt;</code>.</li>
+<li><strong>And</strong> <code>found=true</code> for the <code>200</code>, <code>found=false</code> for <strong>both</strong> <code>404</code>s.</li>
+<li><strong>And</strong> the audit line records the <strong>product id asked for</strong>, never any product content.</li>
+<li><strong>And</strong> an obligation the service does not recognise would refuse the request with <code>403</code>; see
+  <code>DiscoveryObligations</code>.</li>
+</ul>
+<p><strong>Why.</strong> XACML's rule: a Policy Enforcement Point that cannot fulfil an obligation must not grant.
+The audit line is also the operator's only way to tell the two <code>404</code>s apart, which is exactly the
+distinction the response must not make (<a href="#v5--the-two-404s-are-indistinguishable">V5</a>).</p>
+<hr />
+<h2 id="4-edge-cases">4. Edge cases</h2>
+<p>All of these use an authenticated caller holding <code>product_view</code>, with policy <strong>on</strong>, unless stated.
+None of them may ever produce a <code>500</code>.</p>
+<h3 id="e1-id-0">E1: Id <code>0</code></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>view<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="m">0</span>
+</span></code></pre></div>
+<p><code>0</code> is a valid <code>Long</code>, so it binds and the query runs. <strong>Expect <code>404</code>, empty body.</strong> No sequence
+issues <code>0</code>, so nothing matches. A <code>400</code> here would mean something is validating the range (nothing
+does); a <code>500</code> would mean the id is not being bound as a parameter.</p>
+<h3 id="e2-negative-ids">E2: Negative ids</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>view<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span>-1
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>view<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span>-999999
+</span></code></pre></div>
+<p><strong>Expect <code>404</code></strong> for both, empty body. Negative values are valid <code>Long</code>s and are bound like any
+other. <strong>Why it matters:</strong> the id is compiled as an ordinary field comparison with a bound
+parameter, so a negative number is simply a value that matches nothing, and it must not reach the SQL
+as text, and must not trip a parse error.</p>
+<h3 id="e3-very-large-ids">E3: Very large ids</h3>
+<table>
+<thead>
+<tr>
+<th>Request</th>
+<th>Expect</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /api/v1/product/9223372036854775807</code></td>
+<td><code>404</code></td>
+<td><code>Long.MAX_VALUE</code> is a valid <code>Long</code>; no product has it</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/product/9223372036854775808</code></td>
+<td><code>400</code>, <code>"Invalid value for 'productId'"</code></td>
+<td>one past <code>Long.MAX_VALUE</code>; conversion fails before the handler</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/product/99999999999999999999</code></td>
+<td><code>400</code>, same message</td>
+<td>as above</td>
+</tr>
+</tbody>
+</table>
+<p>The boundary is the only thing being tested; a <code>500</code> on either side is a defect.</p>
+<h3 id="e4-a-product-that-exists-but-whose-owning-organisation-the-caller-cannot-reach">E4: A product that exists but whose owning organisation the caller cannot reach</h3>
+<p>Take an id from ENV's catalogue that BCC does not discover, for instance <code>HousingNeedSurvey</code>
+(HEG's, <code>experimental</code>; resolve it <strong>as HEG</strong>, since ENV does not discover it either).</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="nv">id</span><span class="o">=</span><span class="k">$(</span>id_of<span class="w"> </span><span class="s2">"</span><span class="nv">$HEG_TOKEN</span><span class="s2">"</span><span class="w"> </span>HousingNeedSurvey<span class="k">)</span>
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>view<span class="w"> </span><span class="s2">"</span><span class="nv">$HEG_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="w">    </span><span class="c1"># owner: 200</span>
+</span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>view<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="w">    </span><span class="c1"># 404 - quality 'experimental' is not one ENV's purposes earn</span>
+</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>view<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="w">    </span><span class="c1"># 404</span>
+</span></code></pre></div>
+<p><strong>Expect <code>200</code> for HEG, <code>404</code> for ENV and BCC.</strong> This is worth its own case because it shows the
+<code>404</code> is <strong>not</strong> about clearance: ENV is the most-cleared caller in the sample and still gets <code>404</code>.
+Clearance, purpose and jurisdiction each independently shape the row filter.</p>
+<h3 id="e5-head-versus-get">E5: <code>HEAD</code> versus <code>GET</code></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span>--cert<span class="w"> </span>client.crt<span class="w"> </span>--key<span class="w"> </span>client.key<span class="w"> </span>-I<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="w">  </span><span class="s2">"https://localhost:8090/api/v1/product/</span><span class="nv">$id</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span>
+</span></code></pre></div>
+<p><strong>Expect</strong> the same status <code>GET</code> would give (<code>200</code> / <code>403</code> / <code>404</code>), with headers and <strong>no body</strong>.
+Spring MVC serves <code>HEAD</code> from the <code>@GetMapping</code> handler, and the view rule has no method gate, so
+<code>HEAD</code> is judged exactly as <code>GET</code> is. <strong>Importantly, <code>HEAD</code> must not be a way to probe existence:</strong>
+a withheld product must return <code>404</code> to <code>HEAD</code> just as it does to <code>GET</code>. Check this explicitly
+against a product the caller cannot discover.</p>
+<h3 id="e6-trailing-slash-and-missing-id">E6: Trailing slash and missing id</h3>
+<table>
+<thead>
+<tr>
+<th>Request</th>
+<th>Expect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /api/v1/product/{id}/</code></td>
+<td><code>404</code> with a <strong>JSON</strong> body, <code>{"status":404,"message":"Resource not found: …","errorId":"…"}</code>, refused by routing, not by the handler</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/product/</code></td>
+<td><code>404</code> (or <code>405</code> if the framework matches the collection path) with a JSON body</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/product</code></td>
+<td><code>404</code> or <code>405</code> with a JSON body</td>
+</tr>
+</tbody>
+</table>
+<p>The distinction that matters: a routing <code>404</code> carries a JSON error document, while the endpoint's
+own <code>404</code> is <strong>empty</strong>. Do not mistake one for the other when comparing responses in
+<a href="#v5--the-two-404s-are-indistinguishable">V5</a>; compare only responses to well-formed requests.</p>
+<h3 id="e7-a-product-with-a-null-description-or-no-product-type">E7: A product with a NULL description or no product type</h3>
+<p><code>Bristol_Cycle%Counts</code> (BCC's) has no description and no product type.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="nv">id</span><span class="o">=</span><span class="k">$(</span>id_of<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'Bristol_Cycle%Counts'</span><span class="k">)</span><span class="w">     </span><span class="c1"># or find it by listing BCC's catalogue</span>
+</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>view_body<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'{name, has_description: has("description"), has_type: has("type"), has_topic: has("topic")}'</span>
+</span></code></pre></div>
+<p><strong>Expect <code>200</code></strong>, with <code>description</code> and <code>type</code> <strong>absent</strong>: not <code>null</code>, not <code>""</code>. <code>name</code> and
+<code>topic</code> are present. <strong>Why:</strong> <code>@JsonInclude(NON_NULL)</code> means an unrecorded value and a withheld one
+look the same in the JSON, which is deliberate; neither must produce a <code>null</code> key or an error. Note
+the <code>%</code> and <code>_</code> in the name are LIKE metacharacters; they matter to discovery's text search, not to
+view, but this is the product to use if you want to confirm they cause no trouble on the way in.</p>
+<h3 id="e8-an-id-with-whitespace-a-sign-or-a-decimal-point">E8: An id with whitespace, a sign, or a decimal point</h3>
+<table>
+<thead>
+<tr>
+<th>Request (URL-encoded as shown)</th>
+<th>Expect</th>
+<th>Note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/api/v1/product/3.0</code></td>
+<td><code>400</code>, <code>"Invalid value for 'productId'"</code></td>
+<td>a decimal is not a <code>Long</code></td>
+</tr>
+<tr>
+<td><code>/api/v1/product/%203</code> (leading space)</td>
+<td><code>200</code> <strong>or</strong> <code>400</code>; either is acceptable, <strong>never <code>500</code></strong></td>
+<td>Spring's number conversion trims surrounding whitespace, so this most likely binds as <code>3</code>; confirm the behaviour in your environment and record it</td>
+</tr>
+<tr>
+<td><code>/api/v1/product/+3</code></td>
+<td><code>200</code> <strong>or</strong> <code>400</code>, never <code>500</code></td>
+<td>as above</td>
+</tr>
+<tr>
+<td><code>/api/v1/product/0003</code></td>
+<td><code>200</code> for the product with id <code>3</code></td>
+<td>leading zeros are insignificant to <code>Long</code> parsing</td>
+</tr>
+<tr>
+<td><code>/api/v1/product/3%00</code></td>
+<td><code>400</code>, never <code>500</code></td>
+<td>a null byte must not reach the query</td>
+</tr>
+</tbody>
+</table>
+<p>The requirement under test is narrow: <strong>the id is bound as a number or the request is refused with
+<code>400</code>.</strong> It must never be interpolated into SQL, and it must never produce a <code>500</code>.</p>
+<h3 id="e9-repeatability-and-caching">E9: Repeatability and caching</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="k">for</span><span class="w"> </span>i<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">3</span><span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w"> </span>view<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$withheld_id</span><span class="s2">"</span><span class="p">;</span><span class="w"> </span><span class="k">done</span>
+</span></code></pre></div>
+<p><strong>Expect <code>404</code> every time.</strong> Then view a product the caller <em>can</em> see, and re-view the withheld one:
+still <code>404</code>. A decision is taken <strong>per request</strong> and nothing is cached across them, so no sequence of
+calls may turn a <code>404</code> into a <code>200</code>.</p>
+<hr />
+<h2 id="5-things-that-should-never-happen">5. Things that should never happen</h2>
+<p>Raise any of these immediately; each is a disclosure or an integrity failure rather than a
+behavioural difference.</p>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Why it is serious</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>a <code>200</code> for a product the same caller cannot discover</td>
+<td>an id is a way around discovery's filtering, the exact hole the row filter closes</td>
+</tr>
+<tr>
+<td>a <code>403</code> (rather than <code>404</code>) for a product excluded by the row filter</td>
+<td>turns an id into a probe for what exists</td>
+</tr>
+<tr>
+<td>any observable difference between the two <code>404</code>s of <a href="#v5--the-two-404s-are-indistinguishable">V5</a></td>
+<td>the same disclosure, by another route</td>
+</tr>
+<tr>
+<td>a masked member present as <code>null</code>, <code>[]</code> or <code>{}</code> rather than absent</td>
+<td>masking is being applied after reading, not by not reading, and the value reached the JVM</td>
+</tr>
+<tr>
+<td><code>host</code>, <code>port</code>, <code>tls</code>, <code>idpClientId</code> or a subscription <code>destination</code> in any response</td>
+<td>outside the model by design</td>
+</tr>
+<tr>
+<td>a sensitive attribute present for a caller below SECRET</td>
+<td>the catalogue's <code>sensitive</code> flag is not reaching the attribute query</td>
+</tr>
+<tr>
+<td>discover and view disagreeing for the same caller and product</td>
+<td>the two rules have drifted, which one shared Rego module exists to prevent</td>
+</tr>
+<tr>
+<td>a <code>500</code> for any input in <a href="#4-edge-cases">§4</a></td>
+<td>an unhandled conversion or query failure</td>
+</tr>
+<tr>
+<td>a successful view while policy enforcement is on but no decision was taken</td>
+<td>must be <code>403</code> with <code>policy.enforcement_missing</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-related-documents">6. Related documents</h2>
+<ul>
+<li><a href="../product-discover/"><code>docs/tests/products/product-discover.md</code></a>: the sibling specification for
+  <code>POST /api/v1/product/discover</code>. Read alongside this one: the two endpoints share their gates,
+  row filter and masking, so a discovery defect usually shows here too.</li>
+<li><a href="../../../DISCOVERY_TEST_SCENARIOS/"><code>docs/DISCOVERY_TEST_SCENARIOS.md</code></a>: setup (§2), tokens and
+  who is who (§3), the sample catalogue (§4), the discovery walkthrough (§5), and the informal view
+  scenarios S17–S22 (§5a).</li>
+<li><a href="../../../POLICY_ENFORCEMENT/"><code>docs/POLICY_ENFORCEMENT.md</code></a>: how a decision is requested, the
+  decision document, the master switch, and the <code>GET /api/v1/product/{productId}</code> reference section.</li>
+<li><a href="../../../AUTHENTICATION_REQUIREMENTS/"><code>docs/AUTHENTICATION_REQUIREMENTS.md</code></a>: token structure
+  and the role required per endpoint.</li>
+<li><a href="../../../DATABASE_SCHEMA/"><code>docs/DATABASE_SCHEMA.md</code></a>: the product, organisation and
+  <code>policy_attribute_*</code> tables, and the <code>policy_attribute_live_value</code> view the queries read.</li>
+<li><code>docker/opa/policies/product/view.rego</code> and <code>docker/opa/policies/lib/product_access.rego</code>: the
+  policy itself; <code>docker/opa/policy_sample_stories.md</code> walks the sample organisations through it.</li>
+<li><code>product_view_requirement.md</code> (repository root): the design, its status codes (§6.3) and the
+  decisions behind them (§8), including <strong>D1</strong> (<code>404</code>, not <code>403</code>) and <strong>D2</strong> (the response type).</li>
+</ul>
+
+
+
+
+
+
+
+  
+    
+  
+  
+
+
+  <aside class="md-source-file">
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="Last update">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 24, 2026 10:34:35 UTC">September 24, 2026</span>
+  </span>
+
+    
+    
+    
+    
+  </aside>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      &copy;Crown Copyright 2025. This work has been developed by the National Digital Twin Programme and is legally attributed to the Department for Business and Trade (UK) as the governing entity.  
+
+    </div>
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.code.annotate", "content.code.copy", "content.code.select", "content.tooltips", "navigation.indexes", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "search.share", "navigation.instant", "navigation.instant.prefetch", "navigation.instant", "navigation.instant.progress", "navigation.path", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

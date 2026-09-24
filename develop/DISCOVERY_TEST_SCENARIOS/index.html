@@ -1,0 +1,3057 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Management Node is is the control plane for the National Digital Twin Programme IA Node Net.">
+      
+      
+        <meta name="author" content="NDTP">
+      
+      
+        <link rel="canonical" href="https://docs.ndtp.co.uk/develop/DISCOVERY_TEST_SCENARIOS/">
+      
+      
+        <link rel="prev" href="../DATABASE_SCHEMA/">
+      
+      
+        <link rel="next" href="../JACOCO_COVERAGE/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/android-chrome-512x512-1-150x150.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Product Discovery and View: Test Scenarios - Management-Node Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#product-discovery-and-view-test-scenarios" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Management-Node Documentation" class="md-header__button md-logo" aria-label="Management-Node Documentation" data-md-component="logo">
+      
+  <img src="../assets/light-page_header_logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Management-Node Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Product Discovery and View: Test Scenarios
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Management-Node Documentation" class="md-nav__button md-logo" aria-label="Management-Node Documentation" data-md-component="logo">
+      
+  <img src="../assets/light-page_header_logo.png" alt="logo">
+
+    </a>
+    Management-Node Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    README
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AUTHENTICATION_REQUIREMENTS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication Requirements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../BOOTSTRAP_ONBOARDING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bootstrap Onboarding Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DATABASE_SCHEMA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Discovery and View: Test Scenarios
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Discovery and View: Test Scenarios
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0-if-all-three-organisations-return-the-same-products" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. If all three organisations return the same products
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-what-you-are-testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. What you are testing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-setting-up" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Setting up
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Setting up">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-infrastructure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 Infrastructure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-identity-provider" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 Identity provider
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 Data
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#24-the-application" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.4 The application
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-getting-a-token" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Getting a token
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Getting a token">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-who-is-who" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 Who is who
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-the-sample-catalogue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. The sample catalogue
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. The sample catalogue">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-the-three-organisations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 The three organisations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-the-17-products" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 The 17 products
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-scenarios-with-policy-on" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Scenarios with policy ON
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Scenarios with policy ON">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#s1-each-organisation-discovers-a-different-catalogue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S1: Each organisation discovers a different catalogue
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s2-the-same-product-seen-differently" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S2: The same product, seen differently
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s3-an-organisation-always-sees-its-own" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S3: An organisation always sees its own
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s4-who-is-using-a-product" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S4: Who is using a product
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s5-free-text-searches-name-and-description-nothing-else" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S5: Free text searches name and description, nothing else
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s6-organisation-attributes-drive-the-query" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S6: Organisation attributes drive the query
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s7-filtering-on-fields-and-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S7: Filtering on fields and attributes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s8-sorting-and-paging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S8: Sorting and paging
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s9-a-missing-attribute-is-not-a-free-pass" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S9: A missing attribute is not a free pass
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s10-search-terms-are-values-never-sql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S10: Search terms are values, never SQL
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s11-products-with-nothing-recorded" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S11: Products with nothing recorded
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5a-viewing-one-product" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5a. Viewing one product
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5a. Viewing one product">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#s17-you-can-view-exactly-what-you-can-discover" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S17: You can view exactly what you can discover
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s18-a-withheld-product-is-indistinguishable-from-a-missing-one" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S18: A withheld product is indistinguishable from a missing one
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s19-the-same-masking-as-discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S19: The same masking as discovery
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s20-the-caller-level-refusal-is-a-403-and-applies-to-both-endpoints-alike" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S20: The caller-level refusal is a 403, and applies to both endpoints alike
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s21-bad-ids" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S21: Bad ids
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s22-viewing-with-policy-off" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S22: Viewing with policy OFF
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-scenarios-with-policy-off" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Scenarios with policy OFF
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Scenarios with policy OFF">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#s12-every-caller-sees-the-whole-catalogue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S12: Every caller sees the whole catalogue
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s13-nothing-is-masked-and-no-policy-block-is-returned" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S13: Nothing is masked and no policy block is returned
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s14-everything-is-filterable-including-what-policy-would-refuse" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S14: Everything is filterable, including what policy would refuse
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s15-the-rest-of-the-search-still-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S15: The rest of the search still works
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s16-switch-back-on-and-confirm-the-difference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S16: Switch back on and confirm the difference
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-bad-requests-and-refusals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Bad requests and refusals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-things-that-should-never-happen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Things that should never happen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Troubleshooting
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-documents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related documents
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../JACOCO_COVERAGE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JaCoCo Code Coverage Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MOCKITO_USAGE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockito Testing Tool Usage Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MTLS_CONFIGURATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MTLS Configuration Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../POLICY_ENFORCEMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Policy Enforcement
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../entity-dto-converter-pattern/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entity-DTO Converter Pattern
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../jobs-scheduler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Jobs Scheduler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tests
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tests
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../tests/products/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Products
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_12_1" id="__nav_12_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_12_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Products
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tests/products/product-discover/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Discover: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tests/products/product-view/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product View API: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0-if-all-three-organisations-return-the-same-products" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. If all three organisations return the same products
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-what-you-are-testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. What you are testing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-setting-up" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Setting up
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Setting up">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-infrastructure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 Infrastructure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-identity-provider" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 Identity provider
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 Data
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#24-the-application" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.4 The application
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-getting-a-token" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Getting a token
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Getting a token">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-who-is-who" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 Who is who
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-the-sample-catalogue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. The sample catalogue
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. The sample catalogue">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-the-three-organisations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 The three organisations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-the-17-products" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 The 17 products
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-scenarios-with-policy-on" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Scenarios with policy ON
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Scenarios with policy ON">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#s1-each-organisation-discovers-a-different-catalogue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S1: Each organisation discovers a different catalogue
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s2-the-same-product-seen-differently" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S2: The same product, seen differently
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s3-an-organisation-always-sees-its-own" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S3: An organisation always sees its own
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s4-who-is-using-a-product" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S4: Who is using a product
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s5-free-text-searches-name-and-description-nothing-else" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S5: Free text searches name and description, nothing else
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s6-organisation-attributes-drive-the-query" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S6: Organisation attributes drive the query
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s7-filtering-on-fields-and-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S7: Filtering on fields and attributes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s8-sorting-and-paging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S8: Sorting and paging
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s9-a-missing-attribute-is-not-a-free-pass" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S9: A missing attribute is not a free pass
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s10-search-terms-are-values-never-sql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S10: Search terms are values, never SQL
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s11-products-with-nothing-recorded" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S11: Products with nothing recorded
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5a-viewing-one-product" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5a. Viewing one product
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5a. Viewing one product">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#s17-you-can-view-exactly-what-you-can-discover" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S17: You can view exactly what you can discover
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s18-a-withheld-product-is-indistinguishable-from-a-missing-one" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S18: A withheld product is indistinguishable from a missing one
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s19-the-same-masking-as-discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S19: The same masking as discovery
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s20-the-caller-level-refusal-is-a-403-and-applies-to-both-endpoints-alike" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S20: The caller-level refusal is a 403, and applies to both endpoints alike
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s21-bad-ids" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S21: Bad ids
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s22-viewing-with-policy-off" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S22: Viewing with policy OFF
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-scenarios-with-policy-off" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Scenarios with policy OFF
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Scenarios with policy OFF">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#s12-every-caller-sees-the-whole-catalogue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S12: Every caller sees the whole catalogue
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s13-nothing-is-masked-and-no-policy-block-is-returned" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S13: Nothing is masked and no policy block is returned
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s14-everything-is-filterable-including-what-policy-would-refuse" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S14: Everything is filterable, including what policy would refuse
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s15-the-rest-of-the-search-still-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S15: The rest of the search still works
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s16-switch-back-on-and-confirm-the-difference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S16: Switch back on and confirm the difference
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-bad-requests-and-refusals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Bad requests and refusals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-things-that-should-never-happen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Things that should never happen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Troubleshooting
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-documents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related documents
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="product-discovery-and-view-test-scenarios">Product Discovery and View: Test Scenarios</h1>
+<p><strong>Repository:</strong> <code>management-node</code>
+<strong>Endpoints:</strong> <code>POST /api/v1/product/discover</code>, <code>GET /api/v1/product/{productId}</code>
+<strong>SPDX-License-Identifier:</strong> <code>Apache-2.0 AND OGL-UK-3.0</code></p>
+<hr />
+<p>Scenarios for a human tester, over the sample data this repository ships. Each one states what to
+send, what to expect, and <strong>why</strong>, so that when an answer differs you can tell a bug from a data
+change.</p>
+<blockquote>
+<p>The product counts and refusals below are not predictions: they were produced by running the real
+policy (the rule in <code>docker/opa/policies/product/discover.rego</code>, evaluated by OPA) through the
+real service against a PostgreSQL database loaded with these migrations. What has <strong>not</strong> been
+exercised end to end is the HTTP layer in front of it (mTLS, tokens and roles), which is what
+these scenarios ask you to do.</p>
+</blockquote>
+<p>The one idea to hold on to: <strong>policy decides what a caller can find, and the service turns that
+decision into the database query.</strong> Both endpoints do it with the same contract: viewing one
+product is a search constrained to that product, so what you can view is exactly what you can
+discover (§5a). So a difference in results is either a difference in the
+calling organisation's attributes, a difference in the product's attributes, or a bug. Nothing in
+Java decides who sees what.</p>
+<blockquote>
+<p><strong>Looking for a formal test specification?</strong> These scenarios are the guided tour; they explain
+the system by walking through it. The per-API checklists, written as test requirement
+specifications with objectives, preconditions, test data and Given/When/Then, are in
+<a href="../tests/products/"><code>docs/tests/products/</code></a>:
+<a href="../tests/products/product-discover/">Product Discover</a> and
+<a href="../tests/products/product-view/">Product View</a>.</p>
+</blockquote>
+<h2 id="contents">Contents</h2>
+<ul>
+<li><a href="#0-if-all-three-organisations-return-the-same-products">0. If all three organisations return the same products</a></li>
+<li><a href="#1-what-you-are-testing">1. What you are testing</a></li>
+<li><a href="#2-setting-up">2. Setting up</a></li>
+<li><a href="#3-getting-a-token">3. Getting a token</a></li>
+<li><a href="#31-who-is-who">3.1 Who is who</a></li>
+<li><a href="#4-the-sample-catalogue">4. The sample catalogue</a></li>
+<li><a href="#5-scenarios-with-policy-on">5. Scenarios with policy ON</a></li>
+<li><a href="#5a-viewing-one-product">5a. Viewing one product</a></li>
+<li><a href="#6-scenarios-with-policy-off">6. Scenarios with policy OFF</a></li>
+<li><a href="#7-bad-requests-and-refusals">7. Bad requests and refusals</a></li>
+<li><a href="#8-things-that-should-never-happen">8. Things that should never happen</a></li>
+<li><a href="#9-troubleshooting">9. Troubleshooting</a></li>
+</ul>
+<hr />
+<h2 id="0-if-all-three-organisations-return-the-same-products">0. If all three organisations return the same products</h2>
+<p>The most common first result, and almost never a filtering bug. <strong>Different callers must see
+different catalogues</strong> (15 / 12 / 8 in S1); identical counts mean policy is not shaping the query.
+One command tells you which of three causes it is:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'{total: .page.totalElements, policy}'</span>
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th>What you see</th>
+<th>Cause</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>policy</code> is present and the counts are <strong>each organisation's own</strong> (15 / 12 / 8)</td>
+<td><strong>You are sending the same identity every time.</strong> The commonest cause by far: one browser session, one saved Postman token, or the same user re-logged-in. The organisation comes from the <strong>token</strong>, not from the request.</td>
+<td>Check the <code>organisation</code> claim of each token (§3) - and see §3.1 for who is who.</td>
+</tr>
+<tr>
+<td><code>policy</code> is <strong>absent</strong></td>
+<td><strong>Policy enforcement is off.</strong> No decision was taken, so the search ran with the open contract: every product, nothing withheld, the same for everyone.</td>
+<td>Set <code>application.opa.enabled=true</code> (§2.4). The <code>local</code> profile does <strong>not</strong> set it; the default in <code>application.yml</code> is <code>false</code>, and only the <code>dev</code> profile turns it on.</td>
+</tr>
+<tr>
+<td><code>policy</code> is present but <strong>identical</strong> for all three callers</td>
+<td>All three tokens resolve to the <strong>same organisation</strong>, or to none.</td>
+<td>Decode the tokens (§3) and check each carries its own <code>organisation</code> claim: <code>ENV</code>, <code>HEG</code>, <code>BCC</code> (§2.2).</td>
+</tr>
+<tr>
+<td><code>policy</code> differs per caller but counts match</td>
+<td>A genuine bug, or the catalogue does not hold what you think.</td>
+<td>Compare against §4.2, then report it.</td>
+</tr>
+</tbody>
+</table>
+<p>Two crosschecks worth doing at the same time:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Is policy enforcement actually on? The service says so once, at startup:</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1">#   WARN  OPA is switched off in configuration (application.opa.enabled=false) ...</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># If that line is in the log, that is your answer.</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1"># How many products does the database actually hold?  Expect 17.</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>&lt;postgres-container&gt;<span class="w"> </span>psql<span class="w"> </span>-U<span class="w"> </span>&lt;user&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;db&gt;<span class="w"> </span>-c<span class="w"> </span><span class="s1">'SELECT count(*) FROM mn.product;'</span>
+</span></code></pre></div>
+<p>If every caller returns <em>the same number and that number is the whole catalogue</em>, policy is off. If
+every caller returns the same number and it is <strong>not</strong> the whole catalogue, the callers are being
+treated as the same organisation.</p>
+<blockquote>
+<p>A search that runs unrestricted because policy was <strong>meant</strong> to judge it and did not is refused,
+not answered: <code>403</code> with <code>policy.enforcement_missing</code> in the log. So "policy is on but silently
+not applied" cannot present as a successful search. Identical results with <code>policy</code> absent always
+means the switch is off.</p>
+</blockquote>
+<hr />
+<h2 id="1-what-you-are-testing">1. What you are testing</h2>
+<p>A search over data products in which policy controls three separate things. Keeping them apart
+makes most surprises self-explaining:</p>
+<table>
+<thead>
+<tr>
+<th>Policy controls</th>
+<th>Effect when it says no</th>
+<th>How you see it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>what may be <strong>asked</strong></td>
+<td>the request is refused</td>
+<td><code>403</code> naming the filter, e.g. <code>filter.attribute_not_permitted:identifiability</code></td>
+</tr>
+<tr>
+<td>what is <strong>shown</strong></td>
+<td>that member is absent from each result</td>
+<td>the JSON has no such key; <code>policy.maskedFields</code> says why</td>
+</tr>
+<tr>
+<td>what <strong>exists</strong> for this caller</td>
+<td>the product is not in the results at all</td>
+<td>shorter <code>products</code> list and smaller <code>totalElements</code></td>
+</tr>
+</tbody>
+</table>
+<p>The third is the important one to understand: a product a caller may not discover is <strong>not
+returned and not counted</strong>. It is indistinguishable from a product that does not exist. That is
+deliberate, since a count is a disclosure.</p>
+<hr />
+<h2 id="2-setting-up">2. Setting up</h2>
+<h3 id="21-infrastructure">2.1 Infrastructure</h3>
+<p>Bring up Keycloak + Postgres, Vault and OPA (<code>/stack-up</code>, or follow <code>README.md</code>). Discovery needs
+<strong>Keycloak, Postgres and OPA</strong>; Vault is only used by the certificate endpoints.</p>
+<blockquote>
+<p><strong>OPA fails closed.</strong> If OPA is not running, every discover request returns <code>403</code>. That is
+correct behaviour, not a bug. Check <code>curl -s http://localhost:8181/health</code> first whenever you
+see an unexplained <code>403</code>.</p>
+</blockquote>
+<h3 id="22-identity-provider">2.2 Identity provider</h3>
+<p>The sample federator clients need two things that were <strong>not</strong> previously configured: the
+<code>product_discovery</code> role, and an <code>organisation</code> claim. Both are now in
+<code>docker/keycloak/tofu</code>: <code>clients.tf</code> defines the three <code>product_*</code> roles, <code>terraform.tfvars</code> maps
+them onto <code>FEDERATOR_ENV</code> / <code>FEDERATOR_HEG</code> / <code>FEDERATOR_BCC</code>, and the <code>federator_client</code> module
+adds a hardcoded <code>organisation</code> claim per client.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">cd</span><span class="w"> </span>docker/keycloak/tofu
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>tofu<span class="w"> </span>init<span class="w"> </span>-backend-config<span class="o">=</span>backends/dev-backend.tfvars<span class="w">   </span><span class="c1"># state is remote (S3); needs credentials</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>tofu<span class="w"> </span>apply<span class="w"> </span>-var-file<span class="o">=</span>terraform.tfvars
+</span></code></pre></div>
+<p>If you have no state-backend access, the same two changes take a minute in the Keycloak admin
+console (<code>http://localhost:8080</code>, realm <code>mng-node</code>), and doing it by hand is a good way to see
+exactly what the token needs:</p>
+<ol>
+<li><strong>Client roles:</strong> on the <code>management-node</code> client, add the roles <code>product_discovery</code>,
+   <code>product_view</code>, <code>product_subscribe</code>. Then for each of <code>FEDERATOR_ENV</code>, <code>FEDERATOR_HEG</code>,
+   <code>FEDERATOR_BCC</code>: <em>Service account roles</em> → <em>Assign role</em> → filter by clients → assign all three.</li>
+<li><strong>Organisation claim:</strong> on each federator client: <em>Client scopes</em> → <em><code>&lt;client&gt;</code>-dedicated</em> →
+   <em>Add mapper</em> → <em>By configuration</em> → <em>Hardcoded claim</em>, with token claim name <code>organisation</code> and
+   value <code>ENV</code>, <code>HEG</code> or <code>BCC</code> respectively. Tick <em>Add to access token</em>.</li>
+</ol>
+<p><strong>Both parts matter, and they fail differently:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Missing</th>
+<th>Symptom</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>the <code>product_discovery</code> role</td>
+<td><code>403 "Access denied: insufficient permissions for this operation"</code>, refused by the role check, before policy</td>
+</tr>
+<tr>
+<td>the <code>organisation</code> claim</td>
+<td><code>403 "Access denied by policy"</code> with reason <code>organisation.missing</code>, because policy cannot resolve the caller's attributes</td>
+</tr>
+</tbody>
+</table>
+<p>The claim value must be the key <strong>as the database holds it</strong> (<code>ENV</code>), not the client id
+(<code>FEDERATOR_ENV</code>). They are matched against <code>organisation.organisation_key</code>.</p>
+<h3 id="23-data">2.3 Data</h3>
+<p>The sample catalogue is in <code>src/main/resources/db/samples/</code> and is applied by Flyway at startup
+alongside the real migrations. Nothing extra to run, but confirm it landed:</p>
+<div class="language-sql highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">SELECT</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">mn</span><span class="p">.</span><span class="n">product</span><span class="p">;</span><span class="w">                 </span><span class="c1">-- expect 17</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="k">SELECT</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">mn</span><span class="p">.</span><span class="n">policy_attribute_value</span><span class="p">;</span><span class="w">  </span><span class="c1">-- expect well over 100</span>
+</span></code></pre></div>
+<h3 id="24-the-application">2.4 The application</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>./mvnw<span class="w"> </span>spring-boot:run<span class="w"> </span>-Dspring-boot.run.profiles<span class="o">=</span><span class="nb">local</span>
+</span></code></pre></div>
+<p><code>keystore.jks</code> and <code>truststore.jks</code> must sit in the <strong>repo root</strong>, and every call needs the client
+certificate. Policy enforcement must be on:</p>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nt">application</span><span class="p">:</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="nt">opa</span><span class="p">:</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">          </span><span class="c1"># or OPA_ENABLED=true</span>
+</span></code></pre></div>
+<p>The <code>dev</code> profile turns it on, along with <code>log-input</code> and <code>log-output</code>, very useful while testing,
+since they print the exact document sent to the PDP and the decision that came back.</p>
+<hr />
+<h2 id="3-getting-a-token">3. Getting a token</h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>get_token<span class="o">()</span><span class="w"> </span><span class="o">{</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span>curl<span class="w"> </span>-sk<span class="w"> </span>--cert<span class="w"> </span>client.crt<span class="w"> </span>--key<span class="w"> </span>client.key<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="s1">'https://localhost:8443/realms/mng-node/protocol/openid-connect/token'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span>-d<span class="w"> </span><span class="s2">"client_id=</span><span class="nv">$1</span><span class="s2">"</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'grant_type=client_credentials'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span>.access_token
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="o">}</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="nv">ENV_TOKEN</span><span class="o">=</span><span class="k">$(</span>get_token<span class="w"> </span>FEDERATOR_ENV<span class="k">)</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="nv">HEG_TOKEN</span><span class="o">=</span><span class="k">$(</span>get_token<span class="w"> </span>FEDERATOR_HEG<span class="k">)</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="nv">BCC_TOKEN</span><span class="o">=</span><span class="k">$(</span>get_token<span class="w"> </span>FEDERATOR_BCC<span class="k">)</span>
+</span></code></pre></div>
+<p><strong>Check the token before blaming the endpoint</strong>; most first-run failures are here:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>cut<span class="w"> </span>-d.<span class="w"> </span>-f2<span class="w"> </span><span class="p">|</span><span class="w"> </span>base64<span class="w"> </span>-d<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'{aud, organisation, roles: .resource_access."management-node".roles}'</span>
+</span></code></pre></div>
+<p>You want <code>aud</code> to include <code>management-node</code>, <code>organisation</code> to be <code>ENV</code>, and the roles to include
+<code>product_discovery</code>.</p>
+<h3 id="31-who-is-who">3.1 Who is who</h3>
+<p>The organisation reaching policy is the one on the <strong>token</strong>, so which identity you authenticate as
+is what varies the results, not anything in the request body. Two kinds of caller exist, and they
+carry the claim differently:</p>
+<table>
+<thead>
+<tr>
+<th>Caller</th>
+<th>Identity</th>
+<th>organisation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>service account</td>
+<td>client <code>FEDERATOR_ENV</code> / <code>FEDERATOR_HEG</code> / <code>FEDERATOR_BCC</code></td>
+<td>on the <strong>client</strong> (the hardcoded mapper of §2.2)</td>
+</tr>
+<tr>
+<td>a person</td>
+<td>realm user <code>jamesbond</code> / <code>heguser</code> / <code>nikannegaresh</code></td>
+<td>on the <strong>user</strong>, as an <code>organisation</code> attribute</td>
+</tr>
+</tbody>
+</table>
+<p>Through the UI client (<code>ia-data-product-catalogue-ui</code>) you are the second kind, so the organisation
+is whoever is <strong>logged in</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>User</th>
+<th>organisation</th>
+<th>Expect (empty criteria)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>jamesbond</code></td>
+<td>ENV</td>
+<td><strong>15</strong> products</td>
+</tr>
+<tr>
+<td><code>heguser</code></td>
+<td>HEG</td>
+<td><strong>12</strong> products</td>
+</tr>
+<tr>
+<td><code>nikannegaresh</code></td>
+<td>BCC</td>
+<td><strong>8</strong> products</td>
+</tr>
+</tbody>
+</table>
+<p>So getting 15 three times in a row usually means three requests as <code>jamesbond</code>. Confirm before
+anything else; the principal is logged on every request:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>Set SecurityContextHolder to CustomJwtAuthenticationToken
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>  [Principal=CustomPrincipal{subject='…', clientId='…', organisation='ENV'}, …
+</span></code></pre></div>
+<p>and the decision input logs it too (<code>subject.organisation : ENV attributes={…}</code>). If that says
+<code>ENV</code> on all three, you have your answer. Log out and back in as another user; a cached session or
+a saved bearer token in Postman will otherwise keep sending the first identity.</p>
+<p>A convenience wrapper used throughout the rest of this document:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>discover<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w">   </span><span class="c1"># discover &lt;TOKEN&gt; '&lt;json body&gt;'</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span>curl<span class="w"> </span>-sk<span class="w"> </span>--cert<span class="w"> </span>client.crt<span class="w"> </span>--key<span class="w"> </span>client.key<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">    </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s1">'https://localhost:8090/api/v1/product/discover'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">    </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$1</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">    </span>-d<span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">2</span><span class="k">:-</span><span class="se">\{\}</span><span class="si">}</span><span class="s2">"</span>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="o">}</span>
+</span></code></pre></div>
+<hr />
+<h2 id="4-the-sample-catalogue">4. The sample catalogue</h2>
+<h3 id="41-the-three-organisations">4.1 The three organisations</h3>
+<p>Everything below follows from these attributes. They are in
+<code>db/samples/V20260910130000__add_sample_organisation_policy_attributes.sql</code>, and changing them
+changes every expected result in this document.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>ENV (Environment Agency)</th>
+<th>HEG (Homes England)</th>
+<th>BCC (Bristol City Council)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>clearance</td>
+<td><strong>SECRET</strong></td>
+<td><strong>OFFICIAL-SENSITIVE</strong></td>
+<td><strong>OFFICIAL</strong></td>
+</tr>
+<tr>
+<td>purposes</td>
+<td>service delivery, regulatory oversight</td>
+<td>service delivery, statistical analysis</td>
+<td>service delivery</td>
+</tr>
+<tr>
+<td>jurisdictions</td>
+<td>England, Wales</td>
+<td>England, Scotland</td>
+<td>England, <strong>Bristol</strong></td>
+</tr>
+<tr>
+<td>remit</td>
+<td>national</td>
+<td>national</td>
+<td><strong>local</strong> (Bristol is not a nation)</td>
+</tr>
+</tbody>
+</table>
+<p>What each fact buys the caller:</p>
+<ul>
+<li><strong>clearance</strong> decides which <code>identifiability</code> levels are discoverable, whether risk-tagged
+  products are discoverable at all, what is masked, and the page-size cap (100 / 50 / 20);</li>
+<li><strong>purpose</strong> decides which <code>quality_designation</code> values are discoverable: statistical analysis
+  earns <code>experimental</code>, regulatory oversight earns <code>provisional</code>, everyone gets <code>validated</code>;</li>
+<li><strong>local remit</strong> adds a jurisdiction condition: a local caller only discovers products whose
+  <code>coverage_jurisdictions</code> overlap its own. This is the clearest demonstration that organisation
+  attributes drive the query.</li>
+</ul>
+<p>Plus one rule that cuts across all of it: <strong>an organisation always discovers its own products</strong>,
+whatever their attributes, and sees who is using them.</p>
+<h3 id="42-the-17-products">4.2 The 17 products</h3>
+<p>Owner is the organisation behind the producer. <code>n/a</code> means the attribute is not recorded.</p>
+<table>
+<thead>
+<tr>
+<th>Product</th>
+<th>Owner</th>
+<th>identifiability</th>
+<th>quality</th>
+<th>risk tags</th>
+<th>coverage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FloodRiskMapZones</td>
+<td>ENV</td>
+<td>non_personal</td>
+<td>validated</td>
+<td>n/a</td>
+<td>England, Wales</td>
+</tr>
+<tr>
+<td>RiverLevelTelemetry</td>
+<td>ENV</td>
+<td>non_personal</td>
+<td>validated</td>
+<td>n/a</td>
+<td>England, Wales</td>
+</tr>
+<tr>
+<td>CoastalErosionForecast</td>
+<td>ENV</td>
+<td>non_personal</td>
+<td>experimental</td>
+<td>n/a</td>
+<td>England</td>
+</tr>
+<tr>
+<td>PollutionIncidentReports</td>
+<td>ENV</td>
+<td>pseudonymised</td>
+<td>provisional</td>
+<td>n/a</td>
+<td>England, Wales</td>
+</tr>
+<tr>
+<td>WaterAbstractionLicences</td>
+<td>ENV</td>
+<td>directly_identifiable</td>
+<td>validated</td>
+<td>n/a</td>
+<td>England</td>
+</tr>
+<tr>
+<td>UnclassifiedDraftDataset</td>
+<td>ENV</td>
+<td><strong>n/a</strong></td>
+<td><strong>n/a</strong></td>
+<td>n/a</td>
+<td>England</td>
+</tr>
+<tr>
+<td>BrownfieldLandAvailability</td>
+<td>HEG</td>
+<td>pseudonymised</td>
+<td>validated</td>
+<td>n/a</td>
+<td>England</td>
+</tr>
+<tr>
+<td>AffordableHousingCompletions</td>
+<td>HEG</td>
+<td>anonymised</td>
+<td>validated</td>
+<td>n/a</td>
+<td>England</td>
+</tr>
+<tr>
+<td>HelpToBuyApplicants</td>
+<td>HEG</td>
+<td>directly_identifiable</td>
+<td>validated</td>
+<td>children</td>
+<td>England</td>
+</tr>
+<tr>
+<td>HousingNeedSurvey</td>
+<td>HEG</td>
+<td>pseudonymised</td>
+<td>experimental</td>
+<td>n/a</td>
+<td>England, Scotland</td>
+</tr>
+<tr>
+<td>EmptyHomesRegister</td>
+<td>HEG</td>
+<td>pseudonymised</td>
+<td><strong>superseded</strong></td>
+<td>n/a</td>
+<td>England</td>
+</tr>
+<tr>
+<td>ScotlandLandRegisterExtract</td>
+<td>HEG</td>
+<td>anonymised</td>
+<td>validated</td>
+<td>n/a</td>
+<td><strong>Scotland only</strong></td>
+</tr>
+<tr>
+<td>PendingPlanningApplications</td>
+<td>BCC</td>
+<td>directly_identifiable</td>
+<td>provisional</td>
+<td>domestic_abuse_survivors, protected_witnesses</td>
+<td>Bristol</td>
+</tr>
+<tr>
+<td>BristolAirQualitySensors</td>
+<td>BCC</td>
+<td>non_personal</td>
+<td>validated</td>
+<td>n/a</td>
+<td>Bristol</td>
+</tr>
+<tr>
+<td>BristolSchoolPlaces</td>
+<td>BCC</td>
+<td>anonymised</td>
+<td>provisional</td>
+<td>children</td>
+<td>Bristol</td>
+</tr>
+<tr>
+<td>BristolTemporaryAccommodation</td>
+<td>BCC</td>
+<td>directly_identifiable</td>
+<td>validated</td>
+<td>domestic_abuse_survivors</td>
+<td>Bristol</td>
+</tr>
+<tr>
+<td><code>Bristol_Cycle%Counts</code></td>
+<td>BCC</td>
+<td>non_personal</td>
+<td>validated</td>
+<td>n/a</td>
+<td>Bristol</td>
+</tr>
+</tbody>
+</table>
+<p>Four of these exist to be awkward, and each has a scenario of its own:</p>
+<ul>
+<li><strong>UnclassifiedDraftDataset</strong> has no <code>identifiability</code> and no <code>quality_designation</code>; it tests
+  that a missing attribute <strong>fails closed</strong> (S9);</li>
+<li><strong><code>Bristol_Cycle%Counts</code></strong> has <code>%</code> and <code>_</code> in its name, and no description and no product type,
+  it tests LIKE escaping and null handling (S10, S11);</li>
+<li><strong>ScotlandLandRegisterExtract</strong> is harmless data that a Bristol caller still cannot discover,
+  because of jurisdiction alone (S6);</li>
+<li><strong>EmptyHomesRegister</strong> is <code>superseded</code>, a quality nobody is granted; its owner discovers it
+  anyway (S7).</li>
+</ul>
+<hr />
+<h2 id="5-scenarios-with-policy-on">5. Scenarios with policy ON</h2>
+<h3 id="s1-each-organisation-discovers-a-different-catalogue">S1: Each organisation discovers a different catalogue</h3>
+<p>The baseline. Send an empty body as each caller: no criteria, so the result is exactly "everything
+this caller may discover".</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="k">for</span><span class="w"> </span>t<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$HEG_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$t</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'{total: .page.totalElements, names: [.products[].name] | sort}'</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="k">done</span>
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Caller</th>
+<th><code>totalElements</code></th>
+<th>Discovers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ENV</strong></td>
+<td><strong>15</strong></td>
+<td>everything except HousingNeedSurvey and EmptyHomesRegister</td>
+</tr>
+<tr>
+<td><strong>HEG</strong></td>
+<td><strong>12</strong></td>
+<td>its own 6, plus FloodRiskMapZones, RiverLevelTelemetry, CoastalErosionForecast, PollutionIncidentReports, BristolAirQualitySensors, <code>Bristol_Cycle%Counts</code></td>
+</tr>
+<tr>
+<td><strong>BCC</strong></td>
+<td><strong>8</strong></td>
+<td>its own 5, plus FloodRiskMapZones, RiverLevelTelemetry, AffordableHousingCompletions</td>
+</tr>
+</tbody>
+</table>
+<p>Read a few of these back to the table in §4 and the reasons should be plain:</p>
+<ul>
+<li>ENV misses <strong>HousingNeedSurvey</strong> and <strong>EmptyHomesRegister</strong>: top clearance, but neither
+  <code>experimental</code> nor <code>superseded</code> is a quality ENV's purposes earn. Clearance is not everything.</li>
+<li>HEG discovers <strong>CoastalErosionForecast</strong> (experimental) and ENV does not: HEG holds
+  <em>statistical analysis</em>. A lower-cleared organisation discovering something a higher-cleared one
+  cannot is correct.</li>
+<li>HEG does not discover <strong>BristolSchoolPlaces</strong> even though anonymised and provisional would pass:
+  it is tagged <code>children</code>, and risk-tagged products need SECRET.</li>
+<li>BCC discovers only three products it does not own, and every one of them covers England.</li>
+</ul>
+<p>Note the paging: the first page holds at most the caller's cap (ENV 100, HEG 50, BCC 20), so all
+three fit on one page. <code>totalElements</code> counts only what the caller may discover.</p>
+<h3 id="s2-the-same-product-seen-differently">S2: The same product, seen differently</h3>
+<p><code>FloodRiskMapZones</code> is discoverable by all three. Compare what each is shown:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="k">for</span><span class="w"> </span>t<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$HEG_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$t</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"text":"FloodRiskMapZones"}'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">    </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'.products[0] | {name, source, attributes, organisation: .organisation.key,</span>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="s1">                          producer: .producer.name, consumers, subscribedBy}'</span>
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="k">done</span>
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Member</th>
+<th>ENV</th>
+<th>HEG</th>
+<th>BCC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code>, <code>topic</code>, <code>type</code>, <code>description</code></td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>organisation</code>, <code>producer</code></td>
+<td>✅</td>
+<td>✅</td>
+<td>✅, since anyone who can discover a product sees who offers it</td>
+</tr>
+<tr>
+<td><code>source</code></td>
+<td>✅</td>
+<td>✅</td>
+<td>❌ absent</td>
+</tr>
+<tr>
+<td><code>attributes</code> (the product's own)</td>
+<td>✅</td>
+<td>✅</td>
+<td>❌ absent entirely</td>
+</tr>
+<tr>
+<td><code>consumers</code></td>
+<td>✅</td>
+<td>❌ absent</td>
+<td>❌ absent</td>
+</tr>
+<tr>
+<td><code>subscribedBy</code></td>
+<td>✅</td>
+<td>✅</td>
+<td>❌ absent</td>
+</tr>
+</tbody>
+</table>
+<p>Also check the <code>policy</code> block, which is how a UI would build its filter panel:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>.policy
+</span></code></pre></div>
+<p>BCC should show <code>maxPageSize: 20</code>, <code>maskedFields</code> including <code>source</code>, <code>consumers</code>, <code>subscribedBy</code>
+and <code>policyAttributes</code>, and <code>obligations</code> including <code>audit_access</code> and <code>mask_response</code>.</p>
+<h3 id="s3-an-organisation-always-sees-its-own">S3: An organisation always sees its own</h3>
+<p>This is the exception that makes masking legible. <code>PendingPlanningApplications</code> is BCC's own and is
+directly identifiable and risk-tagged, BCC discovers it regardless, and sees who uses it, even
+though <code>consumers</code> and <code>subscribedBy</code> are masked for BCC in general (S2).</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"text":"PendingPlanningApplications"}'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'.products[0] | {name, consumers, subscribedBy}'</span>
+</span></code></pre></div>
+<p><strong>Expect:</strong> the product is returned, and <code>consumers</code> / <code>subscribedBy</code> are <strong>present on this product</strong>
+while still absent from every product BCC does not own (compare with FloodRiskMapZones in the same
+response). Confirm the contrast in one call:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'[.products[] | {name, hasSubscribedBy: (.subscribedBy != null)}]'</span>
+</span></code></pre></div>
+<h3 id="s4-who-is-using-a-product">S4: Who is using a product</h3>
+<p><code>BristolAirQualitySensors</code> is used by three consumers across two organisations (ENV ×2, HEG ×1),
+so <code>subscribedBy</code> and <code>consumers</code> are genuinely different things.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"text":"BristolAirQualitySensors"}'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'.products[0] | {subscribedBy, consumerCount: (.consumers | length)}'</span>
+</span></code></pre></div>
+<p><strong>Expect:</strong> <code>subscribedBy</code> has <strong>two</strong> entries: ENV with <code>consumers: 2</code> and <code>since</code> the earlier of
+its two grants (<code>2026-02-11T07:00:00</code>), and HEG with <code>consumers: 1</code>. <code>consumers</code> has <strong>three</strong>
+entries, each with its subscription terms. Check that no subscription carries a <code>destination</code>
+(delivery detail is deliberately not part of discovery).</p>
+<h3 id="s5-free-text-searches-name-and-description-nothing-else">S5: Free text searches name and description, nothing else</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"text":"flood"}'</span><span class="w">  </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'[.products[].name]'</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"text":"kafka"}'</span><span class="w">  </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'[.products[].name]'</span>
+</span></code></pre></div>
+<p><strong>Expect:</strong> <code>"flood"</code> matches <strong>FloodRiskMapZones</strong> (by name) and <strong>RiverLevelTelemetry</strong> (its
+description ends "Used for flood warning"): a case-insensitive substring in either. <code>"kafka"</code>
+matches <strong>nothing</strong>, because <code>source</code> and <code>topic</code> are not text-searched even though <code>kafka://</code>
+appears in several sources. They remain available as explicit filters.</p>
+<h3 id="s6-organisation-attributes-drive-the-query">S6: Organisation attributes drive the query</h3>
+<p>The jurisdiction case. <code>ScotlandLandRegisterExtract</code> is anonymised and validated, so nothing about it
+is sensitive, yet BCC cannot discover it, purely because BCC's remit is local and the product
+covers Scotland only.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"text":"Scotland"}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'.page.totalElements'</span><span class="w">   </span><span class="c1"># expect 0</span>
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$HEG_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"text":"Scotland"}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'[.products[].name]'</span><span class="w">    </span><span class="c1"># expect it, and HousingNeedSurvey</span>
+</span></code></pre></div>
+<p><strong>Expect:</strong> 0 for BCC, and for HEG both <strong>ScotlandLandRegisterExtract</strong> and <strong>HousingNeedSurvey</strong>
+(its description mentions Scotland): HEG's own products, and its jurisdiction covers Scotland.
+This is the scenario to point at when someone asks "what does policy actually <em>do</em> here": no Java
+code knows the word <code>Scotland</code>.</p>
+<h3 id="s7-filtering-on-fields-and-attributes">S7: Filtering on fields and attributes</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="c1"># by product field</span>
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"filters":[{"field":"type","values":["file"]}]}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'[.products[].name]'</span>
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>
+</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="c1"># by policy attribute</span>
+</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"filters":[{"attribute":"record_unit","operator":"in",</span>
+</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="s1">                                    "values":["geographic_area","property"]}]}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'[.products[].name]'</span>
+</span><span id="__span-18-7"><a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>
+</span><span id="__span-18-8"><a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="c1"># by the owning organisation</span>
+</span><span id="__span-18-9"><a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"filters":[{"scope":"organisation","field":"key","values":["HEG"]}]}'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-18-10"><a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="w">  </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'[.products[].name]'</span>
+</span><span id="__span-18-11"><a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a>
+</span><span id="__span-18-12"><a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a><span class="c1"># by who is using it</span>
+</span><span id="__span-18-13"><a id="__codelineno-18-13" name="__codelineno-18-13" href="#__codelineno-18-13"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"filters":[{"field":"subscribedBy","operator":"any_of","values":["BCC"]}]}'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-18-14"><a id="__codelineno-18-14" name="__codelineno-18-14" href="#__codelineno-18-14"></a><span class="w">  </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'[.products[].name]'</span>
+</span><span id="__span-18-15"><a id="__codelineno-18-15" name="__codelineno-18-15" href="#__codelineno-18-15"></a>
+</span><span id="__span-18-16"><a id="__codelineno-18-16" name="__codelineno-18-16" href="#__codelineno-18-16"></a><span class="c1"># several filters are AND-ed</span>
+</span><span id="__span-18-17"><a id="__codelineno-18-17" name="__codelineno-18-17" href="#__codelineno-18-17"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"filters":[{"field":"type","values":["file"]},</span>
+</span><span id="__span-18-18"><a id="__codelineno-18-18" name="__codelineno-18-18" href="#__codelineno-18-18"></a><span class="s1">                                   {"attribute":"quality_designation","values":["validated"]}]}'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-18-19"><a id="__codelineno-18-19" name="__codelineno-18-19" href="#__codelineno-18-19"></a><span class="w">  </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'.page.totalElements'</span>
+</span></code></pre></div>
+<p><strong>Expect:</strong> each narrows the S1 list and never widens it. The organisation filter returns only HEG
+products <strong>that ENV may discover</strong> (so not HousingNeedSurvey or EmptyHomesRegister). The
+<code>subscribedBy</code> filter returns the four products BCC's consumers hold a grant on:
+RiverLevelTelemetry, PollutionIncidentReports, AffordableHousingCompletions and FloodRiskMapZones
+(the last granted to <code>BCC-CONSUMER-1</code> by the original sample data, <code>V20250728152300</code>, not by the
+discovery dataset).</p>
+<p>Worth checking explicitly: a filter cannot reach past the row filter. Ask BCC to filter for a
+product it cannot discover and you get an empty result, not a refusal,</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"text":"WaterAbstractionLicences"}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'.page.totalElements'</span><span class="w">  </span><span class="c1"># 0</span>
+</span></code></pre></div>
+<p>because a caller must not be able to tell "you may not see this" from "this does not exist".</p>
+<h3 id="s8-sorting-and-paging">S8: Sorting and paging</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"sort":[{"field":"name","direction":"desc"}],"size":5}'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="w">  </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'{names: [.products[].name], page}'</span>
+</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"size":5,"page":1}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'{names: [.products[].name], page}'</span>
+</span><span id="__span-20-4"><a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"size":5,"page":2}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>.page<span class="w">      </span><span class="c1"># the last page of ENV's 15</span>
+</span><span id="__span-20-5"><a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"size":500}'</span><span class="w">        </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'.page.size'</span>
+</span></code></pre></div>
+<p><strong>Expect:</strong> descending name order; page 1 continues where page 0 stopped with no repeats and no
+gaps; and BCC's <code>size: 500</code> is <strong>clamped to 20</strong>, not refused; the response reports the size that
+was actually applied. Totals stay the same across pages.</p>
+<p>The <code>page</code> object answers four separate questions, and the two counts are the ones worth keeping
+apart:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Means</th>
+<th>On ENV's page 2 of <code>size: 5</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>number</code></td>
+<td>which page this is, from 0</td>
+<td><code>2</code></td>
+</tr>
+<tr>
+<td><code>size</code></td>
+<td>the page size <strong>applied</strong>, after clamping</td>
+<td><code>5</code></td>
+</tr>
+<tr>
+<td><code>numberOfElements</code></td>
+<td>how many products <strong>this response carries</strong></td>
+<td><code>5</code></td>
+</tr>
+<tr>
+<td><code>totalElements</code></td>
+<td>how many match in all, for this caller</td>
+<td><code>15</code></td>
+</tr>
+<tr>
+<td><code>totalPages</code></td>
+<td>how many pages of <code>size</code> those fill</td>
+<td><code>3</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>size</code> and <code>numberOfElements</code> part company on the last page and whenever fewer products match than
+a page holds: ENV's 15 products at <code>size: 4</code> give <code>numberOfElements: 3</code> on page 3, and any search
+returning nothing gives <code>numberOfElements: 0</code>. Check <code>.products | length</code> equals
+<code>.page.numberOfElements</code> in every response; they are the same number, and a mismatch would mean
+something was removed after the page was counted.</p>
+<p>Paging is exact because the database does it: <code>totalElements</code> and <code>totalPages</code> agree with what you
+can actually walk through. Walk every page of ENV's catalogue with <code>size: 4</code> and you should collect
+exactly the 15 names from S1, each once, across four pages whose <code>numberOfElements</code> are 4, 4, 4, 3.</p>
+<h3 id="s9-a-missing-attribute-is-not-a-free-pass">S9: A missing attribute is not a free pass</h3>
+<p><code>UnclassifiedDraftDataset</code> (ENV's) records no <code>identifiability</code> and no <code>quality_designation</code>.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"text":"UnclassifiedDraftDataset"}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'.page.totalElements'</span><span class="w">  </span><span class="c1"># 1, own product</span>
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$HEG_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"text":"UnclassifiedDraftDataset"}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'.page.totalElements'</span><span class="w">  </span><span class="c1"># 0</span>
+</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"text":"UnclassifiedDraftDataset"}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'.page.totalElements'</span><span class="w">  </span><span class="c1"># 0</span>
+</span></code></pre></div>
+<p><strong>Expect:</strong> only its owner discovers it. For everyone else the missing attribute fails every
+positive condition, so the product is withheld. <strong>If HEG or BCC can see it, that is a serious bug</strong>
+It would mean an unclassified product is discoverable by default.</p>
+<h3 id="s10-search-terms-are-values-never-sql">S10: Search terms are values, never SQL</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"text":"Bristol_Cycle%Counts"}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'[.products[].name]'</span>
+</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"text":"%"}'</span><span class="w">                    </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'.page.totalElements'</span>
+</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"text":"'</span><span class="s2">"'"</span><span class="s1">' OR 1=1 --"}'</span><span class="w">      </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'.page.totalElements'</span>
+</span></code></pre></div>
+<p><strong>Expect:</strong> the first finds exactly <code>Bristol_Cycle%Counts</code>: <code>%</code> and <code>_</code> are matched literally, not
+as wildcards. The second returns <strong>0</strong>, not everything. The third returns <strong>0</strong> and no error: the
+term is a bound parameter, and it matches no product name or description.</p>
+<p>Try the same through a filter value and an attribute name; both must behave identically.</p>
+<h3 id="s11-products-with-nothing-recorded">S11: Products with nothing recorded</h3>
+<p><code>Bristol_Cycle%Counts</code> has no description and no product type.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"text":"Cycle"}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'.products[0]'</span>
+</span></code></pre></div>
+<p><strong>Expect:</strong> the product is returned and found by name; <code>description</code> and <code>type</code> are <strong>absent</strong>
+(not <code>null</code>, not <code>""</code>). A null description simply does not match a text search; it never errors.</p>
+<hr />
+<h2 id="5a-viewing-one-product">5a. Viewing one product</h2>
+<p><code>GET /api/v1/product/{productId}</code> is <strong>the same policy, constrained to one product</strong>. It is worth
+testing right after S1, because the single most valuable check is that the two endpoints agree.</p>
+<blockquote>
+<p>Measured before release, driving the real rules through the real services against a PostgreSQL
+loaded with this data: every organisation views exactly what it discovers: ENV 15, HEG 12,
+BCC 8. A non-existent id returns the same <code>404</code> as a withheld one. Note ENV views <strong>15 of the 17</strong>
+products in the catalogue: before this work any sufficiently cleared caller could read all 17 by
+id, which is the hole S17 exists to catch.</p>
+</blockquote>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>view<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w">   </span><span class="c1"># view &lt;TOKEN&gt; &lt;productId&gt;</span>
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="w">  </span>curl<span class="w"> </span>-sk<span class="w"> </span>--cert<span class="w"> </span>client.crt<span class="w"> </span>--key<span class="w"> </span>client.key<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code}\n'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="w">    </span><span class="s2">"https://localhost:8090/api/v1/product/</span><span class="nv">$2</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$1</span><span class="s2">"</span>
+</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="o">}</span>
+</span><span id="__span-24-5"><a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>view_body<span class="o">()</span><span class="w"> </span><span class="o">{</span>
+</span><span id="__span-24-6"><a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="w">  </span>curl<span class="w"> </span>-sk<span class="w"> </span>--cert<span class="w"> </span>client.crt<span class="w"> </span>--key<span class="w"> </span>client.key<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-24-7"><a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a><span class="w">    </span><span class="s2">"https://localhost:8090/api/v1/product/</span><span class="nv">$2</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$1</span><span class="s2">"</span>
+</span><span id="__span-24-8"><a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a><span class="o">}</span>
+</span></code></pre></div>
+<h3 id="s17-you-can-view-exactly-what-you-can-discover">S17: You can view exactly what you can discover</h3>
+<p>The guarantee the design rests on. Take the ids a caller discovers, and the ids they do not, and
+check each one:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="c1"># every id BCC discovers should be 200</span>
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="k">for</span><span class="w"> </span>id<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">'.products[].id'</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="w">  </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2"> -&gt; </span><span class="k">$(</span>view<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="k">)</span><span class="s2">"</span>
+</span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="k">done</span>
+</span><span id="__span-25-5"><a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>
+</span><span id="__span-25-6"><a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a><span class="c1"># every id BCC does NOT discover should be 404 - take them from ENV's larger catalogue</span>
+</span><span id="__span-25-7"><a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a><span class="nv">mine</span><span class="o">=</span><span class="k">$(</span>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">'.products[].id'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sort<span class="k">)</span>
+</span><span id="__span-25-8"><a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a><span class="k">for</span><span class="w"> </span>id<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">'.products[].id'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sort<span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-25-9"><a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a><span class="w">  </span>grep<span class="w"> </span>-qx<span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="w"> </span><span class="o">&lt;&lt;&lt;</span><span class="s2">"</span><span class="nv">$mine</span><span class="s2">"</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"not discoverable by BCC: </span><span class="nv">$id</span><span class="s2"> -&gt; </span><span class="k">$(</span>view<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="k">)</span><span class="s2">"</span>
+</span><span id="__span-25-10"><a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a><span class="k">done</span>
+</span></code></pre></div>
+<p><strong>Expect:</strong> every discoverable id <code>200</code>, every non-discoverable id <strong><code>404</code></strong>. A <code>200</code> in the second
+loop is a serious bug; it would mean an id is a way around discovery's filtering, which is exactly
+what this endpoint used to allow.</p>
+<h3 id="s18-a-withheld-product-is-indistinguishable-from-a-missing-one">S18: A withheld product is indistinguishable from a missing one</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>view<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="m">999999</span><span class="w">    </span><span class="c1"># no such product</span>
+</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>view<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span>&lt;an<span class="w"> </span>id<span class="w"> </span>BCC<span class="w"> </span>cannot<span class="w"> </span>discover,<span class="w"> </span>from<span class="w"> </span>S17&gt;
+</span></code></pre></div>
+<p><strong>Expect: <code>404</code> from both, with identical bodies.</strong> Not <code>403</code> for the second. The caller was already
+allowed to <em>ask</em>, which is what the role and the request-level policy check decide, so the
+per-product answer must not reveal whether the product exists. Compare the two responses byte for
+byte.</p>
+<h3 id="s19-the-same-masking-as-discovery">S19: The same masking as discovery</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>view_body<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span>&lt;a<span class="w"> </span>product<span class="w"> </span>BCC<span class="w"> </span>can<span class="w"> </span>discover&gt;<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq
+</span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>view_body<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq
+</span></code></pre></div>
+<p><strong>Expect:</strong> exactly the member-by-member outcome of S2 for that caller: BCC sees no <code>source</code>, no
+<code>attributes</code>, no <code>consumers</code>, no <code>subscribedBy</code>; ENV sees everything; HEG sees <code>subscribedBy</code> but not
+<code>consumers</code>. The response is the same object model discovery returns, so a product you discovered
+and then viewed looks the same. Check <code>id</code> is present (it is what you pass to <code>subscribe</code>).</p>
+<p>Own products unmask here too, as in S3: BCC viewing its own <code>PendingPlanningApplications</code> sees
+<code>consumers</code> and <code>subscribedBy</code>.</p>
+<h3 id="s20-the-caller-level-refusal-is-a-403-and-applies-to-both-endpoints-alike">S20: The caller-level refusal is a 403, and applies to both endpoints alike</h3>
+<p>View applies <strong>the same three caller gates discover applies</strong>, from one shared definition: a known
+organisation, a UK jurisdiction, and some clearance. There is no view-only clearance floor, so if you
+may discover, you may view.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>view<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="m">3</span><span class="w">          </span><span class="c1"># BCC is OFFICIAL: allowed, like discover</span>
+</span></code></pre></div>
+<p><strong>Expect <code>200</code>.</strong> BCC holds only <code>OFFICIAL</code>, and that is enough for both endpoints. What its
+clearance costs it is <em>fields</em>, not the endpoint: <code>source</code>, <code>consumers</code>, <code>subscribedBy</code> and the
+product attribute map are withheld (S19), exactly as they are in discovery's results.</p>
+<p>A caller the <strong>gates</strong> refuse (no organisation on the token, a non-UK jurisdiction, or no
+clearance at all) gets <code>403</code> from <em>both</em> endpoints with the same reason. That is the difference
+worth keeping straight: <code>403</code> means "not you, for anything"; <code>404</code> means "not this product, and we
+will not say why" (S18).</p>
+<blockquote>
+<p>If discover and view ever disagree for the same caller, that is a bug, not a policy choice.
+<code>view_test.rego</code> asserts their decisions are identical for every sample organisation.</p>
+</blockquote>
+<h3 id="s21-bad-ids">S21: Bad ids</h3>
+<table>
+<thead>
+<tr>
+<th>Request</th>
+<th>Expect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /api/v1/product/abc</code></td>
+<td><code>400</code>, from type conversion, before any policy</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/product/-1</code></td>
+<td><code>404</code></td>
+</tr>
+<tr>
+<td><code>GET /api/v1/product/</code></td>
+<td><code>404</code> or <code>405</code> from routing</td>
+</tr>
+</tbody>
+</table>
+<h3 id="s22-viewing-with-policy-off">S22: Viewing with policy OFF</h3>
+<p>Restart with <code>OPA_ENABLED=false</code> (§6) and repeat S17:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="k">for</span><span class="w"> </span>id<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="m">999999</span><span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2"> -&gt; </span><span class="k">$(</span>view<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="k">)</span><span class="s2">"</span><span class="p">;</span><span class="w"> </span><span class="k">done</span>
+</span></code></pre></div>
+<p><strong>Expect:</strong> every real id <code>200</code> for every caller, including the ones policy would withhold, and
+<code>404</code> only for ids that genuinely do not exist. Nothing is masked. Same switch, same meaning as it
+has for discovery.</p>
+<hr />
+<h2 id="6-scenarios-with-policy-off">6. Scenarios with policy OFF</h2>
+<p><strong>This is a first-class supported mode, not a degraded one.</strong> With
+<code>application.opa.enabled=false</code> no decision is taken at all; the handler receives an empty
+<code>Optional</code> and the search runs with nothing restricted. Discovery must work, not fail, and not
+quietly return nothing.</p>
+<p>Restart with the switch off (OPA may be stopped as well, since nothing should call it):</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="nv">OPA_ENABLED</span><span class="o">=</span><span class="nb">false</span><span class="w"> </span>./mvnw<span class="w"> </span>spring-boot:run<span class="w"> </span>-Dspring-boot.run.profiles<span class="o">=</span><span class="nb">local</span>
+</span></code></pre></div>
+<p>At startup you should see the documented warning that policy will <strong>not</strong> be evaluated and every
+decision returns ALLOW.</p>
+<h3 id="s12-every-caller-sees-the-whole-catalogue">S12: Every caller sees the whole catalogue</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="k">for</span><span class="w"> </span>t<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$HEG_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-31-2"><a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="w">  </span>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$t</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'{total: .page.totalElements, count: (.products | length)}'</span>
+</span><span id="__span-31-3"><a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="k">done</span>
+</span></code></pre></div>
+<p><strong>Expect:</strong> <code>totalElements: 17</code> for <strong>all three</strong> callers, including BCC, which discovers only 8
+with policy on. Same endpoint, same tokens, different switch.</p>
+<h3 id="s13-nothing-is-masked-and-no-policy-block-is-returned">S13: Nothing is masked and no policy block is returned</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-32-1"><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'{policy, first: .products[0]}'</span>
+</span></code></pre></div>
+<p><strong>Expect:</strong></p>
+<ul>
+<li><strong><code>policy</code> is absent.</strong> No decision was taken, so there is nothing truthful to report. It must
+  not appear as <code>null</code>, and it must not appear filled in with defaults; that would be the service
+  asserting a verdict nobody reached.</li>
+<li>Every product carries <code>source</code>, <code>attributes</code>, <code>organisation</code>, <code>producer</code>, <code>consumers</code> and
+  <code>subscribedBy</code>, including for BCC, which sees almost none of that with policy on.</li>
+<li>Sensitive attributes are present too (<code>population_risk_tags</code>, and the organisations'
+  <code>authorised_classifications</code> / <code>permitted_purposes</code>). With no policy there is nothing to
+  withhold them.</li>
+</ul>
+<h3 id="s14-everything-is-filterable-including-what-policy-would-refuse">S14: Everything is filterable, including what policy would refuse</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-33-1"><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"filters":[{"attribute":"identifiability","values":["directly_identifiable"]}]}'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-33-2"><a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a><span class="w">  </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'{total: .page.totalElements, names: [.products[].name]}'</span>
+</span></code></pre></div>
+<p><strong>Expect:</strong> <code>200</code>, with WaterAbstractionLicences, HelpToBuyApplicants, PendingPlanningApplications
+and BristolTemporaryAccommodation. The identical request is a <strong><code>403</code></strong> with policy on (S16).
+that contrast is the point of the scenario.</p>
+<h3 id="s15-the-rest-of-the-search-still-works">S15: The rest of the search still works</h3>
+<p>Paging, sorting, text and malformed-request handling are the service's own and must be unchanged:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-34-1"><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"text":"flood"}'</span><span class="w">                  </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'[.products[].name]'</span>
+</span><span id="__span-34-2"><a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"size":5,"page":1}'</span><span class="w">               </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>.page
+</span><span id="__span-34-3"><a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"size":5000}'</span><span class="w">                     </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'.page.size'</span>
+</span><span id="__span-34-4"><a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"filters":[{"field":"name","attribute":"x","values":["v"]}]}'</span><span class="w"> </span>-i<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-1
+</span></code></pre></div>
+<p><strong>Expect:</strong> text search behaves as in S5; paging as in S8; <code>size: 5000</code> is clamped to <strong>100</strong>
+(<code>ProductSearchContract.DEFAULT_MAX_PAGE_SIZE</code>, the cap when nothing else sets one) rather than to a
+policy cap; and a malformed filter is still a <strong><code>400</code></strong>; validation of the request shape is the
+service's job, not policy's.</p>
+<h3 id="s16-switch-back-on-and-confirm-the-difference">S16: Switch back on and confirm the difference</h3>
+<p>Restart with <code>OPA_ENABLED=true</code> and re-run S12 and S14. The counts must return to 15 / 12 / 8, and
+S14's request must become:</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-35-1"><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="p">{</span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="mi">403</span><span class="p">,</span><span class="w"> </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Access denied by policy"</span><span class="p">,</span>
+</span><span id="__span-35-2"><a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a><span class="w"> </span><span class="nt">"reasons"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"filter.attribute_not_permitted:identifiability"</span><span class="p">],</span><span class="w"> </span><span class="nt">"errorId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"…"</span><span class="p">}</span>
+</span></code></pre></div>
+<p>If results do <strong>not</strong> change when you flip the switch, something is wrong: either the switch is
+not taking effect or the contract is not being applied.</p>
+<hr />
+<h2 id="7-bad-requests-and-refusals">7. Bad requests and refusals</h2>
+<p>A <code>400</code> and a <code>403</code> mean quite different things here, and the distinction is worth testing
+deliberately: <strong><code>400</code> is "what you sent makes no sense", <code>403</code> is "what you asked for is not
+yours to ask".</strong></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Request (as BCC, policy on)</th>
+<th>Expect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R1</td>
+<td><code>{"filters":[{"attribute":"identifiability","values":["non_personal"]}]}</code></td>
+<td><code>403</code>, reason <code>filter.attribute_not_permitted:identifiability</code></td>
+</tr>
+<tr>
+<td>R2</td>
+<td><code>{"filters":[{"field":"source","values":["x"]}]}</code></td>
+<td><code>403</code>, reason <code>filter.field_not_permitted:source</code></td>
+</tr>
+<tr>
+<td>R3</td>
+<td><code>{"filters":[{"attribute":"no_such_attribute_at_all","values":["x"]}]}</code></td>
+<td><code>403</code>, the <strong>same</strong> shape of reason; an unknown name is refused exactly like a forbidden one</td>
+</tr>
+<tr>
+<td>R4</td>
+<td><code>{"filters":[{"attribute":"population_risk_tags","values":["children"]}]}</code></td>
+<td><code>403</code>, flagged sensitive in the catalogue</td>
+</tr>
+<tr>
+<td>R5</td>
+<td><code>{"sort":[{"field":"source"}]}</code></td>
+<td><code>403</code>, reason <code>sort.not_permitted:source</code></td>
+</tr>
+<tr>
+<td>R6</td>
+<td>two refused filters at once</td>
+<td><code>403</code> listing <strong>both</strong> reasons, so you can fix them in one go</td>
+</tr>
+<tr>
+<td>R7</td>
+<td><code>{"filters":[{"field":"name","attribute":"record_unit","values":["v"]}]}</code></td>
+<td><code>400</code>, both named. Both names must be ones the caller may use, or policy refuses first (see below)</td>
+</tr>
+<tr>
+<td>R8</td>
+<td><code>{"filters":[{"values":["v"]}]}</code></td>
+<td><code>400</code>, neither named</td>
+</tr>
+<tr>
+<td>R9</td>
+<td><code>{"filters":[{"field":"name","operator":"sounds_like","values":["v"]}]}</code></td>
+<td><code>400</code>, unknown operator</td>
+</tr>
+<tr>
+<td>R10</td>
+<td><code>{"filters":[{"attribute":"record_unit","operator":"gt","values":["abc"]}]}</code></td>
+<td><code>400</code>, ordering operator needs a number</td>
+</tr>
+<tr>
+<td>R11</td>
+<td><code>{"page":-1}</code> or <code>{"size":0}</code></td>
+<td><code>400</code></td>
+</tr>
+<tr>
+<td>R12</td>
+<td><code>{"text":"&lt;256 characters&gt;"}</code></td>
+<td><code>400</code></td>
+</tr>
+<tr>
+<td>R13</td>
+<td>51 filters</td>
+<td><code>400</code></td>
+</tr>
+<tr>
+<td>R14</td>
+<td><code>{not-json</code></td>
+<td><code>400</code>, "malformed JSON"</td>
+</tr>
+<tr>
+<td>R15</td>
+<td>no body at all</td>
+<td><strong><code>200</code></strong>, since an empty request is valid and returns the first page of everything</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Order matters: policy is judged before the handler validates.</strong> The PDP sees the body exactly as
+posted, so a request that is <em>both</em> malformed and names something the caller may not use comes back
+<code>403</code>, not <code>400</code>, for <code>{"filters":[{"field":"name","attribute":"x","values":["v"]}]}</code> is refused with
+<code>filter.attribute_not_permitted:x</code> and never reaches the check that would have called it malformed.
+When writing a <code>400</code> test, name only fields and attributes the caller is permitted. Body-shape
+failures (R9, R11–R14) are bound before policy runs and stay <code>400</code> whatever they name. Worked
+through in
+<a href="../tests/products/product-discover/#tc-42--criteria-400s-decided-after-policy"><code>tests/products/product-discover.md</code> TC-42</a>.</p>
+<p>Two subtleties worth confirming by hand:</p>
+<ul>
+<li><strong>R3 is the anti-probing guarantee.</strong> Compare the responses to R1 and R3 byte for byte apart from
+  the name: they must be indistinguishable. If an unknown attribute gave a <code>400</code> while a forbidden
+  one gave a <code>403</code>, the endpoint would become a way to enumerate the attribute vocabulary.</li>
+<li><strong>A refusal never reveals policy wiring.</strong> No <code>403</code> body should contain a reason starting
+  <code>policy.</code> or <code>dispatch.</code>; those stay in the log. Grep a few refusals to be sure.</li>
+</ul>
+<p>Also worth one test each:</p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Expect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>no <code>Authorization</code> header</td>
+<td><code>401</code></td>
+</tr>
+<tr>
+<td>a token without <code>product_discovery</code></td>
+<td><code>403 "Access denied: insufficient permissions for this operation"</code> (the role message, not the policy one)</td>
+</tr>
+<tr>
+<td>OPA stopped, policy on</td>
+<td><code>403</code> for every request, failing closed</td>
+</tr>
+<tr>
+<td>a filter value outside the attribute's <code>allowed_values</code>, e.g. <code>{"attribute":"record_unit","values":["spaceship"]}</code></td>
+<td><code>200</code> with <strong>0 results</strong>, not an error. Rejecting it would turn the endpoint into a probe of the vocabulary</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="8-things-that-should-never-happen">8. Things that should never happen</h2>
+<p>Treat any of these as a defect, whatever else is working. They are the guarantees the design rests
+on, and each is cheap to check by eye:</p>
+<ol>
+<li><strong>A masked member appearing anywhere.</strong> <code>source</code>, <code>attributes</code>, <code>consumers</code> or <code>subscribedBy</code>
+   present for BCC on a product it does not own (S2). Withheld data is never read from the
+   database, so if it appears, the query was not built from the decision.</li>
+<li><strong>A sensitive attribute in any response with policy on and clearance below SECRET.</strong> Check every
+   <code>attributes</code> map, at every level: product, organisation, producer, consumer, subscription:
+   <div class="language-bash highlight"><pre><span></span><code><span id="__span-36-1"><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$HEG_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'[.. | objects | select(has("population_risk_tags"))] | length'</span><span class="w">   </span><span class="c1"># 0</span>
+</span><span id="__span-36-2"><a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$HEG_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-c<span class="w"> </span>authorised_classifications<span class="w">                                   </span><span class="c1"># 0</span>
+</span></code></pre></div></li>
+<li><strong><code>totalElements</code> larger than the number of products a caller can page through.</strong> That would
+   mean the count sees products the page does not: a disclosure by counting.</li>
+<li><strong>A product appearing for a caller who cannot discover it</strong>, especially
+   UnclassifiedDraftDataset for HEG or BCC (S9).</li>
+<li><strong>A <code>500</code>.</strong> Every input in §7 should produce a <code>400</code> or a <code>403</code>. A malformed body is the
+   handler's <code>400</code> to give.</li>
+<li><strong>Producer connection details</strong> (<code>host</code>, <code>port</code>, <code>tls</code>, <code>idp_client_id</code>) or a subscription
+   <code>destination</code> in any discovery response. They belong to the configuration API.</li>
+<li><strong>A response that changes when only the page size changes.</strong> Which products come back must be a
+   function of the caller and the criteria, never of how the page is fetched.</li>
+</ol>
+<hr />
+<h2 id="9-troubleshooting">9. Troubleshooting</h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Likely cause</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>every request <code>403 "Access denied by policy"</code></td>
+<td>OPA is down (it fails closed), or the token has no <code>organisation</code> claim → check for reason <code>organisation.missing</code></td>
+</tr>
+<tr>
+<td><code>403</code> and the log says <code>policy.enforcement_missing</code></td>
+<td>policy is switched <strong>on</strong> but no decision reached the handler; the enforcement point did not run. Discovery refuses rather than searching unrestricted in its place; this is a wiring fault to report, not a caller problem</td>
+</tr>
+<tr>
+<td><code>403 "Access denied: insufficient permissions"</code></td>
+<td>the <code>product_discovery</code> role is not on the token; §2.2</td>
+</tr>
+<tr>
+<td>all three callers see the same products</td>
+<td>see <a href="#0-if-all-three-organisations-return-the-same-products">§0</a>, usually the same identity being sent each time (<a href="#31-who-is-who">§3.1</a>), otherwise the master switch</td>
+</tr>
+<tr>
+<td>the log says <code>No decision published yet; supplying an empty value…</code></td>
+<td>expected, and not a failure. Arguments are resolved before the handler runs, so the enforcement point fills that value in a moment later. The line that reports the outcome is <code>PolicyEnforcementInterceptor … ALLOW</code>/<code>DENY</code> (it is at <code>TRACE</code>, so you will not normally see it at all)</td>
+</tr>
+<tr>
+<td>empty results for everyone</td>
+<td>the sample data did not load, or the organisation claim does not match any <code>organisation_key</code> (<code>FEDERATOR_ENV</code> instead of <code>ENV</code>)</td>
+</tr>
+<tr>
+<td>results differ from §5</td>
+<td>someone changed an organisation or product attribute. Re-derive from §4 before reporting a bug; the tables there are the whole story</td>
+</tr>
+<tr>
+<td>you want to see why</td>
+<td>set <code>application.opa.log-input: true</code> and <code>log-output: true</code> (the <code>dev</code> profile does). The input shows the organisation attributes sent; the output shows the contract that came back, provenance included</td>
+</tr>
+<tr>
+<td>you want to see the query</td>
+<td><code>logging.level.uk.gov.dbt.ndtp.ia.node.management.service.data.impl.ProductDiscoveryServiceImpl: DEBUG</code> logs the compiled SQL and its bound parameters</td>
+</tr>
+</tbody>
+</table>
+<p>To ask the PDP the same question the service asks, without the service:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-37-1"><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>localhost:8181/v1/data/dispatch/decision<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"input":{</span>
+</span><span id="__span-37-2"><a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a><span class="s1">  "subject":{"kind":"service","clientId":"FEDERATOR_BCC",</span>
+</span><span id="__span-37-3"><a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a><span class="s1">             "organisation":{"key":"BCC","attributes":{</span>
+</span><span id="__span-37-4"><a id="__codelineno-37-4" name="__codelineno-37-4" href="#__codelineno-37-4"></a><span class="s1">               "authorised_classifications":["OFFICIAL"],</span>
+</span><span id="__span-37-5"><a id="__codelineno-37-5" name="__codelineno-37-5" href="#__codelineno-37-5"></a><span class="s1">               "permitted_purposes":["service_delivery"],</span>
+</span><span id="__span-37-6"><a id="__codelineno-37-6" name="__codelineno-37-6" href="#__codelineno-37-6"></a><span class="s1">               "jurisdictions":["England","Bristol"]}}},</span>
+</span><span id="__span-37-7"><a id="__codelineno-37-7" name="__codelineno-37-7" href="#__codelineno-37-7"></a><span class="s1">  "action":"discover","resource":{"kind":"product"},</span>
+</span><span id="__span-37-8"><a id="__codelineno-37-8" name="__codelineno-37-8" href="#__codelineno-37-8"></a><span class="s1">  "request":{"method":"POST","path":"/api/v1/product/discover","body":{}}}}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>.result
+</span></code></pre></div>
+<p>The <code>row_filter</code> that comes back is, quite literally, the <code>WHERE</code> clause of the search.</p>
+<hr />
+<h2 id="related-documents">Related documents</h2>
+<ul>
+<li><a href="../POLICY_ENFORCEMENT/">Policy Enforcement</a>: how a decision is reached and what it contains</li>
+<li><a href="../AUTHENTICATION_REQUIREMENTS/">Authentication Requirements</a>: tokens, audiences and roles</li>
+<li><a href="../DATABASE_SCHEMA/">Database Schema</a>: products, grants and policy attributes</li>
+<li><code>docker/opa/policy_sample_stories.md</code>: the same organisations walked through at the policy level</li>
+</ul>
+
+
+
+
+
+
+
+  
+    
+  
+  
+
+
+  <aside class="md-source-file">
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="Last update">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 24, 2026 10:34:35 UTC">September 24, 2026</span>
+  </span>
+
+    
+    
+    
+    
+  </aside>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      &copy;Crown Copyright 2025. This work has been developed by the National Digital Twin Programme and is legally attributed to the Department for Business and Trade (UK) as the governing entity.  
+
+    </div>
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.annotate", "content.code.copy", "content.code.select", "content.tooltips", "navigation.indexes", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "search.share", "navigation.instant", "navigation.instant.prefetch", "navigation.instant", "navigation.instant.progress", "navigation.path", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

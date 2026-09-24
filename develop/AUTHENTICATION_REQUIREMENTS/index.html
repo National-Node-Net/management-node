@@ -459,6 +459,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../DISCOVERY_TEST_SCENARIOS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Discovery and View: Test Scenarios
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../JACOCO_COVERAGE/" class="md-nav__link">
         
   
@@ -610,6 +637,194 @@
   
 
       </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tests
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tests
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../tests/products/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Products
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_12_1" id="__nav_12_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_12_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Products
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tests/products/product-discover/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Discover: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tests/products/product-view/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product View API: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -776,62 +991,123 @@
 - The aud claim may be a list (as shown) and must include "management-node".
 - The resource_access.management-node.roles array must contain the role required for the API you are calling.</p>
 <h2 id="role-requirements-per-api">Role requirements per API</h2>
+<p>Every role below is a client role on <code>management-node</code>, so it reaches the token as
+<code>resource_access["management-node"].roles</code> and is enforced as the authority
+<code>ROLE_management-node:&lt;role&gt;</code>. Where an endpoint carries <code>@Policy</code>, the resource and action
+in that annotation select the rule that answers, never the URL, so renaming a path or
+versioning the API does not change which rule decides (see
+<a href="../POLICY_ENFORCEMENT/#dispatch">Policy Enforcement</a>).</p>
+<table>
+<thead>
+<tr>
+<th>API path</th>
+<th>Required role</th>
+<th>Policy rule</th>
+<th>Policy resource</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /api/v1/configuration/producer</code></td>
+<td><code>access_producer_configurations</code></td>
+<td><code>policies.configuration.fallback</code> (resource fallback)</td>
+<td><code>configuration</code></td>
+<td><code>producer</code></td>
+</tr>
+<tr>
+<td><code>GET /api/v1/configuration/consumer</code></td>
+<td><code>access_consumer_configurations</code></td>
+<td><code>policies.configuration.fallback</code> (resource fallback)</td>
+<td><code>configuration</code></td>
+<td><code>consumer</code></td>
+</tr>
+<tr>
+<td><code>GET /api/v1/certificate/keyPair</code></td>
+<td><code>create_keys</code></td>
+<td>not annotated</td>
+<td>n/a</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td><code>POST /api/v1/certificate/csr/create</code></td>
+<td><code>create_keys</code></td>
+<td>not annotated</td>
+<td>n/a</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td><code>POST /api/v1/certificate/csr/sign</code></td>
+<td><code>sign_certificate</code></td>
+<td>not annotated</td>
+<td>n/a</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/certificate/intermediate</code></td>
+<td><code>access_public_certificates</code></td>
+<td>not annotated</td>
+<td>n/a</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td><code>POST /api/v1/certificate/bootstrap</code></td>
+<td><code>request_bootstrap_certificate</code></td>
+<td>not annotated</td>
+<td>n/a</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td><code>POST /api/v1/product/discover</code></td>
+<td><code>product_discovery</code></td>
+<td><code>policies.product.discover</code> (exact)</td>
+<td><code>product</code></td>
+<td><code>discover</code></td>
+</tr>
+<tr>
+<td><code>POST /api/v1/product/subscribe</code></td>
+<td><code>product_subscribe</code></td>
+<td><code>policies.product.subscribe</code> (exact)</td>
+<td><code>product</code></td>
+<td><code>subscribe</code></td>
+</tr>
+<tr>
+<td><code>GET /api/v1/product/{productId}</code></td>
+<td><code>product_view</code></td>
+<td><code>policies.product.view</code> (exact)</td>
+<td><code>product</code></td>
+<td><code>view</code></td>
+</tr>
+</tbody>
+</table>
+<p>Notes the table cannot carry:</p>
 <ul>
-<li>Producer API: Federator clients may access Producer configuration only when their token contains the role <code>access_producer_configurations</code> under the <code>resource_access</code> for the audience/client <code>management-node</code>.</li>
-<li>
-<p>Enforcement in code: <code>@PreAuthorize("hasAuthority('ROLE_management-node:access_producer_configurations')")</code> on <code>/api/v1/configuration/producer</code>.</p>
-</li>
-<li>
-<p>Consumer API: Federator clients may access Consumer configuration only when their token contains the role <code>access_consumer_configurations</code> under the <code>resource_access</code> for the audience/client <code>management-node</code>.</p>
-</li>
-<li>
-<p>Enforcement in code: <code>@PreAuthorize("hasAuthority('ROLE_management-node:access_consumer_configurations')")</code> on <code>/api/v1/configuration/consumer</code>.</p>
-</li>
-<li>
-<p>Key Pair / CSR Creation API: Clients may create RSA key pairs and certificate signing requests when their token contains the role <code>create_keys</code>.</p>
-</li>
-<li>
-<p>Enforcement in code: <code>@PreAuthorize("hasAuthority('ROLE_management-node:create_keys')")</code> on <code>GET /api/v1/certificate/keyPair</code> and <code>POST /api/v1/certificate/csr/create</code>.</p>
-</li>
-<li>
-<p>CSR Signing API: Clients may sign certificate signing requests when their token contains the role <code>sign_certificate</code>.</p>
-</li>
-<li>
-<p>Enforcement in code: <code>@PreAuthorize("hasAuthority('ROLE_management-node:sign_certificate')")</code> on <code>POST /api/v1/certificate/csr/sign</code>.</p>
-</li>
-<li>
-<p>Intermediate Certificate API: Clients may retrieve the intermediate CA certificate when their token contains the role <code>access_public_certificates</code>.</p>
-</li>
-<li>
-<p>Enforcement in code: <code>@PreAuthorize("hasAuthority('ROLE_management-node:access_public_certificates')")</code> on <code>GET /api/v1/certificate/intermediate</code>.</p>
-</li>
-<li>
-<p>Bootstrap Certificate API: The onboarding service account may request bootstrap certificate packages when its token contains the role <code>request_bootstrap_certificate</code>. The request body contains the target <code>organisationId</code> and a CSR. If no certificate record exists for the organisation, one is created automatically. This role is typically assigned only to the website backend service account, not to individual federator clients.</p>
-</li>
-<li>
-<p>Enforcement in code: <code>@PreAuthorize("hasAuthority('ROLE_management-node:request_bootstrap_certificate')")</code> on <code>POST /api/v1/certificate/bootstrap</code>.</p>
-</li>
-<li>
-<p>Product Discovery API: Clients may discover the products they are authorised to see when their token contains the role <code>product_discovery</code>. Even with the role, policy applies on top of it (<code>@Policy(resource = "product", action = "discover")</code>): the <code>product.discover</code> rule first decides whether the caller may discover at all, and then filters results per product - the role only gates access to the endpoint itself (see <a href="../POLICY_ENFORCEMENT/#reference-endpoints">Policy Enforcement</a>).</p>
-</li>
-<li>
-<p>Enforcement in code: <code>@PreAuthorize("hasAuthority('ROLE_management-node:product_discovery')")</code> on <code>POST /api/v1/product/discover</code>.</p>
-</li>
-<li>
-<p>Product Subscription API: Clients may request a subscription of their organisation to a product when their token contains the role <code>product_subscribe</code>. The role only gates access to the endpoint; policy is then evaluated on top of it (<code>@Policy(resource = "product", action = "subscribe")</code>), and decides both whether the subscription is allowed and its terms - whether approval is required, the maximum validity and the permitted schedule types (see <a href="../POLICY_ENFORCEMENT/#reference-endpoints">Policy Enforcement</a>).</p>
-</li>
-<li>
-<p>Enforcement in code: <code>@PreAuthorize("hasAuthority('ROLE_management-node:product_subscribe')")</code> on <code>POST /api/v1/product/subscribe</code>.</p>
-</li>
-<li>
-<p>Product View API: Clients may retrieve a single product when their token contains the role <code>product_view</code>. Policy is then evaluated on top of the role check (<code>@Policy(resource = "product", action = "view")</code>): the <code>product.view</code> rule allows organisations cleared to <code>OFFICIAL-SENSITIVE</code> or higher and sets how much of the product they see.</p>
-</li>
-<li>Enforcement in code: <code>@PreAuthorize("hasAuthority('ROLE_management-node:product_view')")</code> on <code>GET /api/v1/product/{productId}</code>.</li>
+<li><strong>Holding the role is necessary but not sufficient</strong> on an annotated endpoint: a request that
+  passes the role check can still be refused <code>403</code> by policy. Policy is only evaluated when
+  <code>application.opa.enabled=true</code>; see <a href="../POLICY_ENFORCEMENT/">Policy Enforcement</a>.</li>
+<li><strong>Configuration endpoints</strong> have no dedicated rule. <code>policies.configuration.fallback</code> allows,
+  and is a placeholder: who may call them is gated by the role and the client certificate
+  (<code>CertificateValidationInterceptor</code>, which applies to <code>/api/v1/configuration/**</code> only). It is
+  the first thing to replace with real rules.</li>
+<li><strong>Certificate endpoints</strong> are not annotated, so no decision is taken and the PDP is never
+  called for them, so only authentication and the role check apply.</li>
+<li><strong><code>request_bootstrap_certificate</code></strong> is for the website/onboarding backend service account, not
+  individual federator clients. The request body carries the target <code>organisationId</code> and a CSR;
+  if no certificate record exists for that organisation, one is created automatically.</li>
+<li><strong>Discovery's decision is the query.</strong> <code>product.discover</code> returns a <em>search contract</em>, saying which
+  products exist for the caller, what they may filter, sort and text-search on, and what is
+  withheld from each result, and the service compiles that contract into the SQL.</li>
+<li><strong>View is discovery constrained to one product.</strong> <code>product.view</code> applies the same caller gates
+  as <code>product.discover</code> (a known organisation, a UK jurisdiction, some clearance) and returns the
+  same contract, so a product the caller could not discover cannot be reached by its id either. A
+  product policy excludes is answered <code>404</code>, exactly as one that does not exist.</li>
+<li><strong>Subscription terms come from policy</strong>, not from Java: <code>product.subscribe</code> decides whether
+  approval is required, the maximum validity, and the permitted schedule types.</li>
 </ul>
-<p>Where an endpoint is annotated <code>@Policy</code>, holding the role is necessary but not sufficient: a request with the role can still be refused with <code>403</code> by policy. Policy is only evaluated when <code>application.opa.enabled=true</code>; see <a href="../POLICY_ENFORCEMENT/">Policy Enforcement</a>.</p>
 <h2 id="how-this-maps-to-keycloak">How this maps to Keycloak</h2>
 <ul>
 <li>In Keycloak, roles are typically assigned to a client (here conceptually the <code>management-node</code> client) and appear in tokens under <code>resource_access["management-node"].roles</code>.</li>
+<li>Tokens must also carry an <code>organisation</code> claim whose value is the organisation's key <strong>as the database holds it</strong> (<code>ENV</code>, <code>HEG</code>, <code>BCC</code>), not the client id (<code>FEDERATOR_ENV</code>). Policy resolves the calling organisation's attributes by matching it against <code>organisation.organisation_key</code>; a token without it is an unknown organisation, and the product rules refuse it with <code>organisation.missing</code>. The sample federator clients get it from a hardcoded claim mapper in <code>docker/keycloak/tofu</code>.</li>
 <li>Ensure the token’s audience includes <code>management-node</code>. This can be achieved by:</li>
 <li>Setting the client as an audience in the token via an Audience mapper, or</li>
 <li>Using the <code>audience resolve</code>/<code>Full Scope Allowed</code> as per your realm design.</li>
@@ -872,9 +1148,9 @@
 <li>CSR Signing API requires role: <code>sign_certificate</code>.</li>
 <li>Intermediate Certificate API requires role: <code>access_public_certificates</code>.</li>
 <li>Bootstrap Certificate API requires role: <code>request_bootstrap_certificate</code>.</li>
-<li>Product Discovery API requires role: <code>product_discovery</code> (plus per-product PDP authorisation, see <a href="../POLICY_ENFORCEMENT/">Policy Enforcement</a>).</li>
+<li>Product Discovery API requires role: <code>product_discovery</code> (plus policy, which decides which products are returned and what is shown of each; see <a href="../POLICY_ENFORCEMENT/">Policy Enforcement</a>).</li>
 <li>Product Subscription API requires role: <code>product_subscribe</code> (plus policy, which also sets the subscription terms).</li>
-<li>Product View API requires role: <code>product_view</code> (plus policy; answered by the <code>product.view</code> rule).</li>
+<li>Product View API requires role: <code>product_view</code> (plus policy, which decides whether this product exists for the caller and what is shown of it; see <a href="../POLICY_ENFORCEMENT/">Policy Enforcement</a>).</li>
 <li>Swagger/OpenAPI: Use Swagger UI at <code>/swagger-ui.html</code> to explore and test with a valid token.</li>
 </ul>
 
@@ -897,7 +1173,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 18, 2026 12:12:47 UTC">September 18, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 24, 2026 10:34:35 UTC">September 24, 2026</span>
   </span>
 
     

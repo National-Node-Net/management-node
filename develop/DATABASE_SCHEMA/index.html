@@ -18,7 +18,7 @@
         <link rel="prev" href="../BOOTSTRAP_ONBOARDING/">
       
       
-        <link rel="next" href="../JACOCO_COVERAGE/">
+        <link rel="next" href="../DISCOVERY_TEST_SCENARIOS/">
       
       
         
@@ -555,6 +555,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#policy_attribute_live_value-view" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        policy_attribute_live_value (view)
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -586,6 +597,33 @@
   
 </nav>
       
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DISCOVERY_TEST_SCENARIOS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Discovery and View: Test Scenarios
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -748,6 +786,194 @@
   
 
       </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tests
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tests
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../tests/products/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Products
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_12_1" id="__nav_12_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_12_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Products
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tests/products/product-discover/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Discover: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tests/products/product-view/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product View API: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -944,6 +1170,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#policy_attribute_live_value-view" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        policy_attribute_live_value (view)
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1070,6 +1307,7 @@
     BIGSERIAL id PK
     VARCHAR name
     VARCHAR topic
+    TEXT description
     BIGINT producer_id FK
     BIGINT product_type_id FK
     VARCHAR source
@@ -1166,7 +1404,7 @@
 <p>Columns:
 - <code>id</code> BIGSERIAL, primary key
 - <code>name</code> VARCHAR(150), not null
-- <code>organisation_key</code> VARCHAR(50), not null — stable, human-readable identifier for the organisation (e.g. <code>ENV</code>, <code>BCC</code>, <code>HEG</code>), so callers can address an organisation without depending on ids that differ between environments
+- <code>organisation_key</code> VARCHAR(50), not null: stable, human-readable identifier for the organisation (e.g. <code>ENV</code>, <code>BCC</code>, <code>HEG</code>), so callers can address an organisation without depending on ids that differ between environments
 - <code>certificate_automation_enabled</code> BOOLEAN, not null, default TRUE</p>
 <p>Indexes and constraints:
 - UNIQUE on <code>organisation_key</code> (<code>uq_organisation__organisation_key</code>)</p>
@@ -1182,10 +1420,10 @@
 - <code>description</code> TEXT, not null
 - <code>org_id</code> BIGINT, not null, foreign key → <code>organisation(id)</code>
 - <code>active</code> BOOLEAN, not null
-- <code>host</code> VARCHAR(500), not null — host or base URL where the producer can be reached
-- <code>port</code> NUMERIC, not null — network port (stored as numeric)
-- <code>tls</code> BOOLEAN, not null — whether TLS is required for this endpoint
-- <code>idp_client_id</code> VARCHAR(50), not null — identity provider client id (e.g., Keycloak). Informational; not an FK</p>
+- <code>host</code> VARCHAR(500), not null: host or base URL where the producer can be reached
+- <code>port</code> NUMERIC, not null: network port (stored as numeric)
+- <code>tls</code> BOOLEAN, not null: whether TLS is required for this endpoint
+- <code>idp_client_id</code> VARCHAR(50), not null: identity provider client id (e.g., Keycloak). Informational; not an FK</p>
 <p>Usage:
 - Owns <code>product</code> records.
 - Links an Organisation to concrete connection details for the Producer.</p>
@@ -1196,9 +1434,9 @@
 - <code>id</code> BIGSERIAL, primary key
 - <code>name</code> VARCHAR(50), not null
 - <code>org_id</code> BIGINT, not null, foreign key → <code>organisation(id)</code>
-- <code>idp_client_id</code> VARCHAR(50), not null — identity provider client id (e.g., Keycloak). Informational; not an FK
-- <code>schedule_type</code> VARCHAR(100), nullable — type of schedule, e.g., <code>cron</code>, <code>interval</code>
-- <code>schedule_expression</code> VARCHAR(255), nullable — schedule expression matching the chosen schedule_type</p>
+- <code>idp_client_id</code> VARCHAR(50), not null: identity provider client id (e.g., Keycloak). Informational; not an FK
+- <code>schedule_type</code> VARCHAR(100), nullable: type of schedule, e.g., <code>cron</code>, <code>interval</code>
+- <code>schedule_expression</code> VARCHAR(255), nullable: schedule expression matching the chosen schedule_type</p>
 <p>Usage:
 - Participates in access grants via <code>product_consumer</code>.
 - Optional scheduling metadata for consumer-driven jobs.</p>
@@ -1208,7 +1446,7 @@
 <p>Columns:
 - <code>id</code> BIGSERIAL, primary key
 - <code>name</code> VARCHAR(150), not null
-- <code>description</code> VARCHAR(255), nullable — brief description of the product type</p>
+- <code>description</code> VARCHAR(255), nullable: brief description of the product type</p>
 <p>Usage:
 - Lookup table used to categorize products. Initial values seeded by migration: <code>topic</code> and <code>file</code>.</p>
 <hr />
@@ -1217,10 +1455,11 @@
 <p>Columns:
 - <code>id</code> BIGSERIAL, primary key
 - <code>name</code> VARCHAR(50), not null
-- <code>topic</code> VARCHAR(150), not null — logical topic or channel for the product
+- <code>topic</code> VARCHAR(150), not null: logical topic or channel for the product
+- <code>description</code> TEXT, nullable: prose describing the product. Together with <code>name</code>, this is what discovery's free-text search matches against (<code>topic</code> and <code>source</code> are identifiers, not prose, and are deliberately not text-searched). Backfilled by data owners; existing rows have none
 - <code>producer_id</code> BIGINT, not null, foreign key → <code>producer(id)</code>
-- <code>product_type_id</code> BIGINT, nullable, foreign key → <code>product_type(id)</code> — categorization of the product
-- <code>source</code> VARCHAR(500), nullable — optional source identifier/URI for the product</p>
+- <code>product_type_id</code> BIGINT, nullable, foreign key → <code>product_type(id)</code>: categorization of the product
+- <code>source</code> VARCHAR(500), nullable: optional source identifier/URI for the product</p>
 <p>Usage:
 - The resource being granted to Consumers via <code>product_consumer</code>.
 - Migration defaults existing rows to the <code>topic</code> product type.</p>
@@ -1231,12 +1470,12 @@
 - <code>id</code> BIGSERIAL, primary key
 - <code>product_id</code> BIGINT, not null, foreign key → <code>product(id)</code>
 - <code>consumer_id</code> BIGINT, not null, foreign key → <code>consumer(id)</code>
-- <code>granted_ts</code> TIMESTAMP, not null — timestamp when access was granted
-- <code>validity</code> NUMERIC, not null — validity period/units are application-defined
-- <code>schedule_type</code> VARCHAR(100), nullable — e.g., <code>cron</code>, <code>interval</code>
-- <code>schedule_expression</code> VARCHAR(255), nullable — expression matching the schedule_type
-- <code>destination</code> VARCHAR(500), nullable — optional destination identifier/URI for scheduled deliveries
-- <code>uq_product_consumer_pair</code> UNIQUE (<code>product_id</code>, <code>consumer_id</code>) — ensures one grant per pair</p>
+- <code>granted_ts</code> TIMESTAMP, not null: timestamp when access was granted
+- <code>validity</code> NUMERIC, not null: validity period/units are application-defined
+- <code>schedule_type</code> VARCHAR(100), nullable: e.g., <code>cron</code>, <code>interval</code>
+- <code>schedule_expression</code> VARCHAR(255), nullable: expression matching the schedule_type
+- <code>destination</code> VARCHAR(500), nullable: optional destination identifier/URI for scheduled deliveries
+- <code>uq_product_consumer_pair</code> UNIQUE (<code>product_id</code>, <code>consumer_id</code>): ensures one grant per pair</p>
 <p>Notes:
 - Originally used a composite primary key (<code>product_id</code>, <code>consumer_id</code>); later replaced by surrogate <code>id</code> while preserving uniqueness via <code>uq_product_consumer_pair</code>.</p>
 <p>Usage:
@@ -1247,9 +1486,9 @@
 <p>Extensible attributes attached to a specific <code>product_consumer</code> grant (key/value-like rows with a simple type field).</p>
 <p>Columns:
 - <code>id</code> BIGSERIAL, primary key
-- <code>name</code> VARCHAR(150), not null — attribute name/key
-- <code>type</code> VARCHAR(50), not null — attribute type (string indicator)
-- <code>value</code> VARCHAR(500), not null — attribute value
+- <code>name</code> VARCHAR(150), not null: attribute name/key
+- <code>type</code> VARCHAR(50), not null: attribute type (string indicator)
+- <code>value</code> VARCHAR(500), not null: attribute value
 - <code>product_consumer_id</code> BIGINT, not null, foreign key → <code>product_consumer(id)</code></p>
 <p>Usage:
 - Store additional constraints or metadata for a grant (e.g., scopes, rate limits, contractual flags). Semantics are defined by application logic.</p>
@@ -1259,17 +1498,17 @@
 <p>Columns:
 - <code>id</code> BIGSERIAL, primary key
 - <code>organisation_id</code> BIGINT, not null, unique, foreign key → <code>organisation(id)</code>
-- <code>subject_dn</code> VARCHAR(500), nullable — X.500 distinguished name of the certificate subject
-- <code>serial_number</code> VARCHAR(150), nullable — certificate serial number
-- <code>is_renewable</code> BOOLEAN, not null, default FALSE — whether automatic renewal is enabled
-- <code>renewal_ttl</code> BIGINT, nullable — renewal time-to-live value
-- <code>type</code> VARCHAR(50), not null — certificate type (e.g., <code>MANUAL</code>, <code>BOOTSTRAP</code>, <code>AUTOMATED</code>)
-- <code>requested_at</code> TIMESTAMP, nullable — when the certificate was requested
-- <code>issued_at</code> TIMESTAMP, nullable — when the certificate was issued
-- <code>expires_at</code> TIMESTAMP, nullable — certificate expiry time
-- <code>revoked_at</code> TIMESTAMP, nullable — when the certificate was revoked (if applicable)</p>
+- <code>subject_dn</code> VARCHAR(500), nullable: X.500 distinguished name of the certificate subject
+- <code>serial_number</code> VARCHAR(150), nullable: certificate serial number
+- <code>is_renewable</code> BOOLEAN, not null, default FALSE: whether automatic renewal is enabled
+- <code>renewal_ttl</code> BIGINT, nullable: renewal time-to-live value
+- <code>type</code> VARCHAR(50), not null: certificate type (e.g., <code>MANUAL</code>, <code>BOOTSTRAP</code>, <code>AUTOMATED</code>)
+- <code>requested_at</code> TIMESTAMP, nullable: when the certificate was requested
+- <code>issued_at</code> TIMESTAMP, nullable: when the certificate was issued
+- <code>expires_at</code> TIMESTAMP, nullable: certificate expiry time
+- <code>revoked_at</code> TIMESTAMP, nullable: when the certificate was revoked (if applicable)</p>
 <p>Constraints:
-- UNIQUE on <code>organisation_id</code> — one certificate record per organisation
+- UNIQUE on <code>organisation_id</code>: one certificate record per organisation
 - Index on <code>organisation_id</code></p>
 <p>Usage:
 - Records the lifecycle state of each organisation's certificate. The <code>type</code> field tracks whether the certificate was manually provisioned, issued via the bootstrap flow, or issued via automated renewal.</p>
@@ -1279,10 +1518,10 @@
 <p>Columns:
 - <code>id</code> BIGSERIAL, primary key
 - <code>organisation_certificate_id</code> BIGINT, not null, foreign key → <code>organisation_certificate(id)</code>
-- <code>type</code> VARCHAR(50), not null — certificate type at the time of the event
-- <code>event_type</code> VARCHAR(50), not null — the event that occurred (e.g., <code>ISSUED</code>, <code>RENEWED</code>, <code>EXPIRED</code>, <code>REVOKED</code>)
-- <code>event_time</code> TIMESTAMP, not null — when the event occurred
-- <code>performed_by</code> VARCHAR(255), nullable — identifier of the actor who triggered the event</p>
+- <code>type</code> VARCHAR(50), not null: certificate type at the time of the event
+- <code>event_type</code> VARCHAR(50), not null: the event that occurred (e.g., <code>ISSUED</code>, <code>RENEWED</code>, <code>EXPIRED</code>, <code>REVOKED</code>)
+- <code>event_time</code> TIMESTAMP, not null: when the event occurred
+- <code>performed_by</code> VARCHAR(255), nullable: identifier of the actor who triggered the event</p>
 <p>Constraints:
 - Index on <code>organisation_certificate_id</code></p>
 <p>Usage:
@@ -1292,8 +1531,8 @@
 <p>Which core entity types may carry dynamic policy attributes, and the table <code>policy_attribute_value.entity_id</code> resolves against for that scope.</p>
 <p>Columns:
 - <code>id</code> BIGSERIAL, primary key
-- <code>code</code> VARCHAR(50), not null — unique scope identifier (e.g. <code>PRODUCT</code>)
-- <code>table_name</code> VARCHAR(150), not null — the table <code>policy_attribute_value.entity_id</code> is a row id in, for this scope
+- <code>code</code> VARCHAR(50), not null: unique scope identifier (e.g. <code>PRODUCT</code>)
+- <code>table_name</code> VARCHAR(150), not null: the table <code>policy_attribute_value.entity_id</code> is a row id in, for this scope
 - <code>description</code> VARCHAR(500), nullable</p>
 <p>Constraints:
 - UNIQUE on <code>code</code> (<code>uq_policy_attribute_scope__code</code>)</p>
@@ -1350,7 +1589,7 @@
 <p>Columns:
 - <code>id</code> BIGSERIAL, primary key
 - <code>attribute_definition_scope_id</code> BIGINT, not null, foreign key → <code>policy_attribute_definition_scope(id)</code>
-- <code>entity_id</code> BIGINT, not null — polymorphic reference: the primary key of the row in the table named by the value's <code>policy_attribute_scope.table_name</code>. Not a declared foreign key, since the target table varies by scope.
+- <code>entity_id</code> BIGINT, not null. Polymorphic reference: the primary key of the row in the table named by the value's <code>policy_attribute_scope.table_name</code>. Not a declared foreign key, since the target table varies by scope.
 - <code>value</code> JSONB, not null
 - <code>is_deleted</code> BOOLEAN, not null, default FALSE
 - <code>created_at</code> TIMESTAMP, not null, default <code>now()</code>
@@ -1359,17 +1598,30 @@
 - <code>updated_by</code> VARCHAR(255), nullable</p>
 <p>Constraints:
 - Index on <code>entity_id</code> (<code>idx_policy_attribute_value__entity_id</code>)
-- Partial UNIQUE index on (<code>attribute_definition_scope_id</code>, <code>entity_id</code>, <code>value</code>) WHERE <code>is_deleted = FALSE</code> (<code>uq_policy_attr_value_live</code>) — an idempotency guard against persisting an exact-duplicate live value; it does not by itself enforce "one live value per entity" for single-valued attributes (that check spans <code>policy_attribute_definition.multi_valued</code> and is left to the service layer that writes these rows)</p>
+- Partial UNIQUE index on (<code>attribute_definition_scope_id</code>, <code>entity_id</code>, <code>value</code>) WHERE <code>is_deleted = FALSE</code> (<code>uq_policy_attr_value_live</code>): an idempotency guard against persisting an exact-duplicate live value; it does not by itself enforce "one live value per entity" for single-valued attributes (that check spans <code>policy_attribute_definition.multi_valued</code> and is left to the service layer that writes these rows)</p>
 <p>Soft-delete triggers:
-- <code>trg_organisation_policy_attribute_value_soft_delete</code>, <code>trg_consumer_policy_attribute_value_soft_delete</code>, <code>trg_producer_policy_attribute_value_soft_delete</code>, <code>trg_product_policy_attribute_value_soft_delete</code>, <code>trg_product_consumer_policy_attribute_value_soft_delete</code> — one <code>AFTER DELETE</code> trigger per owning table (<code>organisation</code>, <code>consumer</code>, <code>producer</code>, <code>product</code>, <code>product_consumer</code>), all calling the shared function <code>fn_policy_attribute_value_soft_delete_on_entity_delete()</code>. When a row in one of those tables is deleted, every live (<code>is_deleted = FALSE</code>) <code>policy_attribute_value</code> row scoped to that table and entity id is set <code>is_deleted = TRUE</code> rather than deleted or left orphaned.</p>
+- <code>trg_organisation_policy_attribute_value_soft_delete</code>, <code>trg_consumer_policy_attribute_value_soft_delete</code>, <code>trg_producer_policy_attribute_value_soft_delete</code>, <code>trg_product_policy_attribute_value_soft_delete</code>, <code>trg_product_consumer_policy_attribute_value_soft_delete</code>: one <code>AFTER DELETE</code> trigger per owning table (<code>organisation</code>, <code>consumer</code>, <code>producer</code>, <code>product</code>, <code>product_consumer</code>), all calling the shared function <code>fn_policy_attribute_value_soft_delete_on_entity_delete()</code>. When a row in one of those tables is deleted, every live (<code>is_deleted = FALSE</code>) <code>policy_attribute_value</code> row scoped to that table and entity id is set <code>is_deleted = TRUE</code> rather than deleted or left orphaned.</p>
 <p>Usage:
 - Stores the actual attribute values sent to the PDP (OPA) for policy decisions, keyed by which entity (organisation, consumer, producer, product, or subscription) they describe. Live rows are read per request and embedded in the decision input as <code>subject.organisation.attributes</code> (resolved from the token's organisation claim via <code>organisation_key</code>) and <code>resource.attributes</code>; the <code>value</code> JSONB keeps its type. A <code>multi_valued</code> attribute is stored as one row per value and all of its live rows are collected into a single array for the policy, so the partial unique index above (which permits many distinct live values per entity) is what makes multiple values possible. See <a href="../POLICY_ENFORCEMENT/">Policy Enforcement</a>.</p>
 <hr />
+<h3 id="policy_attribute_live_value-view">policy_attribute_live_value (view)</h3>
+<p>One row per <strong>live</strong> policy attribute value, already joined to its definition and scope, so a query can ask "does this entity carry attribute X with value Y" without repeating four joins. "Live" means neither the value, its definition, nor its scope binding is soft-deleted.</p>
+<p>Columns:
+- <code>scope_code</code>: the owning <code>policy_attribute_scope.code</code> (<code>PRODUCT</code>, <code>ORGANISATION</code>, …)
+- <code>entity_id</code>: the row id, in the table that scope names, the value is recorded against
+- <code>namespace</code>, <code>name</code>: the attribute's definition
+- <code>multi_valued</code>, <code>sensitive</code>: flags from the definition
+- <code>item</code>: one value as text (<code>'validated'</code>, <code>'42'</code>, <code>'true'</code>)
+- <code>item_type</code>: its JSON type (<code>string</code>, <code>number</code>, <code>boolean</code>), so a caller can compare it typed</p>
+<p>A multi-valued attribute is normally stored as one row per value, but a single row holding a JSON array is also accepted; <strong>both conventions are flattened here</strong>, so either way the view yields one row per value.</p>
+<p>Usage:
+- Product discovery builds its <code>WHERE</code> clause from this view (an attribute comparison compiles to an <code>EXISTS</code> over it, with the attribute <em>name</em> as a bound parameter, which is why a new attribute needs no code change) and loads each response's attribute maps from it, with masked and sensitive names excluded in SQL.</p>
 <h2 id="migration-notes">Migration Notes</h2>
 <ul>
 <li>Schema is versioned and applied with Flyway on application startup.</li>
 <li>Foreign keys enforce referential integrity among core entities.</li>
-<li>Consider adding database indexes on foreign key columns (<code>producer.producer_id</code>, <code>consumer.org_id</code>, <code>product.producer_id</code>, <code>product_consumer.product_id</code>, <code>product_consumer.consumer_id</code>, <code>product_consumer_attribute.product_consumer_id</code>) to optimize query performance.</li>
+<li>Foreign key columns are not indexed automatically by PostgreSQL. The ones product discovery joins on every search are indexed by <code>V20260918122000__add_product_discovery_indexes.sql</code>: <code>product.producer_id</code>, <code>producer.org_id</code>, <code>product_consumer.product_id</code> and <code>consumer.org_id</code>. Consider the same for <code>product_consumer.consumer_id</code> and <code>product_consumer_attribute.product_consumer_id</code> if query plans show it.</li>
+<li>Discovery's free-text search is a leading-wildcard <code>LIKE</code> over <code>product.name</code> and <code>product.description</code>, which no b-tree index can serve. A <code>pg_trgm</code> GIN index is the remedy if <code>EXPLAIN</code> shows it is needed; <code>CREATE EXTENSION</code> needs a privileged role, so agree it with whoever owns the database.</li>
 </ul>
 <h2 id="data-protection-and-security">Data Protection and Security</h2>
 <ul>
@@ -1396,7 +1648,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 18, 2026 12:12:47 UTC">September 18, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 24, 2026 10:34:35 UTC">September 24, 2026</span>
   </span>
 
     
