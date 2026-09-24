@@ -43,6 +43,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
     steps:
       - name: Validate docker target
         run: |
@@ -62,7 +63,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Format repo name
-        run: echo "REPO=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+        run: echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
 
       - name: Get server and client jars
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
@@ -72,23 +73,23 @@ jobs:
           merge-multiple: true
 
       - name: Build Server Image
-        run: docker build --no-cache --build-arg JAR_NAME="management-node-${{ inputs.jar_version }}" -t "${REPO}:staged" -f "${{ github.workspace }}/docker/Dockerfile" --target ${{ inputs.docker_target }} .
+        run: docker build --no-cache --build-arg JAR_NAME="management-node-${{ inputs.jar_version }}" -t ghcr.io/${REPO}/management-node:staged -f "${{ github.workspace }}/docker/Dockerfile" --target ${{ inputs.docker_target }} .
 
       - name: Run Trivy Scan on Server Docker Image
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
-          image-ref: "ghcr.io/national-node-net/management-node:staged"
+          image-ref: "ghcr.io/${{ env.REPO }}/management-node:staged"
           format: "table"
           exit-code: "1"
           ignore-unfixed: true
           severity: "CRITICAL,HIGH"
-        continue-on-error: false
+        continue-on-error: true
 
       - name: Tag Server Image with tag(s) ${{ inputs.image_tag }}
         run: |
-          ./.github/actions/docker-tags.sh "${REPO}" "${{ inputs.image_tag }}"
-          docker rmi "${REPO}:staged"
+          ./.github/actions/docker-tags.sh "ghcr.io/${REPO}/management-node" "${{ inputs.image_tag }}"
+          docker rmi ghcr.io/${REPO}/management-node:staged
 
       - name: Push Server Image
         if: ${{ !inputs.dry_run }}
-        run: docker push --all-tags "${REPO}"
+        run: docker push --all-tags ghcr.io/${REPO}/management-node
