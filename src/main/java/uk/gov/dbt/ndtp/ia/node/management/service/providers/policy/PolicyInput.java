@@ -50,6 +50,7 @@ public record PolicyInput(PolicySubject subject, String action, PolicyResource r
      * @return a new input for that entity
      */
     public PolicyInput withResource(String id, java.util.Map<String, Object> attributes) {
-        return new PolicyInput(subject, action, new PolicyResource(resource.kind(), id, attributes), request);
+        return new PolicyInput(
+                subject, action, PolicyResource.of(resource.kind(), id, resource.fields(), attributes), request);
     }
 }

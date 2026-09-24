@@ -265,9 +265,12 @@ the 17, `HEG` 12 and `BCC` 8, including, for `BCC`, its own directly identifiabl
 | `service_delivery` is not a permitted purpose | `organisation.purpose_not_permitted` |
 | the body has no `productId` | `request.product_missing` (a real request gets `400` from validation first) |
 | `scheduleType` is given and is not a permitted type | `schedule.type_not_permitted` |
+| the organisation's remit covers Wales and the product's type is `topic` | `jurisdiction.topic_not_permitted:Wales Juristiction not allowed to access topics` |
 
-Subscription does not check clearance or jurisdiction. Any organisation holding `service_delivery`
-may subscribe, on the terms below.
+Subscription does not check clearance. Jurisdiction is read for one thing only: an organisation
+whose remit covers Wales may not take a product of type `topic`, whatever else it holds. `ENV`
+(England and Wales) is the sample organisation this catches; `HEG` and `BCC` are not. Otherwise any
+organisation holding `service_delivery` may subscribe, on the terms below.
 
 | `details` field | Rule | `ENV` | `HEG` | `BCC` |
 |---|---|---|---|---|

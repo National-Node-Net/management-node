@@ -36,6 +36,14 @@ public class ProductSubscriptionPolicyDecisionDetails extends PolicyDecisionDeta
     @JsonProperty("permitted_schedule_types")
     private List<String> permittedScheduleTypes;
 
+    /**
+     * How long this organisation may hold this product, in days, as the rule worked it out from
+     * the caller's and the product's attributes. Distinct from {@link #maxValidityDays()}, which
+     * is the ceiling the caller's purpose allows: this is the grant actually being made.
+     */
+    @JsonProperty("validity_days")
+    private Integer validityDays;
+
     public ProductSubscriptionPolicyDecisionDetails() {}
 
     /**
@@ -45,9 +53,18 @@ public class ProductSubscriptionPolicyDecisionDetails extends PolicyDecisionDeta
      */
     public ProductSubscriptionPolicyDecisionDetails(
             Boolean requiresApproval, Integer maxValidityDays, List<String> permittedScheduleTypes) {
+        this(requiresApproval, maxValidityDays, permittedScheduleTypes, null);
+    }
+
+    public ProductSubscriptionPolicyDecisionDetails(
+            Boolean requiresApproval,
+            Integer maxValidityDays,
+            List<String> permittedScheduleTypes,
+            Integer validityDays) {
         this.requiresApproval = requiresApproval;
         this.maxValidityDays = maxValidityDays;
         this.permittedScheduleTypes = permittedScheduleTypes;
+        this.validityDays = validityDays;
     }
 
     /** Whether the grant must be approved before it takes effect; null when the rule did not say. */
@@ -63,5 +80,13 @@ public class ProductSubscriptionPolicyDecisionDetails extends PolicyDecisionDeta
     /** The schedule types the rule allows; never null. */
     public List<String> permittedScheduleTypes() {
         return permittedScheduleTypes == null ? List.of() : List.copyOf(permittedScheduleTypes);
+    }
+
+    /**
+     * The validity to record on the grant, in days; null when the rule did not say. A service must
+     * decide for itself what an unstated validity means rather than inventing a number here.
+     */
+    public Integer validityDays() {
+        return validityDays;
     }
 }

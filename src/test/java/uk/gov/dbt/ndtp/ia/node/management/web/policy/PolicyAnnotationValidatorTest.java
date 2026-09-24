@@ -33,6 +33,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 import uk.gov.dbt.ndtp.ia.node.management.controller.v1.ConfigurationController;
 import uk.gov.dbt.ndtp.ia.node.management.controller.v1.ProductController;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductDiscoveryService;
+import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductSubscriptionService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductViewService;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.configuration.ConfigurationProvider;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecision;
@@ -238,7 +239,10 @@ class PolicyAnnotationValidatorTest {
     void shippedControllers_declareDecisionParametersMatchingTheirPolicy() {
         Map<RequestMappingInfo, HandlerMethod> handlers = new LinkedHashMap<>();
         Stream.of(
-                        new ProductController(mock(ProductDiscoveryService.class), mock(ProductViewService.class)),
+                        new ProductController(
+                                mock(ProductDiscoveryService.class),
+                                mock(ProductViewService.class),
+                                mock(ProductSubscriptionService.class)),
                         new ConfigurationController(mock(ConfigurationProvider.class)))
                 .forEach(controller -> Arrays.stream(controller.getClass().getDeclaredMethods())
                         .filter(method -> method.isAnnotationPresent(Policy.class))

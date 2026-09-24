@@ -18,6 +18,7 @@ import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,10 +30,12 @@ import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductDiscoveryRequ
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductDiscoveryResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductSubscriptionRequestDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductSubscriptionResponseDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.jwt.EnhancedPrincipal;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductDiscoveryPolicyDecisionDetails;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductSubscriptionPolicyDecisionDetails;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductViewPolicyDecisionDetails;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductDiscoveryService;
+import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductSubscriptionService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductViewService;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecision;
 import uk.gov.dbt.ndtp.ia.node.management.web.policy.Policy;
@@ -47,7 +50,13 @@ public class ProductController {
 
     private final ProductViewService productViewService;
 
-    public ProductController(ProductDiscoveryService productDiscoveryService, ProductViewService productViewService) {
+    private final ProductSubscriptionService productSubscriptionService;
+
+    public ProductController(
+            ProductDiscoveryService productDiscoveryService,
+            ProductViewService productViewService,
+            ProductSubscriptionService productSubscriptionService) {
+        this.productSubscriptionService = productSubscriptionService;
         this.productDiscoveryService = productDiscoveryService;
         this.productViewService = productViewService;
     }
@@ -98,7 +107,11 @@ public class ProductController {
 
     @PostMapping("/subscribe")
     @PreAuthorize("hasAuthority('ROLE_management-node:product_subscribe')")
-    @Policy(resource = "product", action = "subscribe", details = ProductSubscriptionPolicyDecisionDetails.class)
+    @Policy(
+            resource = "product",
+            action = "subscribe",
+            details = ProductSubscriptionPolicyDecisionDetails.class,
+            loadResource = true)
     @Operation(
             summary = "Subscribe to a product",
             description = "Requests a subscription of the caller's organisation to a product. The "
@@ -112,31 +125,23 @@ public class ProductController {
                     @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = ProductSubscriptionResponseDTO.class)))
-    @ApiResponse(responseCode = "400", description = "Invalid request body")
+    @ApiResponse(
+            responseCode = "400",
+            description = "Invalid body, no consumer to subscribe, or several consumers and none named")
     @ApiResponse(responseCode = "401", description = "Unauthorized")
     @ApiResponse(responseCode = "403", description = "Forbidden by role or by policy")
+    @ApiResponse(responseCode = "404", description = "No such product")
+    @ApiResponse(responseCode = "409", description = "That consumer is already subscribed to that product")
     @ApiResponse(responseCode = "500", description = "Internal server error")
     public ProductSubscriptionResponseDTO subscribe(
             @Valid @RequestBody ProductSubscriptionRequestDTO subscription,
+            @Parameter(hidden = true) @AuthenticationPrincipal EnhancedPrincipal principal,
             @Parameter(hidden = true)
                     Optional<PolicyDecision<ProductSubscriptionPolicyDecisionDetails>> policyDecision) {
-        // Terms only exist when policy decided them. With policy switched off nothing has judged
-        // the request, so it is held for approval rather than accepted on no one's authority.
-        return policyDecision
-                .map(PolicyDecision::details)
-                .map(terms -> ProductSubscriptionResponseDTO.builder()
-                        .productId(subscription.productId())
-                        .status(
-                                Boolean.FALSE.equals(terms.requiresApproval())
-                                        ? ProductSubscriptionResponseDTO.STATUS_ACCEPTED
-                                        : ProductSubscriptionResponseDTO.STATUS_PENDING_APPROVAL)
-                        .maxValidityDays(terms.maxValidityDays())
-                        .permittedScheduleTypes(terms.permittedScheduleTypes())
-                        .build())
-                .orElseGet(() -> ProductSubscriptionResponseDTO.builder()
-                        .productId(subscription.productId())
-                        .status(ProductSubscriptionResponseDTO.STATUS_PENDING_APPROVAL)
-                        .build());
+        // The decision is handed to the service rather than re-taken there: the terms applied must
+        // be the ones this request was allowed on.
+        return productSubscriptionService.subscribe(
+                subscription, principal == null ? null : principal.organisation(), policyDecision);
     }
 
     @GetMapping("/{productId}")

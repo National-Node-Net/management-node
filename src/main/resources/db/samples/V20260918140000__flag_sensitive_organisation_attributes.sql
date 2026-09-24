@@ -10,4 +10,3 @@
 UPDATE policy_attribute_definition
 SET sensitive = TRUE, updated_at = now(), updated_by = 'sample-data'
 WHERE namespace = 'policy' AND name IN ('authorised_classifications', 'permitted_purposes');
-0

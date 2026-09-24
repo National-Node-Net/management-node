@@ -72,7 +72,8 @@ public class PolicyEnforcementInterceptor implements MethodInterceptor {
             return invocation.proceed();
         }
 
-        PolicyTarget<?> target = new PolicyTarget<>(policy.resource(), policy.action(), policy.details());
+        PolicyTarget<?> target =
+                new PolicyTarget<>(policy.resource(), policy.action(), policy.details(), policy.loadResource());
         String correlationId = UUID.randomUUID().toString();
         // A @Policy method called outside a request has no caller to judge; refusing keeps the
         // annotation a guarantee rather than something a direct call can step around.

@@ -104,7 +104,10 @@ Notes the table cannot carry:
   same contract, so a product the caller could not discover cannot be reached by its id either. A
   product policy excludes is answered `404`, exactly as one that does not exist.
 - **Subscription terms come from policy**, not from Java: `product.subscribe` decides whether
-  approval is required, the maximum validity, and the permitted schedule types.
+  approval is required, the maximum validity, the permitted schedule types, and the validity
+  actually recorded on the grant. That last one is worked out from the **product's** attributes as
+  well as the caller's, so the product named in the body is loaded and sent to the PDP; see
+  [Policy Enforcement](POLICY_ENFORCEMENT.md#loading-the-entity-a-decision-is-about).
 
 ## How this maps to Keycloak
 

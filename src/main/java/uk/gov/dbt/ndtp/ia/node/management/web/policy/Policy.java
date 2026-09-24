@@ -47,4 +47,24 @@ public @interface Policy {
      * could not hold this type fails startup.
      */
     Class<? extends PolicyDecisionDetails> details() default PolicyDecisionDetails.class;
+
+    /**
+     * Whether to read the entity this request names and send it to the PDP as
+     * {@code resource.id}, {@code resource.fields} and {@code resource.attributes}.
+     *
+     * <p>Off by default, because reading an entity costs queries and most rules decide about a
+     * kind of thing rather than one entity: discovery asks which products a caller may see, and
+     * view delegates the per-product decision to the row filter compiled into its SQL. Neither
+     * reads the entity in Rego, so neither should pay to load it.
+     *
+     * <p>Turn it on for an endpoint whose rule needs the entity's own facts. Subscription is the
+     * case today: it works out how long a grant may last from the product's identifiability and
+     * quality, and no SQL predicate does that work.
+     *
+     * <p>Where the id comes from is not declared here. {@link
+     * uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyResourceIdExtractor} finds
+     * it by the same convention for every endpoint, whether the endpoint carries it in the path or
+     * in the body.
+     */
+    boolean loadResource() default false;
 }

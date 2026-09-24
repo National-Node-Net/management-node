@@ -68,6 +68,7 @@ erDiagram
     VARCHAR idp_client_id
     VARCHAR schedule_type
     VARCHAR schedule_expression
+    BOOLEAN is_default
   }
   PRODUCT_TYPE {
     BIGSERIAL id PK
@@ -222,9 +223,14 @@ Columns:
 - `idp_client_id` VARCHAR(50), not null: identity provider client id (e.g., Keycloak). Informational; not an FK
 - `schedule_type` VARCHAR(100), nullable: type of schedule, e.g., `cron`, `interval`
 - `schedule_expression` VARCHAR(255), nullable: schedule expression matching the chosen schedule_type
+- `is_default` BOOLEAN, not null, default FALSE: whether this consumer takes the subscriptions its organisation requests without naming a consumer
+
+Indexes and constraints:
+- Partial UNIQUE index on `org_id` WHERE `is_default = TRUE` (`uq_consumer__one_default_per_org`): an organisation has **at most one** default consumer, and may have none. Constraining only the rows flagged default leaves any number of non-default consumers per organisation legal.
 
 Usage:
 - Participates in access grants via `product_consumer`.
+- `is_default` is read by `POST /api/v1/product/subscribe` when the request names no consumer. The column is `is_default` rather than `default` because DEFAULT is a reserved word in SQL.
 - Optional scheduling metadata for consumer-driven jobs.
 
 ---
@@ -280,6 +286,7 @@ Notes:
 Usage:
 - Central record for authorization decisions: which Consumer can access which Product and since when.
 - Optional scheduling metadata for grant-level processing/delivery.
+- Written by `POST /api/v1/product/subscribe`, with `validity` set to the validity the `product.subscribe` policy decided from the caller's and the product's attributes. Because `uq_product_consumer_pair` is on (`product_id`, `consumer_id`), one organisation may hold the same product on several of its consumers, while the same consumer cannot hold it twice.
 
 ---
 
@@ -432,8 +439,10 @@ Constraints:
 - Index on `entity_id` (`idx_policy_attribute_value__entity_id`)
 - Partial UNIQUE index on (`attribute_definition_scope_id`, `entity_id`, `value`) WHERE `is_deleted = FALSE` (`uq_policy_attr_value_live`): an idempotency guard against persisting an exact-duplicate live value; it does not by itself enforce "one live value per entity" for single-valued attributes (that check spans `policy_attribute_definition.multi_valued` and is left to the service layer that writes these rows)
 
-Soft-delete triggers:
-- `trg_organisation_policy_attribute_value_soft_delete`, `trg_consumer_policy_attribute_value_soft_delete`, `trg_producer_policy_attribute_value_soft_delete`, `trg_product_policy_attribute_value_soft_delete`, `trg_product_consumer_policy_attribute_value_soft_delete`: one `AFTER DELETE` trigger per owning table (`organisation`, `consumer`, `producer`, `product`, `product_consumer`), all calling the shared function `fn_policy_attribute_value_soft_delete_on_entity_delete()`. When a row in one of those tables is deleted, every live (`is_deleted = FALSE`) `policy_attribute_value` row scoped to that table and entity id is set `is_deleted = TRUE` rather than deleted or left orphaned.
+Attribute values are not cleaned up by the database:
+- `V20260922120000__drop_policy_attribute_soft_delete_trigger.sql` removed the five `AFTER DELETE` triggers (`organisation`, `consumer`, `producer`, `product`, `product_consumer`) and the shared function `fn_policy_attribute_value_soft_delete_on_entity_delete()`. The function resolved its table names unqualified, so PL/pgSQL resolved them against the **caller's** `search_path`; a session without the schema on its path could not delete from any owning table at all.
+- **`entity_id` has no foreign key and no cascade** (it is polymorphic, see above), so nothing now marks an entity's attribute values `is_deleted` when the entity is removed. Whatever deletes one of those entities is responsible for soft-deleting its `policy_attribute_value` rows in the same transaction.
+- Live rows left behind remain visible through `policy_attribute_live_value` and are still matched by `entity_id`, so they can reach a policy decision for an entity that no longer exists.
 
 Usage:
 - Stores the actual attribute values sent to the PDP (OPA) for policy decisions, keyed by which entity (organisation, consumer, producer, product, or subscription) they describe. Live rows are read per request and embedded in the decision input as `subject.organisation.attributes` (resolved from the token's organisation claim via `organisation_key`) and `resource.attributes`; the `value` JSONB keeps its type. A `multi_valued` attribute is stored as one row per value and all of its live rows are collected into a single array for the policy, so the partial unique index above (which permits many distinct live values per entity) is what makes multiple values possible. See [Policy Enforcement](POLICY_ENFORCEMENT.md).

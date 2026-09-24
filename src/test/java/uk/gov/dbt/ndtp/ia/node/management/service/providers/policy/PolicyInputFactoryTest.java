@@ -45,9 +45,11 @@ class PolicyInputFactoryTest {
 
     private PolicyInputFactory factory;
 
+    private OpaProperties properties;
+
     @BeforeEach
     void setUp() {
-        OpaProperties properties = new OpaProperties(
+        properties = new OpaProperties(
                 true,
                 "http://opa",
                 "/v1/data/dispatch/decision",
@@ -56,7 +58,8 @@ class PolicyInputFactoryTest {
                 List.of("content-type", "x-correlation-id", "authorization"),
                 false,
                 false);
-        factory = new PolicyInputFactory(organisationService, policyAttributeService, properties);
+        factory = new PolicyInputFactory(
+                organisationService, policyAttributeService, List.of(), new PolicyResourceIdExtractor(), properties);
     }
 
     @AfterEach
@@ -289,6 +292,106 @@ class PolicyInputFactoryTest {
         @Override
         public Object getPrincipal() {
             return principal;
+        }
+    }
+
+    // ------------------------------------------------------------------ resource loading
+
+    /** A kind no loader claims is sent as a bare kind, and nothing is read. */
+    @Test
+    void resource_withNoLoaderForTheKind_isJustTheKind() {
+        PolicyInputFactory withLoader =
+                loaderFactory(new StubLoader("product", PolicyResource.of("product", "42", Map.of(), Map.of())));
+
+        PolicyInput input = withLoader.create(
+                request("/api/v1/product/subscribe"),
+                Map.of("productId", 42),
+                PolicyTarget.of("configuration", "producer"));
+
+        assertThat(input.resource().kind()).isEqualTo("configuration");
+        assertThat(input.resource().id()).isNull();
+        assertThat(input.resource().attributes()).isEmpty();
+        assertThat(input.resource().fields()).isEmpty();
+    }
+
+    /** The loader that claims the kind supplies the entity, and it reaches the input. */
+    @Test
+    void resource_withALoaderForTheKind_carriesTheLoadedEntity() {
+        PolicyResource loaded =
+                PolicyResource.of("product", "42", Map.of("name", "Flood"), Map.of("identifiability", "non_personal"));
+        PolicyInputFactory withLoader = loaderFactory(new StubLoader("product", loaded));
+
+        PolicyInput input = withLoader.create(
+                request("/api/v1/product/subscribe"),
+                Map.of("productId", 42),
+                new PolicyTarget<>("product", "subscribe", PolicyDecisionDetails.class, true));
+
+        assertThat(input.resource().id()).isEqualTo("42");
+        assertThat(input.resource().fields()).containsEntry("name", "Flood");
+        assertThat(input.resource().attributes()).containsEntry("identifiability", "non_personal");
+    }
+
+    /** A loader that finds nothing leaves the resource as the bare kind. */
+    @Test
+    void resource_whenTheLoaderFindsNothing_fallsBackToTheKind() {
+        PolicyInputFactory withLoader = loaderFactory(new StubLoader("product", null));
+
+        PolicyInput input = withLoader.create(
+                request("/api/v1/product/subscribe"), Map.of(), PolicyTarget.of("product", "discover"));
+
+        assertThat(input.resource().kind()).isEqualTo("product");
+        assertThat(input.resource().id()).isNull();
+    }
+
+    private PolicyInputFactory loaderFactory(PolicyResourceLoader loader) {
+        return new PolicyInputFactory(
+                organisationService,
+                policyAttributeService,
+                List.of(loader),
+                new PolicyResourceIdExtractor(),
+                properties);
+    }
+
+    /** An endpoint that does not ask for its entity never pays for a read, even with an id to hand. */
+    @Test
+    void resource_whenTheEndpointDoesNotAskForIt_isNotLoaded() {
+        PolicyResource loaded = PolicyResource.of("product", "42", Map.of("name", "Flood"), Map.of());
+        PolicyInputFactory withLoader = loaderFactory(new StubLoader("product", loaded));
+
+        PolicyInput input = withLoader.create(
+                request("/api/v1/product/subscribe"), Map.of("productId", 42), PolicyTarget.of("product", "subscribe"));
+
+        assertThat(input.resource().id()).isNull();
+        assertThat(input.resource().fields()).isEmpty();
+    }
+
+    /** The id may equally come from the path, which is what makes the mechanism consistent. */
+    @Test
+    void resource_idIsFoundInThePathAsWellAsTheBody() {
+        PolicyResource loaded = PolicyResource.of("product", "42", Map.of("name", "Flood"), Map.of());
+        PolicyInputFactory withLoader = loaderFactory(new StubLoader("product", loaded));
+        MockHttpServletRequest pathRequest = request("/api/v1/product/42");
+        pathRequest.setAttribute(
+                org.springframework.web.servlet.HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE,
+                Map.of("productId", "42"));
+
+        PolicyInput input = withLoader.create(
+                pathRequest, null, new PolicyTarget<>("product", "view", PolicyDecisionDetails.class, true));
+
+        assertThat(input.resource().id()).isEqualTo("42");
+        assertThat(input.resource().fields()).containsEntry("name", "Flood");
+    }
+
+    /** A loader answering one kind is never consulted about another. */
+    private record StubLoader(String kind, PolicyResource result) implements PolicyResourceLoader {
+        @Override
+        public boolean supports(String resourceKind) {
+            return kind.equals(resourceKind);
+        }
+
+        @Override
+        public Optional<PolicyResource> load(String resourceKind, String id) {
+            return Optional.ofNullable(result);
         }
     }
 }
