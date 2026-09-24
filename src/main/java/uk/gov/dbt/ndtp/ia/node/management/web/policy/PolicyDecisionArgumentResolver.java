@@ -90,7 +90,12 @@ public class PolicyDecisionArgumentResolver implements HandlerMethodArgumentReso
                 && declaredDetailsType(parameter).isInstance(output.details())) {
             return Optional.of(output);
         }
-        log.debug("No policy decision of the declared type published for this request; resolving to empty");
+        // Normally there is nothing to find yet: arguments are resolved before the handler is
+        // invoked, and the decision is taken inside that invocation. The enforcement point
+        // overwrites this empty value with the decision before the method body runs, so this is
+        // the expected path on an annotated endpoint and says nothing about the outcome. Look for
+        // the interceptor's own ALLOW or DENY line for that.
+        log.trace("No decision published yet; supplying an empty value for the enforcement point to fill");
         return Optional.empty();
     }
 }

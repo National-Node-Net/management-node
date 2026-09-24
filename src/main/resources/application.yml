@@ -62,7 +62,7 @@ application:
     keyStoreType: JKS
   opa:
     # Policy enforcement. Key-by-key reference: docs/POLICY_ENFORCEMENT.md
-    enabled: ${OPA_ENABLED:false} # master switch; false leaves the PEP unregistered
+    enabled: ${OPA_ENABLED:true} # master switch; false leaves the PEP unregistered
     url: ${OPA_URL:http://localhost:8181} # PDP base URL; https:// outside local development
     decision-path: ${OPA_DECISION_PATH:/v1/data/dispatch/decision}
     connect-timeout: ${OPA_CONNECT_TIMEOUT:2s}

@@ -1,68 +1,78 @@
 # METADATA
 # title: Product view
 # description: |
-#   Who may look at a single product, and how much of it they see.
+#   Who may look at a single product, which products they may look at, and what is shown of one.
 #
-#   Product details reveal who consumes a product and on what terms, which is
-#   OFFICIAL-SENSITIVE information. So:
-#     - an organisation cleared to OFFICIAL-SENSITIVE or higher may view a product;
-#     - one cleared to SECRET sees everything ("full"), one cleared to OFFICIAL-SENSITIVE
-#       sees a "summary" without the consumer details;
-#     - anyone else is refused.
+#   A view is a search that returns one product, so this rule IS the discovery rule: the same
+#   gates, the same reasons, the same contract, all of them lib/product_access.rego's, and the
+#   service AND-s the requested id onto the row filter it returns. The only difference between the
+#   two decisions is the one key each adds for itself - discovery's `evaluation`, this rule's
+#   `access_level` - which view_test.rego asserts for every sample organisation.
 #
-#   The rule sees only who is asking, not which product: the service sends no product
-#   attributes for this endpoint.
+#   That equality is the point. "Viewable but not discoverable" would be a disclosure, and
+#   "discoverable but not viewable" merely confusing, so neither is expressible: there is one
+#   definition, not two that happen to agree today. It is also why this rule has no gate of its
+#   own. An endpoint-specific clearance floor is exactly the kind of near-duplicate that drifts -
+#   it once refused an OFFICIAL council the very products it could already discover, its own
+#   included. What a clearance withholds is said where the service can act on it, in
+#   masked_filtered_fields and masked_filtered_attributes.
+#
+#   There is no method gate either. The endpoint is a @GetMapping, so nothing else reaches this
+#   rule, and discovery - a POST - has no such gate to match; unrouted product actions are still
+#   guarded by policies.product.fallback, which is where a method check belongs.
+#
+#   The rule sees only who is asking, never which product: the service sends no product attributes
+#   for this endpoint, and does not need to - the row filter decides per product in the query, and
+#   the caller cannot tell a product policy excludes from one that does not exist.
 package policies.product.view
 
 import data.lib.decision.deny_shape
-import data.lib.decision.organisation_known
-import data.lib.entitlements.clearance
-import data.lib.product
+import data.lib.entitlements.cleared_to_official_sensitive
+import data.lib.entitlements.cleared_to_secret
+import data.lib.product_access as access
 
 contract := "management-node.decision/1"
 
-version := "policies.product.view/1.0.0"
+version := "policies.product.view/3.0.0"
 
-required_clearance := "OFFICIAL-SENSITIVE"
-
+# The shared contract, plus the one key this rule adds: how much of the product was granted.
 decision := object.union(deny_shape, {
 	"allow": allow,
 	"reasons": reasons,
-	"details": {
+	# The shared contract, plus the one thing this rule adds of its own.
+	"details": object.union(access.contract(allow), {
 		"access_level": access_level,
-		"withheld_fields": withheld_fields,
-		"required_clearance": required_clearance,
-	},
+	}),
 })
 
 # ---------------------------------------------------------------------------
 # Allowed when nothing below is wrong
+#
+# Every reason is lib/product_access.rego's, which is what makes this rule's verdict discovery's
+# verdict for the same caller.
 # ---------------------------------------------------------------------------
 
 default allow := false
 
-allow if count(reason_set) == 0
+allow if count(access.reason_set) == 0
 
-reasons := sort([reason | some reason in reason_set])
-
-reason_set contains "organisation.missing" if not organisation_known
-
-reason_set contains "organisation.clearance_insufficient" if clearance < 2
-
-reason_set contains "action.not_read_only" if not input.request.method in {"GET", "HEAD"}
+reasons := sort(access.reason_set)
 
 # ---------------------------------------------------------------------------
-# How much is shown
+# How much is granted - reported, never acted on
+#
+# What is actually withheld is masked_filtered_fields and masked_filtered_attributes, which the
+# service enforces by never selecting those columns. Two mechanisms for "show less" is how they
+# come apart, so nothing branches on this value and it gates nothing: it is carried so a client
+# can show the caller which tier they were granted, and so the log records it.
 # ---------------------------------------------------------------------------
 
 access_level := "full" if {
 	allow
-	clearance >= 3
+	cleared_to_secret
 } else := "summary" if {
 	allow
-} else := "none"
-
-# A refused caller is shown nothing, so every sensitive field is withheld.
-withheld_fields := product.hidden_fields if {
+	cleared_to_official_sensitive
+} else := "basic" if {
 	allow
-} else := ["configurations", "consumers", "policyAttributes", "source"]
+} else := "none"

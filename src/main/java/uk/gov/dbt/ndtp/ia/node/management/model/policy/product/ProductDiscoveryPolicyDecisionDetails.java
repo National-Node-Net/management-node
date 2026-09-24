@@ -7,12 +7,12 @@
 package uk.gov.dbt.ndtp.ia.node.management.model.policy.product;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import uk.gov.dbt.ndtp.ia.node.management.model.policy.filter.FilterNode;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecisionDetails;
 
 /**
@@ -33,42 +33,36 @@ import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecisio
  * </ul>
  *
  * <p>For each, the rule says what the caller may filter on, what they asked for but may not, and
- * what must be masked in results. The rest of the contract ({@code row_filter},
- * {@code max_page_size}, {@code obligations}) is read through {@link #additional()}.
+ * what must be masked in results. The rest of the contract shapes the query itself:
  *
- * <p>A missing list reads as empty rather than failing the decision.
+ * <ul>
+ *   <li>{@link #rowFilter()} - the condition every returned product must satisfy; it becomes the
+ *       query's {@code WHERE} clause;
+ *   <li>{@link #visibleFields()} - the fields and blocks that may be selected at all;
+ *   <li>{@link #unmaskWhen()} - masked names that are shown after all on the products matching a
+ *       condition (an organisation's own products, say);
+ *   <li>{@link #textSearchFields()}, {@link #maxPageSize()}, {@link #obligations()} and
+ *       {@link #maskSensitiveAttributes()}.
+ * </ul>
+ *
+ * <p>The contract itself lives on {@link ProductPolicyContractDetails}, because
+ * {@code policies.product.view} returns exactly the same one - a view is this search constrained to
+ * a single product. What is added here is only how two decisions combine, and the groupings
+ * {@link #fields()} and {@link #attributes()}.
+ *
+ * <p>Everything missing reads in the withholding direction: a missing list is empty, a missing row
+ * filter matches nothing, and a missing sensitivity flag masks.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-public class ProductDiscoveryPolicyDecisionDetails extends PolicyDecisionDetails {
+public class ProductDiscoveryPolicyDecisionDetails extends ProductPolicyContractDetails {
 
     /** {@link #evaluation()} for the decision on the discover request as a whole. */
     public static final String EVALUATION_REQUEST = "request";
 
     /** {@link #evaluation()} for the decision on one candidate product. */
     public static final String EVALUATION_CANDIDATE = "candidate";
-
-    @JsonProperty("evaluation")
-    private String evaluation;
-
-    @JsonProperty("allowed_filtered_fields")
-    private List<String> allowedFilteredFields;
-
-    @JsonProperty("denied_filtered_fields")
-    private List<String> deniedFilteredFields;
-
-    @JsonProperty("masked_filtered_fields")
-    private List<String> maskedFilteredFields;
-
-    @JsonProperty("allowed_filtered_attributes")
-    private List<String> allowedFilteredAttributes;
-
-    @JsonProperty("denied_filtered_attributes")
-    private List<String> deniedFilteredAttributes;
-
-    @JsonProperty("masked_filtered_attributes")
-    private List<String> maskedFilteredAttributes;
 
     public ProductDiscoveryPolicyDecisionDetails() {}
 
@@ -79,48 +73,13 @@ public class ProductDiscoveryPolicyDecisionDetails extends PolicyDecisionDetails
      * @param attributes filtering and masking of product policy attributes
      */
     public ProductDiscoveryPolicyDecisionDetails(String evaluation, Filtering fields, Filtering attributes) {
-        this.evaluation = evaluation;
-        this.allowedFilteredFields = fields.allowed();
-        this.deniedFilteredFields = fields.denied();
-        this.maskedFilteredFields = fields.masked();
-        this.allowedFilteredAttributes = attributes.allowed();
-        this.deniedFilteredAttributes = attributes.denied();
-        this.maskedFilteredAttributes = attributes.masked();
-    }
-
-    /** Which level the decision was taken at; null when the rule did not say. */
-    public String evaluation() {
-        return evaluation;
-    }
-
-    /** Product fields the caller may filter on; never null. */
-    public List<String> allowedFilteredFields() {
-        return orEmpty(allowedFilteredFields);
-    }
-
-    /** Product fields the caller asked to filter on but may not; never null. */
-    public List<String> deniedFilteredFields() {
-        return orEmpty(deniedFilteredFields);
-    }
-
-    /** Product fields that must be masked in results; never null. */
-    public List<String> maskedFilteredFields() {
-        return orEmpty(maskedFilteredFields);
-    }
-
-    /** Product policy attributes the caller may filter on; never null. */
-    public List<String> allowedFilteredAttributes() {
-        return orEmpty(allowedFilteredAttributes);
-    }
-
-    /** Product policy attributes the caller asked to filter on but may not; never null. */
-    public List<String> deniedFilteredAttributes() {
-        return orEmpty(deniedFilteredAttributes);
-    }
-
-    /** Product policy attributes whose values must be masked in results; never null. */
-    public List<String> maskedFilteredAttributes() {
-        return orEmpty(maskedFilteredAttributes);
+        evaluation(evaluation);
+        allowedFilteredFields(fields.allowed());
+        deniedFilteredFields(fields.denied());
+        allowedFilteredAttributes(attributes.allowed());
+        deniedFilteredAttributes(attributes.denied());
+        maskedFilteredFields(fields.masked());
+        maskedFilteredAttributes(attributes.masked());
     }
 
     /** Filtering and masking of product fields, as one value. */
@@ -144,15 +103,29 @@ public class ProductDiscoveryPolicyDecisionDetails extends PolicyDecisionDetails
             return this;
         }
         ProductDiscoveryPolicyDecisionDetails combined = new ProductDiscoveryPolicyDecisionDetails(
-                other.evaluation,
+                other.evaluation(),
                 fields().narrowedBy(other.fields()),
                 attributes().narrowedBy(other.attributes()));
+        combined.rowFilter(FilterNode.Group.and(List.of(rowFilter(), other.rowFilter())));
+        combined.visibleFields(intersection(visibleFields(), other.visibleFields()));
+        combined.textSearchFields(intersection(textSearchFields(), other.textSearchFields()));
+        combined.unmaskWhen(unmaskWhen().equals(other.unmaskWhen()) ? unmaskWhen() : List.of());
+        combined.maskSensitiveAttributes(maskSensitiveAttributes() || other.maskSensitiveAttributes());
+        combined.maxPageSize(smaller(maxPageSize(), other.maxPageSize()));
+        combined.obligations(List.copyOf(Filtering.union(obligations(), other.obligations())));
         other.additional().forEach(combined::putAdditional);
         return combined;
     }
 
-    private static List<String> orEmpty(List<String> values) {
-        return values == null ? List.of() : List.copyOf(values);
+    private static List<String> intersection(List<String> first, List<String> second) {
+        return first.stream().filter(second::contains).toList();
+    }
+
+    private static Integer smaller(Integer first, Integer second) {
+        if (first == null || second == null) {
+            return first == null ? second : first;
+        }
+        return Math.min(first, second);
     }
 
     /**

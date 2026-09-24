@@ -56,7 +56,7 @@
     <modelmapper.version>3.2.0</modelmapper.version>
     <mockito-junit-jupiter.version>5.10.0</mockito-junit-jupiter.version>
     <springdoc-openapi-starter-webmvc-ui.version>2.8.13</springdoc-openapi-starter-webmvc-ui.version>
-    <bouncycastle.version>1.84</bouncycastle.version>
+    <bouncycastle.version>1.85</bouncycastle.version>
     <spring-security.version>6.5.9</spring-security.version>
     <httpcore5.version>5.4.3</httpcore5.version>
     <tomcat.version>10.1.59</tomcat.version>

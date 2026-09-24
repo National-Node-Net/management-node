@@ -12,4 +12,5 @@ contract := "management-node.decision/1"
 
 version := "policies.fallback/1.0.0"
 
+# Refused, saying why: deny_shape is already a refusal, so only the reason is added to it.
 decision := object.union(deny_shape, {"reasons": ["policy.no_specific_rule"]})

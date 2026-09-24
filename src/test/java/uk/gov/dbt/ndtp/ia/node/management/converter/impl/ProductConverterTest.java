@@ -37,6 +37,7 @@ class ProductConverterTest {
     private final Long dataProviderId = 1L;
     private final String dataProviderName = "Test Data Provider";
     private final String topic = "test-topic";
+    private final String description = "Prose describing the product";
     private final Long producerId = 101L;
     private final String producerName = "Test Producer";
 
@@ -52,6 +53,7 @@ class ProductConverterTest {
         entity.setId(dataProviderId);
         entity.setName(dataProviderName);
         entity.setTopic(topic);
+        entity.setDescription(description);
         entity.setProducer(producer);
 
         // Create test DTO
@@ -59,6 +61,7 @@ class ProductConverterTest {
         dto.setId(dataProviderId);
         dto.setName(dataProviderName);
         dto.setTopic(topic);
+        dto.setDescription(description);
         dto.setProducerId(producerId);
     }
 
@@ -81,7 +84,21 @@ class ProductConverterTest {
         assertEquals(dataProviderId, result.getId());
         assertEquals(dataProviderName, result.getName());
         assertEquals(topic, result.getTopic());
+        assertEquals(description, result.getDescription());
         assertEquals(producerId, result.getProducerId());
+    }
+
+    @Test
+    void toDto_withNullDescription_shouldReturnDTOWithNullDescription() {
+        // Arrange
+        entity.setDescription(null);
+
+        // Act
+        ProductDTO result = converter.toDto(entity);
+
+        // Assert
+        assertNotNull(result);
+        assertNull(result.getDescription());
     }
 
     @Test
@@ -122,12 +139,41 @@ class ProductConverterTest {
         assertEquals(dataProviderId, result.getId());
         assertEquals(dataProviderName, result.getName());
         assertEquals(topic, result.getTopic());
+        assertEquals(description, result.getDescription());
         assertNotNull(result.getProducer());
         assertEquals(producerId, result.getProducer().getId());
         assertEquals(producerName, result.getProducer().getName());
 
         // Verify
         verify(producerRepository, times(1)).findById(producerId);
+    }
+
+    @Test
+    void toEntity_withNullDescription_shouldReturnEntityWithNullDescription() {
+        // Arrange
+        dto.setDescription(null);
+        dto.setProducerId(null);
+
+        // Act
+        Product result = converter.toEntity(dto);
+
+        // Assert
+        assertNotNull(result);
+        assertNull(result.getDescription());
+    }
+
+    @Test
+    void description_roundTripsThroughBothConversions() {
+        // Arrange
+        when(producerRepository.findById(producerId)).thenReturn(Optional.of(producer));
+
+        // Act
+        ProductDTO asDto = converter.toDto(entity);
+        Product asEntity = converter.toEntity(asDto);
+
+        // Assert
+        assertEquals(description, asDto.getDescription());
+        assertEquals(description, asEntity.getDescription());
     }
 
     @Test

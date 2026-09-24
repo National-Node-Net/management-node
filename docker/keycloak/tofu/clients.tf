@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-# © Crown Copyright 2025. This work has been developed by the National Digital Twin Programme and is legally attributed to the Department for Business and Trade (UK) as the governing entity.
+# © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
+# attributed to the Department for Business and Trade (UK) as the governing entity.
 
 resource "keycloak_openid_client" "management_node" {
   realm_id                     = keycloak_realm.management-node.id
@@ -53,6 +54,27 @@ resource "keycloak_role" "create_keys" {
   description = "Allows creating key pairs and certificate signing requests"
 }
 
+resource "keycloak_role" "product_discovery" {
+  realm_id    = keycloak_realm.management-node.id
+  client_id   = keycloak_openid_client.management_node.id
+  name        = "product_discovery"
+  description = "Allows discovering products; policy then decides which ones are returned"
+}
+
+resource "keycloak_role" "product_view" {
+  realm_id    = keycloak_realm.management-node.id
+  client_id   = keycloak_openid_client.management_node.id
+  name        = "product_view"
+  description = "Allows retrieving a single product"
+}
+
+resource "keycloak_role" "product_subscribe" {
+  realm_id    = keycloak_realm.management-node.id
+  client_id   = keycloak_openid_client.management_node.id
+  name        = "product_subscribe"
+  description = "Allows requesting a subscription to a product"
+}
+
 resource "keycloak_role" "request_bootstrap_certificate" {
   realm_id    = keycloak_realm.management-node.id
   client_id   = keycloak_openid_client.management_node.id
@@ -78,7 +100,15 @@ module "federator_client" {
     keycloak_role.access_public_certificates,
     keycloak_role.create_keys,
     keycloak_role.request_bootstrap_certificate,
+    keycloak_role.product_discovery,
+    keycloak_role.product_view,
+    keycloak_role.product_subscribe,
   ]
+
+  # The organisation the client acts for. Policy resolves the calling organisation's attributes
+  # by matching this claim against organisation.organisation_key, so a client with no such claim
+  # is an unknown organisation and every product rule refuses it.
+  organisation = lookup(each.value, "organisation", null)
 
   # Token lifespan for this client
   client_access_token_lifespan_seconds = var.client_access_token_lifespan_seconds

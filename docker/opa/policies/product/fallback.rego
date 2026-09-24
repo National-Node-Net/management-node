@@ -32,7 +32,7 @@ allow if {
 	input.request.method in read_only_methods
 }
 
-reasons := sort([reason | some reason in reason_set])
+reasons := sort(reason_set)
 
 reason_set contains "organisation.missing" if not organisation_known
 
