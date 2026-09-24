@@ -808,6 +808,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#loading-the-entity-a-decision-is-about" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Loading the entity a decision is about
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#client-and-organisation-both-come-from-the-principal" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1170,6 +1181,8 @@
       
         
       
+        
+      
     
     
     
@@ -1262,6 +1275,34 @@
     
   
     Product View API: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tests/products/subscribe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Subscribe API: Test Requirement Specification
   
 
     
@@ -1598,6 +1639,17 @@
   
     <nav class="md-nav" aria-label="Where each field comes from">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#loading-the-entity-a-decision-is-about" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Loading the entity a decision is about
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#client-and-organisation-both-come-from-the-principal" class="md-nav__link">
@@ -2624,7 +2676,11 @@ development switches it off deliberately: <code>OPA_ENABLED=false</code>, or the
 </tr>
 <tr>
 <td><code>resource.id</code></td>
-<td>the entity id, when a decision concerns one entity. Null for whole-request decisions, which is every decision taken today</td>
+<td>the entity id, when the request names one. Null for whole-request decisions, which is most of them</td>
+</tr>
+<tr>
+<td><code>resource.fields</code></td>
+<td>the entity's own columns, named as the API names them, when an entity was loaded</td>
 </tr>
 <tr>
 <td><code>resource.attributes</code></td>
@@ -2649,6 +2705,88 @@ development switches it off deliberately: <code>OPA_ENABLED=false</code>, or the
 </tbody>
 </table>
 <p><code>action</code> and <code>resource.kind</code> never come from the URL, so <code>request.path</code> is informational: a rule may inspect it, but rule selection does not depend on it.</p>
+<h3 id="loading-the-entity-a-decision-is-about">Loading the entity a decision is about</h3>
+<p>Most endpoints decide about a <em>kind</em> of thing rather than one entity: discovery asks which products
+a caller may see, and view delegates the per-product question to the row filter compiled into its
+SQL. Neither reads the entity in Rego, so neither should pay to load one.</p>
+<p>Loading is therefore three independent things, each declared in one place:</p>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Answered by</th>
+<th>How</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Should this endpoint's rule see the entity?</td>
+<td>the endpoint</td>
+<td><code>@Policy(loadResource = true)</code></td>
+</tr>
+<tr>
+<td>Which entity does this request name?</td>
+<td><code>PolicyResourceIdExtractor</code></td>
+<td>one convention, any transport</td>
+</tr>
+<tr>
+<td>How is that kind read?</td>
+<td>a <code>PolicyResourceLoader</code></td>
+<td>one implementation per kind</td>
+</tr>
+</tbody>
+</table>
+<p>Separating them is what makes the mechanism consistent. The extractor looks for the id in the
+<strong>path</strong> first and then the <strong>body</strong>, by the same naming convention every time:</p>
+<ol>
+<li>path variable <code>&lt;kind&gt;Id</code>, then plain <code>id</code></li>
+<li>body field <code>&lt;kind&gt;Id</code>, then plain <code>id</code></li>
+</ol>
+<p>So <code>GET /api/v1/product/{productId}</code> and <code>POST /api/v1/product/subscribe</code> are found the same way,
+and a new kind needs no change: <code>consumerId</code> and <code>producerId</code> are located by the rule that locates
+<code>productId</code>. Adding a kind is a single class implementing <code>PolicyResourceLoader</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th><code>loadResource</code></th>
+<th>What the rule sees</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>POST /api/v1/product/subscribe</code></td>
+<td><code>true</code></td>
+<td><code>resource.id</code>, <code>resource.fields</code>, <code>resource.attributes</code></td>
+</tr>
+<tr>
+<td><code>POST /api/v1/product/discover</code></td>
+<td><code>false</code></td>
+<td>kind only, nothing read</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/product/{productId}</code></td>
+<td><code>false</code></td>
+<td>kind only, nothing read</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/configuration/**</code></td>
+<td><code>false</code></td>
+<td>kind only</td>
+</tr>
+</tbody>
+</table>
+<p>Subscription is the case that needs it: <code>validity_days</code> is worked out from the product's
+identifiability and quality, and no SQL predicate does that work. View has an id to hand in its
+path and still does not load, for two reasons. Its rule reads nothing of the entity, so the read
+would be wasted; and <code>policies.product.discover</code> keys its per-candidate branch and its
+<code>evaluation</code> field on <code>input.resource.id</code>, so populating it for view would change discovery's side
+of the parity assertion in <code>view_test.rego</code>, which is the build-time guarantee that a product
+cannot be viewable without being discoverable. Turning it on for view is a one-word change plus a
+revision of that test, and should be done deliberately if a view rule ever needs product facts.</p>
+<p>An id that matches no entity loads nothing rather than failing: whether an unknown id is a refusal
+belongs to the rule and the handler, and failing the decision would report a missing entity as a
+<code>403</code>.</p>
 <h3 id="client-and-organisation-both-come-from-the-principal">Client and organisation both come from the principal</h3>
 <p><code>subject.clientId</code> and <code>subject.organisation.key</code> are sourced the same way, from the authenticated principal, but they are distinct facts. The client id names the OAuth client the token was issued to; the organisation names who that client acts for. Several clients can belong to one organisation, so a policy may gate on either.</p>
 <p>The organisation is resolved in two steps:</p>
@@ -3055,8 +3193,17 @@ and it writes one entry per decision, so it is just as noisy a bring-up aid. Pro
 <td><code>scheduleType</code> given and not permitted</td>
 <td><code>schedule.type_not_permitted</code></td>
 </tr>
+<tr>
+<td>the caller's <code>jurisdictions</code> include Wales and the product's type is <code>topic</code></td>
+<td><code>jurisdiction.topic_not_permitted:Wales Juristiction not allowed to access topics</code></td>
+</tr>
 </tbody>
 </table>
+<p>The last is the one refusal that reads the product's own type (<code>input.resource.fields.type</code>, from
+<code>product_type.name</code>), and the one that carries its caller-facing wording in the reason itself, in
+the <code>code:subject</code> form: the code before the colon stays the stable audit key, and the caller is
+shown the sentence after it in the <code>403</code>'s <code>reasons</code>. Holding Wales alongside other nations is
+enough to be refused; the sample organisation <code>ENV</code> (England and Wales) is the one this catches.</p>
 <p><code>details</code> are returned whether allowed or denied:</p>
 <table>
 <thead>
@@ -3082,9 +3229,20 @@ and it writes one entry per decision, so it is just as noisy a bring-up aid. Pro
 <td><code>permittedScheduleTypes</code></td>
 <td><code>["interval"]</code> for a local remit; otherwise <code>["cron", "interval"]</code></td>
 </tr>
+<tr>
+<td><code>validity_days</code></td>
+<td><code>validityDays</code></td>
+<td>the grant actually made: the lower of <code>max_validity_days</code> and what the product's own attributes allow (30 days directly identifiable or unvalidated, 90 pseudonymised, 365 otherwise, 30 when the product has no attributes recorded)</td>
+</tr>
 </tbody>
 </table>
-<p>The terms live in policy so the service applies what policy decided rather than restating those limits in Java. The handler reads them into <code>ProductSubscriptionResponseDTO</code>: <code>status</code> is <code>PENDING_APPROVAL</code> when approval is required and <code>ACCEPTED</code> otherwise, alongside <code>maxValidityDays</code> and <code>permittedScheduleTypes</code>.</p>
+<p>The terms live in policy so the service applies what policy decided rather than restating those limits in Java. <code>ProductSubscriptionService</code> records the grant in <code>product_consumer</code> with <code>validity_days</code> as its validity, and reports the terms in <code>ProductSubscriptionResponseDTO</code>.</p>
+<p>The response carries <strong>no status</strong>. A grant is recorded or the request fails, and once recorded it is in force: <code>product_consumer</code> has no status column and the configuration API does not filter on one. <code>requires_approval</code> is therefore still decided by the rule but nothing in the service acts on it; wiring it to anything would mean giving the schema an approval state it does not have.</p>
+<p><code>validity_days</code> is the one term worked out from the <strong>product</strong> as well as the caller, which is why
+this is the endpoint whose body causes a product to be loaded (see <a href="#loading-the-entity-a-decision-is-about">Loading the entity a decision is
+about</a>). The product can only shorten a grant, never
+extend one: a caller entitled to a year of a validated, anonymised feed is not entitled to a year
+of a provisional, directly identifiable one.</p>
 <h3 id="get-apiv1productproductid-a-search-that-returns-one-product"><code>GET /api/v1/product/{productId}</code>: a search that returns one product</h3>
 <ul>
 <li>Role: <code>product_view</code>.</li>
@@ -3203,7 +3361,7 @@ and it writes one entry per decision, so it is just as noisy a bring-up aid. Pro
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 24, 2026 10:34:35 UTC">September 24, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 24, 2026 11:15:04 UTC">September 24, 2026</span>
   </span>
 
     

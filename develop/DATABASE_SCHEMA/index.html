@@ -858,6 +858,8 @@
       
         
       
+        
+      
     
     
     
@@ -950,6 +952,34 @@
     
   
     Product View API: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tests/products/subscribe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Subscribe API: Test Requirement Specification
   
 
     
@@ -1297,6 +1327,7 @@
     VARCHAR idp_client_id
     VARCHAR schedule_type
     VARCHAR schedule_expression
+    BOOLEAN is_default
   }
   PRODUCT_TYPE {
     BIGSERIAL id PK
@@ -1436,9 +1467,13 @@
 - <code>org_id</code> BIGINT, not null, foreign key → <code>organisation(id)</code>
 - <code>idp_client_id</code> VARCHAR(50), not null: identity provider client id (e.g., Keycloak). Informational; not an FK
 - <code>schedule_type</code> VARCHAR(100), nullable: type of schedule, e.g., <code>cron</code>, <code>interval</code>
-- <code>schedule_expression</code> VARCHAR(255), nullable: schedule expression matching the chosen schedule_type</p>
+- <code>schedule_expression</code> VARCHAR(255), nullable: schedule expression matching the chosen schedule_type
+- <code>is_default</code> BOOLEAN, not null, default FALSE: whether this consumer takes the subscriptions its organisation requests without naming a consumer</p>
+<p>Indexes and constraints:
+- Partial UNIQUE index on <code>org_id</code> WHERE <code>is_default = TRUE</code> (<code>uq_consumer__one_default_per_org</code>): an organisation has <strong>at most one</strong> default consumer, and may have none. Constraining only the rows flagged default leaves any number of non-default consumers per organisation legal.</p>
 <p>Usage:
 - Participates in access grants via <code>product_consumer</code>.
+- <code>is_default</code> is read by <code>POST /api/v1/product/subscribe</code> when the request names no consumer. The column is <code>is_default</code> rather than <code>default</code> because DEFAULT is a reserved word in SQL.
 - Optional scheduling metadata for consumer-driven jobs.</p>
 <hr />
 <h3 id="product_type">product_type</h3>
@@ -1480,7 +1515,8 @@
 - Originally used a composite primary key (<code>product_id</code>, <code>consumer_id</code>); later replaced by surrogate <code>id</code> while preserving uniqueness via <code>uq_product_consumer_pair</code>.</p>
 <p>Usage:
 - Central record for authorization decisions: which Consumer can access which Product and since when.
-- Optional scheduling metadata for grant-level processing/delivery.</p>
+- Optional scheduling metadata for grant-level processing/delivery.
+- Written by <code>POST /api/v1/product/subscribe</code>, with <code>validity</code> set to the validity the <code>product.subscribe</code> policy decided from the caller's and the product's attributes. Because <code>uq_product_consumer_pair</code> is on (<code>product_id</code>, <code>consumer_id</code>), one organisation may hold the same product on several of its consumers, while the same consumer cannot hold it twice.</p>
 <hr />
 <h3 id="product_consumer_attribute">product_consumer_attribute</h3>
 <p>Extensible attributes attached to a specific <code>product_consumer</code> grant (key/value-like rows with a simple type field).</p>
@@ -1599,8 +1635,10 @@
 <p>Constraints:
 - Index on <code>entity_id</code> (<code>idx_policy_attribute_value__entity_id</code>)
 - Partial UNIQUE index on (<code>attribute_definition_scope_id</code>, <code>entity_id</code>, <code>value</code>) WHERE <code>is_deleted = FALSE</code> (<code>uq_policy_attr_value_live</code>): an idempotency guard against persisting an exact-duplicate live value; it does not by itself enforce "one live value per entity" for single-valued attributes (that check spans <code>policy_attribute_definition.multi_valued</code> and is left to the service layer that writes these rows)</p>
-<p>Soft-delete triggers:
-- <code>trg_organisation_policy_attribute_value_soft_delete</code>, <code>trg_consumer_policy_attribute_value_soft_delete</code>, <code>trg_producer_policy_attribute_value_soft_delete</code>, <code>trg_product_policy_attribute_value_soft_delete</code>, <code>trg_product_consumer_policy_attribute_value_soft_delete</code>: one <code>AFTER DELETE</code> trigger per owning table (<code>organisation</code>, <code>consumer</code>, <code>producer</code>, <code>product</code>, <code>product_consumer</code>), all calling the shared function <code>fn_policy_attribute_value_soft_delete_on_entity_delete()</code>. When a row in one of those tables is deleted, every live (<code>is_deleted = FALSE</code>) <code>policy_attribute_value</code> row scoped to that table and entity id is set <code>is_deleted = TRUE</code> rather than deleted or left orphaned.</p>
+<p>Attribute values are not cleaned up by the database:
+- <code>V20260922120000__drop_policy_attribute_soft_delete_trigger.sql</code> removed the five <code>AFTER DELETE</code> triggers (<code>organisation</code>, <code>consumer</code>, <code>producer</code>, <code>product</code>, <code>product_consumer</code>) and the shared function <code>fn_policy_attribute_value_soft_delete_on_entity_delete()</code>. The function resolved its table names unqualified, so PL/pgSQL resolved them against the <strong>caller's</strong> <code>search_path</code>; a session without the schema on its path could not delete from any owning table at all.
+- <strong><code>entity_id</code> has no foreign key and no cascade</strong> (it is polymorphic, see above), so nothing now marks an entity's attribute values <code>is_deleted</code> when the entity is removed. Whatever deletes one of those entities is responsible for soft-deleting its <code>policy_attribute_value</code> rows in the same transaction.
+- Live rows left behind remain visible through <code>policy_attribute_live_value</code> and are still matched by <code>entity_id</code>, so they can reach a policy decision for an entity that no longer exists.</p>
 <p>Usage:
 - Stores the actual attribute values sent to the PDP (OPA) for policy decisions, keyed by which entity (organisation, consumer, producer, product, or subscription) they describe. Live rows are read per request and embedded in the decision input as <code>subject.organisation.attributes</code> (resolved from the token's organisation claim via <code>organisation_key</code>) and <code>resource.attributes</code>; the <code>value</code> JSONB keeps its type. A <code>multi_valued</code> attribute is stored as one row per value and all of its live rows are collected into a single array for the policy, so the partial unique index above (which permits many distinct live values per entity) is what makes multiple values possible. See <a href="../POLICY_ENFORCEMENT/">Policy Enforcement</a>.</p>
 <hr />
@@ -1648,7 +1686,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 24, 2026 10:34:35 UTC">September 24, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 24, 2026 11:15:04 UTC">September 24, 2026</span>
   </span>
 
     

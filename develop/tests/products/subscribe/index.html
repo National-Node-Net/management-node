@@ -1,0 +1,2730 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Management Node is is the control plane for the National Digital Twin Programme IA Node Net.">
+      
+      
+        <meta name="author" content="NDTP">
+      
+      
+        <link rel="canonical" href="https://docs.ndtp.co.uk/develop/tests/products/subscribe/">
+      
+      
+        <link rel="prev" href="../product-view/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/android-chrome-512x512-1-150x150.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Product Subscribe API: Test Requirement Specification - Management-Node Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#product-subscribe-api-test-requirement-specification" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="Management-Node Documentation" class="md-header__button md-logo" aria-label="Management-Node Documentation" data-md-component="logo">
+      
+  <img src="../../../assets/light-page_header_logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Management-Node Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Product Subscribe API: Test Requirement Specification
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="Management-Node Documentation" class="md-nav__button md-logo" aria-label="Management-Node Documentation" data-md-component="logo">
+      
+  <img src="../../../assets/light-page_header_logo.png" alt="logo">
+
+    </a>
+    Management-Node Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    README
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../AUTHENTICATION_REQUIREMENTS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication Requirements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../BOOTSTRAP_ONBOARDING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bootstrap Onboarding Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../DATABASE_SCHEMA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../DISCOVERY_TEST_SCENARIOS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Discovery and View: Test Scenarios
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../JACOCO_COVERAGE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JaCoCo Code Coverage Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../MOCKITO_USAGE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockito Testing Tool Usage Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../MTLS_CONFIGURATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MTLS Configuration Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../POLICY_ENFORCEMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Policy Enforcement
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../entity-dto-converter-pattern/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entity-DTO Converter Pattern
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../jobs-scheduler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Jobs Scheduler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tests
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tests
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12_1" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Products
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_12_1" id="__nav_12_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_12_1_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_12_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Products
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../product-discover/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Discover: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../product-view/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product View API: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Subscribe API: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Subscribe API: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-what-this-api-does" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. What this API does
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. What this API does">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-what-gets-created" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 What gets created
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-choosing-the-consumer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 Choosing the consumer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13-what-policy-decides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.3 What policy decides
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#14-status-codes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.4 Status codes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#15-the-request-body" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.5 The request body
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#16-the-response" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.6 The response
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-before-you-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Before you start
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-test-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Test cases
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Test cases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#s1-a-first-subscription-succeeds-and-records-the-policy-terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S1: A first subscription succeeds and records the policy terms
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s2-the-same-subscription-again-is-a-409-not-a-second-row" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S2: The same subscription again is a 409, not a second row
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s3-the-same-product-on-a-second-consumer-of-the-same-organisation-is-allowed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S3: The same product on a second consumer of the same organisation is allowed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s4-several-consumers-and-no-default-is-refused-asking-for-consumer_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S4: Several consumers and no default is refused, asking for consumer_id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s5-naming-the-consumer-resolves-s4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S5: Naming the consumer resolves S4
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s6-a-consumer-belonging-to-another-organisation-is-refused" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S6: A consumer belonging to another organisation is refused
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s7-validity-is-shortened-by-the-product-not-only-by-the-caller" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S7: Validity is shortened by the product, not only by the caller
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s8-a-pseudonymised-product-caps-the-grant-at-90-days" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S8: A pseudonymised product caps the grant at 90 days
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s9-the-product-can-only-shorten-never-extend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S9: The product can only shorten, never extend
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s10-a-schedule-type-policy-does-not-permit-is-refused" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S10: A schedule type policy does not permit is refused
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s11-the-same-request-with-an-interval-succeeds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S11: The same request with an interval succeeds
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s12-an-organisation-without-the-service-delivery-purpose-is-refused" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S12: An organisation without the service delivery purpose is refused
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s13-a-token-with-no-organisation-claim-is-refused" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S13: A token with no organisation claim is refused
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s14-a-token-without-the-role-never-reaches-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S14: A token without the role never reaches policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s15-an-unknown-product-is-a-404" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S15: An unknown product is a 404
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s16-with-policy-switched-off-the-grant-is-held-not-accepted" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S16: With policy switched off the grant is held, not accepted
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-wales-may-not-take-topic-products" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Wales may not take topic products
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Wales may not take topic products">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-which-sample-products-are-topics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 Which sample products are topics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-test-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 Test cases
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.2 Test cases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#w1-a-welsh-organisation-is-refused-a-topic-product" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        W1: A Welsh organisation is refused a topic product
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#w2-the-same-caller-and-a-file-product-succeeds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        W2: The same caller and a file product succeeds
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#w3-owning-the-product-does-not-excuse-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        W3: Owning the product does not excuse it
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#w4-a-non-welsh-organisation-may-take-a-topic-product" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        W4: A non-Welsh organisation may take a topic product
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#w5-a-product-with-no-type-recorded-is-not-a-topic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        W5: A product with no type recorded is not a topic
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#w6-the-refusal-is-reported-alongside-every-other-reason" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        W6: The refusal is reported alongside every other reason
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#w7-the-terms-are-still-returned-with-the-refusal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        W7: The terms are still returned with the refusal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#w8-discover-and-view-are-unaffected" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        W8: Discover and view are unaffected
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#w9-with-policy-switched-off-the-rule-is-not-enforced" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        W9: With policy switched off the rule is not enforced
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-edge-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Edge cases
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-things-that-should-never-happen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Things that should never happen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-related-documents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Related documents
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-what-this-api-does" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. What this API does
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. What this API does">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-what-gets-created" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 What gets created
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-choosing-the-consumer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 Choosing the consumer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13-what-policy-decides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.3 What policy decides
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#14-status-codes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.4 Status codes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#15-the-request-body" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.5 The request body
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#16-the-response" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.6 The response
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-before-you-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Before you start
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-test-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Test cases
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Test cases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#s1-a-first-subscription-succeeds-and-records-the-policy-terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S1: A first subscription succeeds and records the policy terms
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s2-the-same-subscription-again-is-a-409-not-a-second-row" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S2: The same subscription again is a 409, not a second row
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s3-the-same-product-on-a-second-consumer-of-the-same-organisation-is-allowed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S3: The same product on a second consumer of the same organisation is allowed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s4-several-consumers-and-no-default-is-refused-asking-for-consumer_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S4: Several consumers and no default is refused, asking for consumer_id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s5-naming-the-consumer-resolves-s4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S5: Naming the consumer resolves S4
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s6-a-consumer-belonging-to-another-organisation-is-refused" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S6: A consumer belonging to another organisation is refused
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s7-validity-is-shortened-by-the-product-not-only-by-the-caller" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S7: Validity is shortened by the product, not only by the caller
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s8-a-pseudonymised-product-caps-the-grant-at-90-days" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S8: A pseudonymised product caps the grant at 90 days
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s9-the-product-can-only-shorten-never-extend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S9: The product can only shorten, never extend
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s10-a-schedule-type-policy-does-not-permit-is-refused" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S10: A schedule type policy does not permit is refused
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s11-the-same-request-with-an-interval-succeeds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S11: The same request with an interval succeeds
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s12-an-organisation-without-the-service-delivery-purpose-is-refused" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S12: An organisation without the service delivery purpose is refused
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s13-a-token-with-no-organisation-claim-is-refused" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S13: A token with no organisation claim is refused
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s14-a-token-without-the-role-never-reaches-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S14: A token without the role never reaches policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s15-an-unknown-product-is-a-404" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S15: An unknown product is a 404
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s16-with-policy-switched-off-the-grant-is-held-not-accepted" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S16: With policy switched off the grant is held, not accepted
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-wales-may-not-take-topic-products" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Wales may not take topic products
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Wales may not take topic products">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-which-sample-products-are-topics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 Which sample products are topics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-test-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 Test cases
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.2 Test cases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#w1-a-welsh-organisation-is-refused-a-topic-product" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        W1: A Welsh organisation is refused a topic product
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#w2-the-same-caller-and-a-file-product-succeeds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        W2: The same caller and a file product succeeds
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#w3-owning-the-product-does-not-excuse-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        W3: Owning the product does not excuse it
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#w4-a-non-welsh-organisation-may-take-a-topic-product" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        W4: A non-Welsh organisation may take a topic product
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#w5-a-product-with-no-type-recorded-is-not-a-topic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        W5: A product with no type recorded is not a topic
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#w6-the-refusal-is-reported-alongside-every-other-reason" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        W6: The refusal is reported alongside every other reason
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#w7-the-terms-are-still-returned-with-the-refusal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        W7: The terms are still returned with the refusal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#w8-discover-and-view-are-unaffected" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        W8: Discover and view are unaffected
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#w9-with-policy-switched-off-the-rule-is-not-enforced" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        W9: With policy switched off the rule is not enforced
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-edge-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Edge cases
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-things-that-should-never-happen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Things that should never happen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-related-documents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Related documents
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="../../.." class="md-path__link">
+        
+  <span class="md-ellipsis">
+    README
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Tests
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Products
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="product-subscribe-api-test-requirement-specification">Product Subscribe API: Test Requirement Specification</h1>
+<p><strong>Repository:</strong> <code>management-node</code><br />
+<strong>Endpoint:</strong> <code>POST /api/v1/product/subscribe</code><br />
+<strong>Role required:</strong> <code>product_subscribe</code><br />
+<strong>SPDX-License-Identifier:</strong> <code>Apache-2.0 AND OGL-UK-3.0</code></p>
+<hr />
+<p>This is the formal test specification for the <strong>Product Subscribe</strong> API: what the endpoint does,
+what policy governs it, and every permutation a manual tester should exercise.</p>
+<p>It is a sibling of <a href="../product-discover/"><code>product-discover.md</code></a> and <a href="../product-view/"><code>product-view.md</code></a>,
+and it <strong>reuses</strong> the setup, token recipe and "who is who" of
+<a href="../../../DISCOVERY_TEST_SCENARIOS/"><code>../../DISCOVERY_TEST_SCENARIOS.md</code></a> §2, §3 and §3.1, and its
+sample catalogue in §4 of that document. Read those once, then work through §3 and §4 below.</p>
+<h2 id="contents">Contents</h2>
+<ul>
+<li><a href="#1-what-this-api-does">1. What this API does</a></li>
+<li><a href="#11-what-gets-created">1.1 What gets created</a></li>
+<li><a href="#12-choosing-the-consumer">1.2 Choosing the consumer</a></li>
+<li><a href="#13-what-policy-decides">1.3 What policy decides</a></li>
+<li><a href="#14-status-codes">1.4 Status codes</a></li>
+<li><a href="#15-the-request-body">1.5 The request body</a></li>
+<li><a href="#16-the-response">1.6 The response</a></li>
+<li><a href="#2-before-you-start">2. Before you start</a></li>
+<li><a href="#3-test-cases">3. Test cases</a></li>
+<li><a href="#4-wales-may-not-take-topic-products">4. Wales may not take topic products</a></li>
+<li><a href="#5-edge-cases">5. Edge cases</a></li>
+<li><a href="#6-things-that-should-never-happen">6. Things that should never happen</a></li>
+<li><a href="#7-related-documents">7. Related documents</a></li>
+</ul>
+<hr />
+<h2 id="1-what-this-api-does">1. What this API does</h2>
+<p>Subscribes the calling organisation to a product, by recording a grant of that product to one of
+the organisation's consumers.</p>
+<ul>
+<li>Authentication: OAuth2 JWT bearer token, <code>aud</code> including <code>management-node</code>.</li>
+<li>Authorization: the client role <code>management-node:product_subscribe</code>.</li>
+<li>Policy: <code>@Policy(resource = "product", action = "subscribe")</code>, answered by <code>policies.product.subscribe</code>.</li>
+</ul>
+<h3 id="11-what-gets-created">1.1 What gets created</h3>
+<p>One row in <code>product_consumer</code>: the product, the consumer, when it was granted, how long it is valid
+for, and the schedule. The row is what every other part of the system reads as "this organisation
+has access to this product", so a successful call is a change to the configuration the federators
+receive, not merely a record of a request.</p>
+<p><strong>Uniqueness is per product and consumer, not per product and organisation.</strong> That is what the
+database enforces (<code>uq_product_consumer_pair</code>), and it is deliberate:</p>
+<ul>
+<li>the same consumer <strong>cannot</strong> be subscribed to the same product twice;</li>
+<li>one organisation <strong>can</strong> subscribe to the same product on several of its consumers, which is how
+  an organisation feeds the same data to more than one system.</li>
+</ul>
+<h3 id="12-choosing-the-consumer">1.2 Choosing the consumer</h3>
+<p><code>consumerId</code> is optional. When it is absent the service works out which consumer the subscription
+is for, in this order:</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Condition</th>
+<th>Outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>consumerId</code> given</td>
+<td>that consumer is used, <strong>after</strong> checking it belongs to the caller's organisation</td>
+</tr>
+<tr>
+<td>2</td>
+<td>the organisation has a consumer flagged <code>is_default</code></td>
+<td>that consumer is used</td>
+</tr>
+<tr>
+<td>3</td>
+<td>the organisation has exactly one consumer</td>
+<td>that consumer is used; there is nothing to disambiguate</td>
+</tr>
+<tr>
+<td>4</td>
+<td>the organisation has several consumers and no default</td>
+<td><strong>refused</strong>, asking for <code>consumer_id</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td>the organisation has no consumers</td>
+<td><strong>refused</strong></td>
+</tr>
+</tbody>
+</table>
+<p>An organisation has <strong>at most one</strong> default consumer, enforced by a partial unique index on
+<code>consumer(org_id) WHERE is_default = TRUE</code>. It may have none.</p>
+<h3 id="13-what-policy-decides">1.3 What policy decides</h3>
+<p>Policy decides four things, and the service applies them rather than restating them:</p>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>whether to allow at all</td>
+<td>the refusals in §1.4, including the jurisdiction rule in §4</td>
+</tr>
+<tr>
+<td><code>requires_approval</code></td>
+<td>decided by the rule, but <strong>nothing acts on it</strong>: see the note below</td>
+</tr>
+<tr>
+<td><code>max_validity_days</code></td>
+<td>the ceiling the caller's purpose allows</td>
+</tr>
+<tr>
+<td><code>validity_days</code></td>
+<td>the validity actually recorded, from the caller's <strong>and the product's</strong> attributes</td>
+</tr>
+</tbody>
+</table>
+<p><strong>There is no subscription status.</strong> A grant is recorded or the request fails, and once recorded it
+is in force. <code>product_consumer</code> has no status column and the configuration API does not filter on
+one, so a reported status would be advisory text nothing reads back. <code>requires_approval</code> is still
+decided by the rule and reported in the decision, but no approval workflow exists to act on it.</p>
+<p><code>validity_days</code> is the only term worked out from the product as well as the caller: how long an
+organisation may hold data depends on what the data is. The product's own ceiling, first line that
+describes it winning:</p>
+<table>
+<thead>
+<tr>
+<th>Product</th>
+<th>Ceiling</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>directly identifiable</td>
+<td>30 days</td>
+</tr>
+<tr>
+<td>experimental, provisional or superseded quality</td>
+<td>30 days</td>
+</tr>
+<tr>
+<td>pseudonymised</td>
+<td>90 days</td>
+</tr>
+<tr>
+<td>anything else (anonymised, non-personal, validated)</td>
+<td>365 days</td>
+</tr>
+<tr>
+<td>no attributes recorded at all</td>
+<td>30 days</td>
+</tr>
+</tbody>
+</table>
+<p>The grant is the <strong>lower</strong> of the caller's ceiling and the product's. The product can only shorten
+a grant, never extend one.</p>
+<h3 id="14-status-codes">1.4 Status codes</h3>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>When</th>
+<th>Body</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>200</code></td>
+<td>the grant was recorded, and is in force</td>
+<td>the subscription, with the terms policy set</td>
+</tr>
+<tr>
+<td><code>400</code></td>
+<td>invalid body, several consumers and none named, no consumer at all, or a consumer belonging to another organisation</td>
+<td>error object</td>
+</tr>
+<tr>
+<td><code>401</code></td>
+<td>no token, or one that is invalid or expired</td>
+<td>empty</td>
+</tr>
+<tr>
+<td><code>403</code> (role)</td>
+<td>the token lacks <code>management-node:product_subscribe</code></td>
+<td>error object, <strong>no</strong> <code>reasons</code></td>
+</tr>
+<tr>
+<td><code>403</code> (policy)</td>
+<td>policy refused: <code>organisation.missing</code>, <code>organisation.purpose_not_permitted</code>, <code>schedule.type_not_permitted</code>, <code>jurisdiction.topic_not_permitted:…</code></td>
+<td>error object <strong>with</strong> <code>reasons</code></td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td>no such product</td>
+<td>error object</td>
+</tr>
+<tr>
+<td><code>409</code></td>
+<td>that consumer is already subscribed to that product</td>
+<td>error object naming the consumer</td>
+</tr>
+</tbody>
+</table>
+<p>The distinction that matters: <strong><code>403</code> is "you may not", <code>409</code> is "that is already done".</strong> A policy
+refusal is the only one that carries <code>reasons</code>.</p>
+<p><code>message</code> is always the literal <code>"Access denied by policy"</code> on a policy refusal. The detail is in
+<code>reasons</code>, never in <code>message</code>, so a tester checking only the message will not see which rule
+refused. One reason carries its own sentence after a colon; see §4.</p>
+<h3 id="15-the-request-body">1.5 The request body</h3>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">"productId"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">"consumerId"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">"scheduleType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"interval"</span><span class="p">,</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="nt">"scheduleExpression"</span><span class="p">:</span><span class="w"> </span><span class="s2">"P1D"</span><span class="p">,</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="nt">"destination"</span><span class="p">:</span><span class="w"> </span><span class="s2">"s3://bucket/prefix"</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="p">}</span>
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Default</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>productId</code></td>
+<td><strong>yes</strong></td>
+<td>n/a</td>
+<td>absent is a <code>400</code></td>
+</tr>
+<tr>
+<td><code>consumerId</code></td>
+<td>no</td>
+<td>the organisation's default, see §1.2</td>
+<td>must belong to the caller's organisation</td>
+</tr>
+<tr>
+<td><code>scheduleType</code></td>
+<td>no</td>
+<td><code>interval</code></td>
+<td>must be one policy permits</td>
+</tr>
+<tr>
+<td><code>scheduleExpression</code></td>
+<td>no</td>
+<td><code>P1D</code></td>
+<td>ISO-8601 duration for <code>interval</code>, so <code>P1D</code> is daily</td>
+</tr>
+<tr>
+<td><code>destination</code></td>
+<td>no</td>
+<td>none</td>
+<td>delivery target</td>
+</tr>
+</tbody>
+</table>
+<h3 id="16-the-response">1.6 The response</h3>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">"subscriptionId"</span><span class="p">:</span><span class="w"> </span><span class="mi">31</span><span class="p">,</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="nt">"productId"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="nt">"consumerId"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">  </span><span class="nt">"consumerName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ENV-CONSUMER-1"</span><span class="p">,</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span><span class="nt">"grantedAt"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-09-22T10:15:00"</span><span class="p">,</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span><span class="nt">"validityDays"</span><span class="p">:</span><span class="w"> </span><span class="mi">90</span><span class="p">,</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">  </span><span class="nt">"maxValidityDays"</span><span class="p">:</span><span class="w"> </span><span class="mi">90</span><span class="p">,</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">  </span><span class="nt">"scheduleType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"interval"</span><span class="p">,</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">  </span><span class="nt">"scheduleExpression"</span><span class="p">:</span><span class="w"> </span><span class="s2">"P1D"</span><span class="p">,</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">  </span><span class="nt">"permittedScheduleTypes"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"cron"</span><span class="p">,</span><span class="w"> </span><span class="s2">"interval"</span><span class="p">]</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="p">}</span>
+</span></code></pre></div>
+<hr />
+<h2 id="2-before-you-start">2. Before you start</h2>
+<p>Everything in §2 and §3 of <a href="../../../DISCOVERY_TEST_SCENARIOS/"><code>../../DISCOVERY_TEST_SCENARIOS.md</code></a>
+applies. In addition:</p>
+<ul>
+<li><strong>OPA must be running.</strong> The policy decision point fails closed, so a stopped OPA makes every
+  request <code>403</code>. That is expected, not a defect.</li>
+<li><strong>Sample defaults.</strong> With the sample data loaded, <strong>ENV</strong> has a default consumer
+  (<code>ENV-CONSUMER-1</code>), and <strong>HEG</strong> and <strong>BCC</strong> each have two consumers and no default. That split is
+  what lets you test both consumer-resolution paths without editing the database.</li>
+<li><strong>Subscriptions persist.</strong> Unlike discover and view, this endpoint writes. A test that succeeds
+  changes the state the next test sees, so the order below matters and repeat runs need the row
+  removing first. Each case says so where it applies.</li>
+<li><strong>Never hard-code a product id.</strong> Resolve it by name from discovery, as the sibling specifications
+  instruct.</li>
+<li><strong>Product type matters here, and it is not visible in a discover response.</strong> Since §4 refuses
+  some callers by product type, you need to know which sample products are <code>topic</code> and which are
+  <code>file</code>. The table in §4.1 is the reference; it is derived from
+  <code>db/samples/V20260918150000__add_discovery_sample_dataset.sql</code> and the backfill in
+  <code>db/migration/V20251013135858__add_product_type.sql</code>.</li>
+<li><strong>ENV is the Welsh organisation.</strong> Its <code>jurisdictions</code> are England <strong>and</strong> Wales, so it is the
+  sample organisation §4 catches. HEG (England, Scotland) and BCC (Bristol, England) are not.</li>
+<li><strong>Subscription does not require discoverability.</strong> Policy does not check that the caller could
+  have discovered the product, so a caller may subscribe to a product that does not appear in its
+  own discover response. In practice ENV is cleared to SECRET and has a national remit, so it
+  discovers the whole sample catalogue and every id below is reachable from an ENV discover.</li>
+</ul>
+<hr />
+<h2 id="3-test-cases">3. Test cases</h2>
+<h3 id="s1-a-first-subscription-succeeds-and-records-the-policy-terms">S1: A first subscription succeeds and records the policy terms</h3>
+<p><strong>Objective.</strong> The happy path writes a grant and reports the terms policy set.</p>
+<p><strong>Preconditions.</strong> ENV holds no subscription to <code>CoastalErosionForecast</code>.</p>
+<p><strong>Test data.</strong> ENV, <code>productId</code> of <code>CoastalErosionForecast</code> (ENV's own, type <code>file</code>, non-personal,
+experimental), no <code>consumerId</code>.</p>
+<ul>
+<li><strong>Given</strong> ENV has a default consumer and no grant on this product,</li>
+<li><strong>When</strong> it posts <code>{"productId": &lt;id&gt;}</code>,</li>
+<li><strong>Then</strong> <code>200</code>, <code>consumerName</code> is <code>ENV-CONSUMER-1</code>, <code>maxValidityDays</code> is <code>90</code>, <code>validityDays</code> is
+  <code>30</code>, <code>scheduleType</code> is <code>interval</code>, <code>scheduleExpression</code> is <code>P1D</code>, and the response carries
+  <strong>no</strong> <code>status</code> field.</li>
+</ul>
+<blockquote>
+<p><strong>A <code>file</code> product, deliberately.</strong> ENV covers Wales, so it cannot subscribe to a <code>topic</code> product
+at all (§4), and every product ENV could otherwise use for a happy path is one. <code>validityDays</code> is
+<code>30</code> rather than <code>90</code> because the product is experimental, which is §1.3 doing its job.</p>
+</blockquote>
+<p><strong>Why.</strong> It proves four things at once: the default consumer was found, the defaults were applied,
+the validity came from policy, and the row was written.</p>
+<h3 id="s2-the-same-subscription-again-is-a-409-not-a-second-row">S2: The same subscription again is a 409, not a second row</h3>
+<ul>
+<li><strong>Given</strong> S1 has run,</li>
+<li><strong>When</strong> ENV repeats the identical request,</li>
+<li><strong>Then</strong> <code>409</code>, and the message names the organisation, the product and the consumer already
+  subscribed.</li>
+<li><strong>And</strong> <code>product_consumer</code> still holds exactly one matching row.</li>
+</ul>
+<h3 id="s3-the-same-product-on-a-second-consumer-of-the-same-organisation-is-allowed">S3: The same product on a second consumer of the same organisation is allowed</h3>
+<ul>
+<li><strong>Given</strong> S1 has run, so <code>ENV-CONSUMER-1</code> holds the product,</li>
+<li><strong>When</strong> ENV posts the same <code>productId</code> with <code>consumerId</code> of <code>ENV-CONSUMER-2</code>,</li>
+<li><strong>Then</strong> <code>200</code>, and a second row exists for the same product on a different consumer.</li>
+</ul>
+<p><strong>Why.</strong> This is the case §1.1 exists to protect. If it returns <code>409</code>, uniqueness has been
+implemented per organisation instead of per consumer.</p>
+<h3 id="s4-several-consumers-and-no-default-is-refused-asking-for-consumer_id">S4: Several consumers and no default is refused, asking for consumer_id</h3>
+<p><strong>Test data.</strong> HEG, which has two consumers and no default.</p>
+<ul>
+<li><strong>When</strong> HEG posts <code>{"productId": &lt;id&gt;}</code> with no <code>consumerId</code>,</li>
+<li><strong>Then</strong> <code>400</code>, and the message is <strong>"Multiple consumers found, please specify consumer_id"</strong>.</li>
+<li><strong>And</strong> no row was written.</li>
+</ul>
+<h3 id="s5-naming-the-consumer-resolves-s4">S5: Naming the consumer resolves S4</h3>
+<ul>
+<li><strong>When</strong> HEG repeats S4 with <code>consumerId</code> of <code>HEG-CONSUMER-1</code>,</li>
+<li><strong>Then</strong> <code>200</code>.</li>
+</ul>
+<h3 id="s6-a-consumer-belonging-to-another-organisation-is-refused">S6: A consumer belonging to another organisation is refused</h3>
+<ul>
+<li><strong>When</strong> ENV posts a <code>consumerId</code> belonging to a HEG consumer,</li>
+<li><strong>Then</strong> <code>400</code>, the message says the consumer does not belong to the organisation, and no row is
+  written.</li>
+</ul>
+<p><strong>Why.</strong> Without this check a consumer id would be a way to subscribe somebody else's consumer.</p>
+<h3 id="s7-validity-is-shortened-by-the-product-not-only-by-the-caller">S7: Validity is shortened by the product, not only by the caller</h3>
+<p><strong>Test data.</strong> HEG (research purpose, ceiling 365 days) and a <strong>directly identifiable</strong> product.</p>
+<ul>
+<li><strong>When</strong> HEG subscribes to <code>PendingPlanningApplications</code>,</li>
+<li><strong>Then</strong> <code>200</code>, <code>maxValidityDays</code> is <code>365</code> <strong>but</strong> <code>validityDays</code> is <code>30</code>.</li>
+</ul>
+<p><strong>Why.</strong> The single most important case in this document: it proves the product's attributes reach
+the policy engine and shorten the grant. If <code>validityDays</code> equals <code>maxValidityDays</code>, the product is
+not being loaded and §1.3 is not in force.</p>
+<h3 id="s8-a-pseudonymised-product-caps-the-grant-at-90-days">S8: A pseudonymised product caps the grant at 90 days</h3>
+<ul>
+<li><strong>When</strong> HEG subscribes to <code>BrownfieldLandAvailability</code> (pseudonymised, validated),</li>
+<li><strong>Then</strong> <code>validityDays</code> is <code>90</code> while <code>maxValidityDays</code> is <code>365</code>.</li>
+</ul>
+<h3 id="s9-the-product-can-only-shorten-never-extend">S9: The product can only shorten, never extend</h3>
+<p><strong>Test data.</strong> ENV (purpose ceiling 90 days) and <code>AffordableHousingCompletions</code> (HEG's, type
+<code>file</code>, anonymised and validated, so a product ceiling of 365). It covers England, so ENV can
+discover it.</p>
+<ul>
+<li><strong>When</strong> ENV subscribes to it,</li>
+<li><strong>Then</strong> <code>200</code>, <code>maxValidityDays</code> is <code>90</code> and <code>validityDays</code> is <code>90</code>, <strong>not</strong> <code>365</code>.</li>
+</ul>
+<h3 id="s10-a-schedule-type-policy-does-not-permit-is-refused">S10: A schedule type policy does not permit is refused</h3>
+<p><strong>Test data.</strong> BCC, which has a local remit and may use <code>interval</code> only.</p>
+<ul>
+<li><strong>When</strong> BCC posts <code>"scheduleType": "cron"</code>,</li>
+<li><strong>Then</strong> <code>403</code> with <code>reasons</code> containing <code>schedule.type_not_permitted</code>.</li>
+<li><strong>And</strong> no row is written.</li>
+</ul>
+<h3 id="s11-the-same-request-with-an-interval-succeeds">S11: The same request with an interval succeeds</h3>
+<ul>
+<li><strong>When</strong> BCC repeats S10 with <code>"scheduleType": "interval"</code>,</li>
+<li><strong>Then</strong> <code>200</code>, and <code>permittedScheduleTypes</code> is <code>["interval"]</code>.</li>
+</ul>
+<h3 id="s12-an-organisation-without-the-service-delivery-purpose-is-refused">S12: An organisation without the service delivery purpose is refused</h3>
+<ul>
+<li><strong>When</strong> an organisation lacking <code>service_delivery</code> subscribes,</li>
+<li><strong>Then</strong> <code>403</code> with <code>reasons</code> containing <code>organisation.purpose_not_permitted</code>.</li>
+</ul>
+<h3 id="s13-a-token-with-no-organisation-claim-is-refused">S13: A token with no organisation claim is refused</h3>
+<ul>
+<li><strong>Then</strong> <code>403</code> with <code>reasons</code> containing <code>organisation.missing</code>.</li>
+</ul>
+<h3 id="s14-a-token-without-the-role-never-reaches-policy">S14: A token without the role never reaches policy</h3>
+<ul>
+<li><strong>When</strong> a token lacking <code>product_subscribe</code> posts a valid body,</li>
+<li><strong>Then</strong> <code>403</code>, the body has <strong>no</strong> <code>reasons</code> key, and the PDP was never called.</li>
+</ul>
+<h3 id="s15-an-unknown-product-is-a-404">S15: An unknown product is a 404</h3>
+<ul>
+<li><strong>When</strong> a permitted caller posts a <code>productId</code> that does not exist,</li>
+<li><strong>Then</strong> <code>404</code>.</li>
+</ul>
+<h3 id="s16-with-policy-switched-off-the-grant-is-held-not-accepted">S16: With policy switched off the grant is held, not accepted</h3>
+<p><strong>Preconditions.</strong> <code>application.opa.enabled=false</code>.</p>
+<ul>
+<li><strong>When</strong> any permitted caller subscribes,</li>
+<li><strong>Then</strong> <code>200</code> and <code>validityDays</code> is <code>30</code>.</li>
+</ul>
+<p><strong>Why.</strong> Nothing judged the request, so the grant must be short rather than generous. Note that the
+grant <strong>is in force</strong>: with no status column and no approval workflow, a subscription made while
+policy is off is indistinguishable from one policy allowed. That is the reason not to run with
+<code>application.opa.enabled=false</code> anywhere that matters.</p>
+<hr />
+<h2 id="4-wales-may-not-take-topic-products">4. Wales may not take topic products</h2>
+<p>An organisation whose <code>jurisdictions</code> include <strong>Wales</strong> may not subscribe to a product whose type
+is <strong><code>topic</code></strong>, whatever else it is entitled to. The rule is in <code>policies.product.subscribe</code>, and
+it is the only place jurisdiction is read on this endpoint.</p>
+<p>Three properties of it decide what is worth testing:</p>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Consequence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>It reads the <strong>caller's</strong> remit, not the product's coverage</td>
+<td>a product about England is refused just the same, if the caller covers Wales</td>
+</tr>
+<tr>
+<td>Wales <strong>alongside</strong> other nations still counts</td>
+<td>ENV covers England and Wales; holding England as well does not excuse it</td>
+</tr>
+<tr>
+<td>It reads the <strong>product's type</strong>, not its owner</td>
+<td>ENV is refused its own <code>topic</code> products</td>
+</tr>
+</tbody>
+</table>
+<p>The refusal is a policy <code>403</code> and carries one reason:</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="mi">403</span><span class="p">,</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Access denied by policy"</span><span class="p">,</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span><span class="nt">"reasons"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"jurisdiction.topic_not_permitted:Wales Juristiction not allowed to access topics"</span><span class="p">],</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">  </span><span class="nt">"errorId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"…"</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>The part before the colon is the stable code to assert on; the part after it is the caller-facing
+sentence. <strong>Assert on the whole string</strong>, including the spelling <code>Juristiction</code>, which is
+deliberate and agreed — a test that quietly "corrects" it will pass against nothing.</p>
+<h3 id="41-which-sample-products-are-topics">4.1 Which sample products are topics</h3>
+<p>The type is not in a discover or view response, so this table is how you pick one. Anything not
+listed as <code>topic</code> is safe for a Welsh caller.</p>
+<table>
+<thead>
+<tr>
+<th>Product</th>
+<th>Owner</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>FloodRiskMapZones</code></td>
+<td>ENV</td>
+<td><strong>topic</strong></td>
+</tr>
+<tr>
+<td><code>RiverLevelTelemetry</code></td>
+<td>ENV</td>
+<td><strong>topic</strong></td>
+</tr>
+<tr>
+<td><code>PollutionIncidentReports</code></td>
+<td>ENV</td>
+<td><strong>topic</strong></td>
+</tr>
+<tr>
+<td><code>BrownfieldLandAvailability</code></td>
+<td>HEG</td>
+<td><strong>topic</strong></td>
+</tr>
+<tr>
+<td><code>HelpToBuyApplicants</code></td>
+<td>HEG</td>
+<td><strong>topic</strong></td>
+</tr>
+<tr>
+<td><code>PendingPlanningApplications</code></td>
+<td>BCC</td>
+<td><strong>topic</strong></td>
+</tr>
+<tr>
+<td><code>BristolAirQualitySensors</code></td>
+<td>BCC</td>
+<td><strong>topic</strong></td>
+</tr>
+<tr>
+<td><code>BristolTemporaryAccommodation</code></td>
+<td>BCC</td>
+<td><strong>topic</strong></td>
+</tr>
+<tr>
+<td><code>CoastalErosionForecast</code>, <code>WaterAbstractionLicences</code>, <code>UnclassifiedDraftDataset</code></td>
+<td>ENV</td>
+<td>file</td>
+</tr>
+<tr>
+<td><code>AffordableHousingCompletions</code>, <code>HousingNeedSurvey</code>, <code>EmptyHomesRegister</code>, <code>ScotlandLandRegisterExtract</code></td>
+<td>HEG</td>
+<td>file</td>
+</tr>
+<tr>
+<td><code>BristolSchoolPlaces</code></td>
+<td>BCC</td>
+<td>file</td>
+</tr>
+<tr>
+<td><code>Bristol_Cycle%Counts</code></td>
+<td>BCC</td>
+<td><strong>none recorded</strong></td>
+</tr>
+</tbody>
+</table>
+<p><code>FloodRiskMapZones</code>, <code>BrownfieldLandAvailability</code> and <code>PendingPlanningApplications</code> carry no type
+in their own insert: they are typed <code>topic</code> by the backfill in
+<code>db/migration/V20251013135858__add_product_type.sql</code>, which set every product existing at that
+point to <code>topic</code>. So eight of the seventeen sample products are topics, and this rule puts <strong>about
+half the catalogue out of ENV's reach</strong>. That is the rule working, not a defect — but it is why
+several cases in §3 use a <code>file</code> product where an earlier version of this document used
+<code>FloodRiskMapZones</code>.</p>
+<h3 id="42-test-cases">4.2 Test cases</h3>
+<h4 id="w1-a-welsh-organisation-is-refused-a-topic-product">W1: A Welsh organisation is refused a topic product</h4>
+<p><strong>Test data.</strong> ENV, <code>productId</code> of <code>RiverLevelTelemetry</code> (ENV's own, type <code>topic</code>).</p>
+<ul>
+<li><strong>Given</strong> ENV covers England and Wales,</li>
+<li><strong>When</strong> it posts <code>{"productId": &lt;id&gt;}</code>,</li>
+<li><strong>Then</strong> <code>403</code>, <code>message</code> is <code>"Access denied by policy"</code>, and <code>reasons</code> is exactly
+  <code>["jurisdiction.topic_not_permitted:Wales Juristiction not allowed to access topics"]</code>.</li>
+<li><strong>And</strong> no row was written to <code>product_consumer</code>.</li>
+</ul>
+<p><strong>Why.</strong> The base case. Check the row: a refusal that still writes is the serious failure here, not
+the wrong status code.</p>
+<h4 id="w2-the-same-caller-and-a-file-product-succeeds">W2: The same caller and a file product succeeds</h4>
+<ul>
+<li><strong>When</strong> ENV posts <code>CoastalErosionForecast</code> (its own, type <code>file</code>) with everything else identical,</li>
+<li><strong>Then</strong> <code>200</code>.</li>
+</ul>
+<p><strong>Why.</strong> Run it immediately after W1. It is what proves W1 refused on the <strong>type</strong> and not on
+something else about ENV — without it, a broken caller gate would look like a passing W1.</p>
+<h4 id="w3-owning-the-product-does-not-excuse-it">W3: Owning the product does not excuse it</h4>
+<ul>
+<li><strong>When</strong> ENV posts <code>FloodRiskMapZones</code>, which ENV itself produces,</li>
+<li><strong>Then</strong> <code>403</code> with the same reason as W1.</li>
+</ul>
+<p><strong>Why.</strong> The most likely misreading of the rule is that it is about whose data it is. It is not.</p>
+<h4 id="w4-a-non-welsh-organisation-may-take-a-topic-product">W4: A non-Welsh organisation may take a topic product</h4>
+<ul>
+<li><strong>When</strong> HEG (England, Scotland) posts <code>BrownfieldLandAvailability</code> (type <code>topic</code>) with
+  <code>consumerId</code> of <code>HEG-CONSUMER-1</code>,</li>
+<li><strong>Then</strong> <code>200</code>.</li>
+<li><strong>And</strong> when BCC (Bristol, England) posts <code>BristolAirQualitySensors</code> (type <code>topic</code>) with
+  <code>"scheduleType": "interval"</code> and a <code>consumerId</code>, <strong>then</strong> <code>200</code>.</li>
+</ul>
+<p><strong>Why.</strong> The rule must catch Wales and nothing else. If either of these is refused, the
+jurisdiction test is matching too widely.</p>
+<h4 id="w5-a-product-with-no-type-recorded-is-not-a-topic">W5: A product with no type recorded is not a topic</h4>
+<p><strong>Test data.</strong> <code>Bristol_Cycle%Counts</code>, the one sample product with no <code>product_type_id</code>. ENV has a
+national remit rather than a local one, so its discovery is not confined to its own coverage area
+and it can find this product by name as usual.</p>
+<ul>
+<li><strong>When</strong> ENV posts that <code>productId</code>,</li>
+<li><strong>Then</strong> <code>200</code>, and <code>validityDays</code> is <code>90</code>.</li>
+</ul>
+<p><strong>Why.</strong> "No type" must not be read as "topic". A rule written as <em>not <code>file</code></em> rather than <em>is
+<code>topic</code></em> passes W1 to W4 and fails only here.</p>
+<h4 id="w6-the-refusal-is-reported-alongside-every-other-reason">W6: The refusal is reported alongside every other reason</h4>
+<ul>
+<li><strong>When</strong> ENV posts a <code>topic</code> product with <code>"scheduleType": "daily"</code>, which is not a permitted
+  type for anyone,</li>
+<li><strong>Then</strong> <code>403</code>, and <code>reasons</code> contains <strong>both</strong>, in this order:
+  <code>["jurisdiction.topic_not_permitted:Wales Juristiction not allowed to access topics", "schedule.type_not_permitted"]</code>.</li>
+</ul>
+<p><strong>Why.</strong> Policy reports every failing condition at once, sorted, so a caller can fix them all in
+one go. A response carrying only the first is a rule that stops at the first failure.</p>
+<h4 id="w7-the-terms-are-still-returned-with-the-refusal">W7: The terms are still returned with the refusal</h4>
+<ul>
+<li><strong>When</strong> W1 is repeated and the <strong>decision</strong> is inspected (<code>application.opa.log-output=true</code>, or
+  query the PDP directly),</li>
+<li><strong>Then</strong> <code>details</code> still carries <code>requires_approval: false</code>, <code>max_validity_days: 90</code>,
+  <code>permitted_schedule_types: ["cron", "interval"]</code> and <code>validity_days</code>.</li>
+</ul>
+<p><strong>Why.</strong> Consistent with every other refusal on this endpoint (S10): a caller that is turned away
+is still told what it would have been held to.</p>
+<h4 id="w8-discover-and-view-are-unaffected">W8: Discover and view are unaffected</h4>
+<ul>
+<li><strong>When</strong> ENV discovers, and then views by id, a <code>topic</code> product such as <code>RiverLevelTelemetry</code>,</li>
+<li><strong>Then</strong> both succeed as before: <code>200</code>, and the product appears in the discover results.</li>
+</ul>
+<p><strong>Why.</strong> The rule is on <code>policies.product.subscribe</code> alone. ENV can still <strong>find and read</strong> topic
+products; it just cannot subscribe to them. If discover or view starts hiding them, the rule has
+been put in the shared contract (<code>lib/product_access.rego</code>) by mistake, which would change two
+other APIs.</p>
+<h4 id="w9-with-policy-switched-off-the-rule-is-not-enforced">W9: With policy switched off the rule is not enforced</h4>
+<p><strong>Preconditions.</strong> <code>application.opa.enabled=false</code>.</p>
+<ul>
+<li><strong>When</strong> ENV posts a <code>topic</code> product,</li>
+<li><strong>Then</strong> <code>200</code>, and the grant is in force.</li>
+</ul>
+<p><strong>Why.</strong> No decision was taken, so nothing refused it. This is the same warning as S16 and is worth
+repeating: with policy off there is no jurisdiction rule, and the resulting grant is
+indistinguishable from one policy allowed.</p>
+<hr />
+<h2 id="5-edge-cases">5. Edge cases</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Case</th>
+<th>Expected</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>E1</td>
+<td><code>productId</code> absent</td>
+<td><code>400</code>, message names <code>productId</code></td>
+</tr>
+<tr>
+<td>E2</td>
+<td><code>productId</code> not a number</td>
+<td><code>400</code>, never <code>500</code></td>
+</tr>
+<tr>
+<td>E3</td>
+<td><code>consumerId</code> that does not exist</td>
+<td><code>400</code>, message says no such consumer</td>
+</tr>
+<tr>
+<td>E4</td>
+<td><code>scheduleType</code> absent</td>
+<td><code>200</code>, recorded as <code>interval</code></td>
+</tr>
+<tr>
+<td>E5</td>
+<td><code>scheduleExpression</code> absent</td>
+<td><code>200</code>, recorded as <code>P1D</code></td>
+</tr>
+<tr>
+<td>E6</td>
+<td><code>scheduleType</code> present but empty or blank</td>
+<td><code>200</code>, treated as absent and defaulted</td>
+</tr>
+<tr>
+<td>E7</td>
+<td>Body is <code>{}</code></td>
+<td><code>400</code> for the missing <code>productId</code></td>
+</tr>
+<tr>
+<td>E8</td>
+<td>No body at all</td>
+<td><code>400</code></td>
+</tr>
+<tr>
+<td>E9</td>
+<td><code>destination</code> omitted</td>
+<td><code>200</code>, destination is absent from the row</td>
+</tr>
+<tr>
+<td>E10</td>
+<td>Two identical requests sent concurrently</td>
+<td>one <code>200</code> and one <code>409</code>, never two rows</td>
+</tr>
+<tr>
+<td>E11</td>
+<td>ENV posts a <code>topic</code> product it is <strong>already</strong> subscribed to from before the rule existed</td>
+<td><code>403</code> from §4, not <code>409</code>; policy is judged before the duplicate check</td>
+</tr>
+<tr>
+<td>E12</td>
+<td>A <code>topic</code> product whose <code>product_type</code> row is renamed to something else</td>
+<td><code>200</code>; the rule matches the type <strong>name</strong>, so renaming the row changes who may subscribe</td>
+</tr>
+<tr>
+<td>E13</td>
+<td>ENV posts a <code>topic</code> product with no <code>consumerId</code></td>
+<td><code>403</code> from §4; policy refuses before the consumer is resolved, so the message is the policy one, not "Multiple consumers found"</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-things-that-should-never-happen">6. Things that should never happen</h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Why it matters</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Two rows for the same product and consumer</td>
+<td>the unique constraint is not in force</td>
+</tr>
+<tr>
+<td>A <code>409</code> when subscribing the same product on a <strong>different</strong> consumer</td>
+<td>uniqueness applied per organisation instead of per consumer (§1.1)</td>
+</tr>
+<tr>
+<td><code>validityDays</code> equal to <code>maxValidityDays</code> for a directly identifiable product</td>
+<td>product attributes are not reaching the policy engine (S7)</td>
+</tr>
+<tr>
+<td>A row written when the response was <code>4xx</code></td>
+<td>the write is not inside the rejection path</td>
+</tr>
+<tr>
+<td><code>reasons</code> present on a role refusal</td>
+<td>the role and policy refusals have been conflated</td>
+</tr>
+<tr>
+<td>A subscription to another organisation's consumer succeeding</td>
+<td>the ownership check is missing (S6)</td>
+</tr>
+<tr>
+<td>a <code>status</code> field in any response</td>
+<td>the endpoint reports no status; see §1.3</td>
+</tr>
+<tr>
+<td>ENV subscribing to any <code>topic</code> product</td>
+<td>the §4 rule is not in force, or OPA is serving a stale policy — restart it</td>
+</tr>
+<tr>
+<td>HEG or BCC refused a <code>topic</code> product</td>
+<td>the jurisdiction test matches too widely (W4)</td>
+</tr>
+<tr>
+<td><code>Bristol_Cycle%Counts</code> refused to ENV</td>
+<td>"no type" is being read as "topic" (W5)</td>
+</tr>
+<tr>
+<td>a topic product missing from ENV's <strong>discover</strong> results</td>
+<td>the rule has leaked into the shared product contract and now changes three APIs (W8)</td>
+</tr>
+<tr>
+<td>the reason spelled <code>jurisdiction.topic_not_permitted</code> with no sentence after the colon</td>
+<td>the caller-facing half of the reason has been dropped</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="7-related-documents">7. Related documents</h2>
+<ul>
+<li><a href="../product-discover/">Product Discover API test specification</a>: finding the product to subscribe to</li>
+<li><a href="../product-view/">Product View API test specification</a>: reading one product</li>
+<li><a href="../../../DISCOVERY_TEST_SCENARIOS/"><code>../../DISCOVERY_TEST_SCENARIOS.md</code></a>: setup, tokens and the sample catalogue</li>
+<li><a href="../../../AUTHENTICATION_REQUIREMENTS/">Authentication Requirements</a>: tokens, audiences and roles</li>
+<li><a href="../../../POLICY_ENFORCEMENT/">Policy Enforcement</a>: how a decision is reached and what it carries</li>
+<li><a href="../../../docker/opa/policy_sample_stories.md"><code>docker/opa/policy_sample_stories.md</code></a>: the same
+  decisions walked through per sample organisation</li>
+<li><code>docker/opa/policies/product/subscribe.rego</code> and its <code>subscribe_test.rego</code>: the rule itself, and
+  the Rego tests that pin every case in §4</li>
+</ul>
+
+
+
+
+
+
+
+  
+    
+  
+  
+
+
+  <aside class="md-source-file">
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="Last update">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 24, 2026 11:15:04 UTC">September 24, 2026</span>
+  </span>
+
+    
+    
+    
+    
+  </aside>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      &copy;Crown Copyright 2025. This work has been developed by the National Digital Twin Programme and is legally attributed to the Department for Business and Trade (UK) as the governing entity.  
+
+    </div>
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.code.annotate", "content.code.copy", "content.code.select", "content.tooltips", "navigation.indexes", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "search.share", "navigation.instant", "navigation.instant.prefetch", "navigation.instant", "navigation.instant.progress", "navigation.path", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
