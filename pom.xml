@@ -252,6 +252,15 @@
             </includes>
             <excludes>
               <exclude>**/target/**</exclude>
+              <!--
+                Vendored dependencies are not ours to format, and Spotless walks the filesystem
+                rather than git, so being gitignored does not keep node_modules out of this glob.
+                It also cannot: some packaged tsconfig.json files are JSON5 (comments, trailing
+                commas), which the gson step rejects outright - so without this the lint job
+                fails on a third-party file the moment anyone runs npm install.
+              -->
+              <exclude>**/node_modules/**</exclude>
+              <exclude>**/dist/**</exclude>
             </excludes>
             <gson>
               <indentSpaces>4</indentSpaces>
