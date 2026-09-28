@@ -81,6 +81,7 @@ versioning the API does not change which rule decides (see
 | `POST /api/v1/product/discover` | `product_discovery` | `policies.product.discover` (exact) | `product` | `discover` |
 | `POST /api/v1/product/subscribe` | `product_subscribe` | `policies.product.subscribe` (exact) | `product` | `subscribe` |
 | `GET /api/v1/product/{productId}` | `product_view` | `policies.product.view` (exact) | `product` | `view` |
+| `GET /api/v1/network/map` | `product_discovery` | **not annotated** | n/a | n/a |
 
 Notes the table cannot carry:
 
@@ -93,6 +94,18 @@ Notes the table cannot carry:
   the first thing to replace with real rules.
 - **Certificate endpoints** are not annotated, so no decision is taken and the PDP is never
   called for them, so only authentication and the role check apply.
+- **The network map is not annotated either, and that is a deliberate exception rather than an
+  oversight.** `GET /api/v1/network/map` returns the whole topology - every organisation,
+  producer, consumer, product and subscription in the database - to any caller holding
+  `product_discovery`, with no policy consulted and no search contract applied. Its counts can
+  therefore exceed what `product.discover` returns to the same caller. What it exposes is
+  **relationships, not content**: names, ids and how they join, with no policy attributes and no
+  classifications. Reading a product's attributes still means
+  `GET /api/v1/product/{productId}`, which *is* enforced and answers `404` for a product policy
+  withholds - an id from the map does not unlock it. It reuses `product_discovery` rather than
+  defining a role of its own; a deployment that needs the topology held more closely should give
+  it a dedicated role. To enforce it later, annotate the handler `@Policy(resource = "network",
+  action = "map")` and write the rule; the enforcement point needs nothing else.
 - **`request_bootstrap_certificate`** is for the website/onboarding backend service account, not
   individual federator clients. The request body carries the target `organisationId` and a CSR;
   if no certificate record exists for that organisation, one is created automatically.
@@ -161,4 +174,5 @@ curl -k 'https://localhost:8090/api/v1/configuration/producer' \
   - Product Discovery API requires role: `product_discovery` (plus policy, which decides which products are returned and what is shown of each; see [Policy Enforcement](POLICY_ENFORCEMENT.md)).
   - Product Subscription API requires role: `product_subscribe` (plus policy, which also sets the subscription terms).
   - Product View API requires role: `product_view` (plus policy, which decides whether this product exists for the caller and what is shown of it; see [Policy Enforcement](POLICY_ENFORCEMENT.md)).
+  - Network Map API requires role: `product_discovery`. **No policy**: it returns the whole topology, and exposes relationships rather than product content.
 - Swagger/OpenAPI: Use Swagger UI at `/swagger-ui.html` to explore and test with a valid token.
