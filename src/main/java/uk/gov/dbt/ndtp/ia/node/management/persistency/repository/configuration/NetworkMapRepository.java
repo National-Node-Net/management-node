@@ -37,6 +37,16 @@ import uk.gov.dbt.ndtp.ia.node.management.service.discovery.DiscoverySchema;
 @Repository
 public class NetworkMapRepository {
 
+    /**
+     * The column four of the five row mappers read the organisation from.
+     *
+     * Named once because it is one fact. The four queries that join {@code organisation} select
+     * this column under its own name, so all four readers depend on the same spelling, and a
+     * rename that reached three of them would leave the fourth returning null rather than
+     * failing - which is the kind of mistake a shared constant makes impossible.
+     */
+    private static final String ORGANISATION_KEY = "organisation_key";
+
     private final NamedParameterJdbcTemplate jdbc;
 
     private final String organisationsSql;
@@ -109,7 +119,7 @@ public class NetworkMapRepository {
     private static final RowMapper<NetworkMapDTO.Organisation> ORGANISATION =
             (row, index) -> NetworkMapDTO.Organisation.builder()
                     .id(row.getLong("id"))
-                    .key(row.getString("organisation_key"))
+                    .key(row.getString(ORGANISATION_KEY))
                     .name(row.getString("name"))
                     .build();
 
@@ -118,13 +128,13 @@ public class NetworkMapRepository {
             .name(row.getString("name"))
             .description(row.getString("description"))
             .active(nullableBoolean(row, "active"))
-            .organisationKey(row.getString("organisation_key"))
+            .organisationKey(row.getString(ORGANISATION_KEY))
             .build();
 
     private static final RowMapper<NetworkMapDTO.Consumer> CONSUMER = (row, index) -> NetworkMapDTO.Consumer.builder()
             .id(row.getLong("id"))
             .name(row.getString("name"))
-            .organisationKey(row.getString("organisation_key"))
+            .organisationKey(row.getString(ORGANISATION_KEY))
             .defaultConsumer(nullableBoolean(row, "is_default"))
             .scheduleType(row.getString("schedule_type"))
             .scheduleExpression(row.getString("schedule_expression"))
@@ -138,7 +148,7 @@ public class NetworkMapRepository {
             .type(row.getString("type"))
             .source(row.getString("source"))
             .producerId(row.getLong("producer_id"))
-            .organisationKey(row.getString("organisation_key"))
+            .organisationKey(row.getString(ORGANISATION_KEY))
             .build();
 
     private static final RowMapper<NetworkMapDTO.Subscription> SUBSCRIPTION =
