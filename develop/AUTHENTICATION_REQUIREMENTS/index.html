@@ -1108,6 +1108,13 @@ versioning the API does not change which rule decides (see
 <td><code>product</code></td>
 <td><code>view</code></td>
 </tr>
+<tr>
+<td><code>GET /api/v1/network/map</code></td>
+<td><code>product_discovery</code></td>
+<td><strong>not annotated</strong></td>
+<td>n/a</td>
+<td>n/a</td>
+</tr>
 </tbody>
 </table>
 <p>Notes the table cannot carry:</p>
@@ -1121,6 +1128,18 @@ versioning the API does not change which rule decides (see
   the first thing to replace with real rules.</li>
 <li><strong>Certificate endpoints</strong> are not annotated, so no decision is taken and the PDP is never
   called for them, so only authentication and the role check apply.</li>
+<li><strong>The network map is not annotated either, and that is a deliberate exception rather than an
+  oversight.</strong> <code>GET /api/v1/network/map</code> returns the whole topology - every organisation,
+  producer, consumer, product and subscription in the database - to any caller holding
+  <code>product_discovery</code>, with no policy consulted and no search contract applied. Its counts can
+  therefore exceed what <code>product.discover</code> returns to the same caller. What it exposes is
+  <strong>relationships, not content</strong>: names, ids and how they join, with no policy attributes and no
+  classifications. Reading a product's attributes still means
+  <code>GET /api/v1/product/{productId}</code>, which <em>is</em> enforced and answers <code>404</code> for a product policy
+  withholds - an id from the map does not unlock it. It reuses <code>product_discovery</code> rather than
+  defining a role of its own; a deployment that needs the topology held more closely should give
+  it a dedicated role. To enforce it later, annotate the handler <code>@Policy(resource = "network",
+  action = "map")</code> and write the rule; the enforcement point needs nothing else.</li>
 <li><strong><code>request_bootstrap_certificate</code></strong> is for the website/onboarding backend service account, not
   individual federator clients. The request body carries the target <code>organisationId</code> and a CSR;
   if no certificate record exists for that organisation, one is created automatically.</li>
@@ -1184,6 +1203,7 @@ versioning the API does not change which rule decides (see
 <li>Product Discovery API requires role: <code>product_discovery</code> (plus policy, which decides which products are returned and what is shown of each; see <a href="../POLICY_ENFORCEMENT/">Policy Enforcement</a>).</li>
 <li>Product Subscription API requires role: <code>product_subscribe</code> (plus policy, which also sets the subscription terms).</li>
 <li>Product View API requires role: <code>product_view</code> (plus policy, which decides whether this product exists for the caller and what is shown of it; see <a href="../POLICY_ENFORCEMENT/">Policy Enforcement</a>).</li>
+<li>Network Map API requires role: <code>product_discovery</code>. <strong>No policy</strong>: it returns the whole topology, and exposes relationships rather than product content.</li>
 <li>Swagger/OpenAPI: Use Swagger UI at <code>/swagger-ui.html</code> to explore and test with a valid token.</li>
 </ul>
 
@@ -1206,7 +1226,7 @@ versioning the API does not change which rule decides (see
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 24, 2026 11:15:04 UTC">September 24, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 28, 2026 15:30:37 UTC">September 28, 2026</span>
   </span>
 
     
