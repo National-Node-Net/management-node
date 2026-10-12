@@ -678,6 +678,21 @@ If this returns 200 with a JSON response containing the key pair, the Management
 
 > **Note:** This setup imports the development root CA directly at the `pki-int` mount point. For production, you would typically create a separate root CA and then generate an intermediate CA signed by it. Both configurations work with the Management Node; the only difference is whether `pki-int/cert/ca_chain` returns a chain or is empty.
 
+## Kafka (Optional)
+
+The Management Node can publish events to Kafka for other services to act on. The first is
+`product-subscription.activated`, sent when a consumer subscribes to a product. Publishing is **off by
+default** and needs no broker until you switch it on with `KAFKA_ENABLED=true`.
+
+To run Kafka and Kafka UI locally:
+
+```bash
+docker compose -f docker/kafka/docker-compose.yml up -d
+```
+
+Kafka UI is then at <http://localhost:8085>. The message format, configuration, delivery guarantees and
+troubleshooting are in [Kafka Events](docs/KAFKA.md).
+
 ## Building and Running with Maven
 
 ### Building the Application
