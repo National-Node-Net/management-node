@@ -12,3 +12,7 @@ CVE-2026-56407
 CVE-2026-56408
 # p11-kit and p11-kit-trust
 CVE-2026-2100
+# spring-webmvc 6.2.19: only fixed in Spring Framework 7.0.9 (Boot 4) or paid 6.2.20. XsltView not used. Remove on Boot 4 migration.
+CVE-2026-47884
+# spring-webmvc 6.2.19: same as above. SseEmitter/view-based SSE not used. Remove on Boot 4 migration.
+CVE-2026-47890
