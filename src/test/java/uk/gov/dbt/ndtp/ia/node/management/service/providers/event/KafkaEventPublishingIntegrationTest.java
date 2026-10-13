@@ -32,7 +32,7 @@ import uk.gov.dbt.ndtp.ia.node.management.model.event.ProductSubscriptionActivat
 
 /**
  * The event, sent the way the application sends it (Spring Boot's own Kafka and Jackson
- * configuration, the listener and the publisher), against a real broker started for the test, and
+ * configuration and the publisher), against a real broker started for the test, and
  * read back from the topic as another service would read it.
  */
 @SpringBootTest(
@@ -48,11 +48,11 @@ class KafkaEventPublishingIntegrationTest {
 
     @Configuration
     @ImportAutoConfiguration({KafkaAutoConfiguration.class, JacksonAutoConfiguration.class})
-    @Import({KafkaEventConfig.class, ProductSubscriptionEventListener.class})
+    @Import(KafkaEventConfig.class)
     static class KafkaOnly {}
 
     @Autowired
-    private ProductSubscriptionEventListener listener;
+    private EventPublisher publisher;
 
     @Autowired
     private EmbeddedKafkaBroker broker;
@@ -70,7 +70,7 @@ class KafkaEventPublishingIntegrationTest {
                 .createConsumer()) {
             broker.consumeFromAnEmbeddedTopic(consumer, TOPIC);
 
-            listener.onProductSubscriptionActivated(ProductSubscriptionActivatedEvents.sample());
+            publisher.publish(TOPIC, "FEDERATOR_BCC", ProductSubscriptionActivatedEvents.sample());
 
             ConsumerRecord<String, String> record =
                     KafkaTestUtils.getSingleRecord(consumer, TOPIC, Duration.ofSeconds(15));
