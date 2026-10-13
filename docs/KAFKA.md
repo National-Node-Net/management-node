@@ -41,6 +41,7 @@ The message is JSON. The **key** is the consumer's identity provider client (`co
 {
   "eventId": "7f3c2a1e-0b4d-4d7a-9a52-1c2e8f6d3b10",
   "eventType": "product-subscription.activated",
+  "version": 1,
   "occurredAt": "2026-10-07T13:30:00Z",
   "subscriptionId": 15,
   "productId": 1,
@@ -54,6 +55,7 @@ The message is JSON. The **key** is the consumer's identity provider client (`co
 |---|---|
 | `eventId` | Unique to this occurrence. A receiver may use it to recognise a message it has already handled. |
 | `eventType` | The event's name. |
+| `version` | The version of the message's format. It changes only for a change that would break a receiver. |
 | `occurredAt` | When the subscription was recorded (UTC, ISO-8601). |
 | `subscriptionId` | The id of the subscription row (`subscriptionId` in the `subscribe` response). Use it to match a log line in another service to the row that caused it. |
 | `productId`, `productName` | The subscribed product. |
@@ -89,6 +91,10 @@ In `application.yml`. The Node's own settings are under `application.kafka`; the
 | `spring.kafka.bootstrap-servers` | `KAFKA_BOOTSTRAP_SERVERS` | `localhost:9092` | Where the broker is. |
 | `spring.kafka.producer.acks` | | `all` | A send counts as done only once the broker has recorded it. |
 | `spring.kafka.producer.properties.max.block.ms` | `KAFKA_MAX_BLOCK_MS` | `5000` | How long a send may wait for the broker's metadata before giving up. This matters when the broker is already down at the first send after the Node starts (see [§6](#6-delivery-what-is-and-is-not-guaranteed)). |
+| `spring.kafka.producer.properties.enable.idempotence` | | `true` | A send that is retried is never written twice. |
+| `spring.kafka.producer.properties.delivery.timeout.ms` | `KAFKA_DELIVERY_TIMEOUT_MS` | `120000` | How long a send is retried before it is reported as failed. |
+| `application.kafka.topic-settings.create` | `KAFKA_CREATE_TOPICS` | `false` | Declare the topic at startup. Leave off where topics are created deliberately. |
+| `application.kafka.topic-settings.partitions` / `replicas` / `retention-days` | `KAFKA_TOPIC_PARTITIONS` / `KAFKA_TOPIC_REPLICAS` / `KAFKA_TOPIC_RETENTION_DAYS` | `1` / `1` / `7` | Shape of the topic, used only when `create` is `true`. |
 | `spring.kafka.consumer.group-id` | | `management-node-group` | The Node's consumer group. The Node does not consume anything yet; the setting is in place for when it does. |
 
 ## 4. Running Kafka locally
