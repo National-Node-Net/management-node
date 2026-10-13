@@ -1,0 +1,1598 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Management Node is is the control plane for the National Digital Twin Programme IA Node Net.">
+      
+      
+        <meta name="author" content="NDTP">
+      
+      
+        <link rel="canonical" href="https://docs.ndtp.co.uk/develop/KAFKA/">
+      
+      
+        <link rel="prev" href="../JACOCO_COVERAGE/">
+      
+      
+        <link rel="next" href="../MOCKITO_USAGE/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/android-chrome-512x512-1-150x150.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Kafka Events - Management-Node Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#kafka-events" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Management-Node Documentation" class="md-header__button md-logo" aria-label="Management-Node Documentation" data-md-component="logo">
+      
+  <img src="../assets/light-page_header_logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Management-Node Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Kafka Events
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Management-Node Documentation" class="md-nav__button md-logo" aria-label="Management-Node Documentation" data-md-component="logo">
+      
+  <img src="../assets/light-page_header_logo.png" alt="logo">
+
+    </a>
+    Management-Node Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    README
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AUTHENTICATION_REQUIREMENTS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication Requirements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../BOOTSTRAP_ONBOARDING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bootstrap Onboarding Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DATABASE_SCHEMA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DISCOVERY_TEST_SCENARIOS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Discovery and View: Test Scenarios
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../JACOCO_COVERAGE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JaCoCo Code Coverage Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kafka Events
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kafka Events
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-what-is-published" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. What is published
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. What is published">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-the-message" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 The message
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-switching-it-on-and-off" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Switching it on and off
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-configuration-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Configuration reference
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-running-kafka-locally" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Running Kafka locally
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-seeing-the-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Seeing the events
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-delivery-what-is-and-is-not-guaranteed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Delivery: what is and is not guaranteed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-how-it-is-built" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. How it is built
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-adding-another-event" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Adding another event
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Tests
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Troubleshooting
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MOCKITO_USAGE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockito Testing Tool Usage Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MTLS_CONFIGURATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MTLS Configuration Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../POLICY_ENFORCEMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Policy Enforcement
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../entity-dto-converter-pattern/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entity-DTO Converter Pattern
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../jobs-scheduler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Jobs Scheduler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tests
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tests
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_13_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../tests/products/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Products
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_13_1" id="__nav_13_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_13_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Products
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tests/products/product-discover/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Discover: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tests/products/product-view/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product View API: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tests/products/subscribe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Subscribe API: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-what-is-published" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. What is published
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. What is published">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-the-message" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 The message
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-switching-it-on-and-off" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Switching it on and off
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-configuration-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Configuration reference
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-running-kafka-locally" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Running Kafka locally
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-seeing-the-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Seeing the events
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-delivery-what-is-and-is-not-guaranteed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Delivery: what is and is not guaranteed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-how-it-is-built" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. How it is built
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-adding-another-event" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Adding another event
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Tests
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Troubleshooting
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="kafka-events">Kafka Events</h1>
+<p><strong>Repository:</strong> <code>management-node</code>
+<strong>Description:</strong> <code>How the Management Node publishes events to Kafka, how to run Kafka locally, and how to switch it on and off</code>
+<strong>SPDX-License-Identifier:</strong> <code>Apache-2.0 AND OGL-UK-3.0</code></p>
+<hr />
+<p>The Management Node publishes an event to Kafka when something happens that other services need to act on. Today there is one: a consumer has been subscribed to a product. The service that listens for it (the identity management service) uses it to give the consumer's organisation access to that product in the identity provider.</p>
+<p>Publishing is <strong>off by default</strong>. With it off the Node needs no broker and behaves exactly as it did before Kafka was introduced.</p>
+<h2 id="contents">Contents</h2>
+<ul>
+<li><a href="#1-what-is-published">1. What is published</a></li>
+<li><a href="#2-switching-it-on-and-off">2. Switching it on and off</a></li>
+<li><a href="#3-configuration-reference">3. Configuration reference</a></li>
+<li><a href="#4-running-kafka-locally">4. Running Kafka locally</a></li>
+<li><a href="#5-seeing-the-events">5. Seeing the events</a></li>
+<li><a href="#6-delivery-what-is-and-is-not-guaranteed">6. Delivery: what is and is not guaranteed</a></li>
+<li><a href="#7-how-it-is-built">7. How it is built</a></li>
+<li><a href="#8-adding-another-event">8. Adding another event</a></li>
+<li><a href="#9-tests">9. Tests</a></li>
+<li><a href="#10-troubleshooting">10. Troubleshooting</a></li>
+</ul>
+<hr />
+<h2 id="1-what-is-published">1. What is published</h2>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Topic</th>
+<th>Raised when</th>
+<th>Published by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>EVT_001</code> <code>product-subscription.activated</code></td>
+<td><code>product-subscription.activated</code></td>
+<td>a subscription has been recorded (<code>POST /api/v1/product/subscribe</code> succeeded)</td>
+<td><code>ProductSubscriptionServiceImpl</code>, sent by <code>ProductSubscriptionEventListener</code></td>
+</tr>
+</tbody>
+</table>
+<p>The event is sent <strong>after</strong> the subscription is committed to the database. A subscription that is refused (<code>400</code>, <code>404</code>, <code>409</code>) or rolled back publishes nothing.</p>
+<h3 id="11-the-message">1.1 The message</h3>
+<p>The message is JSON. The <strong>key</strong> is the consumer's identity provider client (<code>consumerOrganisation.idpClientId</code>), so everything said about one client reaches a receiver in the order it happened.</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">"eventId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"7f3c2a1e-0b4d-4d7a-9a52-1c2e8f6d3b10"</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">"eventType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"product-subscription.activated"</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">"occurredAt"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-10-07T13:30:00Z"</span><span class="p">,</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="nt">"subscriptionId"</span><span class="p">:</span><span class="w"> </span><span class="mi">15</span><span class="p">,</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="nt">"productId"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="nt">"productName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"BrownfieldLandAvailability"</span><span class="p">,</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="nt">"producingOrganisation"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"organisationKey"</span><span class="p">:</span><span class="w"> </span><span class="s2">"HEG"</span><span class="p">,</span><span class="w"> </span><span class="nt">"idpClientId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"FEDERATOR_HEG"</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">  </span><span class="nt">"consumerOrganisation"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"organisationKey"</span><span class="p">:</span><span class="w"> </span><span class="s2">"BCC"</span><span class="p">,</span><span class="w"> </span><span class="nt">"consumerId"</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="nt">"idpClientId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"FEDERATOR_BCC"</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="p">}</span>
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>eventId</code></td>
+<td>Unique to this occurrence. A receiver may use it to recognise a message it has already handled.</td>
+</tr>
+<tr>
+<td><code>eventType</code></td>
+<td>The event's name.</td>
+</tr>
+<tr>
+<td><code>occurredAt</code></td>
+<td>When the subscription was recorded (UTC, ISO-8601).</td>
+</tr>
+<tr>
+<td><code>subscriptionId</code></td>
+<td>The id of the subscription row (<code>subscriptionId</code> in the <code>subscribe</code> response). Use it to match a log line in another service to the row that caused it.</td>
+</tr>
+<tr>
+<td><code>productId</code>, <code>productName</code></td>
+<td>The subscribed product.</td>
+</tr>
+<tr>
+<td><code>producingOrganisation</code></td>
+<td>The organisation the product comes from. <code>organisationKey</code> is the Node's key; <code>idpClientId</code> is the identity provider's client for the producer (<code>product.producer.idp_client_id</code>).</td>
+</tr>
+<tr>
+<td><code>consumerOrganisation</code></td>
+<td>The organisation that subscribed. <code>consumerId</code> is the consumer within it that took the subscription (an organisation may have several); <code>idpClientId</code> is that consumer's identity provider client.</td>
+</tr>
+</tbody>
+</table>
+<p>Organisations are named twice on purpose: the Node knows them by <code>organisationKey</code>, the identity provider by <code>idpClientId</code>, and a receiver that talks to the identity provider should not have to look the second up.</p>
+<blockquote>
+<p><strong>Not to be confused with <code>product.topic</code>.</strong> A product row also has a <code>topic</code> column. That is the Kafka topic the <em>product's data</em> flows on between producer and consumer federators. The topic this document describes carries the Node's own events about subscriptions.</p>
+</blockquote>
+<h2 id="2-switching-it-on-and-off">2. Switching it on and off</h2>
+<table>
+<thead>
+<tr>
+<th>Environment variable</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>KAFKA_ENABLED=true</code></td>
+<td>Events are published to Kafka. A broker must be reachable at <code>KAFKA_BOOTSTRAP_SERVERS</code>.</td>
+</tr>
+<tr>
+<td>unset, or <code>false</code></td>
+<td>Nothing is published, no broker is needed, no connection is attempted.</td>
+</tr>
+</tbody>
+</table>
+<p>At startup the log says which it is:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Kafka event publishing is DISABLED - set application.kafka.enabled=true (KAFKA_ENABLED) to enable
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>Kafka event publishing is ENABLED - bootstrapServers=localhost:9092 productSubscriptionActivatedTopic=product-subscription.activated
+</span></code></pre></div>
+<h2 id="3-configuration-reference">3. Configuration reference</h2>
+<p>In <code>application.yml</code>. The Node's own settings are under <code>application.kafka</code>; the connection is Spring's own <code>spring.kafka</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Environment variable</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>application.kafka.enabled</code></td>
+<td><code>KAFKA_ENABLED</code></td>
+<td><code>false</code></td>
+<td>Master switch.</td>
+</tr>
+<tr>
+<td><code>application.kafka.topics.product-subscription-activated</code></td>
+<td><code>KAFKA_TOPIC_PRODUCT_SUBSCRIPTION_ACTIVATED</code></td>
+<td><code>product-subscription.activated</code></td>
+<td>Topic for <code>product-subscription.activated</code>.</td>
+</tr>
+<tr>
+<td><code>spring.kafka.bootstrap-servers</code></td>
+<td><code>KAFKA_BOOTSTRAP_SERVERS</code></td>
+<td><code>localhost:9092</code></td>
+<td>Where the broker is.</td>
+</tr>
+<tr>
+<td><code>spring.kafka.producer.acks</code></td>
+<td></td>
+<td><code>all</code></td>
+<td>A send counts as done only once the broker has recorded it.</td>
+</tr>
+<tr>
+<td><code>spring.kafka.producer.properties.max.block.ms</code></td>
+<td><code>KAFKA_MAX_BLOCK_MS</code></td>
+<td><code>5000</code></td>
+<td>How long a send may wait for the broker's metadata before giving up. This matters when the broker is already down at the first send after the Node starts (see <a href="#6-delivery-what-is-and-is-not-guaranteed">§6</a>).</td>
+</tr>
+<tr>
+<td><code>spring.kafka.consumer.group-id</code></td>
+<td></td>
+<td><code>management-node-group</code></td>
+<td>The Node's consumer group. The Node does not consume anything yet; the setting is in place for when it does.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="4-running-kafka-locally">4. Running Kafka locally</h2>
+<p><code>docker/kafka/docker-compose.yml</code> starts a single-node Kafka (KRaft, no ZooKeeper) and Kafka UI. It is for development and testing only.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/kafka/docker-compose.yml<span class="w"> </span>up<span class="w"> </span>-d
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/kafka/docker-compose.yml<span class="w"> </span>ps<span class="w">     </span><span class="c1"># both should become running / healthy</span>
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th>What</th>
+<th>Address</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Kafka, from the host (the Node running in your IDE)</td>
+<td><code>localhost:9092</code></td>
+</tr>
+<tr>
+<td>Kafka, from another container</td>
+<td><code>kafka:29092</code></td>
+</tr>
+<tr>
+<td>Kafka UI</td>
+<td><a href="http://localhost:8085">http://localhost:8085</a></td>
+</tr>
+</tbody>
+</table>
+<p>Ports can be changed with <code>KAFKA_PORT</code> and <code>KAFKA_UI_PORT</code>. The UI is on 8085 because Keycloak already uses 8080.</p>
+<p>Then start the Node with Kafka switched on, for example in IntelliJ add to the run configuration's environment variables:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>KAFKA_ENABLED=true
+</span></code></pre></div>
+<p>Stop it with <code>docker compose -f docker/kafka/docker-compose.yml stop</code>. <code>down -v</code> also deletes the stored messages.</p>
+<p>Topics are created the first time something is sent to them. In any shared environment topics should be created deliberately, with the right partitions and retention.</p>
+<h2 id="5-seeing-the-events">5. Seeing the events</h2>
+<ol>
+<li>Subscribe to a product (see <a href="../tests/products/subscribe/"><code>tests/products/subscribe.md</code></a>).</li>
+<li>Open Kafka UI, <strong>Topics</strong>, <code>product-subscription.activated</code>, <strong>Messages</strong>. The message is there, with the key and JSON described in <a href="#11-the-message">§1.1</a>.</li>
+<li>The Node's log also states it:</li>
+</ol>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>Event published type=product-subscription.activated eventId=7f3c... topic=product-subscription.activated key=FEDERATOR_BCC partition=0 offset=0
+</span></code></pre></div>
+<h2 id="6-delivery-what-is-and-is-not-guaranteed">6. Delivery: what is and is not guaranteed</h2>
+<p>Publishing is deliberately simple: <strong>fire and forget</strong>. A subscription is recorded and the event is sent; the Node does not wait to learn whether anyone acted on it.</p>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>What happens</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The subscription is committed</td>
+<td>The event is sent once, after the commit.</td>
+</tr>
+<tr>
+<td>The subscription is refused or rolled back</td>
+<td>No event is sent.</td>
+</tr>
+<tr>
+<td>Kafka is switched off</td>
+<td>Nothing is sent; the subscription is unaffected.</td>
+</tr>
+<tr>
+<td>The broker cannot be reached</td>
+<td>The producer keeps retrying in the background for up to two minutes (Kafka's <code>delivery.timeout.ms</code>). If Kafka is back in that time the event is delivered late. Otherwise the failure is logged (<code>Event not published ...</code>) at <code>ERROR</code>. <strong>The subscription stays recorded</strong> either way.</td>
+</tr>
+<tr>
+<td>The broker rejects the record</td>
+<td>The failure is logged (<code>Event not published ...</code>) at <code>ERROR</code>. <strong>The subscription stays recorded.</strong></td>
+</tr>
+<tr>
+<td>The Node stops between the commit and the send</td>
+<td>The event is lost.</td>
+</tr>
+</tbody>
+</table>
+<p>Two things follow, both known and accepted for now:</p>
+<ul>
+<li><strong>An event can be missed.</strong> There is no outbox, and no retry beyond the producer's own two minutes. The subscription row is the source of truth and can be used to find subscriptions whose event was missed. The usual remedy, if this matters, is the <em>transactional outbox</em> pattern: the event is written to a table in the same transaction as the subscription and sent from there.</li>
+<li><strong>A broker that is down is noticed late.</strong> Once the Node has talked to the broker, a send returns at once and the producer retries in the background. <code>Event not published ...</code> is logged only after the two minutes have passed. A short Kafka outage therefore loses nothing; a longer one loses the events sent during it. If the broker is already down when the Node first tries to send (it has no metadata yet), the send waits up to <code>max.block.ms</code> (5 seconds) and then fails, so that one response can be that much late.</li>
+</ul>
+<p>The Node is also not told whether the receiver managed to act on the event, so a subscription can exist without the access it implies. A reply event from the receiver (and a status on the subscription, such as <code>PENDING</code>, <code>ACTIVE</code>, <code>FAILED</code>) is the natural next step. The event already carries <code>eventId</code> and <code>subscriptionId</code> so that a reply can be matched to it without changing this message.</p>
+<h2 id="7-how-it-is-built">7. How it is built</h2>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>ProductSubscriptionServiceImpl.subscribe          (in the subscription's transaction)
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>   saves the subscription
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>   publishes a Spring event: ProductSubscriptionActivatedEvent
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>                 │
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>                 │  transaction commits
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>                 ▼
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>ProductSubscriptionEventListener                  (@TransactionalEventListener, AFTER_COMMIT)
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>   asks the publisher to send it to the configured topic, keyed by the consumer's client
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>                 │
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>                 ▼
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>EventPublisher                                    (one bean, chosen by KafkaEventConfig)
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>   ├── KafkaEventPublisher   application.kafka.enabled=true:  JSON via KafkaTemplate
+</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>   └── NoOpEventPublisher    otherwise:                       does nothing
+</span></code></pre></div>
+<ul>
+<li>The event is built <strong>inside</strong> the transaction. The product's producer and the consumer's organisation are loaded lazily and cannot be read once the transaction has ended, so the listener is handed a plain snapshot, not entities.</li>
+<li><code>EventPublisher.publish</code> never throws. What the Node does must not depend on whether anyone heard.</li>
+<li>The event is written as JSON text by the application's own <code>ObjectMapper</code> (ISO-8601 timestamps, no Java type headers), then sent with Spring's <code>KafkaTemplate</code>. Connection, serialisers and the consumer group are Spring Boot's own <code>spring.kafka.*</code>.</li>
+</ul>
+<p>Code: <code>config/KafkaEventConfig</code>, <code>config/KafkaEventProperties</code>, <code>model/event/*</code>, <code>service/providers/event/*</code>.</p>
+<h2 id="8-adding-another-event">8. Adding another event</h2>
+<ol>
+<li>Add a record under <code>model/event</code> that implements <code>DomainEvent</code>.</li>
+<li>Add its topic to <code>KafkaEventProperties.Topics</code> and to <code>application.yml</code>.</li>
+<li>Raise it where it happens with <code>ApplicationEventPublisher.publishEvent(...)</code>, built inside the transaction.</li>
+<li>Add a listener like <code>ProductSubscriptionEventListener</code> that sends it with <code>EventPublisher</code>.</li>
+<li>Document it in <a href="#1-what-is-published">§1</a> and add test cases.</li>
+</ol>
+<p>Event names follow <em>context.resource.action.status</em> where they can, for example <code>product.subscription.activated</code>; the first event keeps the name it was specified with.</p>
+<h2 id="9-tests">9. Tests</h2>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>What it covers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ProductSubscriptionServiceImplTest</code></td>
+<td>A successful subscription raises one event with the right content; a refused one raises none.</td>
+</tr>
+<tr>
+<td><code>ProductSubscriptionEventListenerTest</code></td>
+<td>The event is handed to the publisher on the configured topic, keyed by the consumer's client.</td>
+</tr>
+<tr>
+<td><code>ProductSubscriptionEventTransactionTest</code></td>
+<td>The event is sent after a commit, and not at all after a rollback.</td>
+</tr>
+<tr>
+<td><code>KafkaEventPublisherTest</code></td>
+<td>The JSON on the topic; failures (broker rejects, send fails, cannot serialise) never throw.</td>
+</tr>
+<tr>
+<td><code>NoOpEventPublisherTest</code></td>
+<td>Switched off, publishing is harmless.</td>
+</tr>
+<tr>
+<td><code>KafkaEventConfigTest</code></td>
+<td>Off unless switched on; exactly one publisher either way; topic name and default.</td>
+</tr>
+<tr>
+<td><code>KafkaEventPublishingIntegrationTest</code></td>
+<td>The event arrives on a real (embedded) broker, as JSON, with the right key.</td>
+</tr>
+</tbody>
+</table>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>./mvnw<span class="w"> </span><span class="nb">test</span><span class="w"> </span>-Dtest<span class="o">=</span><span class="s1">'ProductSubscription*Test,KafkaEvent*Test,NoOpEventPublisherTest'</span>
+</span></code></pre></div>
+<p>Manual test cases for testers are S17 to S20 in <a href="../tests/products/subscribe/"><code>tests/products/subscribe.md</code></a>.</p>
+<h2 id="10-troubleshooting">10. Troubleshooting</h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Cause and remedy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>No message appears in Kafka UI</td>
+<td><code>KAFKA_ENABLED</code> is not <code>true</code> (check the startup log line), or the subscription was refused.</td>
+</tr>
+<tr>
+<td><code>Event not published ... TimeoutException: Topic ... not present in metadata</code></td>
+<td>The broker is not reachable at <code>KAFKA_BOOTSTRAP_SERVERS</code>. Check <code>docker compose -f docker/kafka/docker-compose.yml ps</code>.</td>
+</tr>
+<tr>
+<td>The Node cannot connect although the container is running</td>
+<td>From the host use <code>localhost:9092</code>, not <code>kafka:29092</code>; the latter only resolves inside Docker.</td>
+</tr>
+<tr>
+<td>Kafka UI shows the cluster as offline</td>
+<td>Give it a minute after <code>up -d</code>, it waits for the broker to be healthy.</td>
+</tr>
+<tr>
+<td>Port 9092 or 8085 already in use</td>
+<td>Set <code>KAFKA_PORT</code> or <code>KAFKA_UI_PORT</code>.</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+  
+    
+  
+  
+
+
+  <aside class="md-source-file">
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="Last update">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 13, 2026 08:58:48 UTC">October 13, 2026</span>
+  </span>
+
+    
+    
+    
+    
+  </aside>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      &copy;Crown Copyright 2025. This work has been developed by the National Digital Twin Programme and is legally attributed to the Department for Business and Trade (UK) as the governing entity.  
+
+    </div>
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.annotate", "content.code.copy", "content.code.select", "content.tooltips", "navigation.indexes", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "search.share", "navigation.instant", "navigation.instant.prefetch", "navigation.instant", "navigation.instant.progress", "navigation.path", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
