@@ -60,6 +60,7 @@
     <spring-security.version>6.5.9</spring-security.version>
     <httpcore5.version>5.4.3</httpcore5.version>
     <tomcat.version>10.1.59</tomcat.version>
+    <lz4-java.version>1.11.4</lz4-java.version>
     <sonar.coverage.exclusions>**/config/**,
             **/dto/**,
             **/entity/**,
@@ -83,6 +84,11 @@
         <groupId>org.apache.httpcomponents.core5</groupId>
         <artifactId>httpcore5-h2</artifactId>
         <version>${httpcore5.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>at.yawk.lz4</groupId>
+        <artifactId>lz4-java</artifactId>
+        <version>${lz4-java.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -199,6 +205,10 @@
       <version>3.18.0</version>
     </dependency>
     <dependency>
+      <groupId>org.springframework.kafka</groupId>
+      <artifactId>spring-kafka</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>postgresql</artifactId>
       <scope>test</scope>
@@ -206,6 +216,11 @@
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.kafka</groupId>
+      <artifactId>spring-kafka-test</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
