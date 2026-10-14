@@ -1102,6 +1102,50 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#s17-a-successful-subscription-publishes-product-subscriptionactivated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S17: A successful subscription publishes product-subscription.activated
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s18-a-refused-subscription-publishes-nothing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S18: A refused subscription publishes nothing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s19-with-kafka-switched-off-subscribing-is-unchanged" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S19: With Kafka switched off, subscribing is unchanged
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s20-with-kafka-on-but-unreachable-the-subscription-is-still-recorded" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S20: With Kafka on but unreachable, the subscription is still recorded
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1621,6 +1665,50 @@
     <span class="md-ellipsis">
       
         S16: With policy switched off the grant is held, not accepted
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s17-a-successful-subscription-publishes-product-subscriptionactivated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S17: A successful subscription publishes product-subscription.activated
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s18-a-refused-subscription-publishes-nothing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S18: A refused subscription publishes nothing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s19-with-kafka-switched-off-subscribing-is-unchanged" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S19: With Kafka switched off, subscribing is unchanged
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s20-with-kafka-on-but-unreachable-the-subscription-is-still-recorded" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S20: With Kafka on but unreachable, the subscription is still recorded
       
     </span>
   </a>
@@ -2323,6 +2411,48 @@ discover it.</p>
 grant <strong>is in force</strong>: with no status column and no approval workflow, a subscription made while
 policy is off is indistinguishable from one policy allowed. That is the reason not to run with
 <code>application.opa.enabled=false</code> anywhere that matters.</p>
+<h3 id="s17-a-successful-subscription-publishes-product-subscriptionactivated">S17: A successful subscription publishes <code>product-subscription.activated</code></h3>
+<p><strong>Preconditions.</strong> Kafka is running (<code>docker compose -f docker/kafka/docker-compose.yml up -d</code>) and
+the Node was started with <code>KAFKA_ENABLED=true</code>. See <a href="../../../KAFKA/"><code>../../KAFKA.md</code></a>. The caller
+holds no subscription to the product yet.</p>
+<ul>
+<li><strong>When</strong> a permitted caller subscribes as in S1,</li>
+<li><strong>Then</strong> the response is <code>200</code> with a <code>subscriptionId</code>, and <strong>exactly one</strong> message is on the topic
+  <code>product-subscription.activated</code> (Kafka UI, <a href="http://localhost:8085">http://localhost:8085</a>, Topics, Messages):</li>
+<li>the <strong>key</strong> is the consumer's identity provider client, for example <code>FEDERATOR_BCC</code>;</li>
+<li>the <strong>value</strong> is JSON whose <code>subscriptionId</code> equals the one in the response, whose <code>productId</code>
+    and <code>productName</code> are the subscribed product's, whose <code>producingOrganisation</code> is the product's
+    producer and whose <code>consumerOrganisation</code> is the caller's organisation and consumer
+    (<code>organisationKey</code>, <code>consumerId</code>, <code>idpClientId</code>);</li>
+<li><code>eventId</code> is a UUID and <code>occurredAt</code> is a UTC timestamp;</li>
+<li><strong>And</strong> the Node's log contains <code>Event published type=product-subscription.activated eventId=...</code>
+  with the same <code>eventId</code>.</li>
+</ul>
+<h3 id="s18-a-refused-subscription-publishes-nothing">S18: A refused subscription publishes nothing</h3>
+<ul>
+<li><strong>When</strong> a subscription is refused: the same subscription again (S2, <code>409</code>), an unknown product
+  (S15, <code>404</code>) or several consumers and none named (S4, <code>400</code>),</li>
+<li><strong>Then</strong> the number of messages on <code>product-subscription.activated</code> is unchanged.</li>
+</ul>
+<h3 id="s19-with-kafka-switched-off-subscribing-is-unchanged">S19: With Kafka switched off, subscribing is unchanged</h3>
+<p><strong>Preconditions.</strong> <code>KAFKA_ENABLED</code> unset (or <code>false</code>) and no Kafka running.</p>
+<ul>
+<li><strong>When</strong> a permitted caller subscribes as in S1,</li>
+<li><strong>Then</strong> <code>200</code>, the same response as before Kafka existed, and no error in the log. The startup log
+  contains <code>Kafka event publishing is DISABLED</code>.</li>
+</ul>
+<h3 id="s20-with-kafka-on-but-unreachable-the-subscription-is-still-recorded">S20: With Kafka on but unreachable, the subscription is still recorded</h3>
+<p><strong>Preconditions.</strong> <code>KAFKA_ENABLED=true</code> and Kafka stopped (<code>docker compose -f docker/kafka/docker-compose.yml stop</code>).</p>
+<ul>
+<li><strong>When</strong> a permitted caller subscribes as in S1,</li>
+<li><strong>Then</strong> <code>200</code> with a <code>subscriptionId</code>, and the subscription exists (it appears in <code>GET /api/v1/network/map</code>).
+  The response is immediate once the Node has sent an event before; a first send right after the Node
+  starts waits up to about 5 seconds.</li>
+<li><strong>And</strong> about two minutes later the log contains an <code>ERROR</code> line <code>Event not published ...</code>.</li>
+<li><strong>And</strong> if Kafka is started again <strong>within</strong> those two minutes, the event is delivered late (a new
+  message appears in Kafka UI). After that it is not sent retroactively (see
+  <a href="../../../KAFKA/"><code>../../KAFKA.md</code></a> §6).</li>
+</ul>
 <hr />
 <h2 id="4-wales-may-not-take-topic-products">4. Wales may not take topic products</h2>
 <p>An organisation whose <code>jurisdictions</code> include <strong>Wales</strong> may not subscribe to a product whose type
@@ -2674,6 +2804,7 @@ indistinguishable from one policy allowed.</p>
   decisions walked through per sample organisation</li>
 <li><code>docker/opa/policies/product/subscribe.rego</code> and its <code>subscribe_test.rego</code>: the rule itself, and
   the Rego tests that pin every case in §4</li>
+<li><a href="../../../KAFKA/">Kafka Events</a>: the event raised by a successful subscription, how to run Kafka locally and how to switch it on, used by S17 to S20</li>
 </ul>
 
 
@@ -2695,7 +2826,7 @@ indistinguishable from one policy allowed.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 24, 2026 11:15:04 UTC">September 24, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 14, 2026 15:09:11 UTC">October 14, 2026</span>
   </span>
 
     
