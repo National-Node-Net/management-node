@@ -36,9 +36,7 @@ import uk.gov.dbt.ndtp.ia.node.management.model.event.ProductSubscriptionActivat
  * configuration and the publisher), against a real broker started for the test, and
  * read back from the topic as another service would read it.
  */
-@SpringBootTest(
-        classes = KafkaEventPublishingIntegrationTest.KafkaOnly.class,
-        properties = "spring.kafka.enabled=true")
+@SpringBootTest(classes = KafkaEventPublishingIntegrationTest.KafkaOnly.class, properties = "spring.kafka.enabled=true")
 @EmbeddedKafka(
         partitions = 1,
         topics = KafkaEventPublishingIntegrationTest.TOPIC,
@@ -83,7 +81,8 @@ class KafkaEventPublishingIntegrationTest {
             assertThat(json.get("eventId").asText()).isEqualTo(event.eventId().toString());
             assertThat(json.get("eventType").asText()).isEqualTo(event.eventType());
             assertThat(json.get("version").asInt()).isEqualTo(event.version());
-            assertThat(json.get("occurredAt").asText()).isEqualTo(event.occurredAt().toString());
+            assertThat(json.get("occurredAt").asText())
+                    .isEqualTo(event.occurredAt().toString());
             assertThat(json.get("subscriptionId").asLong()).isEqualTo(event.subscriptionId());
             assertThat(json.get("productId").asLong()).isEqualTo(event.productId());
             assertThat(json.get("productName").asText()).isEqualTo(event.productName());
