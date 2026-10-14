@@ -10,7 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import uk.gov.dbt.ndtp.ia.node.management.model.event.DomainEvent;
 
 /**
- * Stands in for the Kafka publisher when {@code application.kafka.enabled} is {@code false}, so
+ * Stands in for the Kafka publisher when {@code spring.kafka.enabled} is {@code false}, so
  * that code which raises events does not need to know whether Kafka is switched on.
  */
 @Slf4j

@@ -23,7 +23,7 @@ import uk.gov.dbt.ndtp.ia.node.management.service.providers.event.KafkaEventPubl
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.event.NoOpEventPublisher;
 
 /**
- * Chooses how events leave the Node: to Kafka when {@code application.kafka.enabled} is
+ * Chooses how events leave the Node: to Kafka when {@code spring.kafka.enabled} is
  * {@code true}, nowhere otherwise. Exactly one {@link EventPublisher} exists either way, so
  * whatever raises an event never has to ask which.
  */
@@ -33,7 +33,7 @@ import uk.gov.dbt.ndtp.ia.node.management.service.providers.event.NoOpEventPubli
 public class KafkaEventConfig {
 
     @Bean
-    @ConditionalOnProperty(prefix = "application.kafka", name = "enabled", havingValue = "true")
+    @ConditionalOnProperty(prefix = "spring.kafka", name = "enabled", havingValue = "true")
     public EventPublisher kafkaEventPublisher(
             KafkaTemplate<String, String> kafkaTemplate,
             ObjectMapper objectMapper,
@@ -52,7 +52,7 @@ public class KafkaEventConfig {
      * true; the broker's own auto-creation is a convenience for local development only.
      */
     @Bean
-    @ConditionalOnExpression("${application.kafka.enabled:false} and ${application.kafka.topic-settings.create:false}")
+    @ConditionalOnExpression("${spring.kafka.enabled:false} and ${spring.kafka.topic-settings.create:false}")
     public NewTopic productSubscriptionActivatedTopic(KafkaEventProperties properties) {
         KafkaEventProperties.TopicSettings settings = properties.topicSettings();
         return TopicBuilder.name(properties.topics().productSubscriptionActivated())
@@ -63,9 +63,9 @@ public class KafkaEventConfig {
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = "application.kafka", name = "enabled", havingValue = "false", matchIfMissing = true)
+    @ConditionalOnProperty(prefix = "spring.kafka", name = "enabled", havingValue = "false", matchIfMissing = true)
     public EventPublisher noOpEventPublisher() {
-        log.info("Kafka event publishing is DISABLED - set application.kafka.enabled=true (KAFKA_ENABLED) to enable");
+        log.info("Kafka event publishing is DISABLED - set spring.kafka.enabled=true (KAFKA_ENABLED) to enable");
         return new NoOpEventPublisher();
     }
 }

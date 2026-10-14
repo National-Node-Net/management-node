@@ -76,25 +76,25 @@ Organisations are named twice on purpose: the Node knows them by `organisationKe
 At startup the log says which it is:
 
 ```
-Kafka event publishing is DISABLED - set application.kafka.enabled=true (KAFKA_ENABLED) to enable
+Kafka event publishing is DISABLED - set spring.kafka.enabled=true (KAFKA_ENABLED) to enable
 Kafka event publishing is ENABLED - bootstrapServers=localhost:9092 productSubscriptionActivatedTopic=product-subscription.activated
 ```
 
 ## 3. Configuration reference
 
-In `application.yml`. The Node's own settings are under `application.kafka`; the connection is Spring's own `spring.kafka`.
+In `application.yml`, all under `spring.kafka`. The Node's own settings (`enabled`, `topics`, `topic-settings`) sit next to Spring's own connection settings.
 
 | Property | Environment variable | Default | Meaning |
 |---|---|---|---|
-| `application.kafka.enabled` | `KAFKA_ENABLED` | `false` | Master switch. |
-| `application.kafka.topics.product-subscription-activated` | `KAFKA_TOPIC_PRODUCT_SUBSCRIPTION_ACTIVATED` | `product-subscription.activated` | Topic for `product-subscription.activated`. |
+| `spring.kafka.enabled` | `KAFKA_ENABLED` | `false` | Master switch. |
+| `spring.kafka.topics.product-subscription-activated` | `KAFKA_TOPIC_PRODUCT_SUBSCRIPTION_ACTIVATED` | `product-subscription.activated` | Topic for `product-subscription.activated`. |
 | `spring.kafka.bootstrap-servers` | `KAFKA_BOOTSTRAP_SERVERS` | `localhost:9092` | Where the broker is. |
 | `spring.kafka.producer.acks` | | `all` | A send counts as done only once the broker has recorded it. |
 | `spring.kafka.producer.properties.max.block.ms` | `KAFKA_MAX_BLOCK_MS` | `5000` | How long a send may wait for the broker's metadata before giving up. This matters when the broker is already down at the first send after the Node starts (see [§6](#6-delivery-what-is-and-is-not-guaranteed)). |
 | `spring.kafka.producer.properties.enable.idempotence` | | `true` | A send that is retried is never written twice. |
 | `spring.kafka.producer.properties.delivery.timeout.ms` | `KAFKA_DELIVERY_TIMEOUT_MS` | `120000` | How long a send is retried before it is reported as failed. |
-| `application.kafka.topic-settings.create` | `KAFKA_CREATE_TOPICS` | `false` | Declare the topic at startup. Leave off where topics are created deliberately. |
-| `application.kafka.topic-settings.partitions` / `replicas` / `retention-days` | `KAFKA_TOPIC_PARTITIONS` / `KAFKA_TOPIC_REPLICAS` / `KAFKA_TOPIC_RETENTION_DAYS` | `1` / `1` / `7` | Shape of the topic, used only when `create` is `true`. |
+| `spring.kafka.topic-settings.create` | `KAFKA_CREATE_TOPICS` | `false` | Declare the topic at startup. Leave off where topics are created deliberately. |
+| `spring.kafka.topic-settings.partitions` / `replicas` / `retention-days` | `KAFKA_TOPIC_PARTITIONS` / `KAFKA_TOPIC_REPLICAS` / `KAFKA_TOPIC_RETENTION_DAYS` | `1` / `1` / `7` | Shape of the topic, used only when `create` is `true`. |
 | `spring.kafka.consumer.group-id` | | `management-node-group` | The Node's consumer group. The Node does not consume anything yet; the setting is in place for when it does. |
 
 ## 4. Running Kafka locally
@@ -168,7 +168,7 @@ ProductSubscriptionEventListener                  (@TransactionalEventListener, 
                  │
                  ▼
 EventPublisher                                    (one bean, chosen by KafkaEventConfig)
-   ├── KafkaEventPublisher   application.kafka.enabled=true:  JSON via KafkaTemplate
+   ├── KafkaEventPublisher   spring.kafka.enabled=true:  JSON via KafkaTemplate
    └── NoOpEventPublisher    otherwise:                       does nothing
 ```
 

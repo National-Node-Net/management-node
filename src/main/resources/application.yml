@@ -35,8 +35,16 @@ spring:
         show_sql: false
         default_schema: mn
   kafka:
-    # Kafka connection. Only used when application.kafka.enabled is true; see docs/KAFKA.md
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    # Kafka. Key-by-key reference: docs/KAFKA.md
+    enabled: ${KAFKA_ENABLED:false} # master switch; false sends nothing and needs no broker
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092} # only used when enabled is true
+    topics:
+      product-subscription-activated: ${KAFKA_TOPIC_PRODUCT_SUBSCRIPTION_ACTIVATED:product-subscription.activated}
+    topic-settings: # only used when create is true
+      create: ${KAFKA_CREATE_TOPICS:false} # declare the topics at startup; off because shared environments create them deliberately
+      partitions: ${KAFKA_TOPIC_PARTITIONS:1}
+      replicas: ${KAFKA_TOPIC_REPLICAS:1}
+      retention-days: ${KAFKA_TOPIC_RETENTION_DAYS:7}
     producer:
       acks: all # a send counts as done only once the broker has recorded it
       properties:
@@ -86,18 +94,6 @@ application:
       - user-agent
     log-input: ${OPA_LOG_INPUT:false} # diagnostic only - carries the token's claims
     log-output: ${OPA_LOG_OUTPUT:false} # diagnostic only - one entry per decision
-
-  kafka:
-    # Events published to Kafka for other services to act on. Key-by-key reference: docs/KAFKA.md
-    enabled: ${KAFKA_ENABLED:false} # master switch; false sends nothing and needs no broker
-    topics:
-      product-subscription-activated: ${KAFKA_TOPIC_PRODUCT_SUBSCRIPTION_ACTIVATED:product-subscription.activated}
-    topic-settings: # only used when create is true
-      create: ${KAFKA_CREATE_TOPICS:false} # declare the topics at startup; off because shared environments create them deliberately
-      partitions: ${KAFKA_TOPIC_PARTITIONS:1}
-      replicas: ${KAFKA_TOPIC_REPLICAS:1}
-      retention-days: ${KAFKA_TOPIC_RETENTION_DAYS:7}
-
 # Actuator Configuration
 management:
   server:
