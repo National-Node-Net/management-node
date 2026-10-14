@@ -20,7 +20,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  * @param topics the topic each event is sent on
  * @param topicSettings how the topics are declared when the Node is asked to create them
  */
-@ConfigurationProperties(prefix = "application.kafka")
+@ConfigurationProperties(prefix = "spring.kafka")
 public record KafkaEventProperties(
         boolean enabled, @DefaultValue Topics topics, @DefaultValue TopicSettings topicSettings) {
 

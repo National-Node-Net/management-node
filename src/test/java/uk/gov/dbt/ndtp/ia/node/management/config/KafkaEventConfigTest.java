@@ -39,7 +39,7 @@ class KafkaEventConfigTest {
 
     @Test
     void whenDisabled_noOpPublisherIsUsed() {
-        runner.withPropertyValues("application.kafka.enabled=false").run(context -> {
+        runner.withPropertyValues("spring.kafka.enabled=false").run(context -> {
             assertThat(context).hasSingleBean(EventPublisher.class);
             assertThat(context).getBean(EventPublisher.class).isInstanceOf(NoOpEventPublisher.class);
         });
@@ -47,7 +47,7 @@ class KafkaEventConfigTest {
 
     @Test
     void whenEnabled_kafkaPublisherIsUsed() {
-        runner.withPropertyValues("application.kafka.enabled=true").run(context -> {
+        runner.withPropertyValues("spring.kafka.enabled=true").run(context -> {
             assertThat(context).hasSingleBean(EventPublisher.class);
             assertThat(context).getBean(EventPublisher.class).isInstanceOf(KafkaEventPublisher.class);
         });
@@ -55,24 +55,24 @@ class KafkaEventConfigTest {
 
     @Test
     void topicsAreNotDeclaredByDefault() {
-        runner.withPropertyValues("application.kafka.enabled=true")
+        runner.withPropertyValues("spring.kafka.enabled=true")
                 .run(context -> assertThat(context).doesNotHaveBean(NewTopic.class));
     }
 
     @Test
     void whenKafkaIsOffTopicsAreNotDeclaredEvenIfCreateIsOn() {
-        runner.withPropertyValues("application.kafka.topic-settings.create=true")
+        runner.withPropertyValues("spring.kafka.topic-settings.create=true")
                 .run(context -> assertThat(context).doesNotHaveBean(NewTopic.class));
     }
 
     @Test
     void whenKafkaIsOnAndCreateIsOn_theTopicIsDeclaredWithTheConfiguredShape() {
         runner.withPropertyValues(
-                        "application.kafka.enabled=true",
-                        "application.kafka.topic-settings.create=true",
-                        "application.kafka.topic-settings.partitions=3",
-                        "application.kafka.topic-settings.replicas=2",
-                        "application.kafka.topic-settings.retention-days=14")
+                        "spring.kafka.enabled=true",
+                        "spring.kafka.topic-settings.create=true",
+                        "spring.kafka.topic-settings.partitions=3",
+                        "spring.kafka.topic-settings.replicas=2",
+                        "spring.kafka.topic-settings.retention-days=14")
                 .run(context -> {
                     NewTopic topic = context.getBean(NewTopic.class);
                     assertThat(topic.name()).isEqualTo("product-subscription.activated");
@@ -85,7 +85,7 @@ class KafkaEventConfigTest {
 
     @Test
     void theTopicNameCanBeConfigured() {
-        runner.withPropertyValues("application.kafka.topics.product-subscription-activated=other.topic")
+        runner.withPropertyValues("spring.kafka.topics.product-subscription-activated=other.topic")
                 .run(context -> assertThat(context.getBean(KafkaEventProperties.class)
                                 .topics()
                                 .productSubscriptionActivated())

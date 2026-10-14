@@ -28,6 +28,7 @@ import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import uk.gov.dbt.ndtp.ia.node.management.config.KafkaEventConfig;
+import uk.gov.dbt.ndtp.ia.node.management.model.event.ProductSubscriptionActivatedEvent;
 import uk.gov.dbt.ndtp.ia.node.management.model.event.ProductSubscriptionActivatedEvents;
 
 /**
@@ -35,9 +36,7 @@ import uk.gov.dbt.ndtp.ia.node.management.model.event.ProductSubscriptionActivat
  * configuration and the publisher), against a real broker started for the test, and
  * read back from the topic as another service would read it.
  */
-@SpringBootTest(
-        classes = KafkaEventPublishingIntegrationTest.KafkaOnly.class,
-        properties = "application.kafka.enabled=true")
+@SpringBootTest(classes = KafkaEventPublishingIntegrationTest.KafkaOnly.class, properties = "spring.kafka.enabled=true")
 @EmbeddedKafka(
         partitions = 1,
         topics = KafkaEventPublishingIntegrationTest.TOPIC,
@@ -70,19 +69,32 @@ class KafkaEventPublishingIntegrationTest {
                 .createConsumer()) {
             broker.consumeFromAnEmbeddedTopic(consumer, TOPIC);
 
-            publisher.publish(TOPIC, "FEDERATOR_BCC", ProductSubscriptionActivatedEvents.sample());
+            ProductSubscriptionActivatedEvent event = ProductSubscriptionActivatedEvents.sample();
+            String key = event.consumerOrganisation().idpClientId();
+
+            publisher.publish(TOPIC, key, event);
 
             ConsumerRecord<String, String> record =
                     KafkaTestUtils.getSingleRecord(consumer, TOPIC, Duration.ofSeconds(15));
-            assertThat(record.key()).isEqualTo("FEDERATOR_BCC");
+            assertThat(record.key()).isEqualTo(key);
             JsonNode json = objectMapper.readTree(record.value());
-            assertThat(json.get("eventType").asText()).isEqualTo("product-subscription.activated");
-            assertThat(json.get("version").asInt()).isEqualTo(1);
-            assertThat(json.get("subscriptionId").asLong()).isEqualTo(15L);
-            assertThat(json.get("productName").asText()).isEqualTo("BrownfieldLandAvailability");
-            assertThat(json.at("/producingOrganisation/idpClientId").asText()).isEqualTo("FEDERATOR_HEG");
-            assertThat(json.at("/consumerOrganisation/idpClientId").asText()).isEqualTo("FEDERATOR_BCC");
-            assertThat(json.get("occurredAt").asText()).isEqualTo("2026-10-07T13:30:00Z");
+            assertThat(json.get("eventId").asText()).isEqualTo(event.eventId().toString());
+            assertThat(json.get("eventType").asText()).isEqualTo(event.eventType());
+            assertThat(json.get("version").asInt()).isEqualTo(event.version());
+            assertThat(json.get("occurredAt").asText())
+                    .isEqualTo(event.occurredAt().toString());
+            assertThat(json.get("subscriptionId").asLong()).isEqualTo(event.subscriptionId());
+            assertThat(json.get("productId").asLong()).isEqualTo(event.productId());
+            assertThat(json.get("productName").asText()).isEqualTo(event.productName());
+            assertThat(json.at("/producingOrganisation/organisationKey").asText())
+                    .isEqualTo(event.producingOrganisation().organisationKey());
+            assertThat(json.at("/producingOrganisation/idpClientId").asText())
+                    .isEqualTo(event.producingOrganisation().idpClientId());
+            assertThat(json.at("/consumerOrganisation/organisationKey").asText())
+                    .isEqualTo(event.consumerOrganisation().organisationKey());
+            assertThat(json.at("/consumerOrganisation/consumerId").asLong())
+                    .isEqualTo(event.consumerOrganisation().consumerId());
+            assertThat(json.at("/consumerOrganisation/idpClientId").asText()).isEqualTo(key);
         }
     }
 }
