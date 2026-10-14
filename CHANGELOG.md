@@ -19,6 +19,14 @@ This project follows **Semantic Versioning (SemVer)** ([semver.org](https://semv
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- Kafka support, off by default (`KAFKA_ENABLED`): the Management Node publishes
+  `product-subscription.activated` after a successful subscription. See `docs/KAFKA.md`.
+- `docker/kafka/docker-compose.yml`: a local Kafka and Kafka UI for development and testing.
+
 ## [1.2.2] - 2026-07-24
 
 ### Security

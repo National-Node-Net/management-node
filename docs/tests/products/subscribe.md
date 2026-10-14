@@ -321,6 +321,51 @@ grant **is in force**: with no status column and no approval workflow, a subscri
 policy is off is indistinguishable from one policy allowed. That is the reason not to run with
 `application.opa.enabled=false` anywhere that matters.
 
+### S17: A successful subscription publishes `product-subscription.activated`
+
+**Preconditions.** Kafka is running (`docker compose -f docker/kafka/docker-compose.yml up -d`) and
+the Node was started with `KAFKA_ENABLED=true`. See [`../../KAFKA.md`](../../KAFKA.md). The caller
+holds no subscription to the product yet.
+
+- **When** a permitted caller subscribes as in S1,
+- **Then** the response is `200` with a `subscriptionId`, and **exactly one** message is on the topic
+  `product-subscription.activated` (Kafka UI, <http://localhost:8085>, Topics, Messages):
+  - the **key** is the consumer's identity provider client, for example `FEDERATOR_BCC`;
+  - the **value** is JSON whose `subscriptionId` equals the one in the response, whose `productId`
+    and `productName` are the subscribed product's, whose `producingOrganisation` is the product's
+    producer and whose `consumerOrganisation` is the caller's organisation and consumer
+    (`organisationKey`, `consumerId`, `idpClientId`);
+  - `eventId` is a UUID and `occurredAt` is a UTC timestamp;
+- **And** the Node's log contains `Event published type=product-subscription.activated eventId=...`
+  with the same `eventId`.
+
+### S18: A refused subscription publishes nothing
+
+- **When** a subscription is refused: the same subscription again (S2, `409`), an unknown product
+  (S15, `404`) or several consumers and none named (S4, `400`),
+- **Then** the number of messages on `product-subscription.activated` is unchanged.
+
+### S19: With Kafka switched off, subscribing is unchanged
+
+**Preconditions.** `KAFKA_ENABLED` unset (or `false`) and no Kafka running.
+
+- **When** a permitted caller subscribes as in S1,
+- **Then** `200`, the same response as before Kafka existed, and no error in the log. The startup log
+  contains `Kafka event publishing is DISABLED`.
+
+### S20: With Kafka on but unreachable, the subscription is still recorded
+
+**Preconditions.** `KAFKA_ENABLED=true` and Kafka stopped (`docker compose -f docker/kafka/docker-compose.yml stop`).
+
+- **When** a permitted caller subscribes as in S1,
+- **Then** `200` with a `subscriptionId`, and the subscription exists (it appears in `GET /api/v1/network/map`).
+  The response is immediate once the Node has sent an event before; a first send right after the Node
+  starts waits up to about 5 seconds.
+- **And** about two minutes later the log contains an `ERROR` line `Event not published ...`.
+- **And** if Kafka is started again **within** those two minutes, the event is delivered late (a new
+  message appears in Kafka UI). After that it is not sent retroactively (see
+  [`../../KAFKA.md`](../../KAFKA.md) §6).
+
 ---
 
 ## 4. Wales may not take topic products
@@ -526,3 +571,4 @@ indistinguishable from one policy allowed.
   decisions walked through per sample organisation
 - `docker/opa/policies/product/subscribe.rego` and its `subscribe_test.rego`: the rule itself, and
   the Rego tests that pin every case in §4
+- [Kafka Events](../../KAFKA.md): the event raised by a successful subscription, how to run Kafka locally and how to switch it on, used by S17 to S20
