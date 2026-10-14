@@ -11,15 +11,21 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.dbt.ndtp.ia.node.management.exception.SubscriptionRejectedException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.SubscriptionRejectedException.Reason;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductSubscriptionRequestDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductSubscriptionResponseDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.event.ProductSubscriptionActivatedEvent;
+import uk.gov.dbt.ndtp.ia.node.management.model.event.ProductSubscriptionActivatedEvent.ConsumerOrganisation;
+import uk.gov.dbt.ndtp.ia.node.management.model.event.ProductSubscriptionActivatedEvent.ProducingOrganisation;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductSubscriptionPolicyDecisionDetails;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.Consumer;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.Producer;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.Product;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.ProductConsumer;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.configuration.ConsumerRepository;
@@ -51,16 +57,19 @@ public class ProductSubscriptionServiceImpl implements ProductSubscriptionServic
     private final ConsumerRepository consumerRepository;
     private final ProductConsumerRepository productConsumerRepository;
     private final OrganisationService organisationService;
+    private final ApplicationEventPublisher events;
 
     public ProductSubscriptionServiceImpl(
             ProductRepository productRepository,
             ConsumerRepository consumerRepository,
             ProductConsumerRepository productConsumerRepository,
-            OrganisationService organisationService) {
+            OrganisationService organisationService,
+            ApplicationEventPublisher events) {
         this.productRepository = productRepository;
         this.consumerRepository = consumerRepository;
         this.productConsumerRepository = productConsumerRepository;
         this.organisationService = organisationService;
+        this.events = events;
     }
 
     @Override
@@ -114,6 +123,10 @@ public class ProductSubscriptionServiceImpl implements ProductSubscriptionServic
                 product.getId(),
                 validityDays);
 
+        // Raised here, with the grant, so that it is announced if and only if the grant is kept:
+        // it is sent after this transaction commits, and not at all if it rolls back.
+        events.publishEvent(activatedEvent(saved, product, consumer));
+
         return ProductSubscriptionResponseDTO.builder()
                 .subscriptionId(saved.getId())
                 .productId(product.getId())
@@ -129,6 +142,29 @@ public class ProductSubscriptionServiceImpl implements ProductSubscriptionServic
                 .scheduleExpression(saved.getScheduleExpression())
                 .permittedScheduleTypes(terms == null ? List.of() : terms.permittedScheduleTypes())
                 .build();
+    }
+
+    /**
+     * The subscription as other services are told of it.
+     *
+     * <p>Built here, inside the transaction, because the product's producer and the consumer's
+     * organisation are loaded lazily and cannot be read once the transaction has ended. What is
+     * sent after the commit is this plain snapshot, not the entities it was made from.
+     */
+    private static ProductSubscriptionActivatedEvent activatedEvent(
+            ProductConsumer subscription, Product product, Consumer consumer) {
+        Producer producer = product.getProducer();
+        return new ProductSubscriptionActivatedEvent(
+                UUID.randomUUID(),
+                ProductSubscriptionActivatedEvent.EVENT_TYPE,
+                ProductSubscriptionActivatedEvent.EVENT_VERSION,
+                Instant.now(),
+                subscription.getId(),
+                product.getId(),
+                product.getName(),
+                new ProducingOrganisation(producer.getOrg().getOrganisationKey(), producer.getIdpClientId()),
+                new ConsumerOrganisation(
+                        consumer.getOrg().getOrganisationKey(), consumer.getId(), consumer.getIdpClientId()));
     }
 
     /**
