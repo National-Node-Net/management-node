@@ -1021,7 +1021,7 @@
 <p>Examples:
 - Every day at 02:30 (with seconds): 0 30 2 * * *
 - Every day at 02:30 (5-field style): 30 2 * * *
-- Every 5 minutes: <em>/5 * * * * (or 0 </em>/5 * * * * when using seconds)
+- Every 5 minutes: */5 * * * * (or 0 */5 * * * * when using seconds)
 - Every Monday at 09:00: 0 0 9 * * MON
 - At 00:00 on the first of every month: 0 0 0 1 * *
 - Weekdays at 18:15: 0 15 18 * * MON-FRI</p>
@@ -1060,8 +1060,8 @@
 <h2 id="quick-reference-examples">Quick reference examples</h2>
 <p>CRON:
 - 0 0 9 * * MON-FRI: Weekdays at 09:00
-- 0 0 0 1 * <em>: Midnight on the first day of each month
-- 0 </em>/10 * * * *: Every 10 minutes (with seconds field)</p>
+- 0 0 0 1 * *: Midnight on the first day of each month
+- 0 */10 * * * *: Every 10 minutes (with seconds field)</p>
 <p>ISO‑8601 durations (Interval):
 - PT5M: every five minutes
 - PT2H: every two hours
@@ -1075,7 +1075,7 @@
 <li>
 <p>schedule_expression (varchar):</p>
 <ul>
-<li>If schedule_type = 'cron' → a CRON expression (e.g., "0 <em>/10 * * * </em>" or "<em>/5 * * * </em>").</li>
+<li>If schedule_type = 'cron' → a CRON expression (e.g., "0 */10 * * * <em>" or "</em>/5 * * * *").</li>
 <li>If schedule_type = 'interval' → an ISO‑8601 duration (e.g., "PT15M", "P1D").</li>
 </ul>
 </li>
@@ -1090,7 +1090,7 @@
 </li>
 </ul>
 <p>Notes:
-- Default/backfill in migration sets schedule_type to 'cron' with a sample expression (<em>/5 * * * </em>) for existing rows.
+- Default/backfill in migration sets schedule_type to 'cron' with a sample expression (*/5 * * * *) for existing rows.
 - Ensure expressions match the scheduler dialect in use (5-field or 6-field with seconds).</p>
 
 
