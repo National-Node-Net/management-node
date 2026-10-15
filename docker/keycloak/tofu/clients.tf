@@ -114,11 +114,14 @@ module "federator_client" {
   client_access_token_lifespan_seconds = var.client_access_token_lifespan_seconds
 
   # Reuse the same default client scopes as the other federator clients
-  default_client_scopes = [
-    "FEDERATOR_CONSUMER",
-    "FEDERATOR_PRODUCER",
-    "MANAGEMENT_NODE_ACCESS"
-  ]
+  default_client_scopes = concat(
+    [
+      "FEDERATOR_CONSUMER",
+      "FEDERATOR_PRODUCER",
+      "MANAGEMENT_NODE_ACCESS"
+    ],
+    lookup(each.value, "extra_default_client_scopes", [])
+  )
 
   # Create roles under this client
   custom_roles = [

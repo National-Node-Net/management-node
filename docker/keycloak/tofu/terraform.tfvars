@@ -63,6 +63,8 @@ federator_clients = [
   {
     client = "IAM_INTEGRATION_SERVICE"
     roles  = []
+    # Puts realm-management into the token, which the Keycloak admin API requires.
+    extra_default_client_scopes = ["roles"]
     mapped_client_roles = [
       {
         client = "realm-management"
