@@ -59,6 +59,16 @@ federator_clients = [
         roles  = ["access_producer_configurations", "access_consumer_configurations", "sign_certificate", "access_public_certificates", "create_keys", "product_discovery", "product_view", "product_subscribe"]
       }
     ]
+  },
+  {
+    client = "IAM_INTEGRATION_SERVICE"
+    roles  = []
+    mapped_client_roles = [
+      {
+        client = "realm-management"
+        roles  = ["realm-admin"]
+      }
+    ]
   }
 ]
 
