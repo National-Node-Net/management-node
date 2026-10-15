@@ -69,7 +69,8 @@ public class ProductController {
             description = "Searches data products by free text, filters on product fields and policy "
                     + "attributes, sorting and paging. Each result is a summary - id, name, description, type "
                     + "and the owning organisation's key and name - enough to recognise a product, see "
-                    + "whose it is, and ask for it by id; the rest of a "
+                    + "whose it is, and ask for it by id - plus subscriptionStatus, whether the calling "
+                    + "organisation holds a grant on it (SUBSCRIBED or NOT_SUBSCRIBED); the rest of a "
                     + "product is returned by GET /api/v1/product/{productId}. Filtering and sorting are not "
                     + "limited to those four: a search may filter and sort on anything policy allows it, "
                     + "including fields the summary does not carry. The product.discover policy decides "
@@ -91,6 +92,7 @@ public class ProductController {
     @ApiResponse(responseCode = "500", description = "Internal server error")
     public ProductDiscoveryResponseDTO discoverProducts(
             @Valid @RequestBody(required = false) ProductDiscoveryRequestDTO criteria,
+            @Parameter(hidden = true) @AuthenticationPrincipal EnhancedPrincipal principal,
             @Parameter(hidden = true) Optional<PolicyDecision<ProductDiscoveryPolicyDecisionDetails>> policyDecision) {
         // The decision taken for this request is the only one there is: it carries the caller's
         // search contract, which the service turns into the query. It is passed on rather than
@@ -102,7 +104,7 @@ public class ProductController {
                 decision.policy().resolution(),
                 decision.reasons(),
                 decision.details().evaluation()));
-        return productDiscoveryService.discover(criteria, policyDecision);
+        return productDiscoveryService.discover(criteria, organisationOf(principal), policyDecision);
     }
 
     @PostMapping("/subscribe")
@@ -140,8 +142,7 @@ public class ProductController {
                     Optional<PolicyDecision<ProductSubscriptionPolicyDecisionDetails>> policyDecision) {
         // The decision is handed to the service rather than re-taken there: the terms applied must
         // be the ones this request was allowed on.
-        return productSubscriptionService.subscribe(
-                subscription, principal == null ? null : principal.organisation(), policyDecision);
+        return productSubscriptionService.subscribe(subscription, organisationOf(principal), policyDecision);
     }
 
     @GetMapping("/{productId}")
@@ -168,6 +169,7 @@ public class ProductController {
     @ApiResponse(responseCode = "500", description = "Internal server error")
     public ResponseEntity<DiscoveredProductDTO> viewProduct(
             @Parameter(description = "Product identifier") @PathVariable("productId") Long productId,
+            @Parameter(hidden = true) @AuthenticationPrincipal EnhancedPrincipal principal,
             @Parameter(hidden = true) Optional<PolicyDecision<ProductViewPolicyDecisionDetails>> policyDecision) {
         policyDecision.ifPresent(decision -> log.debug(
                 "Product view policy decision allow={} policy={} resolution={} reasons={} accessLevel={}",
@@ -177,8 +179,12 @@ public class ProductController {
                 decision.reasons(),
                 decision.details().accessLevel()));
         return productViewService
-                .view(productId, policyDecision)
+                .view(productId, organisationOf(principal), policyDecision)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    private static String organisationOf(EnhancedPrincipal principal) {
+        return principal == null ? null : principal.organisation();
     }
 }

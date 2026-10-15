@@ -83,6 +83,7 @@ public class ProductDiscoveryServiceImpl implements ProductDiscoveryService {
     @Override
     public ProductDiscoveryResponseDTO discover(
             ProductDiscoveryRequestDTO request,
+            String callerOrganisation,
             Optional<PolicyDecision<ProductDiscoveryPolicyDecisionDetails>> decision) {
 
         ProductSearchContract contract = planner.contractFor(WHAT, decision);
@@ -91,8 +92,9 @@ public class ProductDiscoveryServiceImpl implements ProductDiscoveryService {
         ProductSearchQuery query = planner.compile(WHAT, contract, criteria, PROJECTION, decision);
 
         long total = repository.count(query);
-        List<DiscoveredProductDTO> products =
-                total == 0 ? List.of() : assembler.assemble(repository.findPage(query), contract, PROJECTION);
+        List<DiscoveredProductDTO> products = total == 0
+                ? List.of()
+                : assembler.assemble(repository.findPage(query), contract, PROJECTION, callerOrganisation);
 
         audit(contract, criteria, total, decision);
         return response(contract, criteria, products, total);
