@@ -36,6 +36,7 @@ ui/dist/
 .vscode/
 
 ### Development certificates ###
+cert-backup-*/
 *.key
 *.csr
 *.crt
@@ -66,3 +67,4 @@ docker/vault/vault-keys.env
 
 # Per-machine overrides and secrets for the catalogue stack profiles
 docker/catalogue/profiles/*.local.env
+scripts/acm-export.json
