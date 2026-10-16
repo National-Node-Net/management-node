@@ -160,7 +160,8 @@ the PDP at all.
   ],
   "subscribedBy": [
     { "key": "HEG", "name": "Homes England", "consumers": 1, "since": "2026-02-11T07:00:00" }
-  ]
+  ],
+  "subscriptionStatus": "NOT_SUBSCRIBED"
 }
 ```
 
@@ -178,6 +179,9 @@ Rules that hold for every `200`:
 - A nested `consumers[].organisation` carries `key` and `name` only; it never carries `attributes`.
 - Attribute maps keep their JSON types: a multi-valued attribute is an array, a number stays a
   number.
+- **`subscriptionStatus`** is the calling organisation's own status, `SUBSCRIBED` or
+  `NOT_SUBSCRIBED`, with the same value discovery reports. It is not masked, since it describes the
+  caller only. See [discover §4](product-discover.md#subscriptionstatus).
 - The response carries **no `policy` block**. Discovery's response has one (it is how a UI builds a
   filter panel); view returns the bare product.
 

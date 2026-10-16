@@ -187,7 +187,7 @@ class ProductViewServiceImplTest {
                 products.length == 0 ? List.of() : List.of(Map.of(ProductSearchQuery.ID, (Object) PRODUCT_ID));
         when(repository.findPage(any())).thenReturn(rows);
         if (products.length > 0) {
-            when(assembler.assemble(any(), any(), any())).thenReturn(List.of(products));
+            when(assembler.assemble(any(), any(), any(), any())).thenReturn(List.of(products));
         }
     }
 
@@ -213,7 +213,7 @@ class ProductViewServiceImplTest {
     /** The projection the assembler was asked to build the response to. */
     private ProductProjection capturedProjection() {
         ArgumentCaptor<ProductProjection> projection = ArgumentCaptor.forClass(ProductProjection.class);
-        verify(assembler).assemble(any(), any(), projection.capture());
+        verify(assembler).assemble(any(), any(), projection.capture(), any());
         return projection.getValue();
     }
 
@@ -297,7 +297,7 @@ class ProductViewServiceImplTest {
         service().view(PRODUCT_ID, ownOrganisationDecision());
 
         ArgumentCaptor<ProductSearchContract> contract = ArgumentCaptor.forClass(ProductSearchContract.class);
-        verify(assembler).assemble(any(), contract.capture(), any());
+        verify(assembler).assemble(any(), contract.capture(), any(), any());
         assertThat(contract.getValue().isEnforced()).isTrue();
         assertThat(contract.getValue().rowFilter())
                 .isEqualTo(decisionRowFilter(ownOrganisationDecision()))
@@ -446,7 +446,7 @@ class ProductViewServiceImplTest {
         service(false).view(PRODUCT_ID, Optional.empty());
 
         ArgumentCaptor<ProductSearchContract> contract = ArgumentCaptor.forClass(ProductSearchContract.class);
-        verify(assembler).assemble(any(), contract.capture(), any());
+        verify(assembler).assemble(any(), contract.capture(), any(), any());
         assertThat(contract.getValue().isEnforced()).isFalse();
         assertThat(contract.getValue().masksSensitiveAttributes()).isFalse();
         assertThat(contract.getValue().isVisible("source")).isTrue();

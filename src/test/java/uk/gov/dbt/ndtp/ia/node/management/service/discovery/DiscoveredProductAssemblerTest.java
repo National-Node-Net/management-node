@@ -296,6 +296,49 @@ class DiscoveredProductAssemblerTest {
     }
 
     /** One page row, keyed by the column aliases of {@link ProductSearchQuery} and {@link ProductField}. */
+    @Test
+    void assemble_callerOrganisation_marksEachProductSubscribedOrNot_inOneQuery() {
+        when(repository.findSubscribedProductIds(eq("BCC"), any())).thenReturn(Set.of(1L));
+
+        List<DiscoveredProductDTO> products = assembler.assemble(
+                List.of(summaryRow(1L), summaryRow(2L)),
+                ProductSearchContract.open(),
+                ProductProjection.SUMMARY,
+                "BCC");
+
+        assertThat(products)
+                .extracting(DiscoveredProductDTO::subscriptionStatus)
+                .containsExactly(
+                        DiscoveredProductDTO.SubscriptionStatus.SUBSCRIBED,
+                        DiscoveredProductDTO.SubscriptionStatus.NOT_SUBSCRIBED);
+        verify(repository).findSubscribedProductIds(eq("BCC"), idsCaptor.capture());
+        assertThat(idsCaptor.getValue()).containsExactly(1L, 2L);
+    }
+
+    @Test
+    void assemble_subscriptionStatus_isNotWithheldByMasking() throws JsonProcessingException {
+        ProductSearchContract contract = enforcing("""
+                {"visible_fields": ["name"]}""");
+        when(repository.findSubscribedProductIds(eq("BCC"), any())).thenReturn(Set.of(1L));
+
+        DiscoveredProductDTO product = assembler
+                .assemble(List.of(row(1L)), contract, ProductProjection.FULL, "BCC")
+                .get(0);
+
+        assertThat(product.subscribedBy()).isNull();
+        assertThat(product.subscriptionStatus()).isEqualTo(DiscoveredProductDTO.SubscriptionStatus.SUBSCRIBED);
+    }
+
+    @Test
+    void assemble_noCallerOrganisation_leavesTheStatusOut_andQueriesNothing() {
+        DiscoveredProductDTO product = assembler
+                .assemble(List.of(summaryRow(1L)), ProductSearchContract.open(), ProductProjection.SUMMARY)
+                .get(0);
+
+        assertThat(product.subscriptionStatus()).isNull();
+        verify(repository, never()).findSubscribedProductIds(any(), any());
+    }
+
     private static Map<String, Object> row(long productId) {
         Map<String, Object> row = new LinkedHashMap<>();
         row.put(ProductSearchQuery.ID, productId);

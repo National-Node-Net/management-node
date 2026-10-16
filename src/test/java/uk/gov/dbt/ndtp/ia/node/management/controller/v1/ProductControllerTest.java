@@ -9,6 +9,7 @@ package uk.gov.dbt.ndtp.ia.node.management.controller.v1;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -133,7 +134,7 @@ class ProductControllerTest {
 
     /** What the service answers unless a test says otherwise. */
     private void serviceReturns(ProductDiscoveryResponseDTO response) {
-        when(productDiscoveryService.discover(any(), any())).thenReturn(response);
+        when(productDiscoveryService.discover(any(), any(), any())).thenReturn(response);
     }
 
     private static ProductDiscoveryResponseDTO oneProduct() {
@@ -144,6 +145,36 @@ class ProductControllerTest {
                         .build()))
                 .page(ProductDiscoveryResponseDTO.Page.of(0, 20, 1, 1))
                 .build();
+    }
+
+    @Test
+    void discover_callerOrganisation_comesFromTheTokenAndReachesTheService() throws Exception {
+        serviceReturns(oneProduct());
+
+        mockMvc.perform(post("/api/v1/product/discover")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isOk());
+
+        verify(productDiscoveryService).discover(any(), eq("test-organisation"), any());
+    }
+
+    @Test
+    void discover_subscriptionStatus_isSerialisedOnEachProduct() throws Exception {
+        serviceReturns(ProductDiscoveryResponseDTO.builder()
+                .products(List.of(DiscoveredProductDTO.builder()
+                        .id(3L)
+                        .name("FloodRiskMapZones")
+                        .subscriptionStatus(DiscoveredProductDTO.SubscriptionStatus.SUBSCRIBED)
+                        .build()))
+                .page(ProductDiscoveryResponseDTO.Page.of(0, 20, 1, 1))
+                .build());
+
+        mockMvc.perform(post("/api/v1/product/discover")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.products[0].subscriptionStatus").value("SUBSCRIBED"));
     }
 
     @Test
@@ -164,7 +195,7 @@ class ProductControllerTest {
                 .andExpect(status().isOk());
 
         ArgumentCaptor<ProductDiscoveryRequestDTO> criteria = ArgumentCaptor.forClass(ProductDiscoveryRequestDTO.class);
-        verify(productDiscoveryService).discover(criteria.capture(), any());
+        verify(productDiscoveryService).discover(criteria.capture(), any(), any());
         ProductDiscoveryRequestDTO sent = criteria.getValue();
         assertThat(sent.text()).isEqualTo("flood");
         assertThat(sent.page()).isEqualTo(2);
@@ -206,7 +237,7 @@ class ProductControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.products").isEmpty());
 
-        verify(productDiscoveryService).discover(isNull(), any());
+        verify(productDiscoveryService).discover(isNull(), any(), any());
     }
 
     /** An unknown top-level field is dropped at binding rather than rejected, as before. */
@@ -280,7 +311,7 @@ class ProductControllerTest {
     /** Criteria the service cannot act on are the caller's to correct, so they are a 400. */
     @Test
     void discover_invalidCriteria_returns400WithTheReason() throws Exception {
-        when(productDiscoveryService.discover(any(), any()))
+        when(productDiscoveryService.discover(any(), any(), any()))
                 .thenThrow(new InvalidSearchCriteriaException("A filter names exactly one of 'field' and 'attribute'"));
 
         mockMvc.perform(post("/api/v1/product/discover")
@@ -293,7 +324,7 @@ class ProductControllerTest {
     /** Criteria policy does not permit are a 403 naming what was refused, not a 400. */
     @Test
     void discover_criteriaRefusedByPolicy_returns403WithNamedReasons() throws Exception {
-        when(productDiscoveryService.discover(any(), any()))
+        when(productDiscoveryService.discover(any(), any(), any()))
                 .thenThrow(new AccessRejectedException(
                         "Access denied by policy",
                         List.of("filter.attribute_not_permitted:identifiability"),
@@ -325,7 +356,7 @@ class ProductControllerTest {
 
         ArgumentCaptor<Optional<PolicyDecision<ProductDiscoveryPolicyDecisionDetails>>> decision =
                 ArgumentCaptor.forClass(Optional.class);
-        verify(productDiscoveryService).discover(any(), decision.capture());
+        verify(productDiscoveryService).discover(any(), any(), decision.capture());
         return decision.getValue();
     }
 
@@ -525,7 +556,7 @@ class ProductControllerTest {
 
     /** What the view service answers; a null product stands for "no such product for this caller". */
     private void viewReturns(DiscoveredProductDTO product) {
-        when(productViewService.view(any(), any())).thenReturn(Optional.ofNullable(product));
+        when(productViewService.view(any(), any(), any())).thenReturn(Optional.ofNullable(product));
     }
 
     @Test
@@ -565,8 +596,22 @@ class ProductControllerTest {
                 .andExpect(status().isNotFound());
 
         ArgumentCaptor<Long> productId = ArgumentCaptor.forClass(Long.class);
-        verify(productViewService).view(productId.capture(), any());
+        verify(productViewService).view(productId.capture(), any(), any());
         assertThat(productId.getValue()).isEqualTo(99L);
+    }
+
+    @Test
+    void view_callerOrganisation_comesFromTheTokenAndReachesTheService() throws Exception {
+        viewReturns(DiscoveredProductDTO.builder()
+                .id(7L)
+                .subscriptionStatus(DiscoveredProductDTO.SubscriptionStatus.NOT_SUBSCRIBED)
+                .build());
+
+        mockMvc.perform(get("/api/v1/product/7").requestAttr(PolicyDecision.REQUEST_ATTRIBUTE, viewDecision()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.subscriptionStatus").value("NOT_SUBSCRIBED"));
+
+        verify(productViewService).view(eq(7L), eq("test-organisation"), any());
     }
 
     @Test
@@ -577,7 +622,7 @@ class ProductControllerTest {
                 .andExpect(status().isOk());
 
         ArgumentCaptor<Long> productId = ArgumentCaptor.forClass(Long.class);
-        verify(productViewService).view(productId.capture(), any());
+        verify(productViewService).view(productId.capture(), any(), any());
         assertThat(productId.getValue()).isEqualTo(7L);
     }
 
@@ -603,7 +648,7 @@ class ProductControllerTest {
 
         ArgumentCaptor<Optional<PolicyDecision<ProductViewPolicyDecisionDetails>>> decision =
                 ArgumentCaptor.forClass(Optional.class);
-        verify(productViewService).view(any(), decision.capture());
+        verify(productViewService).view(any(), any(), decision.capture());
         return decision.getValue();
     }
 
@@ -628,7 +673,7 @@ class ProductControllerTest {
     /** A contract the service cannot honour is a 403 naming why, exactly as on discovery. */
     @Test
     void view_refusedByTheService_returns403WithItsReasons() throws Exception {
-        when(productViewService.view(any(), any()))
+        when(productViewService.view(any(), any(), any()))
                 .thenThrow(new AccessRejectedException(
                         "Access denied by policy", List.of("policy.obligation_unsupported"), "error-2"));
 

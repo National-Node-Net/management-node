@@ -38,7 +38,21 @@ public interface ProductDiscoveryService {
      * @throws uk.gov.dbt.ndtp.ia.node.management.exception.AccessRejectedException when the criteria
      *     ask for something policy does not permit, or the contract cannot be honoured ({@code 403})
      */
+    default ProductDiscoveryResponseDTO discover(
+            ProductDiscoveryRequestDTO criteria,
+            Optional<PolicyDecision<ProductDiscoveryPolicyDecisionDetails>> decision) {
+        return discover(criteria, null, decision);
+    }
+
+    /**
+     * As {@link #discover(ProductDiscoveryRequestDTO, Optional)}, reporting the calling
+     * organisation's subscription status on every product.
+     *
+     * @param callerOrganisation the calling organisation's key, from the token; null leaves the
+     *     status out
+     */
     ProductDiscoveryResponseDTO discover(
             ProductDiscoveryRequestDTO criteria,
+            String callerOrganisation,
             Optional<PolicyDecision<ProductDiscoveryPolicyDecisionDetails>> decision);
 }

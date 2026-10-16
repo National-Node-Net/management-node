@@ -57,6 +57,7 @@ Related documents:
   - [G. Refusals by policy, 403 (TC-32 – TC-39)](#g-refusals-by-policy--403)
   - [H. Malformed requests, 400 (TC-40 – TC-42)](#h-malformed-requests--400)
   - [I. Policy switched off (TC-43 – TC-44)](#i-policy-switched-off)
+  - [J. Subscription status (TC-45 – TC-46)](#j-subscription-status)
 - [9. Edge cases](#9-edge-cases)
 - [10. Defect triage](#10-defect-triage)
 
@@ -198,7 +199,8 @@ text-searchable, so a single value defaults to `eq` and must match the whole nam
       "name": "FloodRiskMapZones",
       "description": "Flood risk zones for England and Wales as geographic areas, …",
       "type": "topic",
-      "organisation": { "key": "ENV", "name": "Environment Agency (ENV)" }
+      "organisation": { "key": "ENV", "name": "Environment Agency (ENV)" },
+      "subscriptionStatus": "NOT_SUBSCRIBED"
     }
   ],
   "page": { "number": 0, "size": 20, "numberOfElements": 1, "totalElements": 1, "totalPages": 1 },
@@ -216,10 +218,8 @@ text-searchable, so a single value defaults to `eq` and must match the whole nam
 
 ### A result is a summary
 
-A discovery result carries **only**: `id`, `name`, `description`, `type`, and an `organisation`
-carrying `key` and `name`. Nothing else: no `topic`, no `source`, no `producer`, no `consumers`,
-no `subscribedBy`, no attribute maps. Those belong to
-[`GET /api/v1/product/{productId}`](product-view.md).
+A discovery result carries **only**: `id`, `name`, `description`, `type`, an `organisation`
+carrying `key` and `name`, and `subscriptionStatus`.
 
 **Filtering and sorting are not limited to those members.** A caller may filter and sort on
 anything in its allowed lists, including `topic` and `source`, which no result carries. This
@@ -227,6 +227,17 @@ separation is deliberate and has its own test case ([TC-09](#tc-09--filter-on-a-
 
 Absent members are **omitted**, never `null` and never `""`. A product with no description simply
 has no `description` key.
+
+### `subscriptionStatus`
+
+Whether the **calling** organisation holds a grant on the product, through any of its consumers:
+`SUBSCRIBED` or `NOT_SUBSCRIBED`. The organisation is the token's `organisation` claim.
+
+- It describes the caller only, so it is **not masked**: BCC, for which `subscribedBy` is masked,
+  still sees its own status.
+- A grant counts whatever its `validity`, exactly as for `subscribedBy`.
+- An organisation holding the product on several consumers is still one `SUBSCRIBED`.
+- Absent when the token carries no organisation.
 
 ### The `page` object
 
@@ -478,14 +489,15 @@ absent because of masking.
 
 **Given** ENV, which has no masked fields at all
 **When** the request is posted
-**Then** the single product carries exactly `id`, `name`, `description`, `type`, `organisation`
+**Then** the single product carries exactly `id`, `name`, `description`, `type`, `organisation`,
+`subscriptionStatus`
 **And** `organisation` carries exactly `key` and `name`
 **And** `topic`, `source`, `producer`, `consumers`, `subscribedBy`, `attributes` are **absent keys**
 They are not present with a `null` value.
 
 ```bash
 discover "$ENV_TOKEN" '{"text":"FloodRiskMapZones"}' | jq '.products[0] | keys, (.organisation | keys)'
-# ["description","id","name","organisation","type"]
+# ["description","id","name","organisation","subscriptionStatus","type"]
 # ["key","name"]
 ```
 
@@ -1629,6 +1641,57 @@ or the contract is not being applied, and a search running unrestricted while po
 be on is the most serious failure mode this endpoint has. (It is designed to be impossible: a
 missing decision with the switch on is refused with `policy.enforcement_missing` in the log, never
 answered.)
+
+---
+
+### J. Subscription status
+
+#### TC-45: Each product reports whether the caller is subscribed
+
+**Objective.** Confirm `subscriptionStatus` follows the caller's own grants.
+
+**Preconditions.** P1–P4.
+
+**Test data.** Empty body, each token. Grants as in [6.2](#62-grants-for-subscribedby).
+
+**Given** the three callers
+**When** each posts `{}`
+**Then** exactly these products are `SUBSCRIBED`, and every other product is `NOT_SUBSCRIBED`:
+
+| Caller | `SUBSCRIBED` |
+|---|---|
+| ENV | AffordableHousingCompletions, BristolAirQualitySensors, BrownfieldLandAvailability, HelpToBuyApplicants |
+| HEG | BristolAirQualitySensors, RiverLevelTelemetry |
+| BCC | AffordableHousingCompletions, FloodRiskMapZones, RiverLevelTelemetry |
+
+```bash
+for t in "$ENV_TOKEN" "$HEG_TOKEN" "$BCC_TOKEN"; do
+  discover "$t" '{}' | jq -c '[.products[] | select(.subscriptionStatus=="SUBSCRIBED") | .name] | sort'
+done
+```
+
+*Why:* a grant on a product the caller cannot discover is not reported. BCC holds
+PollutionIncidentReports but cannot discover it, so it does not appear.
+
+#### TC-46: The status is the caller's own, not anyone else's
+
+**Objective.** Confirm the same product reports differently per caller.
+
+**Preconditions.** P1–P4.
+
+**Given** RiverLevelTelemetry, granted to HEG and twice to BCC, and not to ENV
+**When** each caller discovers `{"text": "RiverLevelTelemetry"}`
+**Then** ENV sees `NOT_SUBSCRIBED`
+**And** HEG and BCC see `SUBSCRIBED`, BCC once despite its two grants.
+
+```bash
+for t in "$ENV_TOKEN" "$HEG_TOKEN" "$BCC_TOKEN"; do
+  discover "$t" '{"text":"RiverLevelTelemetry"}' | jq -r '.products[0].subscriptionStatus'
+done
+# NOT_SUBSCRIBED
+# SUBSCRIBED
+# SUBSCRIBED
+```
 
 ---
 
