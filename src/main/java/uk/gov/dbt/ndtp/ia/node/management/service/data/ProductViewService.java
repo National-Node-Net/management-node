@@ -33,6 +33,19 @@ public interface ProductViewService {
      * @throws uk.gov.dbt.ndtp.ia.node.management.exception.AccessRejectedException when the contract
      *     cannot be honoured ({@code 403})
      */
+    default Optional<DiscoveredProductDTO> view(
+            Long productId, Optional<PolicyDecision<ProductViewPolicyDecisionDetails>> decision) {
+        return view(productId, null, decision);
+    }
+
+    /**
+     * As {@link #view(Long, Optional)}, reporting the calling organisation's subscription status.
+     *
+     * @param callerOrganisation the calling organisation's key, from the token; null leaves the
+     *     status out
+     */
     Optional<DiscoveredProductDTO> view(
-            Long productId, Optional<PolicyDecision<ProductViewPolicyDecisionDetails>> decision);
+            Long productId,
+            String callerOrganisation,
+            Optional<PolicyDecision<ProductViewPolicyDecisionDetails>> decision);
 }

@@ -165,7 +165,7 @@ class ProductDiscoveryServiceImplTest {
         when(repository.count(any())).thenReturn(total);
         if (total > 0) {
             when(repository.findPage(any())).thenReturn(List.of(Map.of("id", 1L)));
-            when(assembler.assemble(any(), any(), any())).thenReturn(products);
+            when(assembler.assemble(any(), any(), any(), any())).thenReturn(products);
         }
     }
 
@@ -192,7 +192,7 @@ class ProductDiscoveryServiceImplTest {
     /** The projection the assembler was asked to build the response to. */
     private ProductProjection capturedProjection() {
         ArgumentCaptor<ProductProjection> projection = ArgumentCaptor.forClass(ProductProjection.class);
-        verify(assembler).assemble(any(), any(), projection.capture());
+        verify(assembler).assemble(any(), any(), projection.capture(), any());
         return projection.getValue();
     }
 
@@ -461,7 +461,7 @@ class ProductDiscoveryServiceImplTest {
         service().discover(null, decision(true, permissiveDetails()));
 
         ArgumentCaptor<ProductSearchContract> contract = ArgumentCaptor.forClass(ProductSearchContract.class);
-        verify(assembler).assemble(any(), contract.capture(), any());
+        verify(assembler).assemble(any(), contract.capture(), any(), any());
         assertThat(contract.getValue().isEnforced()).isTrue();
         assertThat(contract.getValue().rowFilter()).isInstanceOf(FilterNode.Literal.class);
     }
