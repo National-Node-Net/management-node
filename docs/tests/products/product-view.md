@@ -55,7 +55,7 @@ catalogue (§4) rather than repeating them; read §2–§4 there once, then work
 | | `POST /api/v1/product/discover` | `GET /api/v1/product/{productId}` |
 |---|---|---|
 | how many products | a page of them | exactly one, by id |
-| how much of each | a **summary** (`id`, `name`, `description`, `type`, and the owning `organisation`'s `key` and `name`) | the **whole** object model |
+| how much of each | a **summary** (`id`, `name`, `displayName`, `description`, `type`, `format`, `isOwnProduct`, and the owning `organisation`'s `key` and `name`) | the **whole** object model |
 
 Everything else is shared, and shared **from one definition** rather than two that happen to agree:
 `docker/opa/policies/lib/product_access.rego` holds the caller gates, the refusal reasons, the row
@@ -128,10 +128,13 @@ the PDP at all.
 {
   "id": 3,
   "name": "FloodRiskMapZones",
+  "displayName": "Flood Risk Map Zones",
   "description": "Flood risk zones for England and Wales …",
   "topic": "topic.FloodRiskMapZones",
   "type": "topic",
   "source": "kafka://…",
+  "format": "GeoJSON",
+  "isOwnProduct": false,
   "attributes": { "identifiability": "non_personal", "quality_designation": "validated" },
   "organisation": {
     "key": "ENV",
@@ -182,6 +185,10 @@ Rules that hold for every `200`:
 - **`subscriptionStatus`** is the calling organisation's own status, `SUBSCRIBED` or
   `NOT_SUBSCRIBED`, with the same value discovery reports. It is not masked, since it describes the
   caller only. See [discover §4](product-discover.md#subscriptionstatus).
+- **`isOwnProduct`** is `true` when the calling organisation offers the product, with the same
+  value discovery reports, and is likewise not masked. See
+  [discover §4](product-discover.md#isownproduct).
+- **`displayName`** and **`format`** are absent when the product's owner has not provided them.
 - The response carries **no `policy` block**. Discovery's response has one (it is how a UI builds a
   filter panel); view returns the bare product.
 
