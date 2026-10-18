@@ -100,7 +100,7 @@ public class ProductDiscoveryRepository {
                 + " FROM " + this.schema + "product_consumer pc"
                 + " JOIN " + this.schema + "consumer c ON c.id = pc.consumer_id"
                 + " JOIN " + this.schema + "organisation o ON o.id = c.org_id"
-                + " WHERE pc.product_id IN (:ids) AND o.organisation_key = :organisationKey";
+                + " WHERE pc.product_id IN (:ids) AND LOWER(o.organisation_key) = LOWER(:organisationKey)";
     }
 
     /** One row per product of the page, keyed by the column aliases of {@link ProductSearchQuery}. */
@@ -203,6 +203,8 @@ public class ProductDiscoveryRepository {
     /**
      * Which of the given products an organisation holds a grant on, through any of its consumers. As
      * for {@link #findSubscribingOrganisations}, a grant row is access and its validity plays no part.
+     * The organisation key is compared case-insensitively, as everywhere else keys are matched
+     * against the caller's organisation.
      */
     public Set<Long> findSubscribedProductIds(String organisationKey, Collection<Long> productIds) {
         if (organisationKey == null || productIds.isEmpty()) {

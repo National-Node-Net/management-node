@@ -242,6 +242,7 @@ Whether the **calling** organisation holds a grant on the product, through any o
 - A grant counts whatever its `validity`, exactly as for `subscribedBy`.
 - An organisation holding the product on several consumers is still one `SUBSCRIBED`.
 - Absent when the token carries no organisation.
+- The organisation key is compared case-insensitively.
 
 ### `displayName` and `format`
 

@@ -59,7 +59,8 @@ class ProductDiscoveryRepositorySubscriptionTest {
                 .contains("JOIN \"mn\".consumer c ON c.id = pc.consumer_id")
                 .contains("JOIN \"mn\".organisation o ON o.id = c.org_id")
                 .contains("pc.product_id IN (:ids)")
-                .contains("o.organisation_key = :organisationKey")
+                .contains("LOWER(o.organisation_key) = LOWER(:organisationKey)")
+                .doesNotContain("o.organisation_key = :organisationKey")
                 .doesNotContain("validity");
         assertThat(parameters.getValue())
                 .containsEntry("organisationKey", "BCC")
