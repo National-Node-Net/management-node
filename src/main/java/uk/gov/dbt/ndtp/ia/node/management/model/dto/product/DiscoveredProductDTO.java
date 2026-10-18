@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
- * attributed to the UK's Department for Business, Innovation, Science and Trade (BIST) as the governing entity.
+ * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 package uk.gov.dbt.ndtp.ia.node.management.model.dto.product;
 
@@ -20,7 +20,8 @@ import lombok.Builder;
  *
  * <ul>
  *   <li>{@code POST /api/v1/product/discover} returns a <b>summary</b> - {@code id}, {@code name},
- *       {@code description}, {@code type}, and an {@code organisation} carrying only its
+ *       {@code displayName}, {@code description}, {@code type}, {@code format},
+ *       {@code isOwnProduct}, and an {@code organisation} carrying only its
  *       {@code key} and {@code name}. A search says which products exist, what they are and whose
  *       they are; everything else is absent, and is not read from the database either. Note the
  *       organisation's own {@code attributes} are among the things absent: a block can be returned
@@ -36,6 +37,13 @@ import lombok.Builder;
  * <p>Attribute maps keep JSON types: a multi-valued attribute is a list, a number stays a number.
  *
  * @param id the identifier to pass to the view and subscribe endpoints
+ * @param name the product's stable identifying name
+ * @param displayName the name a user interface shows in place of {@code name}; absent when the
+ *     owner has not provided one
+ * @param format the format the product's data is published in (JSON, XML, CSV, RDF...); an open set
+ * @param isOwnProduct whether the calling organisation offers the product. Like
+ *     {@code subscriptionStatus}, carried by both endpoints and not subject to masking, since it
+ *     describes the caller. Absent when the caller's organisation is not known
  * @param attributes the product's policy attributes, by name
  * @param organisation the organisation offering the product
  * @param producer the producer offering the product
@@ -50,10 +58,13 @@ import lombok.Builder;
 public record DiscoveredProductDTO(
         Long id,
         String name,
+        String displayName,
         String description,
         String topic,
         String type,
         String source,
+        String format,
+        Boolean isOwnProduct,
         Map<String, Object> attributes,
         Organisation organisation,
         Producer producer,

@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
- * attributed to the UK's Department for Business, Innovation, Science and Trade (BIST) as the governing entity.
+ * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 
 package uk.gov.dbt.ndtp.ia.node.management.service.discovery;
@@ -337,6 +337,35 @@ class DiscoveredProductAssemblerTest {
 
         assertThat(product.subscriptionStatus()).isNull();
         verify(repository, never()).findSubscribedProductIds(any(), any());
+    }
+
+    @Test
+    void assemble_displayNameFormatAndIsOwnProduct_areReadFromTheRow() {
+        Map<String, Object> own = summaryRow(1L);
+        own.put(ProductField.DISPLAY_NAME.alias(), "Flood Risk");
+        own.put(ProductField.FORMAT.alias(), "GeoJSON");
+        own.put(ProductSearchQuery.IS_OWN_PRODUCT, Boolean.TRUE);
+        Map<String, Object> other = summaryRow(2L);
+        other.put(ProductSearchQuery.IS_OWN_PRODUCT, Boolean.FALSE);
+
+        List<DiscoveredProductDTO> products =
+                assembler.assemble(List.of(own, other), ProductSearchContract.open(), ProductProjection.SUMMARY);
+
+        assertThat(products.get(0).displayName()).isEqualTo("Flood Risk");
+        assertThat(products.get(0).format()).isEqualTo("GeoJSON");
+        assertThat(products).extracting(DiscoveredProductDTO::isOwnProduct).containsExactly(true, false);
+        // Not provided by the owner, so absent rather than invented.
+        assertThat(products.get(1).displayName()).isNull();
+        assertThat(products.get(1).format()).isNull();
+    }
+
+    @Test
+    void assemble_isOwnProductNotSelected_isAbsent() {
+        DiscoveredProductDTO product = assembler
+                .assemble(List.of(summaryRow(1L)), ProductSearchContract.open(), ProductProjection.SUMMARY)
+                .get(0);
+
+        assertThat(product.isOwnProduct()).isNull();
     }
 
     private static Map<String, Object> row(long productId) {

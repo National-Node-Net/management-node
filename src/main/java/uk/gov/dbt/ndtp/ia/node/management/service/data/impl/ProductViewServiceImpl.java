@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
- * attributed to the UK's Department for Business, Innovation, Science and Trade (BIST) as the governing entity.
+ * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 
 package uk.gov.dbt.ndtp.ia.node.management.service.data.impl;
@@ -70,7 +70,8 @@ public class ProductViewServiceImpl implements ProductViewService {
             Optional<PolicyDecision<ProductViewPolicyDecisionDetails>> decision) {
 
         ProductSearchContract contract = planner.contractFor(WHAT, decision);
-        ProductSearchQuery query = planner.compile(WHAT, contract, criteriaFor(productId), PROJECTION, decision);
+        ProductSearchQuery query =
+                planner.compile(WHAT, contract, criteriaFor(productId), PROJECTION, callerOrganisation, decision);
 
         List<Map<String, Object>> rows = repository.findPage(query);
         // No row means no such product *for this caller* - either it does not exist or the row

@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
- * attributed to the UK's Department for Business, Innovation, Science and Trade (BIST) as the governing entity.
+ * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 package uk.gov.dbt.ndtp.ia.node.management.service.discovery;
 
@@ -49,12 +49,27 @@ public class SqlPredicateCompiler {
     private static final String LIKE_ESCAPE = " ESCAPE '\\'";
 
     private final String schemaPrefix;
+    private final String callerOrganisation;
 
     /**
+     * A compiler for a search whose caller's organisation is not known, so no product is the
+     * caller's own.
+     *
      * @param schemaPrefix what to put before a table name, e.g. {@code "mn".} - or an empty string
      */
     public SqlPredicateCompiler(String schemaPrefix) {
+        this(schemaPrefix, null);
+    }
+
+    /**
+     * @param schemaPrefix what to put before a table name, e.g. {@code "mn".} - or an empty string
+     * @param callerOrganisation the calling organisation's key, which {@link ProductField#IS_OWN_PRODUCT}
+     *     is compared against; null or blank when it is not known
+     */
+    public SqlPredicateCompiler(String schemaPrefix, String callerOrganisation) {
         this.schemaPrefix = schemaPrefix;
+        this.callerOrganisation =
+                callerOrganisation == null || callerOrganisation.isBlank() ? null : callerOrganisation;
     }
 
     /**
@@ -97,9 +112,83 @@ public class SqlPredicateCompiler {
                 .filter(ProductField::isFilterable)
                 .orElseThrow(() -> new FilterCompilationException(
                         "'" + comparison.target().qualifiedName() + "' is not a field products can be filtered on"));
-        return field == ProductField.SUBSCRIBED_BY
-                ? subscribedBy(comparison, parameters)
-                : column(field, comparison, parameters);
+        return switch (field) {
+            case SUBSCRIBED_BY -> subscribedBy(comparison, parameters);
+            case IS_OWN_PRODUCT -> ownProduct(comparison, parameters);
+            default -> column(field, comparison, parameters);
+        };
+    }
+
+    /**
+     * Whether the calling organisation offers the current row's product, as a SQL condition. Keys
+     * are compared case-insensitively, as every other organisation key is. A caller whose
+     * organisation is not known offers nothing.
+     */
+    String ownProductCondition(SqlParameters parameters) {
+        return callerOrganisation == null
+                ? FALSE
+                : "LOWER(o.organisation_key) = " + parameters.bind(callerOrganisation.toLowerCase(Locale.ROOT));
+    }
+
+    /** A filter on whether the caller offers the product: which of {@code true} and {@code false} match. */
+    private String ownProduct(FilterNode.Comparison comparison, SqlParameters parameters) {
+        return switch (comparison.operator()) {
+            case EQ, IN, ANY_OF -> ownProductIn(booleans(comparison), parameters);
+            case NEQ, NOT_IN, NONE_OF -> ownProductIn(complement(booleans(comparison)), parameters);
+            // Every product either is or is not the caller's own; the value is never missing.
+            case EXISTS -> TRUE;
+            case NOT_EXISTS -> FALSE;
+            default -> throw notApplicable(comparison);
+        };
+    }
+
+    private String ownProductIn(Set<Boolean> values, SqlParameters parameters) {
+        if (values.size() == 2) {
+            return TRUE;
+        }
+        if (values.isEmpty()) {
+            return FALSE;
+        }
+        String own = ownProductCondition(parameters);
+        return values.contains(Boolean.TRUE) ? own : "NOT (" + own + ")";
+    }
+
+    private static Set<Boolean> complement(Set<Boolean> values) {
+        Set<Boolean> rest = new LinkedHashSet<>(Set.of(Boolean.TRUE, Boolean.FALSE));
+        rest.removeAll(values);
+        return rest;
+    }
+
+    private static Set<Boolean> booleans(FilterNode.Comparison comparison) {
+        Set<Boolean> values = new LinkedHashSet<>();
+        for (Object value : comparison.values()) {
+            Boolean parsed = booleanValue(value);
+            if (parsed == null) {
+                throw new FilterCompilationException(
+                        "'" + comparison.target().qualifiedName() + "' needs true or false, not '" + value + "'");
+            }
+            values.add(parsed);
+        }
+        return values;
+    }
+
+    /**
+     * {@code value} as a boolean - a JSON boolean, or the text {@code true} or {@code false} in any
+     * case - or null when it is neither.
+     */
+    static Boolean booleanValue(Object value) {
+        if (value instanceof Boolean bool) {
+            return bool;
+        }
+        if (value instanceof String text) {
+            if ("true".equalsIgnoreCase(text)) {
+                return Boolean.TRUE;
+            }
+            if ("false".equalsIgnoreCase(text)) {
+                return Boolean.FALSE;
+            }
+        }
+        return null;
     }
 
     // ---------------------------------------------------------------------------------------

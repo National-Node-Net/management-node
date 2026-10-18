@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
- * attributed to the UK's Department for Business, Innovation, Science and Trade (BIST) as the governing entity.
+ * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 
 package uk.gov.dbt.ndtp.ia.node.management.service.discovery;
@@ -148,6 +148,9 @@ public class ProductQueryPlanner {
      * <p>The projection says how much of a product the endpoint returns; it narrows the contract
      * and can never widen it.
      *
+     * <p>The caller's organisation decides which products are the caller's own
+     * ({@code isOwnProduct}); null when it is not known.
+     *
      * <p>Caller criteria are checked when they are created, so a predicate that will not compile
      * here is the contract's: a row filter or unmask condition naming something this service cannot
      * translate. That refuses the request - a policy that cannot be applied is never skipped.
@@ -157,9 +160,10 @@ public class ProductQueryPlanner {
             ProductSearchContract contract,
             ProductSearchCriteria criteria,
             ProductProjection projection,
+            String callerOrganisation,
             Optional<PolicyDecision<D>> decision) {
         try {
-            ProductSearchQuery query = queryBuilder.build(contract, criteria, projection);
+            ProductSearchQuery query = queryBuilder.build(contract, criteria, projection, callerOrganisation);
             log.debug("{} query: {} parameters={}", what, query.pageSql(), query.parameters());
             return query;
         } catch (FilterCompilationException e) {

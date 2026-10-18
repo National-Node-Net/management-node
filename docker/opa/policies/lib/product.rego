@@ -27,10 +27,13 @@ import data.lib.entitlements.cleared_to_secret
 # product's own properties, prefixed with its entity otherwise.
 fields := {
 	"name",
+	"displayName",
 	"description",
 	"topic",
 	"type",
 	"source",
+	"format",
+	"isOwnProduct",
 	"organisation",
 	"organisation.key",
 	"organisation.name",

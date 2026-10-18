@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
- * attributed to the UK's Department for Business, Innovation, Science and Trade (BIST) as the governing entity.
+ * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 
 package uk.gov.dbt.ndtp.ia.node.management.service.data.impl;
@@ -53,8 +53,8 @@ public class ProductDiscoveryServiceImpl implements ProductDiscoveryService {
     private static final String WHAT = "Product discover";
 
     /**
-     * A search returns a <b>summary</b> of each product - its id, name, description and type - and
-     * nothing else. The rest of the object model is what {@code GET /api/v1/product/{productId}}
+     * A search returns a <b>summary</b> of each product - its id, name, display name, description,
+     * type and format, and whether it is the caller's own - and nothing else. The rest of the object model is what {@code GET /api/v1/product/{productId}}
      * is for, so a result carries enough to recognise a product and to ask for it by id.
      *
      * <p>This is the only difference between the two endpoints. Policy answers both identically;
@@ -89,7 +89,7 @@ public class ProductDiscoveryServiceImpl implements ProductDiscoveryService {
         ProductSearchContract contract = planner.contractFor(WHAT, decision);
         ProductSearchCriteria criteria =
                 criteriaFactory.create(request, contract, planner.sensitiveAttributeNames(contract));
-        ProductSearchQuery query = planner.compile(WHAT, contract, criteria, PROJECTION, decision);
+        ProductSearchQuery query = planner.compile(WHAT, contract, criteria, PROJECTION, callerOrganisation, decision);
 
         long total = repository.count(query);
         List<DiscoveredProductDTO> products = total == 0
