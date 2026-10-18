@@ -138,8 +138,12 @@ public class ProductDiscoveryServiceImpl implements ProductDiscoveryService {
                 .build();
     }
 
-    /** What the caller was allowed, so a client can build its search form from it instead of guessing. */
-    private static ProductDiscoveryResponseDTO.Policy policyBlock(ProductSearchContract contract) {
+    /**
+     * What the caller was allowed, so a client can build its search form from it instead of
+     * guessing. Package-private so {@code ProductFilterOptionsServiceImpl} can reuse it verbatim:
+     * the filter panel reports the same policy block this endpoint does, from the same contract.
+     */
+    static ProductDiscoveryResponseDTO.Policy policyBlock(ProductSearchContract contract) {
         return ProductDiscoveryResponseDTO.Policy.builder()
                 .filterableFields(contract.filterableFields())
                 .filterableAttributes(contract.filterableAttributes())
