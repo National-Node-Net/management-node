@@ -20,9 +20,10 @@ import uk.gov.dbt.ndtp.ia.node.management.service.discovery.FacetValues.Summary;
 
 /**
  * Covers {@link FacetValues#summarise}: the null row becomes {@code missingCount}, field targets
- * merge case variants and attribute targets do not, a BOOLEAN target always lists both booleans,
- * everything else is ordered by count then value and capped at {@link FacetValues#CAP}, and
- * {@code selected} is matched case-insensitively.
+ * merge case variants (ties broken by the lexicographically smallest spelling) and attribute
+ * targets do not, a BOOLEAN target always lists both booleans, everything else is ordered by
+ * count then value and capped at {@link FacetValues#CAP}, {@code selected} is matched
+ * case-insensitively, and no rows at all yields an empty, unmarked result.
  */
 class FacetValuesTest {
 
@@ -83,6 +84,25 @@ class FacetValuesTest {
                 Set.of());
 
         assertThat(summary.values()).extracting(Value::value, Value::count).containsExactly(tuple("CSV", 5L));
+    }
+
+    @Test
+    void fieldCaseVariantsWithEqualCounts_mergeUnderTheLexicographicallySmallestSpelling() {
+        Summary summary = FacetValues.summarise(
+                FORMAT_FIELD,
+                List.of(new FacetCount("format", "csv", 2), new FacetCount("format", "CSV", 2)),
+                Set.of());
+
+        assertThat(summary.values()).extracting(Value::value, Value::count).containsExactly(tuple("CSV", 4L));
+    }
+
+    @Test
+    void noRows_yieldsNoValuesNoMissingAndNotTruncated() {
+        Summary summary = FacetValues.summarise(FORMAT_FIELD, List.of(), Set.of());
+
+        assertThat(summary.values()).isEmpty();
+        assertThat(summary.missingCount()).isZero();
+        assertThat(summary.truncated()).isFalse();
     }
 
     @Test
