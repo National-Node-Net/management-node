@@ -24,12 +24,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.context.ApplicationEventPublisher;
 import uk.gov.dbt.ndtp.ia.node.management.exception.SubscriptionRejectedException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.SubscriptionRejectedException.Reason;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductSubscriptionRequestDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductSubscriptionResponseDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.event.ProductSubscriptionActivatedEvent;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductSubscriptionPolicyDecisionDetails;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.Consumer;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.Producer;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.Product;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration.ProductConsumer;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.organisation.Organisation;
@@ -50,6 +53,9 @@ class ProductSubscriptionServiceImplTest {
     private static final String ORG_KEY = "ENV";
     private static final long ORG_ID = 5L;
     private static final long PRODUCT_ID = 42L;
+    private static final String CONSUMER_CLIENT_ID = "FEDERATOR_ENV";
+    private static final String PRODUCER_KEY = "HEG";
+    private static final String PRODUCER_CLIENT_ID = "FEDERATOR_HEG";
 
     @Mock
     private ProductRepository productRepository;
@@ -62,6 +68,9 @@ class ProductSubscriptionServiceImplTest {
 
     @Mock
     private OrganisationService organisationService;
+
+    @Mock
+    private ApplicationEventPublisher events;
 
     @InjectMocks
     private ProductSubscriptionServiceImpl service;
@@ -80,6 +89,7 @@ class ProductSubscriptionServiceImplTest {
         consumer.setId(id);
         consumer.setName(name);
         consumer.setOrg(organisation(orgId));
+        consumer.setIdpClientId(CONSUMER_CLIENT_ID);
         consumer.setDefault(isDefault);
         return consumer;
     }
@@ -88,7 +98,19 @@ class ProductSubscriptionServiceImplTest {
         Product product = new Product();
         product.setId(PRODUCT_ID);
         product.setName("FloodRiskMapZones");
+        product.setProducer(producer());
         return product;
+    }
+
+    private static Producer producer() {
+        Organisation org = new Organisation();
+        org.setId(7L);
+        org.setOrganisationKey(PRODUCER_KEY);
+        Producer producer = new Producer();
+        producer.setId(3L);
+        producer.setOrg(org);
+        producer.setIdpClientId(PRODUCER_CLIENT_ID);
+        return producer;
     }
 
     private static ProductSubscriptionRequestDTO request(Long consumerId) {
@@ -302,6 +324,44 @@ class ProductSubscriptionServiceImplTest {
 
         assertThat(response.scheduleType()).isEqualTo("cron");
         assertThat(response.scheduleExpression()).isEqualTo("0 * * * *");
+    }
+
+    @Test
+    void aSuccessfulSubscription_raisesOneEventDescribingIt() {
+        organisationExists();
+        when(consumerRepository.findById(4L)).thenReturn(Optional.of(consumer(4L, "consumer-a", ORG_ID, false)));
+
+        service.subscribe(request(4L), ORG_KEY, decision(false, 90, 90));
+
+        ArgumentCaptor<Object> raised = ArgumentCaptor.forClass(Object.class);
+        verify(events).publishEvent(raised.capture());
+        assertThat(raised.getValue()).isInstanceOfSatisfying(ProductSubscriptionActivatedEvent.class, event -> {
+            assertThat(event.eventId()).isNotNull();
+            assertThat(event.eventType()).isEqualTo("product-subscription.activated");
+            assertThat(event.version()).isEqualTo(1);
+            assertThat(event.occurredAt()).isNotNull();
+            assertThat(event.subscriptionId()).isEqualTo(99L);
+            assertThat(event.productId()).isEqualTo(PRODUCT_ID);
+            assertThat(event.productName()).isEqualTo("FloodRiskMapZones");
+            assertThat(event.producingOrganisation().organisationKey()).isEqualTo(PRODUCER_KEY);
+            assertThat(event.producingOrganisation().idpClientId()).isEqualTo(PRODUCER_CLIENT_ID);
+            assertThat(event.consumerOrganisation().organisationKey()).isEqualTo(ORG_KEY);
+            assertThat(event.consumerOrganisation().consumerId()).isEqualTo(4L);
+            assertThat(event.consumerOrganisation().idpClientId()).isEqualTo(CONSUMER_CLIENT_ID);
+        });
+    }
+
+    @Test
+    void aRefusedSubscription_raisesNoEvent() {
+        organisationExists();
+        when(consumerRepository.findById(4L)).thenReturn(Optional.of(consumer(4L, "consumer-a", ORG_ID, false)));
+        when(productConsumerRepository.existsByProductIdAndConsumerId(PRODUCT_ID, 4L))
+                .thenReturn(true);
+
+        assertThatThrownBy(() -> service.subscribe(request(4L), ORG_KEY, decision(false, 90, 90)))
+                .isInstanceOf(SubscriptionRejectedException.class);
+
+        verify(events, never()).publishEvent(any(Object.class));
     }
 
     @Test

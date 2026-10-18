@@ -65,7 +65,9 @@ public class ProductViewServiceImpl implements ProductViewService {
 
     @Override
     public Optional<DiscoveredProductDTO> view(
-            Long productId, Optional<PolicyDecision<ProductViewPolicyDecisionDetails>> decision) {
+            Long productId,
+            String callerOrganisation,
+            Optional<PolicyDecision<ProductViewPolicyDecisionDetails>> decision) {
 
         ProductSearchContract contract = planner.contractFor(WHAT, decision);
         ProductSearchQuery query = planner.compile(WHAT, contract, criteriaFor(productId), PROJECTION, decision);
@@ -76,7 +78,8 @@ public class ProductViewServiceImpl implements ProductViewService {
         // was found.
         Optional<DiscoveredProductDTO> product = rows.isEmpty()
                 ? Optional.empty()
-                : assembler.assemble(rows, contract, PROJECTION).stream().findFirst();
+                : assembler.assemble(rows, contract, PROJECTION, callerOrganisation).stream()
+                        .findFirst();
 
         audit(productId, contract, product, decision);
         return product;

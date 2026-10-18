@@ -52,6 +52,9 @@ variable "federator_clients" {
     # Organisation key for the client's "organisation" claim; must match
     # organisation.organisation_key in the database (e.g. "ENV").
     organisation = optional(string)
+    # Default client scopes for a client that is not a federator. When unset, the client gets the
+    # federator scopes (FEDERATOR_CONSUMER, FEDERATOR_PRODUCER, MANAGEMENT_NODE_ACCESS).
+    default_client_scopes = optional(list(string))
     mapped_client_roles = optional(list(object({
       client = string
       roles  = list(string)

@@ -113,8 +113,8 @@ module "federator_client" {
   # Token lifespan for this client
   client_access_token_lifespan_seconds = var.client_access_token_lifespan_seconds
 
-  # Reuse the same default client scopes as the other federator clients
-  default_client_scopes = [
+  # The same default client scopes as the other federator clients, unless the client sets its own
+  default_client_scopes = lookup(each.value, "default_client_scopes", null) != null ? each.value.default_client_scopes : [
     "FEDERATOR_CONSUMER",
     "FEDERATOR_PRODUCER",
     "MANAGEMENT_NODE_ACCESS"

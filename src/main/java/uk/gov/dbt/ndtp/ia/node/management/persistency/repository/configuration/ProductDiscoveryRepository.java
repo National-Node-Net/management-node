@@ -68,6 +68,7 @@ public class ProductDiscoveryRepository {
 
     private final String grantsSql;
     private final String subscribingOrganisationsSql;
+    private final String subscribedProductIdsSql;
 
     public ProductDiscoveryRepository(NamedParameterJdbcTemplate jdbc, DiscoverySchema schema) {
         this.jdbc = jdbc;
@@ -95,6 +96,11 @@ public class ProductDiscoveryRepository {
                 + " WHERE pc.product_id IN (:ids)"
                 + " GROUP BY pc.product_id, o.organisation_key, o.name"
                 + " ORDER BY pc.product_id, o.organisation_key";
+        this.subscribedProductIdsSql = "SELECT DISTINCT pc.product_id"
+                + " FROM " + this.schema + "product_consumer pc"
+                + " JOIN " + this.schema + "consumer c ON c.id = pc.consumer_id"
+                + " JOIN " + this.schema + "organisation o ON o.id = c.org_id"
+                + " WHERE pc.product_id IN (:ids) AND o.organisation_key = :organisationKey";
     }
 
     /** One row per product of the page, keyed by the column aliases of {@link ProductSearchQuery}. */
@@ -192,6 +198,18 @@ public class ProductDiscoveryRepository {
                         row.getString("organisation_name"),
                         row.getInt("consumers"),
                         toLocalDateTime(row.getTimestamp("since"))));
+    }
+
+    /**
+     * Which of the given products an organisation holds a grant on, through any of its consumers. As
+     * for {@link #findSubscribingOrganisations}, a grant row is access and its validity plays no part.
+     */
+    public Set<Long> findSubscribedProductIds(String organisationKey, Collection<Long> productIds) {
+        if (organisationKey == null || productIds.isEmpty()) {
+            return Set.of();
+        }
+        return Set.copyOf(jdbc.queryForList(
+                subscribedProductIdsSql, Map.of("ids", productIds, "organisationKey", organisationKey), Long.class));
     }
 
     /** One grant ({@code product_consumer} row) with its consumer and the consumer's organisation. */

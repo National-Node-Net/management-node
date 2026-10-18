@@ -93,3 +93,5 @@ jobs:
       - name: Push Server Image
         if: ${{ !inputs.dry_run }}
         run: docker push --all-tags ghcr.io/${REPO}/management-node
+
+

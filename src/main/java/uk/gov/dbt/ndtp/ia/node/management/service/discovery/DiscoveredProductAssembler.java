@@ -45,6 +45,20 @@ public class DiscoveredProductAssembler {
      */
     public List<DiscoveredProductDTO> assemble(
             List<Map<String, Object>> rows, ProductSearchContract contract, ProductProjection projection) {
+        return assemble(rows, contract, projection, null);
+    }
+
+    /**
+     * As {@link #assemble(List, ProductSearchContract, ProductProjection)}, adding the calling
+     * organisation's subscription status to every product.
+     *
+     * @param callerOrganisation the calling organisation's key; null leaves the status out
+     */
+    public List<DiscoveredProductDTO> assemble(
+            List<Map<String, Object>> rows,
+            ProductSearchContract contract,
+            ProductProjection projection,
+            String callerOrganisation) {
         List<PageRow> page =
                 rows.stream().map(row -> new PageRow(row, contract, projection)).toList();
 
@@ -77,6 +91,7 @@ public class DiscoveredProductAssembler {
                 attributes(PolicyAttributeScopeCode.SUBSCRIPTION, ids(grants, Grant::grantId), contract, projection);
         List<SubscribingOrganisation> subscribing =
                 subscribingOrganisations(idsShowing(page, ProductBlock.SUBSCRIBED_BY, PageRow::productId));
+        Set<Long> subscribed = subscribedProductIds(callerOrganisation, page);
 
         return page.stream()
                 .map(row -> DiscoveredProductDTO.builder()
@@ -117,6 +132,7 @@ public class DiscoveredProductAssembler {
                                 row.shows(ProductBlock.SUBSCRIBED_BY)
                                         ? subscribedBy(row.productId(), subscribing)
                                         : null)
+                        .subscriptionStatus(subscriptionStatus(callerOrganisation, subscribed, row.productId()))
                         .build())
                 .toList();
     }
@@ -188,6 +204,32 @@ public class DiscoveredProductAssembler {
      */
     private List<Grant> grants(Set<Long> productIds) {
         return productIds.isEmpty() ? List.of() : repository.findGrants(productIds);
+    }
+
+    /**
+     * The products of the page the calling organisation holds a grant on - and nothing asked of the
+     * repository when the caller's organisation is not known. The caller's own status describes the
+     * caller, not other organisations, so it is not subject to the masking that withholds consumers
+     * and subscribedBy.
+     */
+    private Set<Long> subscribedProductIds(String callerOrganisation, List<PageRow> page) {
+        if (callerOrganisation == null) {
+            return Set.of();
+        }
+        return repository.findSubscribedProductIds(
+                callerOrganisation, page.stream().map(PageRow::productId).toList());
+    }
+
+    /** The caller's status for one product; null, so absent, when the caller's organisation is not known. */
+    private static DiscoveredProductDTO.SubscriptionStatus subscriptionStatus(
+            String callerOrganisation, Set<Long> subscribed, long productId) {
+        if (callerOrganisation == null) {
+            return null;
+        }
+        if (subscribed.contains(productId)) {
+            return DiscoveredProductDTO.SubscriptionStatus.SUBSCRIBED;
+        }
+        return DiscoveredProductDTO.SubscriptionStatus.NOT_SUBSCRIBED;
     }
 
     /** The organisations subscribing to the products that show them; see {@link #grants}. */

@@ -28,11 +28,15 @@ target/
 build/
 !**/src/main/**/build/
 !**/src/test/**/build/
+**/node_modules/
+# The console's build output; the image builds it, it is not committed.
+ui/dist/
 
 ### VS Code ###
 .vscode/
 
 ### Development certificates ###
+cert-backup-*/
 *.key
 *.csr
 *.crt
@@ -60,3 +64,7 @@ build/
 ### vault unseal keys (local dev)
 docker/vault/vault-keys.env
 /graphify-out/
+
+# Per-machine overrides and secrets for the catalogue stack profiles
+docker/catalogue/profiles/*.local.env
+scripts/acm-export.json

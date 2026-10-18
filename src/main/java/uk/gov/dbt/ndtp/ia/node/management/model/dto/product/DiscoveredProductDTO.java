@@ -41,6 +41,9 @@ import lombok.Builder;
  * @param producer the producer offering the product
  * @param consumers the consumers holding a grant, with the terms of each grant
  * @param subscribedBy the organisations using the product: those with at least one grant
+ * @param subscriptionStatus whether the calling organisation holds a grant on the product. Carried by
+ *     both endpoints and not subject to masking: it describes the caller, not other organisations.
+ *     Absent when the caller's organisation is not known
  */
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -55,7 +58,16 @@ public record DiscoveredProductDTO(
         Organisation organisation,
         Producer producer,
         List<Consumer> consumers,
-        List<SubscribingOrganisation> subscribedBy) {
+        List<SubscribingOrganisation> subscribedBy,
+        SubscriptionStatus subscriptionStatus) {
+
+    /** The calling organisation's relation to a product. */
+    public enum SubscriptionStatus {
+        /** At least one of the organisation's consumers holds a grant on the product. */
+        SUBSCRIBED,
+        /** None of the organisation's consumers holds a grant on the product. */
+        NOT_SUBSCRIBED
+    }
 
     @Builder
     @JsonInclude(JsonInclude.Include.NON_NULL)
