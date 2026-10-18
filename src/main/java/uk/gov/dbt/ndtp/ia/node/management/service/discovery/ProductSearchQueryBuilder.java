@@ -66,10 +66,7 @@ public class ProductSearchQueryBuilder {
                 .map(rule -> compiler.compile(rule.when(), parameters))
                 .toList();
 
-        String from = " FROM " + schemaPrefix + "product p"
-                + " JOIN " + schemaPrefix + "producer pr ON pr.id = p.producer_id"
-                + " JOIN " + schemaPrefix + "organisation o ON o.id = pr.org_id"
-                + " LEFT JOIN " + schemaPrefix + "product_type pt ON pt.id = p.product_type_id";
+        String from = fromClause(schemaPrefix);
         String where = " WHERE (" + compiler.compile(contract.rowFilter(), parameters) + ")"
                 + " AND (" + compiler.compile(FilterNode.Group.and(criteria.filters()), parameters) + ")"
                 + " AND (" + textCondition(contract, criteria, parameters) + ")";
@@ -81,6 +78,14 @@ public class ProductSearchQueryBuilder {
                 + " OFFSET " + parameters.bind(criteria.offset());
         String countSql = "SELECT COUNT(*)" + from + where;
         return new ProductSearchQuery(pageSql, countSql, parameters.asMap());
+    }
+
+    /** The {@code FROM ... JOIN ...} every discovery statement reads products through. */
+    static String fromClause(String schemaPrefix) {
+        return " FROM " + schemaPrefix + "product p"
+                + " JOIN " + schemaPrefix + "producer pr ON pr.id = p.producer_id"
+                + " JOIN " + schemaPrefix + "organisation o ON o.id = pr.org_id"
+                + " LEFT JOIN " + schemaPrefix + "product_type pt ON pt.id = p.product_type_id";
     }
 
     /**
@@ -161,7 +166,7 @@ public class ProductSearchQueryBuilder {
         return String.join(" OR ", matching);
     }
 
-    private static String textCondition(
+    static String textCondition(
             ProductSearchContract contract, ProductSearchCriteria criteria, SqlParameters parameters) {
         if (!criteria.hasText()) {
             return SqlPredicateCompiler.TRUE;
