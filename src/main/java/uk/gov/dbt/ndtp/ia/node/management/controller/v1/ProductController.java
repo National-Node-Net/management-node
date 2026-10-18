@@ -140,6 +140,13 @@ public class ProductController {
             @Valid @RequestBody(required = false) ProductDiscoveryRequestDTO criteria,
             @Parameter(hidden = true) @AuthenticationPrincipal EnhancedPrincipal principal,
             @Parameter(hidden = true) Optional<PolicyDecision<ProductDiscoveryPolicyDecisionDetails>> policyDecision) {
+        policyDecision.ifPresent(decision -> log.debug(
+                "Product discover filter policy decision allow={} policy={} resolution={} reasons={} evaluation={}",
+                decision.allow(),
+                decision.policy().id(),
+                decision.policy().resolution(),
+                decision.reasons(),
+                decision.details().evaluation()));
         return productFilterOptionsService.filterOptions(criteria, organisationOf(principal), policyDecision);
     }
 
