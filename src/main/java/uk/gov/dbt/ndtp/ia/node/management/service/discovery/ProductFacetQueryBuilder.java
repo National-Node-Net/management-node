@@ -24,7 +24,7 @@ import uk.gov.dbt.ndtp.ia.node.management.model.policy.filter.FilterTarget;
  *        COUNT(DISTINCT p.id) FILTER (WHERE [narrowed]) AS matching
  * [fromClause] [extra joins]
  * WHERE ([row filter])
- * GROUP BY [value expr]
+ * GROUP BY 2
  * </pre>
  *
  * <p>Every branch applies the same row filter - compiled once from {@link
@@ -35,6 +35,16 @@ import uk.gov.dbt.ndtp.ia.node.management.model.policy.filter.FilterTarget;
  * group, not how many match with the group's own choice already applied. Each criteria filter and
  * the text condition are themselves compiled once and their SQL text reused across branches, so
  * nothing is bound twice.
+ *
+ * <p>{@code GROUP BY} names the {@code value} column by its ordinal position ({@code 2}) rather
+ * than repeating its expression. {@link SqlParameters#bind(Object)} gives every occurrence of a
+ * value a fresh placeholder, even when the SQL text around it is identical, so a value expression
+ * that carries one - {@link ProductField#IS_OWN_PRODUCT}'s {@code CASE} does, through {@link
+ * SqlPredicateCompiler#ownProductCondition(SqlParameters)} - would repeat the expression in
+ * {@code SELECT} and {@code GROUP BY} with two different placeholders for what
+ * {@code NamedParameterJdbcTemplate} binds to the same value. PostgreSQL sees that as two
+ * different expressions and refuses the query ("must appear in the GROUP BY clause"), so grouping
+ * by position is not a style choice here but the only form that is correct for every branch.
  */
 @Component
 public class ProductFacetQueryBuilder {
@@ -107,7 +117,12 @@ public class ProductFacetQueryBuilder {
                 + from
                 + value.extraJoin()
                 + " WHERE (" + rowFilter + ")"
-                + " GROUP BY " + value.expression();
+                // Grouping by the value expression itself would repeat it between SELECT and
+                // GROUP BY with a fresh placeholder each time it binds a parameter (isOwnProduct's
+                // CASE does); PostgreSQL then sees two different expressions for one bound value
+                // and refuses the query. Grouping by ordinal position is correct for every branch,
+                // not only the ones whose value expression happens to carry no parameter.
+                + " GROUP BY 2";
     }
 
     /**

@@ -118,11 +118,15 @@ class ProductFacetQueryBuilderTest {
         FacetQuery query =
                 schemaBuilder.build(contract, criteria(null, List.of()), List.of(FORMAT, ORGANISATION_KEY), null);
 
-        String expectedFragment = "WHERE (EXISTS (SELECT 1 FROM \"mn\".policy_attribute_live_value a";
-        for (String branch : branchesOf(query)) {
-            assertThat(branch).contains(expectedFragment);
-        }
-        assertThat(countOccurrences(query.sql(), "a.name = ")).isGreaterThanOrEqualTo(1);
+        // The row filter is compiled once, independently here with a fresh SqlParameters that
+        // starts at :p0 exactly as the builder's own does (its row filter is the first thing it
+        // compiles), so this is the identical SQL text every branch's outer WHERE must carry.
+        SqlPredicateCompiler rowFilterCompiler = new SqlPredicateCompiler(new DiscoverySchema("mn").prefix(), null);
+        String compiledRowFilter = rowFilterCompiler.compile(contract.rowFilter(), new SqlParameters());
+        String expectedWhere = " WHERE (" + compiledRowFilter + ")";
+
+        List<String> branches = branchesOf(query);
+        assertThat(countOccurrences(query.sql(), expectedWhere)).isEqualTo(branches.size());
         long identifiabilityBindings = query.parameters().values().stream()
                 .filter("identifiability"::equals)
                 .count();
@@ -152,6 +156,31 @@ class ProductFacetQueryBuilderTest {
 
         assertThat(organisationFilter).contains("LOWER(p.format) IN").doesNotContain("LOWER(o.organisation_key) IN");
         assertThat(formatFilter).contains("LOWER(o.organisation_key) IN").doesNotContain("LOWER(p.format) IN");
+    }
+
+    @Test
+    void twoFiltersOnTheSameTarget_areBothExcludedFromItsOwnCounts() {
+        ProductSearchCriteria criteria = criteria(
+                null,
+                List.of(
+                        FilterNode.Comparison.ofField("format", ComparisonOperator.IN, "CSV"),
+                        FilterNode.Comparison.ofField("format", ComparisonOperator.NEQ, "XML"),
+                        new FilterNode.Comparison(
+                                FilterTarget.parse(null, true, "organisation.key"),
+                                ComparisonOperator.EQ,
+                                List.of("ENV"))));
+
+        FacetQuery query =
+                builder.build(ProductSearchContract.open(), criteria, List.of(FORMAT, ORGANISATION_KEY), null);
+
+        List<String> branches = branchesOf(query);
+        String formatFilter = extractFilter(branches.get(0));
+        String organisationFilter = extractFilter(branches.get(1));
+
+        assertThat(formatFilter).doesNotContain("p.format");
+        assertThat(organisationFilter)
+                .contains("LOWER(p.format) IN")
+                .contains("p.format IS NULL OR LOWER(p.format) NOT IN");
     }
 
     private static String extractFilter(String branch) {
@@ -190,7 +219,7 @@ class ProductFacetQueryBuilderTest {
                 .contains(" LEFT JOIN \"mn\".product_consumer fpc ON fpc.product_id = p.id")
                 .contains(" LEFT JOIN \"mn\".consumer fc ON fc.id = fpc.consumer_id")
                 .contains(" LEFT JOIN \"mn\".organisation fo ON fo.id = fc.org_id")
-                .contains("GROUP BY fo.organisation_key");
+                .contains("GROUP BY 2");
     }
 
     @Test
@@ -202,6 +231,44 @@ class ProductFacetQueryBuilderTest {
                 .contains("CASE WHEN LOWER(o.organisation_key) = :p")
                 .contains("THEN 'true' ELSE 'false' END");
         assertThat(query.parameters()).containsValue("env");
+    }
+
+    /**
+     * A blank caller normalises to "not known", the same as {@link SqlPredicateCompiler}'s own
+     * constructor does for the page query: no product counts as anyone's own, and nothing is
+     * bound for it.
+     */
+    @Test
+    void blankCaller_isOwnProductBranch_comparesAsUnknown() {
+        FacetQuery query =
+                builder.build(ProductSearchContract.open(), criteria(null, List.of()), List.of(IS_OWN_PRODUCT), " ");
+
+        assertThat(query.sql()).contains("CASE WHEN 1 = 0 THEN 'true' ELSE 'false' END");
+        assertThat(query.parameters()).hasSize(1).containsEntry("p0", "field:isOwnProduct");
+    }
+
+    /**
+     * {@code GROUP BY} names the value column by position rather than repeating its expression,
+     * in every branch - not only {@code isOwnProduct}'s, whose {@code CASE} is the one value
+     * expression that binds a parameter and so is the one PostgreSQL would reject if grouped by
+     * expression (a fresh placeholder for the same bound value makes the {@code SELECT} and
+     * {@code GROUP BY} occurrences look like two different expressions to it).
+     */
+    @Test
+    void noBranchGroupsByAnExpressionHoldingAParameter() {
+        FacetQuery query = builder.build(
+                ProductSearchContract.open(),
+                criteria(null, List.of()),
+                List.of(FORMAT, SUBSCRIBED_BY, IS_OWN_PRODUCT, PRODUCT_ATTRIBUTE),
+                "ENV");
+
+        List<String> branches = branchesOf(query);
+        assertThat(branches).hasSize(4);
+        for (String branch : branches) {
+            assertThat(branch).endsWith("GROUP BY 2");
+        }
+        assertThat(countOccurrences(query.sql(), "GROUP BY 2")).isEqualTo(branches.size());
+        assertThat(query.sql()).doesNotContain("GROUP BY :p");
     }
 
     @Test
