@@ -156,14 +156,18 @@ public final class FilterOptionTargets {
             case ORGANISATION_NAME -> "Organisation name";
             case SUBSCRIBED_BY -> "Subscribed by";
             case IS_OWN_PRODUCT -> "My organisation's products";
-            default -> throw new IllegalStateException("No filter option label defined for " + field);
+            case ID, PRODUCER_NAME, PRODUCER_DESCRIPTION, PRODUCER_ACTIVE ->
+                throw new IllegalStateException("No filter option label defined for " + field);
         };
     }
 
     private static boolean fieldListsValues(ProductField field) {
         return switch (field) {
             case NAME, DISPLAY_NAME, DESCRIPTION -> false;
-            default -> true;
+            case TOPIC, TYPE, SOURCE, FORMAT, ORGANISATION_KEY, ORGANISATION_NAME, SUBSCRIBED_BY, IS_OWN_PRODUCT ->
+                true;
+            case ID, PRODUCER_NAME, PRODUCER_DESCRIPTION, PRODUCER_ACTIVE ->
+                throw new IllegalStateException("No filter option defined for " + field);
         };
     }
 
