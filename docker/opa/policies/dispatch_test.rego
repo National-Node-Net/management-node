@@ -7,6 +7,7 @@
 package dispatch_test
 
 import data.dispatch
+import data.sample_data
 
 known_org := {"key": "FEDERATOR_ENV", "attributes": {}}
 
@@ -155,6 +156,17 @@ test_module_without_a_contract_is_a_mismatch if {
 # ---------------------------------------------------------------------------
 # Routing order and delegation hygiene
 # ---------------------------------------------------------------------------
+
+# The discover filter panel is decided exactly as discovery is: a route, not a dedicated rule,
+# so the two can never drift apart.
+test_discover_filter_is_routed_to_the_discover_rule if {
+	body := {"filters": [{"field": "format", "values": ["CSV"]}]}
+	filter := dispatch.decision with input as sample_data.input_for("ENV", "discover_filter", "POST", body)
+	discover := dispatch.decision with input as sample_data.input_for("ENV", "discover", "POST", body)
+
+	filter.policy == {"id": "product.discover", "version": discover.policy.version, "resolution": "route"}
+	object.remove(filter, ["policy"]) == object.remove(discover, ["policy"])
+}
 
 test_lowest_priority_enabled_route_wins if {
 	decision := dispatch.decision with input as request("product", "browse", "GET")

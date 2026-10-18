@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.DiscoveredProductDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductDiscoveryRequestDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductDiscoveryResponseDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductFilterOptionsResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductSubscriptionRequestDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductSubscriptionResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.jwt.EnhancedPrincipal;
@@ -35,6 +36,7 @@ import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductDiscoveryP
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductSubscriptionPolicyDecisionDetails;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductViewPolicyDecisionDetails;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductDiscoveryService;
+import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductFilterOptionsService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductSubscriptionService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductViewService;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecision;
@@ -52,13 +54,17 @@ public class ProductController {
 
     private final ProductSubscriptionService productSubscriptionService;
 
+    private final ProductFilterOptionsService productFilterOptionsService;
+
     public ProductController(
             ProductDiscoveryService productDiscoveryService,
             ProductViewService productViewService,
-            ProductSubscriptionService productSubscriptionService) {
+            ProductSubscriptionService productSubscriptionService,
+            ProductFilterOptionsService productFilterOptionsService) {
         this.productSubscriptionService = productSubscriptionService;
         this.productDiscoveryService = productDiscoveryService;
         this.productViewService = productViewService;
+        this.productFilterOptionsService = productFilterOptionsService;
     }
 
     @PostMapping("/discover")
@@ -105,6 +111,36 @@ public class ProductController {
                 decision.reasons(),
                 decision.details().evaluation()));
         return productDiscoveryService.discover(criteria, organisationOf(principal), policyDecision);
+    }
+
+    @PostMapping("/discover/filter")
+    @PreAuthorize("hasAuthority('ROLE_management-node:product_discovery')")
+    @Policy(resource = "product", action = "discover_filter", details = ProductDiscoveryPolicyDecisionDetails.class)
+    @Operation(
+            summary = "The discover filter panel",
+            description = "Builds the product catalogue's filter panel from the same product.discover "
+                    + "policy contract and the same criteria POST /api/v1/product/discover applies: the "
+                    + "total this request matches, whether and how free text may be searched, and every "
+                    + "filter the caller may apply, with distinct values and counts where listing them is "
+                    + "worth it. Routed to the product.discover rule, so the two endpoints agree on who may "
+                    + "search and what is withheld.",
+            security = {@SecurityRequirement(name = "bearerAuth")})
+    @ApiResponse(
+            responseCode = "200",
+            description = "The filter panel for this request",
+            content =
+                    @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ProductFilterOptionsResponseDTO.class)))
+    @ApiResponse(responseCode = "400", description = "Malformed search criteria")
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
+    @ApiResponse(responseCode = "403", description = "Forbidden by role or by policy")
+    @ApiResponse(responseCode = "500", description = "Internal server error")
+    public ProductFilterOptionsResponseDTO discoverFilters(
+            @Valid @RequestBody(required = false) ProductDiscoveryRequestDTO criteria,
+            @Parameter(hidden = true) @AuthenticationPrincipal EnhancedPrincipal principal,
+            @Parameter(hidden = true) Optional<PolicyDecision<ProductDiscoveryPolicyDecisionDetails>> policyDecision) {
+        return productFilterOptionsService.filterOptions(criteria, organisationOf(principal), policyDecision);
     }
 
     @PostMapping("/subscribe")

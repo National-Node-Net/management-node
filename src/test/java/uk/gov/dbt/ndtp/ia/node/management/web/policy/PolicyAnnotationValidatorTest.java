@@ -33,6 +33,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 import uk.gov.dbt.ndtp.ia.node.management.controller.v1.ConfigurationController;
 import uk.gov.dbt.ndtp.ia.node.management.controller.v1.ProductController;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductDiscoveryService;
+import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductFilterOptionsService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductSubscriptionService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductViewService;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.configuration.ConfigurationProvider;
@@ -242,7 +243,8 @@ class PolicyAnnotationValidatorTest {
                         new ProductController(
                                 mock(ProductDiscoveryService.class),
                                 mock(ProductViewService.class),
-                                mock(ProductSubscriptionService.class)),
+                                mock(ProductSubscriptionService.class),
+                                mock(ProductFilterOptionsService.class)),
                         new ConfigurationController(mock(ConfigurationProvider.class)))
                 .forEach(controller -> Arrays.stream(controller.getClass().getDeclaredMethods())
                         .filter(method -> method.isAnnotationPresent(Policy.class))
@@ -260,7 +262,7 @@ class PolicyAnnotationValidatorTest {
                                     handler);
                         }));
 
-        assertThat(handlers).hasSize(5);
+        assertThat(handlers).hasSize(6);
         assertThatCode(() -> validator.validate(handlers)).doesNotThrowAnyException();
     }
 
