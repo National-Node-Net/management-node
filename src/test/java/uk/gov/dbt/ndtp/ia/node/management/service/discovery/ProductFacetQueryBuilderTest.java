@@ -158,6 +158,37 @@ class ProductFacetQueryBuilderTest {
         assertThat(formatFilter).contains("LOWER(o.organisation_key) IN").doesNotContain("LOWER(p.format) IN");
     }
 
+    /**
+     * Regression for the targets {@link FilterOptionTargets#permitted} actually hands this
+     * builder, not the hand-built fixtures above: {@code organisation.key} is the one name where a
+     * wrongly-built target would silently stop excluding itself, because its criteria-side
+     * {@link FilterTarget} and a naively field-built one are not equal.
+     */
+    @Test
+    void organisationKeyFilter_isExcludedFromItsOwnGroup() {
+        List<FilterOptionTarget> permitted =
+                FilterOptionTargets.permitted(ProductSearchContract.open(), List.of(), "ENV");
+        FilterOptionTarget organisationKey = permitted.stream()
+                .filter(target -> target.key().equals("field:organisation.key"))
+                .findFirst()
+                .orElseThrow();
+        FilterOptionTarget format = permitted.stream()
+                .filter(target -> target.key().equals("field:format"))
+                .findFirst()
+                .orElseThrow();
+        ProductSearchCriteria criteria = criteria(
+                null,
+                List.of(new FilterNode.Comparison(
+                        FilterTarget.parse(null, true, "organisation.key"), ComparisonOperator.EQ, List.of("ENV"))));
+
+        FacetQuery query =
+                builder.build(ProductSearchContract.open(), criteria, List.of(organisationKey, format), null);
+
+        List<String> branches = branchesOf(query);
+        assertThat(extractFilter(branches.get(0))).doesNotContain("LOWER(o.organisation_key) IN");
+        assertThat(extractFilter(branches.get(1))).contains("LOWER(o.organisation_key) IN");
+    }
+
     @Test
     void twoFiltersOnTheSameTarget_areBothExcludedFromItsOwnCounts() {
         ProductSearchCriteria criteria = criteria(

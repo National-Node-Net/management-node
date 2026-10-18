@@ -14,7 +14,9 @@ import uk.gov.dbt.ndtp.ia.node.management.model.policy.filter.FilterScope;
  * Response for {@code POST /api/v1/product/discover/filter}: the product catalogue's filter
  * panel, built from the same search contract {@code POST /api/v1/product/discover} applies.
  *
- * @param totalElements how many products match with no filter applied; the panel's baseline
+ * @param totalElements how many products match <em>this</em> request - the same count {@code POST
+ *     /api/v1/product/discover} would return for the same body, filters and text included, not a
+ *     baseline taken with nothing applied
  * @param textSearch whether a free-text term is permitted, and which fields it is matched against
  * @param filters every filter the caller is offered, in the order {@code FilterOptionTargets}
  *     decides

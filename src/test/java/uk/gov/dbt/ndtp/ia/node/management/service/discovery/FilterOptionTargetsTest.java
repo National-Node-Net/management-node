@@ -15,6 +15,7 @@ import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.filter.ComparisonOperator;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.filter.FilterScope;
+import uk.gov.dbt.ndtp.ia.node.management.model.policy.filter.FilterTarget;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductDiscoveryPolicyDecisionDetails;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.configuration.ProductDiscoveryRepository.FilterAttributeDefinition;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecision;
@@ -105,6 +106,28 @@ class FilterOptionTargetsTest {
         List<FilterOptionTarget> options = FilterOptionTargets.permitted(contract, List.of(), callerOrganisation);
 
         assertThat(options).extracting(FilterOptionTarget::key).doesNotContain("field:isOwnProduct");
+    }
+
+    /**
+     * {@code organisation.key} and {@code organisation.name} are the only field names with a dot
+     * in their API name, so they are the only ones a naive {@code FilterTarget.ofField} would
+     * build differently from how {@link uk.gov.dbt.ndtp.ia.node.management.service.discovery.ProductSearchCriteriaFactory}
+     * parses a caller's unscoped filter on the same name. The two must be built the <em>same</em>
+     * way - {@link FilterTarget#parse} with no explicit scope - or a caller's own filter on one of
+     * these can never be recognised as this target's own: {@code selected} would never select it,
+     * and {@link ProductFacetQueryBuilder}'s own-group exclusion would never exclude it either.
+     */
+    @Test
+    void organisationFields_useTheSameTargetAsAParsedCriteriaFilter() {
+        ProductSearchContract contract = ProductSearchContract.open();
+
+        List<FilterOptionTarget> options = FilterOptionTargets.permitted(contract, List.of(), "ENV");
+
+        FilterOptionTarget organisationKey = option(options, "field:organisation.key");
+        assertThat(organisationKey.target()).isEqualTo(FilterTarget.parse(null, true, "organisation.key"));
+
+        FilterOptionTarget organisationName = option(options, "field:organisation.name");
+        assertThat(organisationName.target()).isEqualTo(FilterTarget.parse(null, true, "organisation.name"));
     }
 
     @Test

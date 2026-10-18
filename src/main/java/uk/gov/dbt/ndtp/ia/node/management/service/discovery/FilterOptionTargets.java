@@ -104,7 +104,15 @@ public final class FilterOptionTargets {
             if (field == ProductField.IS_OWN_PRODUCT && !callerKnown) {
                 continue;
             }
-            FilterTarget target = FilterTarget.ofField(field.apiName());
+            // Built the same way ProductSearchCriteriaFactory reads an unscoped filter -
+            // FilterTarget.parse(null, true, name) - rather than FilterTarget.ofField, which would
+            // leave a dotted name such as "organisation.key" as a single PRODUCT-scoped name
+            // instead of the ORGANISATION-scoped "key" the criteria side builds. The two targets
+            // must be equal, or a caller's own filter on such a name can never be recognised as
+            // this target's own: selectedValues would never select it, and
+            // ProductFacetQueryBuilder's narrowedCondition would never exclude it from its own
+            // counts.
+            FilterTarget target = FilterTarget.parse(null, true, field.apiName());
             if (!ProductSearchCriteriaFactory.permits(target, contract, Set.of())) {
                 continue;
             }
