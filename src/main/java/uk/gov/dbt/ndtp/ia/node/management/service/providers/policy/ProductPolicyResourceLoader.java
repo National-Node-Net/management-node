@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
- * attributed to the UK's Department for Business, Innovation, Science and Trade (BIST) as the governing entity.
+ * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 
 package uk.gov.dbt.ndtp.ia.node.management.service.providers.policy;
@@ -71,9 +71,11 @@ public class ProductPolicyResourceLoader implements PolicyResourceLoader {
         Map<String, Object> fields = new LinkedHashMap<>();
         fields.put("id", product.getId());
         fields.put("name", product.getName());
+        putIfPresent(fields, "displayName", product.getDisplayName());
         fields.put("topic", product.getTopic());
         putIfPresent(fields, "description", product.getDescription());
         putIfPresent(fields, "source", product.getSource());
+        putIfPresent(fields, "format", product.getFormat());
         if (product.getProductType() != null) {
             fields.put("type", product.getProductType().getName());
         }

@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
- * attributed to the UK's Department for Business, Innovation, Science and Trade (BIST) as the governing entity.
+ * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 package uk.gov.dbt.ndtp.ia.node.management.service.discovery;
 
@@ -17,7 +17,7 @@ import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductPolicyCont
  * (what the caller asked for). Both halves of the statement come from the contract:
  *
  * <pre>
- * SELECT p.id, [each field the caller may see], [one flag per unmask rule]
+ * SELECT p.id, [each field the caller may see], [one flag per unmask rule], [is it the caller's own]
  * FROM product p JOIN producer pr ... JOIN organisation o ... LEFT JOIN product_type pt ...
  * WHERE ([policy row filter]) AND ([caller filters]) AND ([free text])
  * ORDER BY [sort keys], p.id  LIMIT ... OFFSET ...
@@ -34,21 +34,33 @@ import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductPolicyCont
 public class ProductSearchQueryBuilder {
 
     private final String schemaPrefix;
-    private final SqlPredicateCompiler compiler;
 
     public ProductSearchQueryBuilder(DiscoverySchema schema) {
         this.schemaPrefix = schema.prefix();
-        this.compiler = new SqlPredicateCompiler(schemaPrefix);
+    }
+
+    /** As {@link #build(ProductSearchContract, ProductSearchCriteria, ProductProjection, String)}, for a caller whose organisation is not known. */
+    public ProductSearchQuery build(
+            ProductSearchContract contract, ProductSearchCriteria criteria, ProductProjection projection) {
+        return build(contract, criteria, projection, null);
     }
 
     /**
      * @param projection how much of a product this endpoint returns; it can only narrow what the
      *     contract already permits
+     * @param callerOrganisation the calling organisation's key. When it is known, every row carries
+     *     {@link ProductSearchQuery#IS_OWN_PRODUCT}; when it is null or blank, no row does and no
+     *     product counts as the caller's own
      * @throws FilterCompilationException when the contract's row filter or an unmask condition
      *     cannot be translated; the caller's criteria were validated when they were created
      */
     public ProductSearchQuery build(
-            ProductSearchContract contract, ProductSearchCriteria criteria, ProductProjection projection) {
+            ProductSearchContract contract,
+            ProductSearchCriteria criteria,
+            ProductProjection projection,
+            String callerOrganisation) {
+        SqlPredicateCompiler compiler = new SqlPredicateCompiler(schemaPrefix, callerOrganisation);
+        boolean callerKnown = callerOrganisation != null && !callerOrganisation.isBlank();
         SqlParameters parameters = new SqlParameters();
         List<String> unmaskConditions = contract.unmaskRules().stream()
                 .map(rule -> compiler.compile(rule.when(), parameters))
@@ -62,7 +74,8 @@ public class ProductSearchQueryBuilder {
                 + " AND (" + compiler.compile(FilterNode.Group.and(criteria.filters()), parameters) + ")"
                 + " AND (" + textCondition(contract, criteria, parameters) + ")";
 
-        String pageSql = "SELECT " + selectList(contract, projection, unmaskConditions) + from + where
+        String ownProduct = callerKnown ? compiler.ownProductCondition(parameters) : null;
+        String pageSql = "SELECT " + selectList(contract, projection, unmaskConditions, ownProduct) + from + where
                 + " ORDER BY " + orderBy(criteria, parameters)
                 + " LIMIT " + parameters.bind(criteria.size())
                 + " OFFSET " + parameters.bind(criteria.offset());
@@ -96,8 +109,15 @@ public class ProductSearchQueryBuilder {
         }
     }
 
+    /**
+     * @param ownProduct the condition telling whether the caller offers a product; null when the
+     *     caller's organisation is not known, and then the column is not selected
+     */
     private static String selectList(
-            ProductSearchContract contract, ProductProjection projection, List<String> unmaskConditions) {
+            ProductSearchContract contract,
+            ProductProjection projection,
+            List<String> unmaskConditions,
+            String ownProduct) {
         List<String> columns = new ArrayList<>();
         columns.add("p.id AS " + ProductSearchQuery.ID);
         columns.add("o.id AS " + ProductSearchQuery.ORGANISATION_ID);
@@ -109,6 +129,10 @@ public class ProductSearchQueryBuilder {
         for (int i = 0; i < unmaskConditions.size(); i++) {
             columns.add("CASE WHEN " + unmaskConditions.get(i) + " THEN TRUE ELSE FALSE END AS "
                     + ProductSearchQuery.unmaskColumn(i));
+        }
+        if (ownProduct != null) {
+            columns.add(
+                    "CASE WHEN " + ownProduct + " THEN TRUE ELSE FALSE END AS " + ProductSearchQuery.IS_OWN_PRODUCT);
         }
         return String.join(", ", columns);
     }

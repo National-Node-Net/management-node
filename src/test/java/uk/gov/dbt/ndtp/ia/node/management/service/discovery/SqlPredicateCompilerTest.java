@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
- * attributed to the UK's Department for Business, Innovation, Science and Trade (BIST) as the governing entity.
+ * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 package uk.gov.dbt.ndtp.ia.node.management.service.discovery;
 
@@ -351,6 +351,83 @@ class SqlPredicateCompilerTest {
         assertThatThrownBy(() -> compile(comparison))
                 .isInstanceOf(FilterCompilationException.class)
                 .hasMessageContaining("does not apply to the field 'subscribedBy'");
+    }
+
+    // -----------------------------------------------------------------------------------------
+    // isOwnProduct: the owning organisation compared with the caller's
+    // -----------------------------------------------------------------------------------------
+
+    private final SqlPredicateCompiler envCompiler = new SqlPredicateCompiler("", "ENV");
+
+    @Test
+    void compile_isOwnProductTrue_comparesTheOwnerWithTheCallerCaseInsensitively() {
+        assertThat(envCompiler.compile(field("isOwnProduct", ComparisonOperator.EQ, true), parameters))
+                .isEqualTo("LOWER(o.organisation_key) = :p0");
+        assertThat(parameters.asMap()).containsExactly(entry("p0", "env"));
+    }
+
+    @Test
+    void compile_isOwnProductFalse_isTheNegation() {
+        assertThat(envCompiler.compile(field("isOwnProduct", ComparisonOperator.EQ, false), parameters))
+                .isEqualTo("NOT (LOWER(o.organisation_key) = :p0)");
+        assertThat(envCompiler.compile(field("isOwnProduct", ComparisonOperator.NEQ, true), new SqlParameters()))
+                .isEqualTo("NOT (LOWER(o.organisation_key) = :p0)");
+    }
+
+    @Test
+    void compile_isOwnProductAcceptsTextBooleans() {
+        assertThat(envCompiler.compile(field("isOwnProduct", ComparisonOperator.EQ, "TRUE"), parameters))
+                .isEqualTo("LOWER(o.organisation_key) = :p0");
+    }
+
+    @Test
+    void compile_isOwnProductBothOrNeither_isAConstant() {
+        assertThat(envCompiler.compile(field("isOwnProduct", ComparisonOperator.IN, true, false), parameters))
+                .isEqualTo("1 = 1");
+        assertThat(envCompiler.compile(field("isOwnProduct", ComparisonOperator.IN), parameters))
+                .isEqualTo("1 = 0");
+        assertThat(envCompiler.compile(field("isOwnProduct", ComparisonOperator.NOT_IN, true, false), parameters))
+                .isEqualTo("1 = 0");
+        assertThat(envCompiler.compile(field("isOwnProduct", ComparisonOperator.EXISTS), parameters))
+                .isEqualTo("1 = 1");
+        assertThat(envCompiler.compile(field("isOwnProduct", ComparisonOperator.NOT_EXISTS), parameters))
+                .isEqualTo("1 = 0");
+        assertThat(parameters.asMap()).isEmpty();
+    }
+
+    @Test
+    void compile_isOwnProductWithoutAKnownCaller_matchesNoProductAsOwn() {
+        assertThat(compile(field("isOwnProduct", ComparisonOperator.EQ, true))).isEqualTo("1 = 0");
+        assertThat(compile(field("isOwnProduct", ComparisonOperator.EQ, false))).isEqualTo("NOT (1 = 0)");
+        assertThat(new SqlPredicateCompiler("", " ")
+                        .compile(field("isOwnProduct", ComparisonOperator.EQ, true), parameters))
+                .isEqualTo("1 = 0");
+        assertThat(parameters.asMap()).isEmpty();
+    }
+
+    @Test
+    void compile_isOwnProductWithANonBoolean_throws() {
+        FilterNode.Comparison comparison = field("isOwnProduct", ComparisonOperator.EQ, "yes");
+        assertThatThrownBy(() -> envCompiler.compile(comparison, parameters))
+                .isInstanceOf(FilterCompilationException.class)
+                .hasMessageContaining("'isOwnProduct' needs true or false");
+    }
+
+    @Test
+    void compile_isOwnProductWithAnInapplicableOperator_throws() {
+        FilterNode.Comparison comparison = field("isOwnProduct", ComparisonOperator.CONTAINS, "tr");
+        assertThatThrownBy(() -> envCompiler.compile(comparison, parameters))
+                .isInstanceOf(FilterCompilationException.class)
+                .hasMessageContaining("does not apply to the field 'isOwnProduct'");
+    }
+
+    @Test
+    void compile_newTextFields_areCaseInsensitiveColumns() {
+        assertThat(compile(field("displayName", ComparisonOperator.CONTAINS, "Flood")))
+                .isEqualTo("LOWER(p.display_name) LIKE :p0 ESCAPE '\\'");
+        assertThat(compile(field("format", ComparisonOperator.IN, "JSON", "csv")))
+                .isEqualTo("LOWER(p.format) IN (:p1)");
+        assertThat(parameters.asMap()).containsEntry("p1", Set.of("json", "csv"));
     }
 
     // -----------------------------------------------------------------------------------------

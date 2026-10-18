@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
- * attributed to the UK's Department for Business, Innovation, Science and Trade (BIST) as the governing entity.
+ * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 package uk.gov.dbt.ndtp.ia.node.management.service.discovery;
 
@@ -97,10 +97,13 @@ public class DiscoveredProductAssembler {
                 .map(row -> DiscoveredProductDTO.builder()
                         .id(row.productId())
                         .name(row.text(ProductField.NAME))
+                        .displayName(row.text(ProductField.DISPLAY_NAME))
                         .description(row.text(ProductField.DESCRIPTION))
                         .topic(row.text(ProductField.TOPIC))
                         .type(row.text(ProductField.TYPE))
                         .source(row.text(ProductField.SOURCE))
+                        .format(row.text(ProductField.FORMAT))
+                        .isOwnProduct(row.ownProduct())
                         .attributes(
                                 row.shows(ProductBlock.POLICY_ATTRIBUTES)
                                         ? productAttributes.getOrDefault(row.productId(), Map.of())
@@ -301,6 +304,11 @@ public class DiscoveredProductAssembler {
 
         Long producerId() {
             return id(ProductSearchQuery.PRODUCER_ID);
+        }
+
+        /** Whether the caller offers this product; null when the caller's organisation is not known. */
+        Boolean ownProduct() {
+            return (Boolean) columns.get(ProductSearchQuery.IS_OWN_PRODUCT);
         }
 
         /** The value of a field; null when the field was not selected, i.e. is withheld. */

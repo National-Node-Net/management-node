@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
- * attributed to the UK's Department for Business, Innovation, Science and Trade (BIST) as the governing entity.
+ * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 
 package uk.gov.dbt.ndtp.ia.node.management.controller.v1;
@@ -157,6 +157,29 @@ class ProductControllerTest {
                 .andExpect(status().isOk());
 
         verify(productDiscoveryService).discover(any(), eq("test-organisation"), any());
+    }
+
+    @Test
+    void discover_displayNameFormatAndIsOwnProduct_areSerialisedInCamelCase() throws Exception {
+        serviceReturns(ProductDiscoveryResponseDTO.builder()
+                .products(List.of(DiscoveredProductDTO.builder()
+                        .id(3L)
+                        .name("FloodRiskMapZones")
+                        .displayName("Flood Risk Map Zones")
+                        .format("GeoJSON")
+                        .isOwnProduct(true)
+                        .build()))
+                .page(ProductDiscoveryResponseDTO.Page.of(0, 20, 1, 1))
+                .build());
+
+        mockMvc.perform(post("/api/v1/product/discover")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.products[0].displayName").value("Flood Risk Map Zones"))
+                .andExpect(jsonPath("$.products[0].format").value("GeoJSON"))
+                .andExpect(jsonPath("$.products[0].isOwnProduct").value(true))
+                .andExpect(jsonPath("$.products[0].ownProduct").doesNotExist());
     }
 
     @Test

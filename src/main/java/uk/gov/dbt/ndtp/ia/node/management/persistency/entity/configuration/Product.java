@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
- * attributed to the UK's Department for Business, Innovation, Science and Trade (BIST) as the governing entity.
+ * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 
 package uk.gov.dbt.ndtp.ia.node.management.persistency.entity.configuration;
@@ -24,6 +24,10 @@ public class Product {
     @Column(name = "name", nullable = false, length = 50)
     private String name;
 
+    /** The name a user interface shows in place of {@link #name}. Nullable. */
+    @Column(name = "display_name", length = 150)
+    private String displayName;
+
     @Column(name = "topic", nullable = false, length = 150)
     private String topic;
 
@@ -33,6 +37,10 @@ public class Product {
 
     @Column(name = "source", length = 500)
     private String source;
+
+    /** The format the product's data is published in, e.g. JSON, XML, CSV, RDF; an open set. Nullable. */
+    @Column(name = "format", length = 100)
+    private String format;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "producer_id", nullable = false)

@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
- * attributed to the UK's Department for Business, Innovation, Science and Trade (BIST) as the governing entity.
+ * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 package uk.gov.dbt.ndtp.ia.node.management.service.discovery;
 
@@ -160,6 +160,15 @@ public class ProductSearchCriteriaFactory {
         if (field != null && (operator.isOrdering() || operator == ComparisonOperator.ALL_OF)) {
             throw new InvalidSearchCriteriaException(
                     "Operator '" + operator.wireName() + "' does not apply to the field '" + name + "'");
+        }
+        if (field != null && field.kind() == ProductField.Kind.BOOLEAN) {
+            if (operator == ComparisonOperator.CONTAINS) {
+                throw new InvalidSearchCriteriaException(
+                        "Operator '" + operator.wireName() + "' does not apply to the field '" + name + "'");
+            }
+            if (filter.values().stream().anyMatch(value -> SqlPredicateCompiler.booleanValue(value) == null)) {
+                throw new InvalidSearchCriteriaException("The values of '" + name + "' must be true or false");
+            }
         }
         return new FilterNode.Comparison(target, operator, filter.values());
     }
