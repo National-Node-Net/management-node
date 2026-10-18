@@ -231,8 +231,10 @@ public class ProductDiscoveryRepository {
      * The live {@code PRODUCT} and {@code ORGANISATION} policy attribute definitions the filter
      * panel can offer, each catalogue's own definition, not the per-entity values. Deduplicated on
      * {@code (scope, name)}: when the same name is defined under two namespaces for one scope, the
-     * first one returned (by {@code namespace} order) is kept and the clash is logged, exactly as
-     * {@link #findAttributes} does for a per-entity name collision.
+     * first one returned (by {@code namespace} order) is kept and the clash is logged, in the same
+     * "keep the first, warn" style {@link
+     * uk.gov.dbt.ndtp.ia.node.management.service.data.impl.PolicyAttributeServiceImpl#findAttributeMap}
+     * uses for a per-entity name collision.
      */
     public List<FilterAttributeDefinition> findFilterAttributeDefinitions() {
         List<FilterAttributeDefinition> rows = jdbc.query(

@@ -13,10 +13,15 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,6 +29,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.filter.FilterScope;
@@ -58,9 +64,22 @@ class ProductDiscoveryRepositoryFilterOptionsTest {
 
     private ProductDiscoveryRepository repository;
 
+    private ListAppender<ILoggingEvent> appender;
+    private Logger logger;
+
     @BeforeEach
     void setUp() {
         repository = new ProductDiscoveryRepository(jdbc, new DiscoverySchema("mn"));
+
+        logger = (Logger) LoggerFactory.getLogger(ProductDiscoveryRepository.class);
+        appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+    }
+
+    @AfterEach
+    void tearDown() {
+        logger.detachAppender(appender);
     }
 
     @Test
@@ -105,6 +124,10 @@ class ProductDiscoveryRepositoryFilterOptionsTest {
         List<FilterAttributeDefinition> definitions = repository.findFilterAttributeDefinitions();
 
         assertThat(definitions).containsExactly(first);
+        assertThat(appender.list).anySatisfy(event -> {
+            assertThat(event.getLevel()).isEqualTo(Level.WARN);
+            assertThat(event.getFormattedMessage()).contains("record_unit").contains("PRODUCT");
+        });
     }
 
     @Test
