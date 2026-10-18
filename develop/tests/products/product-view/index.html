@@ -2184,8 +2184,9 @@ the PDP at all.</p>
 </span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a><span class="w">  </span><span class="p">],</span>
 </span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a><span class="w">  </span><span class="nt">"subscribedBy"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 </span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a><span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">"key"</span><span class="p">:</span><span class="w"> </span><span class="s2">"HEG"</span><span class="p">,</span><span class="w"> </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Homes England"</span><span class="p">,</span><span class="w"> </span><span class="nt">"consumers"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"since"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-02-11T07:00:00"</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a><span class="w">  </span><span class="p">]</span>
-</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a><span class="p">}</span>
+</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a><span class="w">  </span><span class="p">],</span>
+</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a><span class="w">  </span><span class="nt">"subscriptionStatus"</span><span class="p">:</span><span class="w"> </span><span class="s2">"NOT_SUBSCRIBED"</span>
+</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a><span class="p">}</span>
 </span></code></pre></div>
 <p>Rules that hold for every <code>200</code>:</p>
 <ul>
@@ -2201,6 +2202,9 @@ the PDP at all.</p>
 <li>A nested <code>consumers[].organisation</code> carries <code>key</code> and <code>name</code> only; it never carries <code>attributes</code>.</li>
 <li>Attribute maps keep their JSON types: a multi-valued attribute is an array, a number stays a
   number.</li>
+<li><strong><code>subscriptionStatus</code></strong> is the calling organisation's own status, <code>SUBSCRIBED</code> or
+  <code>NOT_SUBSCRIBED</code>, with the same value discovery reports. It is not masked, since it describes the
+  caller only. See <a href="../product-discover/#subscriptionstatus">discover §4</a>.</li>
 <li>The response carries <strong>no <code>policy</code> block</strong>. Discovery's response has one (it is how a UI builds a
   filter panel); view returns the bare product.</li>
 </ul>
@@ -3287,7 +3291,7 @@ behavioural difference.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 24, 2026 10:34:35 UTC">September 24, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 18, 2026 17:33:46 UTC">October 18, 2026</span>
   </span>
 
     
