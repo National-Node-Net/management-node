@@ -76,7 +76,7 @@ public class ProductSearchCriteriaFactory {
         List<FilterNode.Comparison> filters = new ArrayList<>();
         for (ProductDiscoveryFilterDTO filter : body.filters()) {
             FilterTarget target = target(filter.scope(), filter.field(), filter.attribute(), "filter");
-            if (permitted(target, contract, sensitiveAttributes)) {
+            if (permits(target, contract, sensitiveAttributes)) {
                 filters.add(comparison(target, filter));
             } else {
                 refusals.add((target.field() ? REASON_FIELD : REASON_ATTRIBUTE) + target.qualifiedName());
@@ -97,7 +97,7 @@ public class ProductSearchCriteriaFactory {
         List<ProductSearchCriteria.SortKey> sort = new ArrayList<>();
         for (ProductDiscoverySortDTO key : body.sort()) {
             FilterTarget target = target(key.scope(), key.field(), key.attribute(), "sort key");
-            if (permitted(target, contract, sensitiveAttributes)) {
+            if (permits(target, contract, sensitiveAttributes)) {
                 sort.add(sortKey(target, key.descending()));
             } else {
                 refusals.add(REASON_SORT + target.qualifiedName());
@@ -127,8 +127,7 @@ public class ProductSearchCriteriaFactory {
         return FilterTarget.parse(scope, isField, isField ? field : attribute);
     }
 
-    private static boolean permitted(
-            FilterTarget target, ProductSearchContract contract, Set<String> sensitiveAttributes) {
+    static boolean permits(FilterTarget target, ProductSearchContract contract, Set<String> sensitiveAttributes) {
         boolean sensitive =
                 !target.field() && contract.masksSensitiveAttributes() && sensitiveAttributes.contains(target.name());
         return !sensitive && contract.mayFilterOn(target);
