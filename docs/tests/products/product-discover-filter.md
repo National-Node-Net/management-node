@@ -139,7 +139,7 @@ Two members are accepted but have no effect here:
 
 `sort`, `page` and `size` are still validated exactly as discover validates them (an invalid
 `direction` is still a `400`), because validation and the policy decision happen before the
-service knows which members it will use. See [TC-16](#tc-16-sort-page-and-size-are-accepted-and-ignored).
+service knows which members it will use. See [TC-16](#tc-16-sort-page-and-size-are-accepted-validated-and-ignored).
 
 ## 4. The response
 
@@ -187,6 +187,7 @@ service knows which members it will use. See [TC-16](#tc-16-sort-page-and-size-a
         { "value": "JSON", "count": 1, "selected": false },
         { "value": "NetCDF", "count": 1, "selected": false },
         { "value": "XML", "count": 1, "selected": false },
+        { "value": "Avro", "count": 0, "selected": false },
         { "value": "RDF", "count": 0, "selected": false }
       ],
       "missingCount": 1
@@ -213,7 +214,7 @@ service knows which members it will use. See [TC-16](#tc-16-sort-page-and-size-a
 
 This is a real response: ENV, posting `{"filters":[{"field":"organisation.key","values":["ENV"]}]}`
 (`filters[]` abbreviated to four of its seventeen entries for ENV; see [§6](#6-test-data) and
-[TC-07](#tc-07-choosing-organisationkey-env-narrows-format-and-type-while-organisation-stays-put)
+[TC-07](#tc-07-choosing-organisationkey--env-narrows-format-and-type-while-organisation-stays-put)
 for the full derivation).
 
 ### `totalElements`
@@ -285,7 +286,7 @@ other field and every attribute. Each entry:
 Which values are listed is decided **once, by the row filter alone** - ignoring the request's own
 `filters` and `text` entirely: the distinct values held by at least one product the caller can see
 at all. Narrowing the request narrows *counts*, never the *set of rows shown*; see
-[TC-07](#tc-07-choosing-organisationkey-env-narrows-format-and-type-while-organisation-stays-put).
+[TC-07](#tc-07-choosing-organisationkey--env-narrows-format-and-type-while-organisation-stays-put).
 A value no visible product holds is never listed, even when a `policy_attribute_definition`
 declares it in `allowed_values` - `rare_condition_cohorts` is a declared value of
 `population_risk_tags` that no sample product carries, and it never appears; see
@@ -353,14 +354,16 @@ Two things fall out of that sentence that are easy to get backwards:
 | Group | Own filter excluded from its own count? | Narrowed by the `organisation.key=ENV` filter? | Result |
 |---|---|---|---|
 | Organisation | yes - it *is* this group | no | unchanged from the baseline `{}` panel: `ENV:6, BCC:5, HEG:4` |
-| Format | n/a - no filter on `format` | yes | ENV's 15-product baseline (`JSON:5, CSV:4, GeoJSON:1, NetCDF:1, RDF:1, XML:1`, `missingCount:2`) narrows to ENV's own 6: `CSV:1, GeoJSON:1, JSON:1, NetCDF:1, XML:1, RDF:0`, `missingCount:1` |
+| Format | n/a - no filter on `format` | yes | ENV's 15-product baseline (`CSV:4, JSON:4, Avro:1, GeoJSON:1, NetCDF:1, RDF:1, XML:1`, `missingCount:2`) narrows to ENV's own 6: `CSV:1, GeoJSON:1, JSON:1, NetCDF:1, XML:1, Avro:0, RDF:0`, `missingCount:1` |
 | Type | n/a | yes | baseline `topic:8, file:6`, `missingCount:1` narrows to `topic:3, file:3`, `missingCount:0` |
 | `totalElements` | n/a | yes | 15 → **6** |
 
-`RDF` staying in the list at `count: 0` is the value-listing rule in action: `RDF` is a value held
-by a product ENV can *see* (`ScotlandLandRegisterExtract`, HEG's), so it is listed, even though no
-product in the *narrowed* set (ENV's own 6) holds it. The UI greys it out rather than removing it,
-so switching the organisation filter back off does not make the group's rows jump around.
+`RDF` and `Avro` staying in the list at `count: 0` is the value-listing rule in action: both are
+values held by a product ENV can *see* but does not *own*
+(`ScotlandLandRegisterExtract` and `HelpToBuyApplicants`, both HEG's), so they are listed, even
+though no product in the *narrowed* set (ENV's own 6) holds either. The UI greys them out rather
+than removing them, so switching the organisation filter back off does not make the group's rows
+jump around.
 
 ## 5. Critical fields
 
@@ -497,8 +500,13 @@ full per-caller breakdown follows directly from discover's §6.1 product list an
 exercise identical to TC-08 of discover's spec, with `in` replaced by "every value, with its
 count".
 
-**`Format` group, baseline `{}`, ENV**: `JSON:5, CSV:4, GeoJSON:1, NetCDF:1, RDF:1, XML:1,
-missingCount:2` (derived from §6.1 above against ENV's visible 15 products).
+**`Format` group, baseline `{}`, ENV**: `CSV:4, JSON:4, Avro:1, GeoJSON:1, NetCDF:1, RDF:1, XML:1,
+missingCount:2` (derived from §6.1 above against ENV's visible 15 products: `CSV` -
+WaterAbstractionLicences, BrownfieldLandAvailability, AffordableHousingCompletions,
+BristolSchoolPlaces; `JSON` - RiverLevelTelemetry, PendingPlanningApplications,
+BristolAirQualitySensors, BristolTemporaryAccommodation; `Avro` - HelpToBuyApplicants; `GeoJSON` -
+FloodRiskMapZones; `NetCDF` - CoastalErosionForecast; `RDF` - ScotlandLandRegisterExtract; `XML` -
+PollutionIncidentReports; missing - UnclassifiedDraftDataset, `Bristol_Cycle%Counts`).
 
 **`record_unit` and `quality_designation`, baseline `{}`, BCC** (BCC's visible 8: its own 5 plus
 FloodRiskMapZones, RiverLevelTelemetry, AffordableHousingCompletions):
@@ -665,8 +673,8 @@ products match. A divergence here is a defect in the shared planner, not in eith
 
 **Given** ENV's 15 visible products, of which 6 have `type=topic`
 **When** the `format` group is read from both responses
-**Then** both list the **same six** distinct `format` values (`CSV, GeoJSON, JSON, NetCDF, RDF,
-XML`) - the second response's counts are lower, but **no value is added or removed**.
+**Then** both list the **same seven** distinct `format` values (`Avro, CSV, GeoJSON, JSON,
+NetCDF, RDF, XML`) - the second response's counts are lower, but **no value is added or removed**.
 
 ```bash
 diff <(filters "$ENV_TOKEN" '{}' | values_of field:format | jq '[.[].value] | sort') \
@@ -701,6 +709,12 @@ RiverLevelTelemetry, CoastalErosionForecast, UnclassifiedDraftDataset, BristolAi
 `file:2` (CoastalErosionForecast, UnclassifiedDraftDataset), `missingCount:1`
 (`Bristol_Cycle%Counts`).
 
+```bash
+filters "$ENV_TOKEN" '{"filters":[{"attribute":"record_unit","values":["geographic_area"]}]}' \
+  | jq '{total: .totalElements, type: (.filters[] | select(.key=="field:type") | .values)}'
+# {"total":6,"type":[{"value":"file","count":3,"selected":false},{"value":"topic","count":3,"selected":false}]}
+```
+
 *Why:* `record_unit` is a different target from `type`, so unlike TC-07 below, *every* group
 including Type is narrowed by this filter - there is no exemption for another group's own choice.
 
@@ -719,14 +733,15 @@ exact response shown in [§4](#4-the-response) and worked through in
 [the counting rule](#the-counting-rule).
 
 **Given** ENV's baseline panel (`{}`): Organisation `ENV:6, BCC:5, HEG:4`; Format
-`JSON:5, CSV:4, GeoJSON:1, NetCDF:1, RDF:1, XML:1, missingCount:2`; Type `topic:8, file:6,
+`CSV:4, JSON:4, Avro:1, GeoJSON:1, NetCDF:1, RDF:1, XML:1, missingCount:2`; Type `topic:8, file:6,
 missingCount:1`; `totalElements:15`
 **When** the organisation filter is posted
 **Then** `totalElements` becomes **6**
 **And** the **Organisation** group is **unchanged**: `ENV:6 (selected:true), BCC:5, HEG:4`
-**And** the **Format** group narrows to `CSV:1, GeoJSON:1, JSON:1, NetCDF:1, XML:1, RDF:0,
-missingCount:1` - `RDF` stays listed at **zero**, since `ScotlandLandRegisterExtract` (HEG's) is
-still a product ENV can *see*, just not one that now matches
+**And** the **Format** group narrows to `CSV:1, GeoJSON:1, JSON:1, NetCDF:1, XML:1, Avro:0, RDF:0,
+missingCount:1` - `Avro` and `RDF` stay listed at **zero**, since `HelpToBuyApplicants` and
+`ScotlandLandRegisterExtract` (both HEG's) are still products ENV can *see*, just not ones that now
+match
 **And** the **Type** group narrows to `topic:3, file:3, missingCount:0`.
 
 ```bash
@@ -761,9 +776,23 @@ this body: WaterAbstractionLicences, AffordableHousingCompletions, ScotlandLandR
 filter excluded), so it reports what each type would give *among validated products*, not among
 the 3 the whole request matches
 **And** symmetrically the **Quality designation** group is narrowed only by the `type=file` filter,
-reporting each quality value's count among `file`-typed products
+reporting each quality value's count among `file`-typed products: `validated:3, experimental:1,
+provisional:1, missingCount:1`
+**And** the **Type** group, narrowed only by the `quality_designation=validated` filter, reports
+`topic:6, file:3, missingCount:1`
 **And** neither group is narrowed by **both** filters at once - that number is `totalElements`, not
 a group count.
+
+```bash
+filters "$ENV_TOKEN" \
+  '{"filters":[{"field":"type","values":["file"]},{"attribute":"quality_designation","values":["validated"]}]}' \
+  | jq '{total: .totalElements,
+         type: (.filters[] | select(.key=="field:type") | .values),
+         quality: (.filters[] | select(.key=="attribute:product.quality_designation") | .values)}'
+# totalElements: 3
+# type:    topic:6, file:3, missingCount:1   (narrowed by quality_designation=validated only)
+# quality: validated:3, experimental:1, provisional:1, missingCount:1   (narrowed by type=file only)
+```
 
 *Why:* this is the case that would expose a bug where the "exclude this target's own filter" rule
 was implemented as "exclude the most recently added filter" or "exclude nothing" - it needs two
