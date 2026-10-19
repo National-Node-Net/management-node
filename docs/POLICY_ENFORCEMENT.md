@@ -731,7 +731,7 @@ All three rules read the caller through four facts in `lib/entitlements.rego`:
 
 This is the endpoint where a decision stops being a verdict and becomes a *search contract*: the rule's `details` say which products exist for this caller, what they may ask, and what is withheld, and `ProductDiscoveryServiceImpl` compiles all three into one parameterised SQL statement. No entitlement logic lives in Java: no clearance comparison, no purpose check, no attribute name. Changing who may discover what is a Rego or attribute-data change.
 
-**A search result is a summary.** Discovery returns `id`, `name`, `displayName`, `description`, `type`, `format`, `isOwnProduct` and an `organisation` block carrying its `key` and `name`, enough to recognise a product, see whose it is, and ask for it by id, and the rest of the object model is what [the view endpoint](#get-apiv1productproductid--a-search-that-returns-one-product) is for. The organisation is the one block a search carries, because its two columns come from a join the query already makes; its *attributes* would be a query of their own, so they are left to the view. That narrowing is `ProductProjection.SUMMARY`, and it is **Java's, not policy's**: the rule answers both endpoints identically, and each decides how much of the answer it returns. It is applied to the query, so a search does not select the columns it will not return and runs no block or attribute query at all.
+**A search result is a summary.** Discovery returns `id`, `name`, `displayName`, `description`, `type`, `format`, `isOwnProduct` (when the caller's organisation is known) and an `organisation` block carrying its `key` and `name`, enough to recognise a product, see whose it is, and ask for it by id, and the rest of the object model is what [the view endpoint](#get-apiv1productproductid--a-search-that-returns-one-product) is for. The organisation is the one block a search carries, because its two columns come from a join the query already makes; its *attributes* would be a query of their own, so they are left to the view. That narrowing is `ProductProjection.SUMMARY`, and it is **Java's, not policy's**: the rule answers both endpoints identically, and each decides how much of the answer it returns. It is applied to the query, so a search does not select the columns it will not return and runs no block or attribute query at all.
 
 Two things follow, and both matter. It can only **narrow**: the projection is intersected with the decision, so a field policy withholds stays withheld and no projection can widen access. And it does not limit **searching**: a caller may still filter and sort on anything policy allows, including fields the summary does not carry, such as `organisation.key` and `topic`, say.
 
@@ -788,7 +788,7 @@ search contract discovery's decision already carries, turned into the catalogue'
 instead of into a page of products - every filter the caller may use, with its data type and
 operators, and, where listing them is worth it, the distinct values a value-holding target has
 among the caller's visible products and how many products hold each one *for this request*. The
-same four caller-level gates, the same row filter, the same allowed/masked lists as discover apply
+same three caller-level gates, the same row filter, the same allowed/masked lists as discover apply
 unchanged, because they are literally the same decision, not a second one evaluated the same way.
 
 **Counting is disjunctive faceting, computed without a second decision.** For each permitted,
@@ -901,6 +901,12 @@ Plain JUnit 5 and Mockito unit tests, run by `./mvnw test`:
 - `ProductQueryPlannerTest`: the single enforcement point both product endpoints share: the contract a decision yields, the open contract when policy is off, and the three refusals that must never widen access: no decision while policy is on, an obligation the service cannot fulfil, and a contract that will not compile.
 - `ProductDiscoveryServiceImplTest`: the search covers the query built from the contract, page-size clamping, paging, and that no `PolicyDecisionClient` is a collaborator at all.
 - `ProductViewServiceImplTest`: reading one product covers the id constraint AND-ed with the row filter, no count query, and that a product excluded by the row filter is indistinguishable from one that does not exist.
+- `ProductFilterOptionsServiceImplTest`: the discover filter panel runs discover's front half unchanged (contract, criteria refusals, count), uses the planner's sensitive attribute set for both the criteria and the offered filters, marks `selected` only for `eq`/`in`/`any_of`, and treats `UNKNOWN_ORG` as no organisation.
+- `FilterOptionTargetsTest`: which filters the panel offers - every filterable field but `id`, the attributes the contract permits minus discover's sensitive set when it is masked, `isOwnProduct` only for a known caller - and each target's operators, default operator and order.
+- `ProductFacetQueryBuilderTest`: the single facet statement - each target excluded from its own counts, the row filter and text applied, the schema prefix - and that it is built from the targets `FilterOptionTargets` actually returns.
+- `FacetValuesTest`: one target's facet rows summarised - `missingCount`, case-merging for fields only, both booleans always listed, ordering, the cap and `truncated`, and `selected` matched case-insensitively for a field and exactly for an attribute.
+- `ProductDiscoveryRepositoryFilterOptionsTest`: the repository's filter-option reads - the attribute definitions and the facet counts - by capturing the SQL and the row mapper, null branches included.
+- `UnknownIdentifiersTest`: `knownOrganisationOrNull`, which turns null, blank and `UNKNOWN_ORG` into "not known" at the entry of discover, view and the filter panel.
 - `ProductViewPolicyDecisionDetailsTest`: the view rule's details, including that an absent row filter reads as deny-all.
 - `ProductControllerTest`: the product endpoints, including `404` for a product this caller has no access to.
 

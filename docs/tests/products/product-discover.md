@@ -241,7 +241,9 @@ Whether the **calling** organisation holds a grant on the product, through any o
   still sees its own status.
 - A grant counts whatever its `validity`, exactly as for `subscribedBy`.
 - An organisation holding the product on several consumers is still one `SUBSCRIBED`.
-- Absent when the token carries no organisation.
+- Absent when the token carries no organisation. That includes a token with no `organisation`
+  claim at all: the principal then carries the `UNKNOWN_ORG` sentinel, which discover treats as
+  no organisation (as it does a blank claim), never as an organisation called `UNKNOWN_ORG`.
 - The organisation key is compared case-insensitively.
 
 ### `displayName` and `format`
@@ -261,7 +263,8 @@ Whether the **calling** organisation holds a grant on the product, through any o
 - It is filterable with `eq`, `neq`, `in`, `not_in`, `any_of`, `none_of`, `exists` and
   `not_exists`, taking JSON booleans (or the strings `"true"`/`"false"`). Any other value, or
   `contains`, is a `400`. It is not sortable.
-- Absent when the token carries no organisation; a filter `isOwnProduct eq true` then matches
+- Absent when the token carries no organisation (no claim, a blank one, or the `UNKNOWN_ORG`
+  sentinel); a filter `isOwnProduct eq true` then matches
   nothing, and `eq false` matches everything the caller may see.
 
 ### The `page` object

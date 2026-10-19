@@ -474,7 +474,7 @@ Usage:
 - Schema is versioned and applied with Flyway on application startup.
 - Foreign keys enforce referential integrity among core entities.
 - Foreign key columns are not indexed automatically by PostgreSQL. The ones product discovery joins on every search are indexed by `V20260918122000__add_product_discovery_indexes.sql`: `product.producer_id`, `producer.org_id`, `product_consumer.product_id` and `consumer.org_id`. Consider the same for `product_consumer.consumer_id` and `product_consumer_attribute.product_consumer_id` if query plans show it.
-- Discovery's free-text search is a leading-wildcard `LIKE` over `product.name` and `product.description`, which no b-tree index can serve. A `pg_trgm` GIN index is the remedy if `EXPLAIN` shows it is needed; `CREATE EXTENSION` needs a privileged role, so agree it with whoever owns the database.
+- Discovery's free-text search is a leading-wildcard `LIKE` over `product.name`, `product.display_name` and `product.description`, which no b-tree index can serve. A `pg_trgm` GIN index is the remedy if `EXPLAIN` shows it is needed; `CREATE EXTENSION` needs a privileged role, so agree it with whoever owns the database.
 
 ## Data Protection and Security
 - Identity fields like `idp_client_id` are not foreign keys; they link to external IdP configuration (e.g., Keycloak) at the application layer.

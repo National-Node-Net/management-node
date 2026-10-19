@@ -279,7 +279,10 @@ other field and every attribute. Each entry:
   (`"CSV"`, not `"csv"`).
 - `count`: how many products satisfy the [counting rule](#the-counting-rule) for this value.
 - `selected`: `true` when the caller's own request already has an `eq`, `in` or `any_of` filter on
-  this exact target naming this value (compared case-insensitively). A `neq`, `contains`, `exists`
+  this exact target naming this value, compared the way discover matches that filter:
+  **case-insensitively for a field** (discover compares fields with `LOWER()`, so `csv` selects
+  `CSV`) and **exactly for an attribute** (discover matches attributes with `a.item IN (...)`, so
+  `Anonymised` does not select `anonymised`). A `neq`, `contains`, `exists`
   or any other operator narrows the other groups but never marks a value `selected` - the request
   did not *pick* that value, it excluded or tested for others.
 
@@ -903,7 +906,8 @@ the service, since `organisation.missing` denies it while policy is on).
 claim.
 
 **Given** `EnhancedPrincipal.organisation()` substitutes the `UNKNOWN_ORG` sentinel for a missing
-claim, which `FilterOptionTargets` treats as "not known"
+claim, which the service turns into "not known" at its entry
+(`UnknownIdentifiers.knownOrganisationOrNull`, as discover and view do) before anything reads it
 **When** the panel is read
 **Then** `filters[]` contains **no** entry with `key: "field:isOwnProduct"`
 **And** every other field and attribute is still listed (policy is off, so nothing else is
