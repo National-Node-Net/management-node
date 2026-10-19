@@ -28,7 +28,7 @@ function usage() {
     echo "  STAGED_TAG: The tag to use as the source image (default: staged)"
 }
 
-if [ "$#" -ne 2 ]; then
+if [[ "$#" -ne 2 ]]; then
   usage
   exit 1
 fi
@@ -37,31 +37,31 @@ IMAGE="$1"
 JOINED_TAGS="$2"
 STAGED_TAG="${STAGED_TAG:-staged}"
 
-if [ -z "$IMAGE" ]; then
-  echo "Error: IMAGE is required"
+if [[ -z "$IMAGE" ]]; then
+  echo "Error: IMAGE is required" >&2
   usage
   exit 1
 fi
 
 if [[ ! "$IMAGE" =~ ^[a-zA-Z0-9_./-]+$ ]]; then
-  echo "Error: Invalid image name '$IMAGE'"
+  echo "Error: Invalid image name '$IMAGE'" >&2
   exit 1
 fi
 
-if [ -z "$JOINED_TAGS" ]; then
-  echo "Error: TAGS is required"
+if [[ -z "$JOINED_TAGS" ]]; then
+  echo "Error: TAGS is required" >&2
   usage
   exit 1
 fi
 
 if [[ ! "$STAGED_TAG" =~ ^[a-zA-Z0-9_./-]+$ ]]; then
-  echo "Error: Invalid staged tag name '$STAGED_TAG'"
+  echo "Error: Invalid staged tag name '$STAGED_TAG'" >&2
   exit 1
 fi
 
 # Check that the image exists
 if ! docker image inspect "$IMAGE:$STAGED_TAG" &> /dev/null; then
-  echo "Error: Image $IMAGE:$STAGED_TAG does not exist"
+  echo "Error: Image $IMAGE:$STAGED_TAG does not exist" >&2
   exit 1
 fi
 
@@ -73,7 +73,7 @@ for TAG in "${TAGS[@]}"; do
   # Remove all spaces from the tag
   tag="${TAG//[[:space:]]/}"
   if [[ ! "$tag" =~ ^[a-zA-Z0-9_./-]+$ ]]; then
-    echo "Error: Invalid tag name '$tag'"
+    echo "Error: Invalid tag name '$tag'" >&2
     exit 1
   fi
   echo "Applying tag: '$tag'"
