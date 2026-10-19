@@ -23,7 +23,7 @@ import uk.gov.dbt.ndtp.ia.node.management.service.discovery.FacetValues.Summary;
  * merge case variants (ties broken by the lexicographically smallest spelling) and attribute
  * targets do not, a BOOLEAN target always lists both booleans, everything else is ordered by
  * count then value and capped at {@link FacetValues#CAP}, {@code selected} is matched
- * case-insensitively, and no rows at all yields an empty, unmarked result.
+ * case-insensitively for a field and exactly for an attribute, and no rows at all yields an empty, unmarked result.
  */
 class FacetValuesTest {
 
@@ -176,5 +176,25 @@ class FacetValuesTest {
                 ComparisonOperator.EQ,
                 true,
                 true);
+    }
+
+    @Test
+    void fieldSelectedComparesCaseInsensitively_whateverCaseTheCallerSent() {
+        Summary summary =
+                FacetValues.summarise(FORMAT_FIELD, List.of(new FacetCount("format", "csv", 4)), Set.of("CSV"));
+
+        assertThat(summary.values()).extracting(Value::selected).containsExactly(true);
+    }
+
+    @Test
+    void attributeSelectedComparesExactly() {
+        Summary summary = FacetValues.summarise(
+                ATTRIBUTE,
+                List.of(
+                        new FacetCount("quality_designation", "validated", 5),
+                        new FacetCount("quality_designation", "Validated", 2)),
+                Set.of("Validated"));
+
+        assertThat(summary.values()).containsExactly(new Value("validated", 5, false), new Value("Validated", 2, true));
     }
 }

@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductFilterOptionsResponseDTO.Value;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.configuration.ProductDiscoveryRepository.FacetCount;
 
@@ -25,6 +27,10 @@ import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.configuration.P
  * {@code BOOLEAN} target always lists both {@code true} and {@code false}, in that order, with a
  * count of zero for whichever has no row. Every other target is ordered by count descending, then
  * by value ascending case-insensitively, and cut at {@link #CAP}.
+ *
+ * <p>{@code selected} mirrors how discover matches the same filter: a field compares
+ * case-insensitively ({@code LOWER(column)}), an attribute exactly ({@code a.item IN (...)}), so a
+ * value is only marked selected when the caller's filter would actually match it.
  */
 public final class FacetValues {
 
@@ -46,7 +52,8 @@ public final class FacetValues {
      * @param target the filter this summary is for
      * @param rows this target's own facet-count rows; a null {@link FacetCount#value()} means
      *     "products with no value"
-     * @param selected the values the caller's current criteria already selected, lower-cased
+     * @param selected the values the caller's current criteria already selected, as the caller
+     *     sent them; matched case-insensitively for a field target and exactly for an attribute
      */
     public static Summary summarise(FilterOptionTarget target, List<FacetCount> rows, Set<String> selected) {
         long missingCount = 0;
@@ -60,10 +67,11 @@ public final class FacetValues {
         }
 
         if (BOOLEAN_DATA_TYPE.equals(target.dataType())) {
-            return summariseBoolean(present, missingCount, selected);
+            return summariseBoolean(present, missingCount, selectedMatcher(target, selected));
         }
 
         boolean mergeCase = target.field() != null;
+        Predicate<String> isSelected = selectedMatcher(target, selected);
         Map<String, Map<String, Long>> groups = new LinkedHashMap<>();
         for (FacetCount row : present) {
             String spelling = row.value();
@@ -75,7 +83,7 @@ public final class FacetValues {
         for (Map<String, Long> spellings : groups.values()) {
             long total = spellings.values().stream().mapToLong(Long::longValue).sum();
             String winner = winningSpelling(spellings);
-            values.add(new Value(winner, total, isSelected(selected, winner)));
+            values.add(new Value(winner, total, isSelected.test(winner)));
         }
 
         values.sort(Comparator.comparingLong(Value::count)
@@ -87,7 +95,7 @@ public final class FacetValues {
         return new Summary(List.copyOf(capped), missingCount, truncated);
     }
 
-    private static Summary summariseBoolean(List<FacetCount> present, long missingCount, Set<String> selected) {
+    private static Summary summariseBoolean(List<FacetCount> present, long missingCount, Predicate<String> isSelected) {
         long trueCount = 0;
         long falseCount = 0;
         for (FacetCount row : present) {
@@ -98,8 +106,8 @@ public final class FacetValues {
             }
         }
         List<Value> values = List.of(
-                new Value(Boolean.TRUE, trueCount, isSelected(selected, "true")),
-                new Value(Boolean.FALSE, falseCount, isSelected(selected, "false")));
+                new Value(Boolean.TRUE, trueCount, isSelected.test("true")),
+                new Value(Boolean.FALSE, falseCount, isSelected.test("false")));
         return new Summary(values, missingCount, false);
     }
 
@@ -118,7 +126,17 @@ public final class FacetValues {
         return winner;
     }
 
-    private static boolean isSelected(Set<String> selected, String value) {
-        return selected.contains(value.toLowerCase(Locale.ROOT));
+    /**
+     * Whether a facet value is one the caller selected: case-insensitively for a field, which
+     * discover matches with {@code LOWER()}, and exactly for an attribute, which it matches with
+     * {@code a.item IN (...)}.
+     */
+    private static Predicate<String> selectedMatcher(FilterOptionTarget target, Set<String> selected) {
+        if (target.field() == null) {
+            return selected::contains;
+        }
+        Set<String> lowered =
+                selected.stream().map(value -> value.toLowerCase(Locale.ROOT)).collect(Collectors.toSet());
+        return value -> lowered.contains(value.toLowerCase(Locale.ROOT));
     }
 }

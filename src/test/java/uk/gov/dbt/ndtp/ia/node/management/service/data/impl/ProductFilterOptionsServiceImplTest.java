@@ -426,7 +426,10 @@ class ProductFilterOptionsServiceImplTest {
         assertThat(filterOption(response, "field:format").values()).containsExactly(new Value("csv", 10, true));
     }
 
-    /** The caller's filter value and the facet's own spelling are compared case-insensitively. */
+    /**
+     * For a field the caller's filter value and the facet's own spelling are compared
+     * case-insensitively, as discover matches a field with {@code LOWER()}.
+     */
     @Test
     void selectedMatchesCaseInsensitively() {
         ProductSearchContract contract = ProductSearchContract.open();
@@ -440,6 +443,33 @@ class ProductFilterOptionsServiceImplTest {
         ProductFilterOptionsResponseDTO response = service.filterOptions(null, null, Optional.empty());
 
         assertThat(filterOption(response, "field:format").values()).containsExactly(new Value("csv", 10, true));
+    }
+
+    /**
+     * For an attribute {@code selected} is exact, as discover matches an attribute with
+     * {@code a.item IN (...)}: a value differing only in case would not be matched by the filter,
+     * so it must not be shown as selected either.
+     */
+    @Test
+    void selectedMatchesAnAttributeExactly() {
+        ProductSearchContract contract = ProductSearchContract.open();
+        FilterAttributeDefinition identifiability = new FilterAttributeDefinition(
+                FilterScope.PRODUCT, "identifiability", "Identifiability", "STRING", false, false);
+        ProductSearchCriteria criteria = criteriaWithFilters(
+                FilterNode.Comparison.ofAttribute("identifiability", ComparisonOperator.IN, "Anonymised"));
+        givenFrontHalf(contract, criteria);
+        when(repository.count(DUMMY_QUERY)).thenReturn(0L);
+        when(repository.findFilterAttributeDefinitions()).thenReturn(List.of(identifiability));
+        givenFacetCounts(
+                contract,
+                criteria,
+                new FacetCount("attribute:product.identifiability", "anonymised", 7),
+                new FacetCount("attribute:product.identifiability", "Anonymised", 2));
+
+        ProductFilterOptionsResponseDTO response = service.filterOptions(null, null, Optional.empty());
+
+        assertThat(filterOption(response, "attribute:product.identifiability").values())
+                .containsExactly(new Value("anonymised", 7, false), new Value("Anonymised", 2, true));
     }
 
     /** {@code selected} works the same way for a policy attribute target as for a field. */

@@ -8,7 +8,6 @@ package uk.gov.dbt.ndtp.ia.node.management.service.data.impl;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -183,9 +182,10 @@ public class ProductFilterOptionsServiceImpl implements ProductFilterOptionsServ
     }
 
     /**
-     * The lower-cased values of the caller's own criteria filters on this target whose operator is
-     * {@code EQ}, {@code IN} or {@code ANY_OF}. Every other operator - a {@code NEQ} naming the same
-     * value included - never marks a value selected.
+     * The values of the caller's own criteria filters on this target whose operator is {@code EQ},
+     * {@code IN} or {@code ANY_OF}, as the caller sent them. Every other operator - a {@code NEQ}
+     * naming the same value included - never marks a value selected. How they are matched against a
+     * facet value is {@link FacetValues}'s to decide, mirroring how discover matches the filter.
      */
     private static Set<String> selectedValues(FilterOptionTarget target, ProductSearchCriteria criteria) {
         Set<String> selected = new HashSet<>();
@@ -194,7 +194,7 @@ public class ProductFilterOptionsServiceImpl implements ProductFilterOptionsServ
                 continue;
             }
             for (Object value : filter.values()) {
-                selected.add(String.valueOf(value).toLowerCase(Locale.ROOT));
+                selected.add(String.valueOf(value));
             }
         }
         return selected;
