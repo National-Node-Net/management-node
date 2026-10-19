@@ -143,33 +143,53 @@ public class ProductSearchCriteriaFactory {
                     + "' cannot take " + filter.values().size() + " value(s)");
         }
         for (Object value : filter.values()) {
-            if (!(value instanceof String || value instanceof Number || value instanceof Boolean)) {
-                throw new InvalidSearchCriteriaException(
-                        "The values of '" + name + "' must be text, numbers or booleans");
-            }
-            if (String.valueOf(value).length() > MAX_VALUE_LENGTH) {
-                throw new InvalidSearchCriteriaException(
-                        "A value of '" + name + "' is longer than " + MAX_VALUE_LENGTH + " characters");
-            }
-            if (operator.isOrdering() && !(value instanceof Number)) {
-                throw new InvalidSearchCriteriaException(
-                        "Operator '" + operator.wireName() + "' on '" + name + "' needs a number");
-            }
+            checkValue(value, operator, name);
         }
-        if (field != null && (operator.isOrdering() || operator == ComparisonOperator.ALL_OF)) {
-            throw new InvalidSearchCriteriaException(
-                    "Operator '" + operator.wireName() + "' does not apply to the field '" + name + "'");
-        }
-        if (field != null && field.kind() == ProductField.Kind.BOOLEAN) {
-            if (operator == ComparisonOperator.CONTAINS) {
-                throw new InvalidSearchCriteriaException(
-                        "Operator '" + operator.wireName() + "' does not apply to the field '" + name + "'");
-            }
-            if (filter.values().stream().anyMatch(value -> SqlPredicateCompiler.booleanValue(value) == null)) {
-                throw new InvalidSearchCriteriaException("The values of '" + name + "' must be true or false");
-            }
+        if (field != null) {
+            checkFieldOperator(field, operator, filter.values(), name);
         }
         return new FilterNode.Comparison(target, operator, filter.values());
+    }
+
+    /** One filter value: text, a number or a boolean, not too long, and a number for an ordering operator. */
+    private static void checkValue(Object value, ComparisonOperator operator, String name) {
+        if (!(value instanceof String || value instanceof Number || value instanceof Boolean)) {
+            throw new InvalidSearchCriteriaException("The values of '" + name + "' must be text, numbers or booleans");
+        }
+        if (String.valueOf(value).length() > MAX_VALUE_LENGTH) {
+            throw new InvalidSearchCriteriaException(
+                    "A value of '" + name + "' is longer than " + MAX_VALUE_LENGTH + " characters");
+        }
+        if (operator.isOrdering() && !(value instanceof Number)) {
+            throw new InvalidSearchCriteriaException(
+                    "Operator '" + operator.wireName() + "' on '" + name + "' needs a number");
+        }
+    }
+
+    /**
+     * What a product field accepts: no ordering or {@code all_of} operator on any field, and on a
+     * boolean field no {@code contains} and only true or false.
+     */
+    private static void checkFieldOperator(
+            ProductField field, ComparisonOperator operator, List<Object> values, String name) {
+        if (operator.isOrdering() || operator == ComparisonOperator.ALL_OF) {
+            throw notApplicableToField(operator, name);
+        }
+        if (field.kind() != ProductField.Kind.BOOLEAN) {
+            return;
+        }
+        if (operator == ComparisonOperator.CONTAINS) {
+            throw notApplicableToField(operator, name);
+        }
+        if (values.stream()
+                .anyMatch(value -> SqlPredicateCompiler.booleanValue(value).isEmpty())) {
+            throw new InvalidSearchCriteriaException("The values of '" + name + "' must be true or false");
+        }
+    }
+
+    private static InvalidSearchCriteriaException notApplicableToField(ComparisonOperator operator, String name) {
+        return new InvalidSearchCriteriaException(
+                "Operator '" + operator.wireName() + "' does not apply to the field '" + name + "'");
     }
 
     /** Text fields are searched by substring, as a person would expect; everything else exactly. */

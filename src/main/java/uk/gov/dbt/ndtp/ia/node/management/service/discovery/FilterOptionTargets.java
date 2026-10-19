@@ -32,6 +32,10 @@ import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.configuration.P
  */
 public final class FilterOptionTargets {
 
+    private static final String TEXT = "TEXT";
+    private static final String NUMBER = "NUMBER";
+    private static final String BOOLEAN = "BOOLEAN";
+
     private static final EnumSet<ComparisonOperator> TEXT_OPERATORS = EnumSet.of(
             ComparisonOperator.EQ,
             ComparisonOperator.NEQ,
@@ -99,10 +103,7 @@ public final class FilterOptionTargets {
     private static List<FilterOptionTarget> fieldOptions(ProductSearchContract contract, boolean callerKnown) {
         List<FilterOptionTarget> options = new ArrayList<>();
         for (ProductField field : ProductField.values()) {
-            if (!isOfferedInPanel(field) || !field.isFilterable()) {
-                continue;
-            }
-            if (field == ProductField.IS_OWN_PRODUCT && !callerKnown) {
+            if (!isOfferedTo(field, callerKnown)) {
                 continue;
             }
             // Built the same way ProductSearchCriteriaFactory reads an unscoped filter -
@@ -114,12 +115,22 @@ public final class FilterOptionTargets {
             // ProductFacetQueryBuilder's narrowedCondition would never exclude it from its own
             // counts.
             FilterTarget target = FilterTarget.parse(null, true, field.apiName());
-            if (!ProductSearchCriteriaFactory.permits(target, contract, Set.of())) {
-                continue;
+            if (ProductSearchCriteriaFactory.permits(target, contract, Set.of())) {
+                options.add(fieldOption(field, target));
             }
-            options.add(fieldOption(field, target));
         }
         return options;
+    }
+
+    /**
+     * Whether the panel offers this field to this caller: offered in the panel at all, filterable,
+     * and, for {@code isOwnProduct}, only when the caller's organisation is known.
+     */
+    private static boolean isOfferedTo(ProductField field, boolean callerKnown) {
+        if (!isOfferedInPanel(field) || !field.isFilterable()) {
+            return false;
+        }
+        return field != ProductField.IS_OWN_PRODUCT || callerKnown;
     }
 
     private static FilterOptionTarget fieldOption(ProductField field, FilterTarget target) {
@@ -146,7 +157,7 @@ public final class FilterOptionTargets {
         String dataType = mapDataType(definition.dataType());
         boolean multiValued = definition.multiValued();
         List<ComparisonOperator> operators = attributeOperators(dataType, multiValued);
-        ComparisonOperator defaultOperator = defaultOperator(true, "BOOLEAN".equals(dataType), multiValued);
+        ComparisonOperator defaultOperator = defaultOperator(true, BOOLEAN.equals(dataType), multiValued);
         String key = "attribute:" + target.scope().wireName() + "." + definition.name();
         return new FilterOptionTarget(
                 key, target, null, label, dataType, multiValued, operators, defaultOperator, true, true);
@@ -221,14 +232,14 @@ public final class FilterOptionTargets {
     }
 
     private static List<ComparisonOperator> attributeOperators(String dataType, boolean multiValued) {
-        if ("BOOLEAN".equals(dataType)) {
+        if (BOOLEAN.equals(dataType)) {
             return List.copyOf(BOOLEAN_OPERATORS);
         }
         EnumSet<ComparisonOperator> operators = EnumSet.copyOf(TEXT_OPERATORS);
         if (multiValued) {
             operators.add(ComparisonOperator.ALL_OF);
         }
-        if ("NUMBER".equals(dataType)) {
+        if (NUMBER.equals(dataType)) {
             operators.add(ComparisonOperator.LT);
             operators.add(ComparisonOperator.LTE);
             operators.add(ComparisonOperator.GT);
@@ -252,13 +263,13 @@ public final class FilterOptionTargets {
 
     private static String mapDataType(String dataType) {
         if (dataType == null) {
-            return "TEXT";
+            return TEXT;
         }
         return switch (dataType.toUpperCase(Locale.ROOT)) {
-            case "STRING", "TEXT" -> "TEXT";
-            case "NUMBER", "INTEGER", "DECIMAL", "NUMERIC" -> "NUMBER";
-            case "BOOLEAN" -> "BOOLEAN";
-            default -> "TEXT";
+            case "STRING", TEXT -> TEXT;
+            case NUMBER, "INTEGER", "DECIMAL", "NUMERIC" -> NUMBER;
+            case BOOLEAN -> BOOLEAN;
+            default -> TEXT;
         };
     }
 }

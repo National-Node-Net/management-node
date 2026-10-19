@@ -86,37 +86,44 @@ public class ProductFacetQueryBuilder {
         String rowFilter = compiler.compile(contract.rowFilter(), parameters);
         String textCondition = ProductSearchQueryBuilder.textCondition(contract, criteria, parameters);
         List<FilterNode.Comparison> filters = criteria.filters();
-        List<String> compiledFilters = new ArrayList<>(filters.size());
-        for (FilterNode.Comparison filter : filters) {
-            compiledFilters.add(compiler.compile(filter, parameters));
-        }
+        // Sequential streams bind each filter's parameters, then each branch's, in list order,
+        // exactly as the loops they replace did.
+        List<String> compiledFilters = filters.stream()
+                .map(filter -> compiler.compile(filter, parameters))
+                .toList();
         String from = ProductSearchQueryBuilder.fromClause(schemaPrefix);
+        SharedConditions shared = new SharedConditions(filters, compiledFilters, textCondition, rowFilter, from);
 
-        List<String> branches = new ArrayList<>(targets.size());
-        for (FilterOptionTarget target : targets) {
-            branches.add(
-                    branch(target, filters, compiledFilters, textCondition, rowFilter, from, compiler, parameters));
-        }
+        List<String> branches = targets.stream()
+                .map(target -> branch(target, shared, compiler, parameters))
+                .toList();
         return new FacetQuery(String.join(" UNION ALL ", branches), parameters.asMap());
     }
 
-    private String branch(
-            FilterOptionTarget target,
+    /**
+     * What every branch shares: the criteria filters with their compiled SQL (index for index), the
+     * free-text condition, the row filter and the {@code FROM} clause.
+     */
+    private record SharedConditions(
             List<FilterNode.Comparison> filters,
             List<String> compiledFilters,
             String textCondition,
             String rowFilter,
-            String from,
+            String from) {}
+
+    private String branch(
+            FilterOptionTarget target,
+            SharedConditions shared,
             SqlPredicateCompiler compiler,
             SqlParameters parameters) {
         String facetKey = parameters.bind(target.key());
         ValueExpression value = valueExpression(target, compiler, parameters);
-        String narrowed = narrowedCondition(target, filters, compiledFilters, textCondition);
+        String narrowed = narrowedCondition(target, shared.filters(), shared.compiledFilters(), shared.textCondition());
         return "SELECT CAST(" + facetKey + " AS TEXT) AS facet, CAST(" + value.expression() + " AS TEXT) AS value,"
                 + " COUNT(DISTINCT p.id) FILTER (WHERE " + narrowed + ") AS matching"
-                + from
+                + shared.from()
                 + value.extraJoin()
-                + " WHERE (" + rowFilter + ")"
+                + " WHERE (" + shared.rowFilter() + ")"
                 // Grouping by the value expression itself would repeat it between SELECT and
                 // GROUP BY with a fresh placeholder each time it binds a parameter (isOwnProduct's
                 // CASE does); PostgreSQL then sees two different expressions for one bound value

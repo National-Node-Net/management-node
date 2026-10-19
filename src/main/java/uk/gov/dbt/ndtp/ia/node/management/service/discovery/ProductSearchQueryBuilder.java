@@ -33,6 +33,8 @@ import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductPolicyCont
 @Component
 public class ProductSearchQueryBuilder {
 
+    private static final String CASE_WHEN = "CASE WHEN ";
+
     private final String schemaPrefix;
 
     public ProductSearchQueryBuilder(DiscoverySchema schema) {
@@ -110,7 +112,7 @@ public class ProductSearchQueryBuilder {
         // condition, and then the column is read only for those.
         String shownWhen = conditionsUnmasking(field, contract.unmaskRules(), unmaskConditions);
         if (!shownWhen.isEmpty()) {
-            columns.add("CASE WHEN " + shownWhen + " THEN " + field.column() + " END AS " + field.alias());
+            columns.add(CASE_WHEN + shownWhen + " THEN " + field.column() + " END AS " + field.alias());
         }
     }
 
@@ -132,12 +134,11 @@ public class ProductSearchQueryBuilder {
             addColumnFor(field, contract, projection, unmaskConditions, columns);
         }
         for (int i = 0; i < unmaskConditions.size(); i++) {
-            columns.add("CASE WHEN " + unmaskConditions.get(i) + " THEN TRUE ELSE FALSE END AS "
+            columns.add(CASE_WHEN + unmaskConditions.get(i) + " THEN TRUE ELSE FALSE END AS "
                     + ProductSearchQuery.unmaskColumn(i));
         }
         if (ownProduct != null) {
-            columns.add(
-                    "CASE WHEN " + ownProduct + " THEN TRUE ELSE FALSE END AS " + ProductSearchQuery.IS_OWN_PRODUCT);
+            columns.add(CASE_WHEN + ownProduct + " THEN TRUE ELSE FALSE END AS " + ProductSearchQuery.IS_OWN_PRODUCT);
         }
         return String.join(", ", columns);
     }

@@ -61,17 +61,23 @@ import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyTarget;
 class PolicyEnforcementInterceptorTest {
 
     /** A details subclass, so the declared details type is distinct from the generic default. */
-    static class SubscriptionDetails extends PolicyDecisionDetails {}
+    public static class SubscriptionDetails extends PolicyDecisionDetails {}
 
     static class SampleController {
 
         @Policy(resource = "product", action = "subscribe", details = SubscriptionDetails.class)
-        public void subscribe(String body, Optional<PolicyDecision<SubscriptionDetails>> decision) {}
+        public void subscribe(String body, Optional<PolicyDecision<SubscriptionDetails>> decision) {
+            // no-op: test stub, the interceptor is under test, not the handler body
+        }
 
         @Policy(resource = "configuration", action = "producer")
-        public void producer() {}
+        public void producer() {
+            // no-op: test stub, the interceptor is under test, not the handler body
+        }
 
-        public void unannotated() {}
+        public void unannotated() {
+            // no-op: test stub, the interceptor is under test, not the handler body
+        }
     }
 
     private static final PolicyInput INPUT = PolicyInputFixture.of("client-1", "product", "subscribe");
@@ -165,7 +171,9 @@ class PolicyEnforcementInterceptorTest {
         RequestContextHolder.resetRequestAttributes();
         invoking("producer");
 
-        assertThatThrownBy(() -> interceptor(true).invoke(invocation)).isInstanceOf(AccessRejectedException.class);
+        PolicyEnforcementInterceptor enforcing = interceptor(true);
+
+        assertThatThrownBy(() -> enforcing.invoke(invocation)).isInstanceOf(AccessRejectedException.class);
         verify(invocation, never()).proceed();
         verifyNoInteractions(policyDecisionClient);
     }
@@ -192,7 +200,7 @@ class PolicyEnforcementInterceptorTest {
     @Test
     void annotatedMethodWithoutDetails_asksForGenericDetails() throws Throwable {
         invoking("producer");
-        when(policyDecisionClient.evaluate(INPUT, PolicyDecisionDetails.class)).thenReturn(PolicyDecision.ALLOW);
+        when(policyDecisionClient.evaluate(INPUT, PolicyDecisionDetails.class)).thenReturn(PolicyDecision.ALLOWED);
 
         interceptor(true).invoke(invocation);
 
@@ -206,7 +214,7 @@ class PolicyEnforcementInterceptorTest {
     void unbufferedRequest_buildsTheInputWithNoBodyRatherThanFailing() throws Throwable {
         invoking("producer");
         when(policyRequestBodyReader.read(request)).thenReturn(null);
-        when(policyDecisionClient.evaluate(any(), any())).thenReturn(PolicyDecision.ALLOW);
+        when(policyDecisionClient.evaluate(any(), any())).thenReturn(PolicyDecision.ALLOWED);
 
         interceptor(true).invoke(invocation);
 

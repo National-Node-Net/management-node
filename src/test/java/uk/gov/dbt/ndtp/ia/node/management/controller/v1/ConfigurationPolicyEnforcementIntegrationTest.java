@@ -183,7 +183,7 @@ class ConfigurationPolicyEnforcementIntegrationTest {
     void allowedRequest_runsCertificateBeforePolicy_andReachesTheController() throws Exception {
         authenticateAs("client-1", PRODUCER_ROLE);
         activeCertificateFor("client-1");
-        when(policyDecisionClient.evaluate(any(), any())).thenReturn(PolicyDecision.ALLOW);
+        when(policyDecisionClient.evaluate(any(), any())).thenReturn(PolicyDecision.ALLOWED);
         when(configurationProvider.getProducerConfigByClientId(any(), any()))
                 .thenReturn(ProducerConfigDTO.builder()
                         .clientId("client-1")
@@ -204,7 +204,7 @@ class ConfigurationPolicyEnforcementIntegrationTest {
     void allowedRequest_onConsumerEndpoint_reachesControllerAndReturnsConfig() throws Exception {
         authenticateAs("client-1", CONSUMER_ROLE);
         activeCertificateFor("client-1");
-        when(policyDecisionClient.evaluate(any(), any())).thenReturn(PolicyDecision.ALLOW);
+        when(policyDecisionClient.evaluate(any(), any())).thenReturn(PolicyDecision.ALLOWED);
         when(configurationProvider.getConsumerConfigByClientId(any(), any()))
                 .thenReturn(ConsumerConfigDTO.builder()
                         .clientId("client-1")
@@ -222,7 +222,7 @@ class ConfigurationPolicyEnforcementIntegrationTest {
     void deniedByPolicy_onConsumerEndpoint_isRefusedBeforeReachingController() throws Exception {
         authenticateAs("client-1", CONSUMER_ROLE);
         activeCertificateFor("client-1");
-        when(policyDecisionClient.evaluate(any(), any())).thenReturn(PolicyDecision.DENY);
+        when(policyDecisionClient.evaluate(any(), any())).thenReturn(PolicyDecision.DENIED);
 
         mockMvc.perform(get("/api/v1/configuration/consumer"))
                 .andExpect(status().isForbidden())
@@ -237,7 +237,7 @@ class ConfigurationPolicyEnforcementIntegrationTest {
     void deniedByPolicy_onProducerEndpoint_isRefusedBeforeReachingController() throws Exception {
         authenticateAs("client-1", PRODUCER_ROLE);
         activeCertificateFor("client-1");
-        when(policyDecisionClient.evaluate(any(), any())).thenReturn(PolicyDecision.DENY);
+        when(policyDecisionClient.evaluate(any(), any())).thenReturn(PolicyDecision.DENIED);
 
         mockMvc.perform(get("/api/v1/configuration/producer"))
                 .andExpect(status().isForbidden())

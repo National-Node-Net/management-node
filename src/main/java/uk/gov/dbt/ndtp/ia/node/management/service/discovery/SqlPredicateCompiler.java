@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.filter.Combinator;
@@ -162,11 +163,9 @@ public class SqlPredicateCompiler {
     private static Set<Boolean> booleans(FilterNode.Comparison comparison) {
         Set<Boolean> values = new LinkedHashSet<>();
         for (Object value : comparison.values()) {
-            Boolean parsed = booleanValue(value);
-            if (parsed == null) {
-                throw new FilterCompilationException(
-                        "'" + comparison.target().qualifiedName() + "' needs true or false, not '" + value + "'");
-            }
+            Boolean parsed = booleanValue(value)
+                    .orElseThrow(() -> new FilterCompilationException(
+                            "'" + comparison.target().qualifiedName() + "' needs true or false, not '" + value + "'"));
             values.add(parsed);
         }
         return values;
@@ -174,21 +173,21 @@ public class SqlPredicateCompiler {
 
     /**
      * {@code value} as a boolean - a JSON boolean, or the text {@code true} or {@code false} in any
-     * case - or null when it is neither.
+     * case - or empty when it is neither.
      */
-    static Boolean booleanValue(Object value) {
+    static Optional<Boolean> booleanValue(Object value) {
         if (value instanceof Boolean bool) {
-            return bool;
+            return Optional.of(bool);
         }
         if (value instanceof String text) {
             if ("true".equalsIgnoreCase(text)) {
-                return Boolean.TRUE;
+                return Optional.of(Boolean.TRUE);
             }
             if ("false".equalsIgnoreCase(text)) {
-                return Boolean.FALSE;
+                return Optional.of(Boolean.FALSE);
             }
         }
-        return null;
+        return Optional.empty();
     }
 
     // ---------------------------------------------------------------------------------------
@@ -247,11 +246,9 @@ public class SqlPredicateCompiler {
 
     /** Every operand as a number, in the order given; anything that is not one fails the search. */
     private static Set<BigDecimal> numbers(FilterNode.Comparison comparison) {
-        Set<BigDecimal> values = new LinkedHashSet<>();
-        for (Object value : comparison.values()) {
-            values.add(number(comparison, value));
-        }
-        return values;
+        return comparison.values().stream()
+                .map(value -> number(comparison, value))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     /** A filter on the organisations using a product: a sub-query over its grants. */

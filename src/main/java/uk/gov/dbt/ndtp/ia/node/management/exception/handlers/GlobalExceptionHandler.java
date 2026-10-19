@@ -309,13 +309,19 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ex.getParameterValidationResults().forEach(result -> {
             String parameter = result.getMethodParameter().getParameterName();
             for (MessageSourceResolvable error : result.getResolvableErrors()) {
-                problems.add(
-                        error instanceof FieldError fieldError
-                                ? describe(fieldError)
-                                : (parameter == null ? "" : parameter + " ") + error.getDefaultMessage());
+                problems.add(describe(error, parameter));
             }
         });
         return join(problems);
+    }
+
+    /** One parameter constraint violation: a field error by its path, otherwise prefixed with the parameter name. */
+    private static String describe(MessageSourceResolvable error, String parameter) {
+        if (error instanceof FieldError fieldError) {
+            return describe(fieldError);
+        }
+        String prefix = parameter == null ? "" : parameter + " ";
+        return prefix + error.getDefaultMessage();
     }
 
     /**

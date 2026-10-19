@@ -31,7 +31,7 @@ class PolicyDecisionArgumentResolverTest {
             PolicyDecision.of(true, PolicyDecisionDetails.class).withDetails(new PolicyDecisionDetails(Map.of("a", 1)));
 
     /** A details subclass a handler might declare. */
-    static class ViewDetails extends PolicyDecisionDetails {}
+    public static class ViewDetails extends PolicyDecisionDetails {}
 
     @SuppressWarnings("unused")
     void handler(
@@ -39,7 +39,9 @@ class PolicyDecisionArgumentResolverTest {
             PolicyDecision<PolicyDecisionDetails> unwrapped,
             Optional<String> otherOptional,
             Optional<PolicyDecision<ViewDetails>> typedDecision,
-            Optional<PolicyDecision<?>> wildcardDecision) {}
+            Optional<PolicyDecision<?>> wildcardDecision) {
+        // no-op: test stub, only its parameter declarations are resolved
+    }
 
     private static MethodParameter parameter(int index) throws NoSuchMethodException {
         Method method = PolicyDecisionArgumentResolverTest.class.getDeclaredMethod(

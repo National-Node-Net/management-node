@@ -100,15 +100,13 @@ public class PolicyDecisionDetails {
      * Details of {@code type} with no fields set: what a decision no rule answered carries.
      *
      * @param type the details type
-     * @return a new instance, made through its no-argument constructor
+     * @return a new instance, made through its public no-argument constructor
      * @throws IllegalStateException when the type cannot be instantiated that way - a programming
      *     error, which startup validation of {@code @Policy} exists to catch earlier
      */
     public static <D extends PolicyDecisionDetails> D empty(Class<D> type) {
         try {
-            var constructor = type.getDeclaredConstructor();
-            constructor.setAccessible(true);
-            return constructor.newInstance();
+            return type.getConstructor().newInstance();
         } catch (NoSuchMethodException
                 | InstantiationException
                 | IllegalAccessException

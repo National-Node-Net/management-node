@@ -95,10 +95,7 @@ public class PolicyInputFactory {
      */
     public PolicyInput create(HttpServletRequest request, Object body, PolicyTarget<?> target) {
         return new PolicyInput(
-                buildSubject(request),
-                target.action(),
-                buildResource(target, request, body),
-                buildRequest(request, body));
+                buildSubject(), target.action(), buildResource(target, request, body), buildRequest(request, body));
     }
 
     /**
@@ -124,7 +121,7 @@ public class PolicyInputFactory {
                 .orElseGet(() -> PolicyResource.ofKind(kind));
     }
 
-    private PolicySubject buildSubject(HttpServletRequest request) {
+    private PolicySubject buildSubject() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         EnhancedPrincipal principal =
                 authentication != null && authentication.getPrincipal() instanceof EnhancedPrincipal p ? p : null;
@@ -156,7 +153,10 @@ public class PolicyInputFactory {
             return email;
         }
         String username = stringClaim(claims, CLAIM_PREFERRED_USERNAME);
-        return username != null ? username : (principal != null ? principal.subject() : null);
+        if (username != null) {
+            return username;
+        }
+        return principal != null ? principal.subject() : null;
     }
 
     /**

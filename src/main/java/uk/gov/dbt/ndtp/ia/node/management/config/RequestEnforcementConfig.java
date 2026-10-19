@@ -51,6 +51,13 @@ public class RequestEnforcementConfig {
     /** After the certificate check, so a request without a valid certificate never reaches the PDP. */
     public static final int POLICY_ENFORCEMENT_ORDER = CERTIFICATE_VALIDATION_ORDER + 10;
 
+    /**
+     * Every member is static. Spring still registers this class as a bean and instantiates it, which
+     * a private constructor allows: with {@code proxyBeanMethods = false} no CGLIB subclass is made,
+     * and Spring makes the constructor accessible itself.
+     */
+    private RequestEnforcementConfig() {}
+
     @Bean
     @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
     public static Advisor certificateValidationAdvisor(ObjectProvider<CertificateValidationInterceptor> interceptor) {

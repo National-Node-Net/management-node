@@ -54,23 +54,13 @@ public class PolicyAttributeServiceImpl implements PolicyAttributeService {
             PolicyAttributeDefinition definition =
                     attributeValue.getAttributeDefinitionScope().getAttributeDefinition();
             String name = definition.getName();
-
-            Long firstDefinitionId = definitionIdByName.putIfAbsent(name, definition.getId());
-            if (firstDefinitionId != null && !firstDefinitionId.equals(definition.getId())) {
-                log.warn(
-                        "Duplicate policy attribute name {} for {} {} across namespaces; keeping the first definition",
-                        name,
-                        scope.code(),
-                        entityId);
-                continue;
+            Object value = isFirstDefinition(definitionIdByName, definition, scope, entityId)
+                    ? readValue(attributeValue.getValue())
+                    : null;
+            if (value != null) {
+                multiValuedByName.putIfAbsent(name, Boolean.TRUE.equals(definition.getMultiValued()));
+                valuesByName.computeIfAbsent(name, key -> new ArrayList<>()).addAll(flatten(value));
             }
-
-            Object value = readValue(attributeValue.getValue());
-            if (value == null) {
-                continue;
-            }
-            multiValuedByName.putIfAbsent(name, Boolean.TRUE.equals(definition.getMultiValued()));
-            valuesByName.computeIfAbsent(name, key -> new ArrayList<>()).addAll(flatten(value));
         }
 
         Map<String, Object> attributes = new LinkedHashMap<>();
@@ -97,6 +87,29 @@ public class PolicyAttributeServiceImpl implements PolicyAttributeService {
     }
 
     /**
+     * Records the definition that first claimed this attribute name, and says whether this one is
+     * it. A second definition of the same name in another namespace is logged and its values are
+     * skipped, so the first definition wins.
+     */
+    private static boolean isFirstDefinition(
+            Map<String, Long> definitionIdByName,
+            PolicyAttributeDefinition definition,
+            PolicyAttributeScopeCode scope,
+            Long entityId) {
+        String name = definition.getName();
+        Long firstDefinitionId = definitionIdByName.putIfAbsent(name, definition.getId());
+        if (firstDefinitionId != null && !firstDefinitionId.equals(definition.getId())) {
+            log.warn(
+                    "Duplicate policy attribute name {} for {} {} across namespaces; keeping the first definition",
+                    name,
+                    scope.code(),
+                    entityId);
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * Flattens one stored value into the values it contributes. A multi-valued attribute is held
      * as one row per value, but a single row may itself hold a JSON array; both conventions are
      * accepted, and neither produces a nested array.
@@ -105,10 +118,7 @@ public class PolicyAttributeServiceImpl implements PolicyAttributeService {
         if (!(value instanceof List<?> list)) {
             return List.of(value);
         }
-        return list.stream()
-                .filter(Objects::nonNull)
-                .map(element -> (Object) element)
-                .toList();
+        return list.stream().filter(Objects::nonNull).map(Object.class::cast).toList();
     }
 
     /**

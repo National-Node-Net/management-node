@@ -42,7 +42,8 @@ import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecisio
 
 class PolicyAnnotationValidatorTest {
 
-    static class SubscriptionDetails extends PolicyDecisionDetails {}
+    // Public, as every details type must be: empty details are created through its public constructor.
+    public static class SubscriptionDetails extends PolicyDecisionDetails {}
 
     abstract static class AbstractDetails extends PolicyDecisionDetails {}
 
@@ -53,41 +54,67 @@ class PolicyAnnotationValidatorTest {
     static class Handlers {
 
         @Policy(resource = "product", action = "subscribe", details = SubscriptionDetails.class)
-        public void subscribe(Optional<PolicyDecision<SubscriptionDetails>> decision) {}
+        public void subscribe(Optional<PolicyDecision<SubscriptionDetails>> decision) {
+            // no-op: test stub, only its @Policy declaration and signature are validated
+        }
 
         @Policy(resource = "product", action = "subscribe", details = SubscriptionDetails.class)
-        public void subscribeGeneric(Optional<PolicyDecision<PolicyDecisionDetails>> decision) {}
+        public void subscribeGeneric(Optional<PolicyDecision<PolicyDecisionDetails>> decision) {
+            // no-op: test stub, only its @Policy declaration and signature are validated
+        }
 
         @Policy(resource = "product", action = "view")
-        public void typedParameterUntypedPolicy(Optional<PolicyDecision<SubscriptionDetails>> decision) {}
+        public void typedParameterUntypedPolicy(Optional<PolicyDecision<SubscriptionDetails>> decision) {
+            // no-op: test stub, only its @Policy declaration and signature are validated
+        }
 
         @Policy(resource = "configuration", action = "producer")
-        public void producer() {}
+        public void producer() {
+            // no-op: test stub, only its @Policy declaration and signature are validated
+        }
 
-        public void unannotated(Optional<String> unrelated) {}
+        public void unannotated(Optional<String> unrelated) {
+            // no-op: test stub, only its @Policy declaration and signature are validated
+        }
 
-        public void decisionWithoutPolicy(Optional<PolicyDecision<PolicyDecisionDetails>> decision) {}
+        public void decisionWithoutPolicy(Optional<PolicyDecision<PolicyDecisionDetails>> decision) {
+            // no-op: test stub, only its @Policy declaration and signature are validated
+        }
 
         @Policy(resource = "Product", action = "view")
-        public void upperCaseResource() {}
+        public void upperCaseResource() {
+            // no-op: test stub, only its @Policy declaration and signature are validated
+        }
 
         @Policy(resource = "product", action = "bulk-view")
-        public void hyphenatedAction() {}
+        public void hyphenatedAction() {
+            // no-op: test stub, only its @Policy declaration and signature are validated
+        }
 
         @Policy(resource = "product", action = "")
-        public void emptyAction() {}
+        public void emptyAction() {
+            // no-op: test stub, only its @Policy declaration and signature are validated
+        }
 
         @Policy(resource = "fallback", action = "view")
-        public void reservedResource() {}
+        public void reservedResource() {
+            // no-op: test stub, only its @Policy declaration and signature are validated
+        }
 
         @Policy(resource = "product", action = "fallback")
-        public void reservedAction() {}
+        public void reservedAction() {
+            // no-op: test stub, only its @Policy declaration and signature are validated
+        }
 
         @Policy(resource = "product", action = "view", details = AbstractDetails.class)
-        public void abstractDetails() {}
+        public void abstractDetails() {
+            // no-op: test stub, only its @Policy declaration and signature are validated
+        }
 
         @Policy(resource = "product", action = "view", details = NoDefaultConstructorDetails.class)
-        public void noDefaultConstructorDetails() {}
+        public void noDefaultConstructorDetails() {
+            // no-op: test stub, only its @Policy declaration and signature are validated
+        }
     }
 
     private final PolicyAnnotationValidator validator = new PolicyAnnotationValidator(emptyProvider());
@@ -166,7 +193,8 @@ class PolicyAnnotationValidatorTest {
 
     @Test
     void identifierNotLowerCase_failsNamingTheMethod() {
-        assertThatThrownBy(() -> validator.validate(handlers("upperCaseResource")))
+        Map<RequestMappingInfo, HandlerMethod> handlerMethods = handlers("upperCaseResource");
+        assertThatThrownBy(() -> validator.validate(handlerMethods))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("upperCaseResource")
                 .hasMessageContaining("resource 'Product'");
@@ -174,7 +202,8 @@ class PolicyAnnotationValidatorTest {
 
     @Test
     void identifierWithAHyphen_fails() {
-        assertThatThrownBy(() -> validator.validate(handlers("hyphenatedAction")))
+        Map<RequestMappingInfo, HandlerMethod> handlerMethods = handlers("hyphenatedAction");
+        assertThatThrownBy(() -> validator.validate(handlerMethods))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("hyphenatedAction")
                 .hasMessageContaining("action 'bulk-view'");
@@ -182,14 +211,16 @@ class PolicyAnnotationValidatorTest {
 
     @Test
     void emptyIdentifier_fails() {
-        assertThatThrownBy(() -> validator.validate(handlers("emptyAction")))
+        Map<RequestMappingInfo, HandlerMethod> handlerMethods = handlers("emptyAction");
+        assertThatThrownBy(() -> validator.validate(handlerMethods))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("emptyAction");
     }
 
     @Test
     void reservedIdentifier_failsForResourceAndAction() {
-        assertThatThrownBy(() -> validator.validate(handlers("reservedResource", "reservedAction")))
+        Map<RequestMappingInfo, HandlerMethod> handlerMethods = handlers("reservedResource", "reservedAction");
+        assertThatThrownBy(() -> validator.validate(handlerMethods))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("reservedResource")
                 .hasMessageContaining("reservedAction")
@@ -198,7 +229,8 @@ class PolicyAnnotationValidatorTest {
 
     @Test
     void abstractDetails_fail() {
-        assertThatThrownBy(() -> validator.validate(handlers("abstractDetails")))
+        Map<RequestMappingInfo, HandlerMethod> handlerMethods = handlers("abstractDetails");
+        assertThatThrownBy(() -> validator.validate(handlerMethods))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("abstractDetails")
                 .hasMessageContaining("abstract");
@@ -206,7 +238,8 @@ class PolicyAnnotationValidatorTest {
 
     @Test
     void detailsWithoutANoArgumentConstructor_fail() {
-        assertThatThrownBy(() -> validator.validate(handlers("noDefaultConstructorDetails")))
+        Map<RequestMappingInfo, HandlerMethod> handlerMethods = handlers("noDefaultConstructorDetails");
+        assertThatThrownBy(() -> validator.validate(handlerMethods))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("noDefaultConstructorDetails")
                 .hasMessageContaining("no-argument constructor");
@@ -220,7 +253,8 @@ class PolicyAnnotationValidatorTest {
 
     @Test
     void decisionParameterTheDetailsCannotBeHandedTo_fails() {
-        assertThatThrownBy(() -> validator.validate(handlers("typedParameterUntypedPolicy")))
+        Map<RequestMappingInfo, HandlerMethod> handlerMethods = handlers("typedParameterUntypedPolicy");
+        assertThatThrownBy(() -> validator.validate(handlerMethods))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("typedParameterUntypedPolicy")
                 .hasMessageContaining(SubscriptionDetails.class.getName())
@@ -229,7 +263,8 @@ class PolicyAnnotationValidatorTest {
 
     @Test
     void decisionParameterWithoutPolicy_fails() {
-        assertThatThrownBy(() -> validator.validate(handlers("decisionWithoutPolicy")))
+        Map<RequestMappingInfo, HandlerMethod> handlerMethods = handlers("decisionWithoutPolicy");
+        assertThatThrownBy(() -> validator.validate(handlerMethods))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("decisionWithoutPolicy")
                 .hasMessageContaining("Optional<PolicyDecision>");
@@ -274,7 +309,9 @@ class PolicyAnnotationValidatorTest {
         ObjectProvider<RequestMappingHandlerMapping> provider = mock(ObjectProvider.class);
         when(provider.orderedStream()).thenAnswer(invocation -> Stream.of(mapping));
 
-        assertThatThrownBy(() -> new PolicyAnnotationValidator(provider).afterSingletonsInstantiated())
+        PolicyAnnotationValidator providedValidator = new PolicyAnnotationValidator(provider);
+
+        assertThatThrownBy(providedValidator::afterSingletonsInstantiated)
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("decisionWithoutPolicy");
     }

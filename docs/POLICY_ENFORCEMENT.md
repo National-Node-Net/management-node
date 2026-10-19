@@ -172,7 +172,7 @@ Annotations are checked when the application starts; a violation fails startup r
 | neither is `fallback` | `fallback` is reserved for the resource and global fallback rules |
 | a handler declaring `Optional<PolicyDecision<...>>` carries `@Policy` | without it no decision is ever taken, so the parameter could only ever be empty, almost certainly a missing annotation |
 | that parameter's details type is assignable from the `@Policy` details type | otherwise the decision taken could never be handed to it |
-| `details` is concrete and has a no-argument constructor | details are bound by Jackson, and a decision no rule answered carries empty details of that type |
+| `details` is concrete and has a public no-argument constructor | details are bound by Jackson, and a decision no rule answered carries empty details of that type |
 
 ### Request body buffering
 
@@ -363,7 +363,7 @@ public ProductSubscriptionResponseDTO subscribe(
 
 `PolicyDecisionClient.evaluate(input, detailsType)` returns `PolicyDecision<D>`, converting the details with the application's `ObjectMapper` so they bind like any other JSON in the service; `evaluate(input)` returns the generic form. No cast is needed anywhere: `decision.details()` is already `D`. `withDetails(E)` returns the same envelope carrying other details.
 
-A details subclass must be concrete, have a no-argument constructor (checked at startup), use `@JsonIgnoreProperties(ignoreUnknown = true)`, and implement `equals` over its fields (e.g. Lombok `@EqualsAndHashCode(callSuper = true)`) so empty details can be recognised when decisions combine. A missing field should read as null, or an empty list for a list.
+A details subclass must be concrete, have a public no-argument constructor (checked at startup), use `@JsonIgnoreProperties(ignoreUnknown = true)`, and implement `equals` over its fields (e.g. Lombok `@EqualsAndHashCode(callSuper = true)`) so empty details can be recognised when decisions combine. A missing field should read as null, or an empty list for a list.
 
 ### Reading failures are DENY
 
