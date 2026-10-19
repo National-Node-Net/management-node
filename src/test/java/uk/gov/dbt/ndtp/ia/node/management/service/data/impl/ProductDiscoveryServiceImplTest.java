@@ -12,6 +12,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -25,6 +27,8 @@ import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -635,5 +639,36 @@ class ProductDiscoveryServiceImplTest {
         assertThat(criteria.page()).isZero();
         assertThat(criteria.size()).isEqualTo(20);
         assertThat(criteria.hasText()).isFalse();
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // An unknown organisation is no organisation
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * {@code UNKNOWN_ORG} is the sentinel for a token without an organisation claim. It must read
+     * as "not known" - no {@code isOwnProduct} column and no subscription status - rather than as
+     * an organisation whose key happens to be {@code UNKNOWN_ORG}.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"UNKNOWN_ORG", " "})
+    void unknownOrganisation_carriesNoIsOwnProductAndNoSubscriptionStatus(String callerOrganisation) {
+        databaseReturns(1, List.of(product(1L, "FloodRiskMapZones")));
+
+        service().discover(null, callerOrganisation, decision(true, permissiveDetails()));
+
+        assertThat(selectList(capturedQuery(repository))).doesNotContain(ProductSearchQuery.IS_OWN_PRODUCT);
+        verify(assembler).assemble(any(), any(), any(), isNull());
+    }
+
+    /** The contrast that keeps the test above honest: a known organisation does get both. */
+    @Test
+    void knownOrganisation_carriesIsOwnProductAndReachesTheAssembler() {
+        databaseReturns(1, List.of(product(1L, "FloodRiskMapZones")));
+
+        service().discover(null, "ENV", decision(true, permissiveDetails()));
+
+        assertThat(selectList(capturedQuery(repository))).contains(ProductSearchQuery.IS_OWN_PRODUCT);
+        verify(assembler).assemble(any(), any(), any(), eq("ENV"));
     }
 }

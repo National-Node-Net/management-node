@@ -604,4 +604,25 @@ class ProductFilterOptionsServiceImplTest {
                 .contains("results=3")
                 .doesNotContain("top-secret-value");
     }
+
+    // ---------------------------------------------------------------------------------------
+    // An unknown organisation is no organisation
+    // ---------------------------------------------------------------------------------------
+
+    /** {@code UNKNOWN_ORG} is no organisation: nothing downstream sees it, and no own-product filter. */
+    @Test
+    void unknownOrganisation_isTreatedAsAbsent() {
+        ProductSearchContract contract = ProductSearchContract.open();
+        ProductSearchCriteria criteria = emptyCriteria();
+        givenFrontHalf(contract, criteria);
+        when(repository.count(DUMMY_QUERY)).thenReturn(0L);
+        when(repository.findFilterAttributeDefinitions()).thenReturn(List.of());
+        givenFacetCounts(contract, criteria);
+
+        ProductFilterOptionsResponseDTO response = service.filterOptions(null, "UNKNOWN_ORG", Optional.empty());
+
+        verify(planner).compile(any(), eq(contract), eq(criteria), eq(ProductProjection.SUMMARY), isNull(), any());
+        verify(facetQueryBuilder).build(eq(contract), eq(criteria), any(), isNull());
+        assertThat(response.filters()).extracting(FilterOption::key).doesNotContain("field:isOwnProduct");
+    }
 }

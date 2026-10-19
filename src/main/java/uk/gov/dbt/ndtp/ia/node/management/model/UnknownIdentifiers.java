@@ -30,4 +30,23 @@ public final class UnknownIdentifiers {
     public static final String UNKNOWN_CLIENT = "UNKNOWN_CLIENT";
 
     private UnknownIdentifiers() {}
+
+    /**
+     * The caller's organisation key when it names a real organisation, otherwise null.
+     *
+     * <p>A null, blank or {@link #UNKNOWN_ORG} key all mean the same thing - the caller's
+     * organisation is not known - so a read endpoint normalises its key through this once, at its
+     * entry, and everything downstream need only test for null. Without it the sentinel would be
+     * treated as an organisation key: compared against product owners and subscribers as if some
+     * organisation were called {@code UNKNOWN_ORG}.
+     *
+     * @param organisationKey the key from the principal, possibly a sentinel
+     * @return the key unchanged, or null when it is null, blank or {@link #UNKNOWN_ORG}
+     */
+    public static String knownOrganisationOrNull(String organisationKey) {
+        if (organisationKey == null || organisationKey.isBlank() || UNKNOWN_ORG.equals(organisationKey)) {
+            return null;
+        }
+        return organisationKey;
+    }
 }

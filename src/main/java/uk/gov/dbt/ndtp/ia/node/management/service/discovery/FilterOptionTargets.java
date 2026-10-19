@@ -65,8 +65,7 @@ public final class FilterOptionTargets {
      */
     public static List<FilterOptionTarget> permitted(
             ProductSearchContract contract, List<FilterAttributeDefinition> definitions, String callerOrganisation) {
-        boolean callerKnown =
-                StringUtils.hasText(callerOrganisation) && !UnknownIdentifiers.UNKNOWN_ORG.equals(callerOrganisation);
+        boolean callerKnown = UnknownIdentifiers.knownOrganisationOrNull(callerOrganisation) != null;
 
         List<FilterOptionTarget> options = new ArrayList<>(fieldOptions(contract, callerKnown));
 

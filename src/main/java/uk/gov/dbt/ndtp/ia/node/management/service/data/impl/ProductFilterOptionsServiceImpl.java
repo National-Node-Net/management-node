@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import uk.gov.dbt.ndtp.ia.node.management.model.UnknownIdentifiers;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductDiscoveryRequestDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductFilterOptionsResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductFilterOptionsResponseDTO.FilterOption;
@@ -91,8 +92,9 @@ public class ProductFilterOptionsServiceImpl implements ProductFilterOptionsServ
     @Override
     public ProductFilterOptionsResponseDTO filterOptions(
             ProductDiscoveryRequestDTO request,
-            String callerOrganisation,
+            String callerOrganisationKey,
             Optional<PolicyDecision<ProductDiscoveryPolicyDecisionDetails>> decision) {
+        String callerOrganisation = UnknownIdentifiers.knownOrganisationOrNull(callerOrganisationKey);
 
         ProductSearchContract contract = planner.contractFor(WHAT, decision);
         ProductSearchCriteria criteria =

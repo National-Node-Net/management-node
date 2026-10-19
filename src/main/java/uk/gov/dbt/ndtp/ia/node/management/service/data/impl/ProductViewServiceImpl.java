@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import uk.gov.dbt.ndtp.ia.node.management.model.UnknownIdentifiers;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.DiscoveredProductDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.filter.ComparisonOperator;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.filter.FilterNode;
@@ -66,8 +67,10 @@ public class ProductViewServiceImpl implements ProductViewService {
     @Override
     public Optional<DiscoveredProductDTO> view(
             Long productId,
-            String callerOrganisation,
+            String callerOrganisationKey,
             Optional<PolicyDecision<ProductViewPolicyDecisionDetails>> decision) {
+        // UNKNOWN_ORG (no organisation claim) means "not known", exactly as null does.
+        String callerOrganisation = UnknownIdentifiers.knownOrganisationOrNull(callerOrganisationKey);
 
         ProductSearchContract contract = planner.contractFor(WHAT, decision);
         ProductSearchQuery query =

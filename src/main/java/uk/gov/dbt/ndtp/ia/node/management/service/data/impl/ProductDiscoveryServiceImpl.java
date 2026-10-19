@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import uk.gov.dbt.ndtp.ia.node.management.model.UnknownIdentifiers;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.DiscoveredProductDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductDiscoveryRequestDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductDiscoveryResponseDTO;
@@ -83,8 +84,10 @@ public class ProductDiscoveryServiceImpl implements ProductDiscoveryService {
     @Override
     public ProductDiscoveryResponseDTO discover(
             ProductDiscoveryRequestDTO request,
-            String callerOrganisation,
+            String callerOrganisationKey,
             Optional<PolicyDecision<ProductDiscoveryPolicyDecisionDetails>> decision) {
+        // UNKNOWN_ORG (no organisation claim) means "not known", exactly as null does.
+        String callerOrganisation = UnknownIdentifiers.knownOrganisationOrNull(callerOrganisationKey);
 
         ProductSearchContract contract = planner.contractFor(WHAT, decision);
         ProductSearchCriteria criteria =
