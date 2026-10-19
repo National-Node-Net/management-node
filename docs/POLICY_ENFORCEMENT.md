@@ -786,10 +786,19 @@ XACML's rule holds: **a Policy Enforcement Point that cannot fulfil an obligatio
 This endpoint has no rule of its own because it has no question of its own: it returns the same
 search contract discovery's decision already carries, turned into the catalogue's filter panel
 instead of into a page of products - every filter the caller may use, with its data type and
-operators, and, where listing them is worth it, the distinct values a value-holding target has
-among the caller's visible products and how many products hold each one *for this request*. The
-same three caller-level gates, the same row filter, the same allowed/masked lists as discover apply
-unchanged, because they are literally the same decision, not a second one evaluated the same way.
+operators, and the distinct values it has among the caller's visible products and how many
+products hold each one *for this request*. The same three caller-level gates, the same row filter,
+the same allowed/masked lists as discover apply unchanged, because they are literally the same
+decision, not a second one evaluated the same way.
+
+The panel narrows the contract further, on top of policy: `name`, `displayName` and `description`
+(already searched by discover's free-text box) and `topic` and `source` (identifiers, not
+something browsed by value) are never offered as panel filters, even when the contract permits
+filtering on them - `FilterOptionTargets.isOfferedInPanel` excludes them unconditionally, before
+the contract is consulted at all. `POST /api/v1/product/discover` itself is unaffected: a caller
+may still filter on any of the five directly. The panel's remaining fields - `type`, `format`,
+`organisation.key`, `organisation.name`, `subscribedBy`, `isOwnProduct` - always carry their
+distinct values when offered, so no entry in the panel lacks a value list any more.
 
 **Counting is disjunctive faceting, computed without a second decision.** For each permitted,
 value-listing target, a count is the number of products satisfying the row filter, the request's

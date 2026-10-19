@@ -85,7 +85,7 @@ that block from the caller's own discover *results* - BCC (`OFFICIAL`) sees `qua
 and `record_unit` values in its panel although its own products' `policyAttributes` block is masked
 in discover's response. This discloses nothing discover does not already answer through
 `totalElements`: BCC could already learn the same counts by sending discover once per value. The
-panel answers it in one request instead. See [TC-09](#tc-09-bcc-sees-quality_designation-and-record_unit-but-no-source-or-subscribedby).
+panel answers it in one request instead. See [TC-09](#tc-09-bcc-sees-quality_designation-and-record_unit-but-no-subscribedby).
 
 ## 2. What governs it
 
@@ -149,16 +149,6 @@ service knows which members it will use. See [TC-16](#tc-16-sort-page-and-size-a
   "textSearch": { "enabled": true, "fields": ["name", "displayName", "description"] },
   "filters": [
     {
-      "key": "field:name",
-      "target": { "field": "name" },
-      "label": "Name",
-      "dataType": "TEXT",
-      "multiValued": false,
-      "operators": ["eq", "neq", "in", "not_in", "any_of", "none_of", "contains", "exists", "not_exists"],
-      "defaultOperator": "contains",
-      "sortable": true
-    },
-    {
       "key": "field:type",
       "target": { "field": "type" },
       "label": "Type",
@@ -213,7 +203,7 @@ service knows which members it will use. See [TC-16](#tc-16-sort-page-and-size-a
 ```
 
 This is a real response: ENV, posting `{"filters":[{"field":"organisation.key","values":["ENV"]}]}`
-(`filters[]` abbreviated to four of its seventeen entries for ENV; see [§6](#6-test-data) and
+(`filters[]` abbreviated to three of its twelve entries for ENV; see [§6](#6-test-data) and
 [TC-07](#tc-07-choosing-organisationkey--env-narrows-format-and-type-while-organisation-stays-put)
 for the full derivation).
 
@@ -268,8 +258,10 @@ complete per-target tables.
 
 ### `values[]`
 
-Absent for the three free-text fields (`name`, `displayName`, `description`); present for every
-other field and every attribute. Each entry:
+Present on every entry the panel offers. The three prose fields that would otherwise carry no
+`values` (`name`, `displayName`, `description`) are not offered in the panel at all (see the
+[§5.1 note](#51-product-fields)), and `topic` and `source` are excluded for the same reason, so no
+entry in `filters[]` lacks `values` any more. Each entry:
 
 ```json
 { "value": "CSV", "count": 1, "selected": false }
@@ -376,20 +368,27 @@ accept - with the operator, label and default-operator mechanics this endpoint a
 
 ### 5.1 Product fields
 
-| API name | `dataType` | `multiValued` | `operators` | `defaultOperator` | lists `values`? | `label` |
-|---|---|---|---|---|---|---|
-| `id` | — | — | — | — | — | **never offered**, policy or no (see note below) |
-| `name` | TEXT | false | 9: eq, neq, in, not_in, any_of, none_of, contains, exists, not_exists | `contains` | no | Name |
-| `displayName` | TEXT | false | same 9 | `contains` | no | Display name |
-| `description` | TEXT | false | same 9 | `contains` | no | Description |
-| `topic` | TEXT | false | same 9 | `in` | yes | Topic |
-| `type` | TEXT | false | same 9 | `in` | yes | Type |
-| `source` | TEXT | false | same 9 | `in` | yes | Source |
-| `format` | TEXT | false | same 9 | `in` | yes | Format |
-| `organisation.key` | TEXT | false | same 9 | `eq` | yes | Organisation |
-| `organisation.name` | TEXT | false | same 9 | `eq` | yes | Organisation name |
-| `subscribedBy` | TEXT | **true** | 8: eq, neq, in, not_in, any_of, none_of, exists, not_exists (**no `contains`**) | `any_of` | yes | Subscribed by |
-| `isOwnProduct` | BOOLEAN | false | 8: eq, neq, in, not_in, any_of, none_of, exists, not_exists | `eq` | yes, always both `true`/`false` | My organisation's products |
+Only six of the eleven filterable product fields are ever offered in the panel at all; the other
+five are filterable on `POST /api/v1/product/discover` exactly as before, but
+`FilterOptionTargets.isOfferedInPanel` excludes them from `filters[]` unconditionally, before the
+contract is consulted - so even a caller whose contract would permit them never sees them here.
+Being left out this way is a third reason an entry can be absent, alongside "not in the caller's
+allowed list" and "masked", and unlike those two it does not depend on the caller at all.
+
+| API name | `dataType` | `multiValued` | `operators` | `defaultOperator` | offered in panel? | lists `values`? | `label` |
+|---|---|---|---|---|---|---|---|
+| `id` | — | — | — | — | **never** (policy or no, see note below) | — | — |
+| `name` | TEXT | false | 9: eq, neq, in, not_in, any_of, none_of, contains, exists, not_exists | `contains` | **never** - prose, already searched by `textSearch` | — | — |
+| `displayName` | TEXT | false | same 9 | `contains` | **never** - prose, already searched by `textSearch` | — | — |
+| `description` | TEXT | false | same 9 | `contains` | **never** - prose, already searched by `textSearch` | — | — |
+| `topic` | TEXT | false | same 9 | `in` | **never** - an identifier nobody browses by | — | — |
+| `source` | TEXT | false | same 9 | `in` | **never** - an identifier nobody browses by | — | — |
+| `type` | TEXT | false | same 9 | `in` | when permitted | yes | Type |
+| `format` | TEXT | false | same 9 | `in` | when permitted | yes | Format |
+| `organisation.key` | TEXT | false | same 9 | `eq` | when permitted | yes | Organisation |
+| `organisation.name` | TEXT | false | same 9 | `eq` | when permitted | yes | Organisation name |
+| `subscribedBy` | TEXT | **true** | 8: eq, neq, in, not_in, any_of, none_of, exists, not_exists (**no `contains`**) | `any_of` | when permitted | yes | Subscribed by |
+| `isOwnProduct` | BOOLEAN | false | 8: eq, neq, in, not_in, any_of, none_of, exists, not_exists | `eq` | when permitted and the caller's organisation is known | yes, always both `true`/`false` | My organisation's products |
 
 > **`id` is never a filter option, whether or not policy is enforced.** `FilterOptionTargets`
 > excludes `ProductField.ID` unconditionally, before consulting the contract at all. This is
@@ -399,8 +398,18 @@ accept - with the operator, label and default-operator mechanics this endpoint a
 > is a deliberate implementation choice beyond what the design note ("`id` never appears while
 > policy is enforced") states outright - see the report accompanying this document.
 
-`name`, `displayName` and `description` are the only targets with no `values` member at all; their
-free-form nature is exactly why free text exists.
+> **`name`, `displayName`, `description`, `topic` and `source` are never filter options either, for
+> the same unconditional reason as `id`.** `FilterOptionTargets.isOfferedInPanel` leaves them out
+> before the contract is consulted, whether or not the caller's contract would otherwise permit
+> them: the first three are prose already covered by the free-text box (`textSearch`), and the last
+> two are identifiers nobody browses a value list for. **Discover itself is unchanged**: a caller
+> who names one of these five directly in `POST /api/v1/product/discover`'s `filters[]` is answered
+> exactly as before, and each still appears in `policy.filterableFields` - only the panel stops
+> offering it. See [TC-02](#tc-02-the-five-text-searched-and-identifier-fields-are-permitted-but-not-offered).
+
+Because the six remaining fields all list values when they are offered at all, **every entry
+`filters[]` now carries, `values` is present on every one of them** - there is no field entry
+without `values` any more. (An attribute entry always listed `values` already; see §5.2.)
 
 ### 5.2 Policy attributes
 
@@ -439,8 +448,9 @@ sample organisation may filter on; see [§6](#6-test-data) for the per-organisat
 
 Reproduced from the design, ground-truthed against `FilterOptionTargets.permitted`:
 
-1. `ProductField` members that are filterable **and** permitted by the contract, in declaration
-   order, never `id` (§5.1 note).
+1. `ProductField` members that are filterable, offered in the panel (`isOfferedInPanel` - never
+   `id`, `name`, `displayName`, `description`, `topic` or `source`, §5.1), **and** permitted by the
+   contract, in declaration order.
 2. Product-scoped attributes permitted by the contract, sorted by `label` (case-insensitive).
 3. Organisation-scoped attributes permitted by the contract, sorted by `label` (case-insensitive).
 
@@ -486,17 +496,24 @@ Set by `src/main/resources/db/samples/V20261018121000__add_sample_product_displa
 
 ### 6.2 The panel per organisation (empty body, policy on)
 
-Derived from discover's §5.4 allowed/masked lists, which this endpoint shares exactly - `id` never
-counted, per §5.1.
+Derived from discover's §5.4 allowed/masked lists, which this endpoint shares exactly, narrowed
+further by the panel's own unconditional exclusions: `id`, `name`, `displayName`, `description`,
+`topic` and `source` never count here, per §5.1, whatever the contract would permit. Of the six
+fields the panel can ever offer (`type`, `format`, `organisation.key`, `organisation.name`,
+`subscribedBy`, `isOwnProduct`), only `subscribedBy` is masked for any sample organisation (BCC).
 
 | | **ENV** | **HEG** | **BCC** |
 |---|---|---|---|
-| field filters offered | 11 (every filterable field) | 11 (same as ENV - `consumers` has no field name to exclude) | 9 (`source`, `subscribedBy` absent - masked) |
+| field filters offered | 6: Type, Format, Organisation, Organisation name, Subscribed by, My organisation's products (every panel-eligible field) | 6 (same as ENV - `consumers` has no field name to exclude) | 5: Type, Format, Organisation, Organisation name, My organisation's products (`subscribedBy` absent - masked) |
 | product-attribute filters offered | 4: Identifiability, Population risk tags, Quality designation, Record unit | 4: Identifiability, Quality designation, Record unit, Temporal resolution | 2: Quality designation, Record unit |
 | organisation-attribute filters offered | 2: Jurisdictions, Responsibility areas | 2: Jurisdictions, Responsibility areas | 2: Jurisdictions, Responsibility areas |
-| **total `filters[]` entries** | **17** | **17** | **13** |
+| **total `filters[]` entries** | **12** | **12** | **9** |
 | `totalElements` (`{}`) | 15 | 12 | 8 |
 | `textSearch.enabled` | true | true | true |
+
+ENV and HEG each lose five entries from the pre-panel-narrowing count of 17 (`name`, `displayName`,
+`description`, `topic`, `source`); BCC loses four from its 13 (`source` was already masked for BCC,
+so only `name`, `displayName`, `description` and `topic` are newly dropped from its field count).
 
 **`Type` group, baseline `{}`** (used throughout §8): ENV `topic:8, file:6, missingCount:1`; the
 full per-caller breakdown follows directly from discover's §6.1 product list and is left as an
@@ -568,7 +585,7 @@ organisations differ, exactly as discover's TC-01.
 **Given** the sample catalogue
 **When** an empty body is posted as ENV, then HEG, then BCC
 **Then** each response is `200` with `totalElements` 15, 12, 8 respectively (§6.2)
-**And** the `filters` array has 17, 17, 13 entries respectively (§6.2).
+**And** the `filters` array has 12, 12, 9 entries respectively (§6.2).
 
 ```bash
 for t in "$ENV_TOKEN" "$HEG_TOKEN" "$BCC_TOKEN"; do
@@ -581,31 +598,44 @@ the panel is not built from the per-caller contract at all - the same tell disco
 
 ---
 
-#### TC-02: The shape of a non-listing entry versus a listing one
+#### TC-02: The five text-searched and identifier fields are permitted but not offered
 
-**Objective.** Confirm `values`, `missingCount` and `truncated` are present only when they describe
-something, never as `0`/`false` placeholders.
+**Objective.** Confirm `name`, `displayName`, `description`, `topic` and `source` are left out of
+`filters[]` unconditionally - even for ENV, which permits filtering on every one of them - while
+`POST /api/v1/product/discover` still accepts a filter on each and still lists each in its own
+`policy.filterableFields`. This also establishes, for every entry that *is* offered, that `values`
+is never absent: there is no longer a "non-listing" shape to contrast it with.
 
 **Preconditions.** P1–P4.
 
-**Test data.** `{}` as ENV.
+**Test data.** `{}` as ENV, to both `/discover` and `/discover/filter`.
 
-**Given** ENV's panel
-**When** the `name` entry and the `type` entry are inspected
-**Then** `name` carries exactly `key, target, label, dataType, multiValued, operators,
-defaultOperator, sortable` - **no** `values`, `missingCount` or `truncated` key at all
-**And** `type` additionally carries `values` and, because ENV's `Bristol_Cycle%Counts` records no
-type, `missingCount: 1`, but **no** `truncated` key (it has only two distinct values).
+**Given** ENV's contract permits `name`, `displayName`, `description`, `topic` and `source` as
+discover filters (discover's §5.4: ENV has no masked fields at all)
+**When** ENV's filter panel is read
+**Then** `filters[]` contains **no** entry whose `key` is `field:name`, `field:displayName`,
+`field:description`, `field:topic` or `field:source`
+**And** the identical token's `POST /api/v1/product/discover` response still lists `name`,
+`displayName`, `description`, `topic` and `source` in `policy.filterableFields`
+**And** every entry that *is* in `filters[]` carries a `values` member - there is no entry with
+`key, target, label, dataType, multiValued, operators, defaultOperator, sortable` and nothing else.
 
 ```bash
-filters "$ENV_TOKEN" '{}' | jq '.filters[] | select(.key=="field:name") | keys'
-# ["dataType","defaultOperator","key","label","multiValued","operators","sortable","target"]
-filters "$ENV_TOKEN" '{}' | jq '.filters[] | select(.key=="field:type")'
+filters "$ENV_TOKEN" '{}' \
+  | jq '[.filters[].key] | any(. == "field:name" or . == "field:displayName" or . == "field:description" or . == "field:topic" or . == "field:source")'
+# false
+discover "$ENV_TOKEN" '{}' | jq '.policy.filterableFields | sort'
+# contains "description", "displayName", "name", "source", "topic" alongside the rest
+filters "$ENV_TOKEN" '{}' | jq 'all(.filters[]; has("values"))'
+# true
 ```
 
-*Why:* the API's "absent, never null or a false default" convention (discover's TC-02) applies
-here too. A `missingCount: 0` or `truncated: false` key present on every entry would mean the
-builder is filling defaults instead of reporting what was decided.
+*Why:* this is the behaviour change itself - a field the contract permits can still be withheld
+from the panel for a reason that has nothing to do with the caller or policy, namely that the panel
+is not the right surface for it (prose already has the free-text box; an identifier has no list
+anyone browses). Checking `policy.filterableFields` on the sibling endpoint is what proves the gap
+is deliberate narrowing by `FilterOptionTargets`, not a masking regression that would also make
+discover refuse the field.
 
 ---
 
@@ -805,10 +835,14 @@ filters on two different targets to catch either mistake.
 
 ### C. Masking and permission
 
-#### TC-09: BCC sees `quality_designation` and `record_unit`, but no `source` or `subscribedBy`
+#### TC-09: BCC sees `quality_designation` and `record_unit`, but no `subscribedBy`
 
 **Objective.** Confirm the filter panel reflects `allowed − masked` exactly as discover's own
 `policy.filterableFields`/`filterableAttributes`, for the organisation with the most withheld.
+`source` cannot be the field this case checks any more - it is now absent from **every**
+organisation's panel unconditionally (§5.1), so it can no longer distinguish masking from the
+panel's own narrowing; `subscribedBy` is the one BCC-masked field the panel still ever offers to
+anybody, so it carries the whole masking check here.
 
 **Preconditions.** P1–P4.
 
@@ -820,20 +854,24 @@ filters on two different targets to catch either mistake.
 **Then** `filters[]` contains `attribute:product.quality_designation`
 (`validated:6, provisional:2`) and `attribute:product.record_unit`
 (`geographic_area:4, household:2, person:1, property:1`) - §6.2
-**And** `filters[]` contains **no** entry whose `key` is `field:source` or `field:subscribedBy`
-**And** the same request as ENV or HEG **does** carry `field:source` and `field:subscribedBy`.
+**And** `filters[]` contains **no** entry whose `key` is `field:subscribedBy`
+**And** the same request as ENV or HEG **does** carry `field:subscribedBy`
+**And** `field:source` is absent for BCC **and** for ENV and HEG alike - that absence is the panel's
+unconditional exclusion (§5.1), not masking, and proves nothing about BCC on its own.
 
 ```bash
-filters "$BCC_TOKEN" '{}' | jq 'any(.filters[]; .key=="field:source" or .key=="field:subscribedBy")'
+filters "$BCC_TOKEN" '{}' | jq 'any(.filters[]; .key=="field:subscribedBy")'
 # false
-filters "$ENV_TOKEN" '{}' | jq 'any(.filters[]; .key=="field:source" or .key=="field:subscribedBy")'
+filters "$ENV_TOKEN" '{}' | jq 'any(.filters[]; .key=="field:subscribedBy")'
 # true
 ```
 
 *Why:* a masked field appearing here with no `values` (so it "looks" withheld) would still be a
 disclosure, because the caller could still send it as a discover filter and get a `200` instead of
 a `403` if the mechanisms disagreed. There is exactly one way to check this is right: the key is
-**absent**, not present-but-empty.
+**absent**, not present-but-empty. With `source` now excluded for everyone, `subscribedBy` is the
+only remaining field whose absence can be pinned on BCC's own contract rather than on the panel's
+blanket exclusions.
 
 ---
 
@@ -1076,7 +1114,10 @@ contract permits
 **And** `attribute:product.population_risk_tags`'s values are
 `children:2, domestic_abuse_survivors:2, protected_witnesses:1`, `missingCount: 13` (§6.2) -
 exactly the values discover itself would now return unmasked for the same request, per
-[TC-43](product-discover.md#tc-43-with-policy-off-every-caller-sees-the-whole-catalogue).
+[TC-43](product-discover.md#tc-43-with-policy-off-every-caller-sees-the-whole-catalogue)
+**And** `filters[]` still contains **no** `field:name`, `field:displayName`, `field:description`,
+`field:topic` or `field:source` entry - the panel's exclusion of those five is unconditional
+(§5.1) and the master switch does not reopen it, unlike every attribute and every other field.
 
 ```bash
 filters "$ENV_TOKEN" '{}' | jq 'has("policy")'
@@ -1119,15 +1160,17 @@ mode either endpoint has.
 | E3 | **Metacharacters in `text`** | `{"text":"%"}` as BCC | `200`, `totalElements: 0`, every count zero | the term is bound as a value in the facet query exactly as in the count query (TC-13) |
 | E4 | **SQL-injection-shaped `text` or filter value** | `{"text":"' OR 1=1 --"}`; `{"filters":[{"field":"name","values":["'; DROP TABLE product; --"]}]}` | `200` with every count at 0; never a `500`; `SELECT count(*) FROM mn.product` unchanged afterwards | the facet query binds the same way the count query does - one `SqlPredicateCompiler`, one set of bound parameters, reused |
 | E5 | **An attribute name that does not exist** | `{"filters":[{"attribute":"no_such_attribute_at_all","values":["x"]}]}` | `403`, `filter.attribute_not_permitted:no_such_attribute_at_all` - same as discover's TC-36, **not** a `400` | the filter-options endpoint does not get its own, looser error path for an unrecognised name |
-| E6 | **No filter is worth listing values for** | not reachable with the shipped sample policy (every enforced contract offers at least `name`/`description`, which never list values, but also at least one listing field); confirm instead that a caller whose contract permits **zero** fields and **zero** attributes still gets `200` with `filters: []`, not an error | `200`, `filters: []`, `totalElements` still correct | `ProductFacetQueryBuilder.build` throws on an **empty** target list by contract (`IllegalArgumentException`), so `ProductFilterOptionsServiceImpl.facetCounts` must short-circuit before calling it whenever no listing target is permitted - exercised at the unit level in `ProductFilterOptionsServiceImplTest`, not reachable through the sample policy |
+| E6 | **No filter is worth listing values for** | not reachable with the shipped sample policy (every enforced contract offers at least one of the six panel-eligible fields, and every panel-eligible field lists values - see §5.1); confirm instead that a caller whose contract permits **zero** panel-eligible fields and **zero** attributes still gets `200` with `filters: []`, not an error | `200`, `filters: []`, `totalElements` still correct | `ProductFacetQueryBuilder.build` throws on an **empty** target list by contract (`IllegalArgumentException`), so `ProductFilterOptionsServiceImpl.facetCounts` must short-circuit before calling it whenever no listing target is permitted - exercised at the unit level in `ProductFilterOptionsServiceImplTest`, not reachable through the sample policy |
 | E7 | **The same request posted twice** | any body, twice, same token | byte-identical responses | counts are a pure function of caller, body and the catalogue's current state |
 | E8 | **A caller holding the role but failing policy's organisation gate** | a token with `product_discovery` but no `organisation` claim, policy **on** | `403`, `reasons: ["organisation.missing"]` - the **same** gate discover's TC-39c hits, since the decision is taken before either service runs | this endpoint cannot be used to get a panel for an unidentified caller while policy is enforced; TC-12 is the one state (policy off) where that is even observable |
 
 ### Things that should never happen
 
 1. A `500` from any input in this document.
-2. `filters[]` containing `field:source` or `field:subscribedBy` for BCC, or
-   `attribute:product.population_risk_tags` for HEG or BCC, while policy is enforced.
+2. `filters[]` containing `field:name`, `field:displayName`, `field:description`, `field:topic` or
+   `field:source` for **any** caller, policy on or off (§5.1's unconditional exclusion) - or
+   `field:subscribedBy` for BCC, or `attribute:product.population_risk_tags` for HEG or BCC, while
+   policy is enforced.
 3. A value listed in `values[]` that no product the caller can see actually holds.
 4. `totalElements` here differing from `POST /api/v1/product/discover`'s `page.totalElements` for
    the identical body and token.
@@ -1144,6 +1187,7 @@ mode either endpoint has.
 | a value disappears from a group after adding an unrelated filter | the value-listing query (ignoring request filters) is being re-run with the request's filters applied after all; re-check with TC-05 |
 | `totalElements` here disagrees with discover's for the same body | the two endpoints have drifted from a shared `ProductQueryPlanner.compile` / `count` call; see TC-04 |
 | a masked field or a below-clearance attribute appears in `filters[]` | `FilterOptionTargets.permitted` is not consulting the same `ProductSearchCriteriaFactory.permits` discover's refusal path uses; see TC-09/TC-10 |
+| `field:name`, `field:displayName`, `field:description`, `field:topic` or `field:source` appears in `filters[]` for any caller, or `source`/`subscribedBy` is missing from discover's own `policy.filterableFields` | `FilterOptionTargets.isOfferedInPanel` was weakened to consult the contract for one of these five, or discover's contract was changed to stop permitting them - the panel's exclusion is meant to be unconditional and independent of discover's own filtering; see TC-02 |
 | `GROUP BY` / "must appear in the GROUP BY clause" error from PostgreSQL | a new value expression added to `ProductFacetQueryBuilder.valueExpression` binds a parameter (like `isOwnProduct`'s `CASE`) and is being grouped by the expression itself rather than by ordinal position 2 - see the class Javadoc |
 | the `format` column, or its values, are missing or all-null | the two newest migrations (`V20261018120000`, `V20261018121000`) are not applied in this environment; see §6.1's note |
 | every count is lower than expected by the same offset | an edited `Bristol_Cycle%Counts` or other row with missing fields is being counted as "missing" when a count was expected, or vice versa; re-derive from §6 before reporting |
