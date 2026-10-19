@@ -646,9 +646,9 @@ and it writes one entry per decision, so it is just as noisy a bring-up aid. Pro
 1. **Give the endpoint its role check** (`@PreAuthorize`) and document the role in [Authentication Requirements](AUTHENTICATION_REQUIREMENTS.md). Policy applies on top of it.
 2. **Annotate the handler** with `@Policy(resource = "...", action = "...")`. Both must match `[a-z][a-z0-9_]*` and must not be `fallback`; startup fails otherwise.
 3. **Decide who answers**, in `docker/opa/policies/`:
-   - a dedicated rule: `<resource>/<action>.rego`, package `policies.<resource>.<action>`, declaring `contract`, `version` and a total `decision`; see [Writing a policy](#writing-a-policy);
-   - or an existing rule, via a route in `routing/data.json`;
-   - or deliberately nothing, relying on `policies.<resource>.fallback`, and if the resource has none, the global fallback denies.
+    - a dedicated rule: `<resource>/<action>.rego`, package `policies.<resource>.<action>`, declaring `contract`, `version` and a total `decision`; see [Writing a policy](#writing-a-policy);
+    - or an existing rule, via a route in `routing/data.json`;
+    - or deliberately nothing, relying on `policies.<resource>.fallback`, and if the resource has none, the global fallback denies.
 4. **Receive the decision**: declare `@Parameter(hidden = true) Optional<PolicyDecision<D>> policyDecision` on the handler. If the rule returns details the endpoint acts on, define `<Resource><Action>PolicyDecisionDetails extends PolicyDecisionDetails` under `model/policy/<resource>/` (see [Dynamic `details`](#dynamic-details)), name it in `@Policy(details = ...)` and use it as `D`; otherwise use `PolicyDecisionDetails`. Handle the empty `Optional` (policy switched off) explicitly.
 5. **Write the tests**: a `<action>_test.rego` beside the rule covering the allow case, each deny reason and the `details`; and Java unit tests for the handler, including the empty-decision case and how the details shape the response.
 6. **Run the checks**, see [Testing](#testing), and restart OPA (`docker compose restart opa`) to load the change locally.

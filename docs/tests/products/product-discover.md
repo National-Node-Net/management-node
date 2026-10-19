@@ -267,6 +267,26 @@ Whether the **calling** organisation holds a grant on the product, through any o
   sentinel); a filter `isOwnProduct eq true` then matches
   nothing, and `eq false` matches everything the caller may see.
 
+### `displayName` and `format`
+
+- **`displayName`** is the name a UI shows. `name` stays the stable identifier; `displayName` is
+  prose its owner may change. Free text searches it alongside `name` and `description`.
+- **`format`** is the format the product's data is published in: `JSON`, `XML`, `CSV`, `RDF`,
+  `GeoJSON`, … It is free text, deliberately not a fixed list, and is filtered case-insensitively.
+- Both are optional: a product whose owner has not provided one simply has no key.
+
+### `isOwnProduct`
+
+`true` when the **calling** organisation offers the product (its `organisation.key` is the token's
+`organisation` claim, compared case-insensitively), otherwise `false`.
+
+- Like `subscriptionStatus`, it describes the caller, so it is **not masked**.
+- It is filterable with `eq`, `neq`, `in`, `not_in`, `any_of`, `none_of`, `exists` and
+  `not_exists`, taking JSON booleans (or the strings `"true"`/`"false"`). Any other value, or
+  `contains`, is a `400`. It is not sortable.
+- Absent when the token carries no organisation; a filter `isOwnProduct eq true` then matches
+  nothing, and `eq false` matches everything the caller may see.
+
 ### The `page` object
 
 | Field | Means |
