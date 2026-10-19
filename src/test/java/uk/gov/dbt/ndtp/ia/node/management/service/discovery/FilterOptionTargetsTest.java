@@ -40,7 +40,7 @@ class FilterOptionTargetsTest {
             new FilterAttributeDefinition(FilterScope.PRODUCT, "record_unit", "Record unit", "STRING", false, false);
 
     @Test
-    void openContract_listsEveryFilterableFieldButId_andEveryAttribute_sensitiveIncluded() {
+    void openContract_listsThePanelsFields_andEveryAttribute_sensitiveIncluded() {
         ProductSearchContract contract = ProductSearchContract.open();
 
         List<FilterOptionTarget> options = FilterOptionTargets.permitted(
@@ -49,12 +49,7 @@ class FilterOptionTargetsTest {
         assertThat(options)
                 .extracting(FilterOptionTarget::key)
                 .containsExactly(
-                        "field:name",
-                        "field:displayName",
-                        "field:description",
-                        "field:topic",
                         "field:type",
-                        "field:source",
                         "field:format",
                         "field:organisation.key",
                         "field:organisation.name",
@@ -68,8 +63,8 @@ class FilterOptionTargetsTest {
     void enforcedContract_listsOnlyWhatPolicyPermitsMinusMasked() throws Exception {
         ProductSearchContract contract = enforcing(
                 """
-                {"allowed_filtered_fields":["name","format","source"],
-                 "masked_filtered_fields":["source"],
+                {"allowed_filtered_fields":["name","type","format","organisation.key"],
+                 "masked_filtered_fields":["organisation.key"],
                  "allowed_filtered_attributes":["record_unit"]}
                 """);
 
@@ -78,14 +73,14 @@ class FilterOptionTargetsTest {
 
         assertThat(options)
                 .extracting(FilterOptionTarget::key)
-                .containsExactly("field:name", "field:format", "attribute:product.record_unit");
+                .containsExactly("field:type", "field:format", "attribute:product.record_unit");
     }
 
     @Test
     void sensitiveAttributes_areDroppedWhenTheContractMasksThem() throws Exception {
         ProductSearchContract contract = enforcing(
                 """
-                {"allowed_filtered_fields":["name"],
+                {"allowed_filtered_fields":["type"],
                  "allowed_filtered_attributes":["quality_designation","authorised_classifications"],
                  "mask_sensitive_attributes":true}
                 """);
@@ -98,7 +93,7 @@ class FilterOptionTargetsTest {
 
         assertThat(options)
                 .extracting(FilterOptionTarget::key)
-                .containsExactly("field:name", "attribute:product.quality_designation");
+                .containsExactly("field:type", "attribute:product.quality_designation");
     }
 
     /**
@@ -110,7 +105,7 @@ class FilterOptionTargetsTest {
     void sensitiveNameFromDiscoversSet_isDroppedEvenWhenTheDefinitionIsNotFlagged() throws Exception {
         ProductSearchContract contract = enforcing(
                 """
-                {"allowed_filtered_fields":["name"],
+                {"allowed_filtered_fields":["type"],
                  "allowed_filtered_attributes":["quality_designation","record_unit"],
                  "mask_sensitive_attributes":true}
                 """);
@@ -120,7 +115,7 @@ class FilterOptionTargetsTest {
 
         assertThat(options)
                 .extracting(FilterOptionTarget::key)
-                .containsExactly("field:name", "attribute:product.record_unit");
+                .containsExactly("field:type", "attribute:product.record_unit");
     }
 
     /** A definition flagged sensitive is kept when discovery's set does not name it. */
@@ -128,7 +123,7 @@ class FilterOptionTargetsTest {
     void definitionFlaggedSensitive_isKeptWhenDiscoversSetDoesNotNameIt() throws Exception {
         ProductSearchContract contract = enforcing(
                 """
-                {"allowed_filtered_fields":["name"],
+                {"allowed_filtered_fields":["type"],
                  "allowed_filtered_attributes":["identifiability"],
                  "mask_sensitive_attributes":true}
                 """);
@@ -140,7 +135,24 @@ class FilterOptionTargetsTest {
 
         assertThat(options)
                 .extracting(FilterOptionTarget::key)
-                .containsExactly("field:name", "attribute:product.identifiability");
+                .containsExactly("field:type", "attribute:product.identifiability");
+    }
+
+    /**
+     * Free-text prose (already searched by the text box) and identifiers nobody browses by are left
+     * out of the panel even when policy permits filtering on them; discover still accepts them.
+     */
+    @Test
+    void textSearchedFieldsAndIdentifiers_areNotOffered_evenWhenPermitted() throws Exception {
+        ProductSearchContract contract = enforcing(
+                """
+                {"allowed_filtered_fields":["name","displayName","description","topic","source","type"]}
+                """);
+
+        List<FilterOptionTarget> options = FilterOptionTargets.permitted(contract, List.of(), Set.of(), "ENV");
+
+        assertThat(options).extracting(FilterOptionTarget::key).containsExactly("field:type");
+        assertThat(options).allMatch(FilterOptionTarget::listsValues);
     }
 
     @ParameterizedTest
@@ -198,10 +210,6 @@ class FilterOptionTargetsTest {
 
         List<FilterOptionTarget> options = FilterOptionTargets.permitted(
                 contract, List.of(multiValuedText, singleValuedText, numberAttribute), Set.of(), "ENV");
-
-        FilterOptionTarget name = option(options, "field:name");
-        assertThat(name.defaultOperator()).isEqualTo(ComparisonOperator.CONTAINS);
-        assertThat(name.listsValues()).isFalse();
 
         FilterOptionTarget format = option(options, "field:format");
         assertThat(format.defaultOperator()).isEqualTo(ComparisonOperator.IN);

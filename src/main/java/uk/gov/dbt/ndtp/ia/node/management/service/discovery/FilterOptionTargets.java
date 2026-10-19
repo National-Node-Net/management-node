@@ -99,7 +99,7 @@ public final class FilterOptionTargets {
     private static List<FilterOptionTarget> fieldOptions(ProductSearchContract contract, boolean callerKnown) {
         List<FilterOptionTarget> options = new ArrayList<>();
         for (ProductField field : ProductField.values()) {
-            if (field == ProductField.ID || !field.isFilterable()) {
+            if (!isOfferedInPanel(field) || !field.isFilterable()) {
                 continue;
             }
             if (field == ProductField.IS_OWN_PRODUCT && !callerKnown) {
@@ -152,31 +152,60 @@ public final class FilterOptionTargets {
                 key, target, null, label, dataType, multiValued, operators, defaultOperator, true, true);
     }
 
+    /**
+     * Whether the filter panel offers a field at all. The panel is for narrowing by a value picked
+     * from a list, so it leaves out:
+     *
+     * <ul>
+     *   <li>{@code name}, {@code displayName} and {@code description}: prose, already searched by
+     *       the free-text box ({@code textSearch});
+     *   <li>{@code topic} and {@code source}: identifiers nobody browses by;
+     *   <li>{@code id} and the producer's members, which are not filterable here at all.
+     * </ul>
+     *
+     * <p>This only narrows the panel. Discover itself still accepts a filter on any field the
+     * contract permits, so a caller that names one directly is answered exactly as before.
+     */
+    private static boolean isOfferedInPanel(ProductField field) {
+        return switch (field) {
+            case TYPE, FORMAT, ORGANISATION_KEY, ORGANISATION_NAME, SUBSCRIBED_BY, IS_OWN_PRODUCT -> true;
+            case NAME, DISPLAY_NAME, DESCRIPTION, TOPIC, SOURCE -> false;
+            case ID, PRODUCER_NAME, PRODUCER_DESCRIPTION, PRODUCER_ACTIVE -> false;
+        };
+    }
+
     private static String fieldLabel(ProductField field) {
         return switch (field) {
-            case NAME -> "Name";
-            case DISPLAY_NAME -> "Display name";
-            case DESCRIPTION -> "Description";
-            case TOPIC -> "Topic";
             case TYPE -> "Type";
-            case SOURCE -> "Source";
             case FORMAT -> "Format";
             case ORGANISATION_KEY -> "Organisation";
             case ORGANISATION_NAME -> "Organisation name";
             case SUBSCRIBED_BY -> "Subscribed by";
             case IS_OWN_PRODUCT -> "My organisation's products";
-            case ID, PRODUCER_NAME, PRODUCER_DESCRIPTION, PRODUCER_ACTIVE ->
-                throw new IllegalStateException("No filter option label defined for " + field);
+            case NAME,
+                    DISPLAY_NAME,
+                    DESCRIPTION,
+                    TOPIC,
+                    SOURCE,
+                    ID,
+                    PRODUCER_NAME,
+                    PRODUCER_DESCRIPTION,
+                    PRODUCER_ACTIVE -> throw new IllegalStateException("No filter option label defined for " + field);
         };
     }
 
     private static boolean fieldListsValues(ProductField field) {
         return switch (field) {
-            case NAME, DISPLAY_NAME, DESCRIPTION -> false;
-            case TOPIC, TYPE, SOURCE, FORMAT, ORGANISATION_KEY, ORGANISATION_NAME, SUBSCRIBED_BY, IS_OWN_PRODUCT ->
-                true;
-            case ID, PRODUCER_NAME, PRODUCER_DESCRIPTION, PRODUCER_ACTIVE ->
-                throw new IllegalStateException("No filter option defined for " + field);
+            case TYPE, FORMAT, ORGANISATION_KEY, ORGANISATION_NAME, SUBSCRIBED_BY, IS_OWN_PRODUCT -> true;
+            case NAME,
+                    DISPLAY_NAME,
+                    DESCRIPTION,
+                    TOPIC,
+                    SOURCE,
+                    ID,
+                    PRODUCER_NAME,
+                    PRODUCER_DESCRIPTION,
+                    PRODUCER_ACTIVE -> throw new IllegalStateException("No filter option defined for " + field);
         };
     }
 

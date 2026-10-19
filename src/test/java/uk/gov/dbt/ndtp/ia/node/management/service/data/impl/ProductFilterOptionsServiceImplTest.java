@@ -326,11 +326,11 @@ class ProductFilterOptionsServiceImplTest {
     }
 
     // ---------------------------------------------------------------------------------------
-    // Values: enumerated targets list them, free text does not
+    // Values: the panel offers only enumerated fields, each with its values
     // ---------------------------------------------------------------------------------------
 
     @Test
-    void freeTextFieldsHaveNoValues_enumeratedOnesDo() {
+    void textSearchedFieldsAndIdentifiersAreNotOffered_enumeratedOnesListValues() {
         ProductSearchContract contract = ProductSearchContract.open();
         ProductSearchCriteria criteria = emptyCriteria();
         givenFrontHalf(contract, criteria);
@@ -345,10 +345,9 @@ class ProductFilterOptionsServiceImplTest {
 
         ProductFilterOptionsResponseDTO response = service.filterOptions(null, null, Optional.empty());
 
-        FilterOption name = filterOption(response, "field:name");
-        assertThat(name.values()).isNull();
-        assertThat(name.missingCount()).isNull();
-        assertThat(name.truncated()).isNull();
+        assertThat(response.filters())
+                .extracting(FilterOption::key)
+                .doesNotContain("field:name", "field:displayName", "field:description", "field:topic", "field:source");
 
         FilterOption format = filterOption(response, "field:format");
         assertThat(format.values()).containsExactly(new Value("csv", 10, false), new Value("json", 5, false));
@@ -357,7 +356,7 @@ class ProductFilterOptionsServiceImplTest {
     }
 
     @Test
-    void noValueListingTargets_runsNoFacetStatement() {
+    void nothingOfferedInThePanel_runsNoFacetStatement() {
         ProductDiscoveryPolicyDecisionDetails details = details(
                 """
                 {"row_filter": {"type": "literal", "value": true},
@@ -372,7 +371,8 @@ class ProductFilterOptionsServiceImplTest {
 
         ProductFilterOptionsResponseDTO response = service.filterOptions(null, null, Optional.of(decision));
 
-        assertThat(response.filters()).extracting(FilterOption::key).containsExactly("field:name");
+        // name is permitted, but the panel never offers a text-searched field
+        assertThat(response.filters()).isEmpty();
         verifyNoInteractions(facetQueryBuilder);
         verify(repository, never()).findFacetCounts(any());
     }
