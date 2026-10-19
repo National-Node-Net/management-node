@@ -150,6 +150,7 @@ Every `@Policy` handler receives the decision by declaring an `Optional<PolicyDe
 | Endpoint | Parameter |
 |---|---|
 | `POST /api/v1/product/discover` | `Optional<PolicyDecision<ProductDiscoveryPolicyDecisionDetails>>`, passed to the service, which searches with the open contract when it is empty |
+| `POST /api/v1/product/discover/filter` | `Optional<PolicyDecision<ProductDiscoveryPolicyDecisionDetails>>`, passed to `ProductFilterOptionsService`, which builds the filter panel from the same contract discovery would get, open when the decision is empty |
 | `POST /api/v1/product/subscribe` | `Optional<PolicyDecision<ProductSubscriptionPolicyDecisionDetails>>` |
 | `GET /api/v1/product/{productId}` | `Optional<PolicyDecision<ProductViewPolicyDecisionDetails>>` |
 | `GET /api/v1/configuration/producer`, `/consumer` | `Optional<PolicyDecision<PolicyDecisionDetails>>` (generic; no typed details yet) |
@@ -271,6 +272,7 @@ With the shipped rules and routing data (organisation known, `GET` for reads):
 | `@Policy` | Resolution | `policy.id` | Outcome | `reasons` |
 |---|---|---|---|---|
 | `product` / `discover` | `exact` | `product.discover` | allow for a UK organisation with a clearance, with its search contract in `details` (a `POST`, so the read-only fallback would have refused it) | `[]` when allowed |
+| `product` / `discover_filter` | `route` (`route-product-discover-filter`) | `product.discover` | identical allow/deny and `details` to `product` / `discover` for the same input - the route sends it to discovery's rule rather than a rule of its own | `[]` when allowed |
 | `product` / `subscribe` | `exact` | `product.subscribe` | decided by the subscription rule; terms in `details` | `[]` when allowed |
 | `product` / `view` | `exact` | `product.view` | the same gates and the same contract as `discover` (a known UK organisation with a clearance), plus `details.access_level` (`full`\|`summary`\|`basic`), which is reported, not enforced | `[]` when allowed |
 | `product` / `browse` | `route` (`route-product-browse`) | `product.fallback` | allow, `details: {"access_level": "read"}` | `[]` |
@@ -708,9 +710,9 @@ The rule for the endpoint in the example would be annotated `@Policy(resource = 
 
 ## Reference endpoints
 
-Three endpoints on `ProductController` exercise the mechanism end to end. Their rules are built from the organisation and product attributes in the database, and are walked through per organisation, with every expected output, in [`docker/opa/policy_sample_stories.md`](../docker/opa/policy_sample_stories.md).
+Three endpoints on `ProductController` exercise the mechanism end to end. Their rules are built from the organisation and product attributes in the database, and are walked through per organisation, with every expected output, in [`docker/opa/policy_sample_stories.md`](../docker/opa/policy_sample_stories.md). A fourth, `POST /api/v1/product/discover/filter`, is routed to discovery's rule rather than carrying one of its own; see its own subsection below.
 
-For testing them rather than reading about them: [`docs/tests/products/`](tests/products/README.md) holds a test requirement specification per API: [Product Discover](tests/products/product-discover.md) and [Product View](tests/products/product-view.md), and [`docs/DISCOVERY_TEST_SCENARIOS.md`](DISCOVERY_TEST_SCENARIOS.md) is the guided tour over the sample data.
+For testing them rather than reading about them: [`docs/tests/products/`](tests/products/README.md) holds a test requirement specification per API: [Product Discover](tests/products/product-discover.md), [Product Discover Filter](tests/products/product-discover-filter.md) and [Product View](tests/products/product-view.md), and [`docs/DISCOVERY_TEST_SCENARIOS.md`](DISCOVERY_TEST_SCENARIOS.md) is the guided tour over the sample data.
 
 All three rules read the caller through four facts in `lib/entitlements.rego`:
 
@@ -774,6 +776,29 @@ XACML's rule holds: **a Policy Enforcement Point that cannot fulfil an obligatio
 | `mask_response` | satisfied by the masked lists, which are applied whether or not it is obliged |
 | `aggregate_before_release` | a duty on whoever later consumes the product's data, not something a metadata search can do; passed through to the caller in the response's `policy.obligations` |
 | anything else | the search is refused: `403`, logged `policy.obligation_unsupported` |
+
+### `POST /api/v1/product/discover/filter`: the panel for discovery's own decision
+
+- Role: `product_discovery`, as discover.
+- `@Policy(resource = "product", action = "discover_filter", details = ProductDiscoveryPolicyDecisionDetails.class)`; the handler passes the decision to `ProductFilterOptionsService`, which makes no decision of its own.
+- Answered by `policies.product.discover`, reached by a **route** (`route-product-discover-filter` in `docker/opa/policies/routing/data.json`) rather than its own rule, so `policy.resolution` reports `route` here and `exact` on discover even though `policy.id` is `product.discover` on both.
+
+This endpoint has no rule of its own because it has no question of its own: it returns the same
+search contract discovery's decision already carries, turned into the catalogue's filter panel
+instead of into a page of products - every filter the caller may use, with its data type and
+operators, and, where listing them is worth it, the distinct values a value-holding target has
+among the caller's visible products and how many products hold each one *for this request*. The
+same four caller-level gates, the same row filter, the same allowed/masked lists as discover apply
+unchanged, because they are literally the same decision, not a second one evaluated the same way.
+
+**Counting is disjunctive faceting, computed without a second decision.** For each permitted,
+value-listing target, a count is the number of products satisfying the row filter, the request's
+`text`, and every request filter *except those on the same target*, that hold the value - so
+choosing one value of a group narrows every *other* group, while that group's own counts keep
+reporting what choosing a different value would give. This is built from `ProductSearchContract`
+and `SqlPredicateCompiler` exactly as discovery's own query is, in `ProductFacetQueryBuilder`, at a
+fixed statement cost per request regardless of how many values exist. Full specification:
+[`docs/tests/products/product-discover-filter.md`](tests/products/product-discover-filter.md).
 
 ### `POST /api/v1/product/subscribe`: exact rule with typed details
 
