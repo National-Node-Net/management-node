@@ -9,6 +9,8 @@ package uk.gov.dbt.ndtp.ia.node.management.service.data.impl;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -253,6 +255,24 @@ class ProductViewServiceImplTest {
                 .contains("LOWER(o.organisation_key) IN (:")
                 .contains("p.id IN (:")
                 .containsPattern("WHERE \\(LOWER\\(o\\.organisation_key\\) IN \\(:p\\d+\\)\\) AND \\(");
+    }
+
+    @Test
+    void view_callerOrganisation_reachesTheAssembler() {
+        databaseReturns(product(PRODUCT_ID, "FloodRiskMapZones"));
+
+        service().view(PRODUCT_ID, "BCC", permissiveDecision());
+
+        verify(assembler).assemble(any(), any(), any(), eq("BCC"));
+    }
+
+    @Test
+    void view_withoutCallerOrganisation_asksForNoSubscriptionStatus() {
+        databaseReturns(product(PRODUCT_ID, "FloodRiskMapZones"));
+
+        service().view(PRODUCT_ID, permissiveDecision());
+
+        verify(assembler).assemble(any(), any(), any(), isNull());
     }
 
     @Test
