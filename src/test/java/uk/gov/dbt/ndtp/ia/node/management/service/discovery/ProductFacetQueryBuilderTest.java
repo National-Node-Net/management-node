@@ -10,6 +10,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.filter.ComparisonOperator;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.filter.FilterNode;
@@ -167,7 +168,7 @@ class ProductFacetQueryBuilderTest {
     @Test
     void organisationKeyFilter_isExcludedFromItsOwnGroup() {
         List<FilterOptionTarget> permitted =
-                FilterOptionTargets.permitted(ProductSearchContract.open(), List.of(), "ENV");
+                FilterOptionTargets.permitted(ProductSearchContract.open(), List.of(), Set.of(), "ENV");
         FilterOptionTarget organisationKey = permitted.stream()
                 .filter(target -> target.key().equals("field:organisation.key"))
                 .findFirst()

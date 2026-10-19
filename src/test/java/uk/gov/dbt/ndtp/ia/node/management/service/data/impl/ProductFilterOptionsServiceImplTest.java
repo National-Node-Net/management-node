@@ -13,6 +13,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -603,6 +604,53 @@ class ProductFilterOptionsServiceImplTest {
                 .contains("filters=[field:format]")
                 .contains("results=3")
                 .doesNotContain("top-secret-value");
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // The sensitive set is discover's own
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * The sensitive set the panel filters by is discover's own, read once from the planner and
+     * used for both the criteria and the offered targets - never derived from the definitions'
+     * own flags, which are scope-limited and de-duplicated per name.
+     */
+    @Test
+    void sensitiveSetGivenToTheTargets_isExactlyThePlanners() {
+        ProductSearchContract contract = ProductSearchContract.enforcing(
+                rawDecision(
+                        details(
+                                """
+                {"allowed_filtered_fields": ["name"],
+                 "allowed_filtered_attributes": ["identifiability", "quality_designation"],
+                 "row_filter": {"type": "literal", "value": true},
+                 "mask_sensitive_attributes": true,
+                 "obligations": []}""")));
+        ProductSearchCriteria criteria = emptyCriteria();
+        Set<String> plannersSensitiveNames = Set.of("identifiability");
+        // Flagged the other way round from the planner's set, so only the planner's can explain
+        // which one survives.
+        FilterAttributeDefinition identifiability = new FilterAttributeDefinition(
+                FilterScope.PRODUCT, "identifiability", "Identifiability", "STRING", false, false);
+        FilterAttributeDefinition qualityDesignation = new FilterAttributeDefinition(
+                FilterScope.PRODUCT, "quality_designation", "Quality designation", "STRING", false, true);
+        when(planner.contractFor(any(), any())).thenReturn(contract);
+        when(planner.sensitiveAttributeNames(contract)).thenReturn(plannersSensitiveNames);
+        when(criteriaFactory.create(any(), eq(contract), eq(plannersSensitiveNames)))
+                .thenReturn(criteria);
+        when(planner.compile(any(), eq(contract), eq(criteria), eq(ProductProjection.SUMMARY), any(), any()))
+                .thenReturn(DUMMY_QUERY);
+        when(repository.count(DUMMY_QUERY)).thenReturn(0L);
+        when(repository.findFilterAttributeDefinitions()).thenReturn(List.of(identifiability, qualityDesignation));
+        givenFacetCounts(contract, criteria);
+
+        ProductFilterOptionsResponseDTO response = service.filterOptions(null, "ENV", Optional.empty());
+
+        assertThat(response.filters())
+                .extracting(FilterOption::key)
+                .contains("attribute:product.quality_designation")
+                .doesNotContain("attribute:product.identifiability");
+        verify(planner, times(1)).sensitiveAttributeNames(contract);
     }
 
     // ---------------------------------------------------------------------------------------

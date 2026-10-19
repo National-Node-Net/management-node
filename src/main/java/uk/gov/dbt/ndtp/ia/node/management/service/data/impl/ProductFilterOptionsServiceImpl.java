@@ -97,15 +97,18 @@ public class ProductFilterOptionsServiceImpl implements ProductFilterOptionsServ
         String callerOrganisation = UnknownIdentifiers.knownOrganisationOrNull(callerOrganisationKey);
 
         ProductSearchContract contract = planner.contractFor(WHAT, decision);
-        ProductSearchCriteria criteria =
-                criteriaFactory.create(request, contract, planner.sensitiveAttributeNames(contract));
+        // Discover's own sensitive set, read once and used for both the criteria and the panel, so
+        // the panel can never offer an attribute discover would refuse, nor withhold one it accepts.
+        Set<String> sensitiveAttributeNames = planner.sensitiveAttributeNames(contract);
+        ProductSearchCriteria criteria = criteriaFactory.create(request, contract, sensitiveAttributeNames);
         ProductSearchQuery query =
                 planner.compile(WHAT, contract, criteria, ProductProjection.SUMMARY, callerOrganisation, decision);
 
         long total = repository.count(query);
 
         List<FilterAttributeDefinition> definitions = repository.findFilterAttributeDefinitions();
-        List<FilterOptionTarget> targets = FilterOptionTargets.permitted(contract, definitions, callerOrganisation);
+        List<FilterOptionTarget> targets =
+                FilterOptionTargets.permitted(contract, definitions, sensitiveAttributeNames, callerOrganisation);
         Map<String, List<FacetCount>> rowsByFacet = facetCounts(contract, criteria, targets, callerOrganisation);
 
         List<FilterOption> filters = targets.stream()

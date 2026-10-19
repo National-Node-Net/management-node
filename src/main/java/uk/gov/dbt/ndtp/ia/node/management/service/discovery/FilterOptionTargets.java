@@ -11,7 +11,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.springframework.util.StringUtils;
 import uk.gov.dbt.ndtp.ia.node.management.model.UnknownIdentifiers;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.filter.ComparisonOperator;
@@ -60,25 +59,28 @@ public final class FilterOptionTargets {
      * @param contract what the caller may filter on
      * @param definitions every policy attribute definition filtering could offer, before the
      *     contract narrows them
+     * @param sensitiveAttributeNames the attribute names discovery withholds as sensitive for this
+     *     contract - exactly {@code ProductQueryPlanner#sensitiveAttributeNames}, so the panel never
+     *     offers an attribute discovery would refuse, nor withholds one discovery would accept. A
+     *     definition's own {@code sensitive} flag is deliberately not consulted: it is scope-limited
+     *     and de-duplicated per name, whereas discovery's set spans every namespace and scope
      * @param callerOrganisation the caller's organisation key, or null/blank/{@link
      *     UnknownIdentifiers#UNKNOWN_ORG} when it is not known
      */
     public static List<FilterOptionTarget> permitted(
-            ProductSearchContract contract, List<FilterAttributeDefinition> definitions, String callerOrganisation) {
+            ProductSearchContract contract,
+            List<FilterAttributeDefinition> definitions,
+            Set<String> sensitiveAttributeNames,
+            String callerOrganisation) {
         boolean callerKnown = UnknownIdentifiers.knownOrganisationOrNull(callerOrganisation) != null;
 
         List<FilterOptionTarget> options = new ArrayList<>(fieldOptions(contract, callerKnown));
-
-        Set<String> sensitiveNames = definitions.stream()
-                .filter(FilterAttributeDefinition::sensitive)
-                .map(FilterAttributeDefinition::name)
-                .collect(Collectors.toSet());
 
         List<FilterOptionTarget> productAttributes = new ArrayList<>();
         List<FilterOptionTarget> organisationAttributes = new ArrayList<>();
         for (FilterAttributeDefinition definition : definitions) {
             FilterTarget target = FilterTarget.parse(definition.scope(), false, definition.name());
-            if (!ProductSearchCriteriaFactory.permits(target, contract, sensitiveNames)) {
+            if (!ProductSearchCriteriaFactory.permits(target, contract, sensitiveAttributeNames)) {
                 continue;
             }
             FilterOptionTarget option = attributeOption(definition, target);

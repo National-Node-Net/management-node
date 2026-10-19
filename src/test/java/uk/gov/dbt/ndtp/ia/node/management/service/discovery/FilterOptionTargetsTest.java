@@ -9,6 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullSource;
@@ -43,7 +44,7 @@ class FilterOptionTargetsTest {
         ProductSearchContract contract = ProductSearchContract.open();
 
         List<FilterOptionTarget> options = FilterOptionTargets.permitted(
-                contract, List.of(QUALITY_DESIGNATION, AUTHORISED_CLASSIFICATIONS), "ENV");
+                contract, List.of(QUALITY_DESIGNATION, AUTHORISED_CLASSIFICATIONS), Set.of(), "ENV");
 
         assertThat(options)
                 .extracting(FilterOptionTarget::key)
@@ -73,7 +74,7 @@ class FilterOptionTargetsTest {
                 """);
 
         List<FilterOptionTarget> options =
-                FilterOptionTargets.permitted(contract, List.of(QUALITY_DESIGNATION, RECORD_UNIT), "ENV");
+                FilterOptionTargets.permitted(contract, List.of(QUALITY_DESIGNATION, RECORD_UNIT), Set.of(), "ENV");
 
         assertThat(options)
                 .extracting(FilterOptionTarget::key)
@@ -90,11 +91,56 @@ class FilterOptionTargetsTest {
                 """);
 
         List<FilterOptionTarget> options = FilterOptionTargets.permitted(
-                contract, List.of(QUALITY_DESIGNATION, AUTHORISED_CLASSIFICATIONS), "ENV");
+                contract,
+                List.of(QUALITY_DESIGNATION, AUTHORISED_CLASSIFICATIONS),
+                Set.of("authorised_classifications"),
+                "ENV");
 
         assertThat(options)
                 .extracting(FilterOptionTarget::key)
                 .containsExactly("field:name", "attribute:product.quality_designation");
+    }
+
+    /**
+     * Discovery's sensitive set spans every namespace and scope, whereas a definition's own flag
+     * is scope-limited and de-duplicated per name. A name discovery withholds is therefore dropped
+     * even when the definition the panel would list says it is not sensitive.
+     */
+    @Test
+    void sensitiveNameFromDiscoversSet_isDroppedEvenWhenTheDefinitionIsNotFlagged() throws Exception {
+        ProductSearchContract contract = enforcing(
+                """
+                {"allowed_filtered_fields":["name"],
+                 "allowed_filtered_attributes":["quality_designation","record_unit"],
+                 "mask_sensitive_attributes":true}
+                """);
+
+        List<FilterOptionTarget> options = FilterOptionTargets.permitted(
+                contract, List.of(QUALITY_DESIGNATION, RECORD_UNIT), Set.of("quality_designation"), "ENV");
+
+        assertThat(options)
+                .extracting(FilterOptionTarget::key)
+                .containsExactly("field:name", "attribute:product.record_unit");
+    }
+
+    /** A definition flagged sensitive is kept when discovery's set does not name it. */
+    @Test
+    void definitionFlaggedSensitive_isKeptWhenDiscoversSetDoesNotNameIt() throws Exception {
+        ProductSearchContract contract = enforcing(
+                """
+                {"allowed_filtered_fields":["name"],
+                 "allowed_filtered_attributes":["identifiability"],
+                 "mask_sensitive_attributes":true}
+                """);
+        FilterAttributeDefinition flaggedSensitive = new FilterAttributeDefinition(
+                FilterScope.PRODUCT, "identifiability", "Identifiability", "STRING", false, true);
+
+        List<FilterOptionTarget> options =
+                FilterOptionTargets.permitted(contract, List.of(flaggedSensitive), Set.of(), "ENV");
+
+        assertThat(options)
+                .extracting(FilterOptionTarget::key)
+                .containsExactly("field:name", "attribute:product.identifiability");
     }
 
     @ParameterizedTest
@@ -103,7 +149,8 @@ class FilterOptionTargetsTest {
     void unknownCaller_omitsIsOwnProduct(String callerOrganisation) {
         ProductSearchContract contract = ProductSearchContract.open();
 
-        List<FilterOptionTarget> options = FilterOptionTargets.permitted(contract, List.of(), callerOrganisation);
+        List<FilterOptionTarget> options =
+                FilterOptionTargets.permitted(contract, List.of(), Set.of(), callerOrganisation);
 
         assertThat(options).extracting(FilterOptionTarget::key).doesNotContain("field:isOwnProduct");
     }
@@ -121,7 +168,7 @@ class FilterOptionTargetsTest {
     void organisationFields_useTheSameTargetAsAParsedCriteriaFilter() {
         ProductSearchContract contract = ProductSearchContract.open();
 
-        List<FilterOptionTarget> options = FilterOptionTargets.permitted(contract, List.of(), "ENV");
+        List<FilterOptionTarget> options = FilterOptionTargets.permitted(contract, List.of(), Set.of(), "ENV");
 
         FilterOptionTarget organisationKey = option(options, "field:organisation.key");
         assertThat(organisationKey.target()).isEqualTo(FilterTarget.parse(null, true, "organisation.key"));
@@ -134,7 +181,7 @@ class FilterOptionTargetsTest {
     void knownCaller_includesIsOwnProduct() {
         ProductSearchContract contract = ProductSearchContract.open();
 
-        List<FilterOptionTarget> options = FilterOptionTargets.permitted(contract, List.of(), "ENV");
+        List<FilterOptionTarget> options = FilterOptionTargets.permitted(contract, List.of(), Set.of(), "ENV");
 
         assertThat(options).extracting(FilterOptionTarget::key).contains("field:isOwnProduct");
     }
@@ -150,7 +197,7 @@ class FilterOptionTargetsTest {
                 FilterScope.PRODUCT, "retention_days", "Retention days", "NUMBER", false, false);
 
         List<FilterOptionTarget> options = FilterOptionTargets.permitted(
-                contract, List.of(multiValuedText, singleValuedText, numberAttribute), "ENV");
+                contract, List.of(multiValuedText, singleValuedText, numberAttribute), Set.of(), "ENV");
 
         FilterOptionTarget name = option(options, "field:name");
         assertThat(name.defaultOperator()).isEqualTo(ComparisonOperator.CONTAINS);
@@ -188,7 +235,7 @@ class FilterOptionTargetsTest {
                 new FilterAttributeDefinition(FilterScope.PRODUCT, "blank_display", "   ", "STRING", false, false);
 
         List<FilterOptionTarget> options =
-                FilterOptionTargets.permitted(contract, List.of(noDisplayName, blankDisplayName), "ENV");
+                FilterOptionTargets.permitted(contract, List.of(noDisplayName, blankDisplayName), Set.of(), "ENV");
 
         FilterOptionTarget obscure = option(options, "attribute:product.obscure_attribute");
         assertThat(obscure.label()).isEqualTo("obscure_attribute");
@@ -211,7 +258,7 @@ class FilterOptionTargetsTest {
                 new FilterAttributeDefinition(FilterScope.ORGANISATION, "org_a", "Yankee", "STRING", false, false);
 
         List<FilterOptionTarget> options =
-                FilterOptionTargets.permitted(contract, List.of(productB, productA, orgB, orgA), "ENV");
+                FilterOptionTargets.permitted(contract, List.of(productB, productA, orgB, orgA), Set.of(), "ENV");
 
         assertThat(options)
                 .filteredOn(option -> option.field() == null)
