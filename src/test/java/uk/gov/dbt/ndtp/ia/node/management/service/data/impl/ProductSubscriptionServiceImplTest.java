@@ -156,7 +156,11 @@ class ProductSubscriptionServiceImplTest {
         organisationExists();
         when(consumerRepository.findById(4L)).thenReturn(Optional.of(consumer(4L, "someone-else", 999L, false)));
 
-        assertThatThrownBy(() -> service.subscribe(request(4L), ORG_KEY, decision(false, 90, 90)))
+        ProductSubscriptionRequestDTO subscription = request(4L);
+
+        Optional<PolicyDecision<ProductSubscriptionPolicyDecisionDetails>> terms = decision(false, 90, 90);
+
+        assertThatThrownBy(() -> service.subscribe(subscription, ORG_KEY, terms))
                 .isInstanceOf(SubscriptionRejectedException.class)
                 .hasMessageContaining("does not belong to organisation")
                 .extracting(e -> ((SubscriptionRejectedException) e).getReason())
@@ -195,7 +199,11 @@ class ProductSubscriptionServiceImplTest {
         when(consumerRepository.findByOrgId(ORG_ID))
                 .thenReturn(List.of(consumer(1L, "a", ORG_ID, false), consumer(2L, "b", ORG_ID, false)));
 
-        assertThatThrownBy(() -> service.subscribe(request(null), ORG_KEY, decision(false, 90, 90)))
+        ProductSubscriptionRequestDTO subscription = request(null);
+
+        Optional<PolicyDecision<ProductSubscriptionPolicyDecisionDetails>> terms = decision(false, 90, 90);
+
+        assertThatThrownBy(() -> service.subscribe(subscription, ORG_KEY, terms))
                 .isInstanceOf(SubscriptionRejectedException.class)
                 .hasMessageContaining("Multiple consumers found, please specify consumer_id")
                 .extracting(e -> ((SubscriptionRejectedException) e).getReason())
@@ -208,7 +216,11 @@ class ProductSubscriptionServiceImplTest {
         when(consumerRepository.findByOrgIdAndIsDefaultTrue(ORG_ID)).thenReturn(Optional.empty());
         when(consumerRepository.findByOrgId(ORG_ID)).thenReturn(List.of());
 
-        assertThatThrownBy(() -> service.subscribe(request(null), ORG_KEY, decision(false, 90, 90)))
+        ProductSubscriptionRequestDTO subscription = request(null);
+
+        Optional<PolicyDecision<ProductSubscriptionPolicyDecisionDetails>> terms = decision(false, 90, 90);
+
+        assertThatThrownBy(() -> service.subscribe(subscription, ORG_KEY, terms))
                 .isInstanceOf(SubscriptionRejectedException.class)
                 .extracting(e -> ((SubscriptionRejectedException) e).getReason())
                 .isEqualTo(Reason.NO_CONSUMER);
@@ -223,7 +235,11 @@ class ProductSubscriptionServiceImplTest {
         when(productConsumerRepository.existsByProductIdAndConsumerId(PRODUCT_ID, 4L))
                 .thenReturn(true);
 
-        assertThatThrownBy(() -> service.subscribe(request(4L), ORG_KEY, decision(false, 90, 90)))
+        ProductSubscriptionRequestDTO subscription = request(4L);
+
+        Optional<PolicyDecision<ProductSubscriptionPolicyDecisionDetails>> terms = decision(false, 90, 90);
+
+        assertThatThrownBy(() -> service.subscribe(subscription, ORG_KEY, terms))
                 .isInstanceOf(SubscriptionRejectedException.class)
                 .hasMessageContaining("already subscribed")
                 .hasMessageContaining("consumer-a")
@@ -253,7 +269,11 @@ class ProductSubscriptionServiceImplTest {
         when(organisationService.findIdByKey(ORG_KEY)).thenReturn(Optional.of(ORG_ID));
         when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.subscribe(request(4L), ORG_KEY, decision(false, 90, 90)))
+        ProductSubscriptionRequestDTO subscription = request(4L);
+
+        Optional<PolicyDecision<ProductSubscriptionPolicyDecisionDetails>> terms = decision(false, 90, 90);
+
+        assertThatThrownBy(() -> service.subscribe(subscription, ORG_KEY, terms))
                 .isInstanceOf(SubscriptionRejectedException.class)
                 .extracting(e -> ((SubscriptionRejectedException) e).getReason())
                 .isEqualTo(Reason.PRODUCT_NOT_FOUND);
@@ -358,7 +378,11 @@ class ProductSubscriptionServiceImplTest {
         when(productConsumerRepository.existsByProductIdAndConsumerId(PRODUCT_ID, 4L))
                 .thenReturn(true);
 
-        assertThatThrownBy(() -> service.subscribe(request(4L), ORG_KEY, decision(false, 90, 90)))
+        ProductSubscriptionRequestDTO subscription = request(4L);
+
+        Optional<PolicyDecision<ProductSubscriptionPolicyDecisionDetails>> terms = decision(false, 90, 90);
+
+        assertThatThrownBy(() -> service.subscribe(subscription, ORG_KEY, terms))
                 .isInstanceOf(SubscriptionRejectedException.class);
 
         verify(events, never()).publishEvent(any(Object.class));
@@ -368,7 +392,11 @@ class ProductSubscriptionServiceImplTest {
     void unknownCallingOrganisation_isRefused() {
         when(organisationService.findIdByKey("NOSUCH")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.subscribe(request(null), "NOSUCH", decision(false, 90, 90)))
+        ProductSubscriptionRequestDTO subscription = request(null);
+
+        Optional<PolicyDecision<ProductSubscriptionPolicyDecisionDetails>> terms = decision(false, 90, 90);
+
+        assertThatThrownBy(() -> service.subscribe(subscription, "NOSUCH", terms))
                 .isInstanceOf(SubscriptionRejectedException.class)
                 .hasMessageContaining("not known");
     }

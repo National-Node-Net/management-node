@@ -120,8 +120,8 @@ class ProductPolicyResourceLoaderTest {
 
         Map<String, Object> fields = loader.load("product", "9").orElseThrow().fields();
 
-        assertThat(fields).containsKeys("id", "name", "topic");
         assertThat(fields)
+                .containsKeys("id", "name", "topic")
                 .doesNotContainKeys(
                         "displayName", "description", "source", "format", "type", "producer", "organisation");
     }

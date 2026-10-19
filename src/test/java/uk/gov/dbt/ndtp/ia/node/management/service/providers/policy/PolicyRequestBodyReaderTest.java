@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import uk.gov.dbt.ndtp.ia.node.management.web.policy.CachedBodyHttpServletRequest;
@@ -37,10 +38,10 @@ class PolicyRequestBodyReaderTest {
                         """
                 {"text": "this is sample text", "filters": {"key 1": "value", "key 2": [1234, 33, 222]}}"""));
 
-        assertThat(body).isInstanceOf(Map.class);
-        Map<?, ?> map = (Map<?, ?>) body;
-        assertThat(map.get("text")).isEqualTo("this is sample text");
-        assertThat(map.get("filters")).isEqualTo(Map.of("key 1", "value", "key 2", List.of(1234, 33, 222)));
+        assertThat(body)
+                .asInstanceOf(InstanceOfAssertFactories.map(String.class, Object.class))
+                .containsEntry("text", "this is sample text")
+                .containsEntry("filters", Map.of("key 1", "value", "key 2", List.of(1234, 33, 222)));
     }
 
     @Test

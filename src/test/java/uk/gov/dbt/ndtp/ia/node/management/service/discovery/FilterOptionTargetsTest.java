@@ -164,7 +164,7 @@ class FilterOptionTargetsTest {
         List<FilterOptionTarget> options =
                 FilterOptionTargets.permitted(contract, List.of(), Set.of(), callerOrganisation);
 
-        assertThat(options).extracting(FilterOptionTarget::key).doesNotContain("field:isOwnProduct");
+        assertThat(options).extracting(FilterOptionTarget::key).isNotEmpty().doesNotContain("field:isOwnProduct");
     }
 
     /**

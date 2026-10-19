@@ -701,6 +701,9 @@ class ProductFilterOptionsServiceImplTest {
 
         verify(planner).compile(any(), eq(contract), eq(criteria), eq(ProductProjection.SUMMARY), isNull(), any());
         verify(facetQueryBuilder).build(eq(contract), eq(criteria), any(), isNull());
-        assertThat(response.filters()).extracting(FilterOption::key).doesNotContain("field:isOwnProduct");
+        assertThat(response.filters())
+                .extracting(FilterOption::key)
+                .isNotEmpty()
+                .doesNotContain("field:isOwnProduct");
     }
 }

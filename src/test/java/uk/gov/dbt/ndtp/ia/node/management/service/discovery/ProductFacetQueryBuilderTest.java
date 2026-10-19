@@ -322,8 +322,10 @@ class ProductFacetQueryBuilderTest {
 
     @Test
     void emptyTargets_isRejected() {
-        assertThatThrownBy(
-                        () -> builder.build(ProductSearchContract.open(), criteria(null, List.of()), List.of(), null))
+        ProductSearchContract contract = ProductSearchContract.open();
+        ProductSearchCriteria noCriteria = criteria(null, List.of());
+        List<FilterOptionTarget> noTargets = List.of();
+        assertThatThrownBy(() -> builder.build(contract, noCriteria, noTargets, null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -341,8 +343,10 @@ class ProductFacetQueryBuilderTest {
                 true,
                 false);
 
-        assertThatThrownBy(() ->
-                        builder.build(ProductSearchContract.open(), criteria(null, List.of()), List.of(noValues), null))
+        ProductSearchContract contract = ProductSearchContract.open();
+        ProductSearchCriteria noCriteria = criteria(null, List.of());
+        List<FilterOptionTarget> targets = List.of(noValues);
+        assertThatThrownBy(() -> builder.build(contract, noCriteria, targets, null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
