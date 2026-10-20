@@ -330,6 +330,22 @@ class DiscoveredProductAssemblerTest {
     }
 
     @Test
+    void assemble_fullModel_reportsTheCallersStatus_notWhoElseSubscribes() {
+        when(repository.findSubscribingOrganisations(anySet()))
+                .thenReturn(List.of(new SubscribingOrganisation(1L, "HEG", "Homes England", 1, EARLIEST)));
+        when(repository.findSubscribedProductIds(eq("BCC"), any())).thenReturn(Set.of());
+
+        DiscoveredProductDTO product = assembler
+                .assemble(List.of(row(1L)), ProductSearchContract.open(), ProductProjection.FULL, "BCC")
+                .get(0);
+
+        assertThat(product.subscribedBy())
+                .extracting(DiscoveredProductDTO.SubscribingOrganisation::key)
+                .containsExactly("HEG");
+        assertThat(product.subscriptionStatus()).isEqualTo(DiscoveredProductDTO.SubscriptionStatus.NOT_SUBSCRIBED);
+    }
+
+    @Test
     void assemble_noCallerOrganisation_leavesTheStatusOut_andQueriesNothing() {
         DiscoveredProductDTO product = assembler
                 .assemble(List.of(summaryRow(1L)), ProductSearchContract.open(), ProductProjection.SUMMARY)

@@ -12,6 +12,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -452,6 +454,24 @@ class ProductDiscoveryServiceImplTest {
         verify(repository).findPage(any());
         // The blocks are the assembler's business, and it batches them; nothing here is per product.
         verify(repository, never()).findAttributes(any(), anyCollection(), anySet(), anyBoolean());
+    }
+
+    @Test
+    void discover_callerOrganisation_reachesTheAssembler() {
+        databaseReturns(1, List.of(product(3, "FloodRiskMapZones")));
+
+        service().discover(null, "BCC", decision(true, permissiveDetails()));
+
+        verify(assembler).assemble(any(), any(), any(), eq("BCC"));
+    }
+
+    @Test
+    void discover_withoutCallerOrganisation_asksForNoSubscriptionStatus() {
+        databaseReturns(1, List.of(product(3, "FloodRiskMapZones")));
+
+        service().discover(null, decision(true, permissiveDetails()));
+
+        verify(assembler).assemble(any(), any(), any(), isNull());
     }
 
     @Test

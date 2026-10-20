@@ -684,7 +684,8 @@ discover "$T" '{}' | jq -c '.products[]' | while read -r summary; do
       description: $x.description,
       type:        $x.type,
       orgKey:      $x.organisation.key,
-      orgName:     $x.organisation.name
+      orgName:     $x.organisation.name,
+      status:      $x.subscriptionStatus
     };
     {id: $a.id, same: (shared($a) == shared($b))}'
 done
@@ -695,7 +696,8 @@ Every line must report `"same": true`.
 - **Given** a product returned in a discover page,
 - **When** the same product is viewed by the same caller,
 - **Then** every member the summary carries (`id`, `name`, `description`, `type`,
-  `organisation.key`, `organisation.name`) has an identical value in the viewed object.
+  `organisation.key`, `organisation.name`, `subscriptionStatus`) has an identical value in the
+  viewed object.
   (Compare those members individually, not the whole `organisation` object: the view adds
   `organisation.attributes`, which the summary deliberately omits.)
 - **And** the viewed object carries **strictly more**: `topic`, `producer`, and whatever of
@@ -1020,6 +1022,45 @@ only place where a withheld product and a missing one are distinguishable.
 **Why.** XACML's rule: a Policy Enforcement Point that cannot fulfil an obligation must not grant.
 The audit line is also the operator's only way to tell the two `404`s apart, which is exactly the
 distinction the response must not make ([V5](#v5--the-two-404s-are-indistinguishable)).
+
+---
+
+### V19: Each organisation sees its own subscription status
+
+**Objective.** The product details page decides its CTA from `subscriptionStatus`: "Subscribe to
+data" for `NOT_SUBSCRIBED`, a disabled "Subscribed" for `SUBSCRIBED`. The status must be the
+calling organisation's own, and must not depend on what policy masks.
+
+**Preconditions.** Policy on.
+
+**Test data.** RiverLevelTelemetry, an ENV product every caller may view. Its grants
+([discover §6.2](product-discover.md#62-grants-for-subscribedby)): HEG once, BCC on two consumers,
+ENV none.
+
+**Given–When–Then.**
+
+```bash
+id=$(discover "$ENV_TOKEN" '{"text":"RiverLevelTelemetry"}' | jq -r '.products[0].id')
+for t in "$ENV_TOKEN" "$HEG_TOKEN" "$BCC_TOKEN"; do
+  view_body "$t" "$id" | jq -c '{status: .subscriptionStatus, subscribedByShown: has("subscribedBy")}'
+done
+# {"status":"NOT_SUBSCRIBED","subscribedByShown":true}
+# {"status":"SUBSCRIBED","subscribedByShown":true}
+# {"status":"SUBSCRIBED","subscribedByShown":false}
+```
+
+- **Given** the same product,
+- **When** each organisation views it,
+- **Then** ENV sees `NOT_SUBSCRIBED`, and HEG and BCC see `SUBSCRIBED`.
+- **And** BCC sees `SUBSCRIBED` once, although it holds the product on two consumers.
+- **And** BCC sees its status although `subscribedBy` is masked for it: the status describes the
+  caller only.
+- **And** the value is the one discover reports for the same caller and product
+  ([V9](#v9--a-viewed-product-agrees-with-the-same-product-in-a-discover-result)).
+
+**Why.** `subscribedBy` cannot drive the CTA: it lists every organisation, and policy masks it for
+some callers. `subscriptionStatus` is the member the page reads. A grant counts whatever its
+`validity`, so an expired grant still reports `SUBSCRIBED`.
 
 ---
 
