@@ -1137,6 +1137,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#v19-each-organisation-sees-its-own-subscription-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V19: Each organisation sees its own subscription status
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1706,6 +1717,17 @@
     <span class="md-ellipsis">
       
         V18: The audit obligation is honoured
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v19-each-organisation-sees-its-own-subscription-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V19: Each organisation sees its own subscription status
       
     </span>
   </a>
@@ -2777,17 +2799,19 @@ exactly, value for value, not merely "look similar".</p>
 </span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="s1">      description: $x.description,</span>
 </span><span id="__span-13-10"><a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="s1">      type:        $x.type,</span>
 </span><span id="__span-13-11"><a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="s1">      orgKey:      $x.organisation.key,</span>
-</span><span id="__span-13-12"><a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a><span class="s1">      orgName:     $x.organisation.name</span>
-</span><span id="__span-13-13"><a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a><span class="s1">    };</span>
-</span><span id="__span-13-14"><a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a><span class="s1">    {id: $a.id, same: (shared($a) == shared($b))}'</span>
-</span><span id="__span-13-15"><a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a><span class="k">done</span>
+</span><span id="__span-13-12"><a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a><span class="s1">      orgName:     $x.organisation.name,</span>
+</span><span id="__span-13-13"><a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a><span class="s1">      status:      $x.subscriptionStatus</span>
+</span><span id="__span-13-14"><a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a><span class="s1">    };</span>
+</span><span id="__span-13-15"><a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a><span class="s1">    {id: $a.id, same: (shared($a) == shared($b))}'</span>
+</span><span id="__span-13-16"><a id="__codelineno-13-16" name="__codelineno-13-16" href="#__codelineno-13-16"></a><span class="k">done</span>
 </span></code></pre></div>
 <p>Every line must report <code>"same": true</code>.</p>
 <ul>
 <li><strong>Given</strong> a product returned in a discover page,</li>
 <li><strong>When</strong> the same product is viewed by the same caller,</li>
 <li><strong>Then</strong> every member the summary carries (<code>id</code>, <code>name</code>, <code>description</code>, <code>type</code>,
-  <code>organisation.key</code>, <code>organisation.name</code>) has an identical value in the viewed object.
+  <code>organisation.key</code>, <code>organisation.name</code>, <code>subscriptionStatus</code>) has an identical value in the
+  viewed object.
   (Compare those members individually, not the whole <code>organisation</code> object: the view adds
   <code>organisation.attributes</code>, which the summary deliberately omits.)</li>
 <li><strong>And</strong> the viewed object carries <strong>strictly more</strong>: <code>topic</code>, <code>producer</code>, and whatever of
@@ -3055,18 +3079,49 @@ only place where a withheld product and a missing one are distinguishable.</p>
 The audit line is also the operator's only way to tell the two <code>404</code>s apart, which is exactly the
 distinction the response must not make (<a href="#v5--the-two-404s-are-indistinguishable">V5</a>).</p>
 <hr />
+<h3 id="v19-each-organisation-sees-its-own-subscription-status">V19: Each organisation sees its own subscription status</h3>
+<p><strong>Objective.</strong> The product details page decides its CTA from <code>subscriptionStatus</code>: "Subscribe to
+data" for <code>NOT_SUBSCRIBED</code>, a disabled "Subscribed" for <code>SUBSCRIBED</code>. The status must be the
+calling organisation's own, and must not depend on what policy masks.</p>
+<p><strong>Preconditions.</strong> Policy on.</p>
+<p><strong>Test data.</strong> RiverLevelTelemetry, an ENV product every caller may view. Its grants
+(<a href="../product-discover/#62-grants-for-subscribedby">discover §6.2</a>): HEG once, BCC on two consumers,
+ENV none.</p>
+<p><strong>Given–When–Then.</strong></p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="nv">id</span><span class="o">=</span><span class="k">$(</span>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"text":"RiverLevelTelemetry"}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">'.products[0].id'</span><span class="k">)</span>
+</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="k">for</span><span class="w"> </span>t<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$HEG_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="w">  </span>view_body<span class="w"> </span><span class="s2">"</span><span class="nv">$t</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-c<span class="w"> </span><span class="s1">'{status: .subscriptionStatus, subscribedByShown: has("subscribedBy")}'</span>
+</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="k">done</span>
+</span><span id="__span-22-5"><a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="c1"># {"status":"NOT_SUBSCRIBED","subscribedByShown":true}</span>
+</span><span id="__span-22-6"><a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a><span class="c1"># {"status":"SUBSCRIBED","subscribedByShown":true}</span>
+</span><span id="__span-22-7"><a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a><span class="c1"># {"status":"SUBSCRIBED","subscribedByShown":false}</span>
+</span></code></pre></div>
+<ul>
+<li><strong>Given</strong> the same product,</li>
+<li><strong>When</strong> each organisation views it,</li>
+<li><strong>Then</strong> ENV sees <code>NOT_SUBSCRIBED</code>, and HEG and BCC see <code>SUBSCRIBED</code>.</li>
+<li><strong>And</strong> BCC sees <code>SUBSCRIBED</code> once, although it holds the product on two consumers.</li>
+<li><strong>And</strong> BCC sees its status although <code>subscribedBy</code> is masked for it: the status describes the
+  caller only.</li>
+<li><strong>And</strong> the value is the one discover reports for the same caller and product
+  (<a href="#v9--a-viewed-product-agrees-with-the-same-product-in-a-discover-result">V9</a>).</li>
+</ul>
+<p><strong>Why.</strong> <code>subscribedBy</code> cannot drive the CTA: it lists every organisation, and policy masks it for
+some callers. <code>subscriptionStatus</code> is the member the page reads. A grant counts whatever its
+<code>validity</code>, so an expired grant still reports <code>SUBSCRIBED</code>.</p>
+<hr />
 <h2 id="4-edge-cases">4. Edge cases</h2>
 <p>All of these use an authenticated caller holding <code>product_view</code>, with policy <strong>on</strong>, unless stated.
 None of them may ever produce a <code>500</code>.</p>
 <h3 id="e1-id-0">E1: Id <code>0</code></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>view<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="m">0</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>view<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="m">0</span>
 </span></code></pre></div>
 <p><code>0</code> is a valid <code>Long</code>, so it binds and the query runs. <strong>Expect <code>404</code>, empty body.</strong> No sequence
 issues <code>0</code>, so nothing matches. A <code>400</code> here would mean something is validating the range (nothing
 does); a <code>500</code> would mean the id is not being bound as a parameter.</p>
 <h3 id="e2-negative-ids">E2: Negative ids</h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>view<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span>-1
-</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>view<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span>-999999
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>view<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span>-1
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>view<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span>-999999
 </span></code></pre></div>
 <p><strong>Expect <code>404</code></strong> for both, empty body. Negative values are valid <code>Long</code>s and are bound like any
 other. <strong>Why it matters:</strong> the id is compiled as an ordinary field comparison with a bound
@@ -3103,17 +3158,17 @@ as text, and must not trip a parse error.</p>
 <h3 id="e4-a-product-that-exists-but-whose-owning-organisation-the-caller-cannot-reach">E4: A product that exists but whose owning organisation the caller cannot reach</h3>
 <p>Take an id from ENV's catalogue that BCC does not discover, for instance <code>HousingNeedSurvey</code>
 (HEG's, <code>experimental</code>; resolve it <strong>as HEG</strong>, since ENV does not discover it either).</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="nv">id</span><span class="o">=</span><span class="k">$(</span>id_of<span class="w"> </span><span class="s2">"</span><span class="nv">$HEG_TOKEN</span><span class="s2">"</span><span class="w"> </span>HousingNeedSurvey<span class="k">)</span>
-</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>view<span class="w"> </span><span class="s2">"</span><span class="nv">$HEG_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="w">    </span><span class="c1"># owner: 200</span>
-</span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>view<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="w">    </span><span class="c1"># 404 - quality 'experimental' is not one ENV's purposes earn</span>
-</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>view<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="w">    </span><span class="c1"># 404</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="nv">id</span><span class="o">=</span><span class="k">$(</span>id_of<span class="w"> </span><span class="s2">"</span><span class="nv">$HEG_TOKEN</span><span class="s2">"</span><span class="w"> </span>HousingNeedSurvey<span class="k">)</span>
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>view<span class="w"> </span><span class="s2">"</span><span class="nv">$HEG_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="w">    </span><span class="c1"># owner: 200</span>
+</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>view<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="w">    </span><span class="c1"># 404 - quality 'experimental' is not one ENV's purposes earn</span>
+</span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>view<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="w">    </span><span class="c1"># 404</span>
 </span></code></pre></div>
 <p><strong>Expect <code>200</code> for HEG, <code>404</code> for ENV and BCC.</strong> This is worth its own case because it shows the
 <code>404</code> is <strong>not</strong> about clearance: ENV is the most-cleared caller in the sample and still gets <code>404</code>.
 Clearance, purpose and jurisdiction each independently shape the row filter.</p>
 <h3 id="e5-head-versus-get">E5: <code>HEAD</code> versus <code>GET</code></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span>--cert<span class="w"> </span>client.crt<span class="w"> </span>--key<span class="w"> </span>client.key<span class="w"> </span>-I<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="w">  </span><span class="s2">"https://localhost:8090/api/v1/product/</span><span class="nv">$id</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span>--cert<span class="w"> </span>client.crt<span class="w"> </span>--key<span class="w"> </span>client.key<span class="w"> </span>-I<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="w">  </span><span class="s2">"https://localhost:8090/api/v1/product/</span><span class="nv">$id</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span>
 </span></code></pre></div>
 <p><strong>Expect</strong> the same status <code>GET</code> would give (<code>200</code> / <code>403</code> / <code>404</code>), with headers and <strong>no body</strong>.
 Spring MVC serves <code>HEAD</code> from the <code>@GetMapping</code> handler, and the view rule has no method gate, so
@@ -3148,8 +3203,8 @@ own <code>404</code> is <strong>empty</strong>. Do not mistake one for the other
 <a href="#v5--the-two-404s-are-indistinguishable">V5</a>; compare only responses to well-formed requests.</p>
 <h3 id="e7-a-product-with-a-null-description-or-no-product-type">E7: A product with a NULL description or no product type</h3>
 <p><code>Bristol_Cycle%Counts</code> (BCC's) has no description and no product type.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="nv">id</span><span class="o">=</span><span class="k">$(</span>id_of<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'Bristol_Cycle%Counts'</span><span class="k">)</span><span class="w">     </span><span class="c1"># or find it by listing BCC's catalogue</span>
-</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>view_body<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'{name, has_description: has("description"), has_type: has("type"), has_topic: has("topic")}'</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="nv">id</span><span class="o">=</span><span class="k">$(</span>id_of<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'Bristol_Cycle%Counts'</span><span class="k">)</span><span class="w">     </span><span class="c1"># or find it by listing BCC's catalogue</span>
+</span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>view_body<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$id</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'{name, has_description: has("description"), has_type: has("type"), has_topic: has("topic")}'</span>
 </span></code></pre></div>
 <p><strong>Expect <code>200</code></strong>, with <code>description</code> and <code>type</code> <strong>absent</strong>: not <code>null</code>, not <code>""</code>. <code>name</code> and
 <code>topic</code> are present. <strong>Why:</strong> <code>@JsonInclude(NON_NULL)</code> means an unrecorded value and a withheld one
@@ -3196,7 +3251,7 @@ view, but this is the product to use if you want to confirm they cause no troubl
 <p>The requirement under test is narrow: <strong>the id is bound as a number or the request is refused with
 <code>400</code>.</strong> It must never be interpolated into SQL, and it must never produce a <code>500</code>.</p>
 <h3 id="e9-repeatability-and-caching">E9: Repeatability and caching</h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="k">for</span><span class="w"> </span>i<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">3</span><span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w"> </span>view<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$withheld_id</span><span class="s2">"</span><span class="p">;</span><span class="w"> </span><span class="k">done</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="k">for</span><span class="w"> </span>i<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">3</span><span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w"> </span>view<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$withheld_id</span><span class="s2">"</span><span class="p">;</span><span class="w"> </span><span class="k">done</span>
 </span></code></pre></div>
 <p><strong>Expect <code>404</code> every time.</strong> Then view a product the caller <em>can</em> see, and re-view the withheld one:
 still <code>404</code>. A decision is taken <strong>per request</strong> and nothing is cached across them, so no sequence of
@@ -3291,7 +3346,7 @@ behavioural difference.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 18, 2026 17:33:46 UTC">October 18, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 20, 2026 10:41:38 UTC">October 20, 2026</span>
   </span>
 
     
