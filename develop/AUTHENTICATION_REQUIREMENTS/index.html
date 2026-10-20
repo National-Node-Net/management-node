@@ -738,6 +738,8 @@
       
         
       
+        
+      
     
     
     
@@ -785,6 +787,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tests/products/product-discover-filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Discover Filter: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -1122,6 +1152,13 @@ versioning the API does not change which rule decides (see
 <td><code>discover</code></td>
 </tr>
 <tr>
+<td><code>POST /api/v1/product/discover/filter</code></td>
+<td><code>product_discovery</code></td>
+<td><code>policies.product.discover</code> (route <code>route-product-discover-filter</code>)</td>
+<td><code>product</code></td>
+<td><code>discover_filter</code></td>
+</tr>
+<tr>
 <td><code>POST /api/v1/product/subscribe</code></td>
 <td><code>product_subscribe</code></td>
 <td><code>policies.product.subscribe</code> (exact)</td>
@@ -1228,6 +1265,7 @@ versioning the API does not change which rule decides (see
 <li>Intermediate Certificate API requires role: <code>access_public_certificates</code>.</li>
 <li>Bootstrap Certificate API requires role: <code>request_bootstrap_certificate</code>.</li>
 <li>Product Discovery API requires role: <code>product_discovery</code> (plus policy, which decides which products are returned and what is shown of each; see <a href="../POLICY_ENFORCEMENT/">Policy Enforcement</a>).</li>
+<li>Product Discover Filter API requires role: <code>product_discovery</code> (same policy as discovery, reached via a route to <code>policies.product.discover</code> rather than its own rule; see <a href="../POLICY_ENFORCEMENT/">Policy Enforcement</a>).</li>
 <li>Product Subscription API requires role: <code>product_subscribe</code> (plus policy, which also sets the subscription terms).</li>
 <li>Product View API requires role: <code>product_view</code> (plus policy, which decides whether this product exists for the caller and what is shown of it; see <a href="../POLICY_ENFORCEMENT/">Policy Enforcement</a>).</li>
 <li>Network Map API requires role: <code>product_discovery</code>. <strong>No policy</strong>: it returns the whole topology, and exposes relationships rather than product content.</li>
@@ -1253,7 +1291,7 @@ versioning the API does not change which rule decides (see
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 28, 2026 15:30:37 UTC">September 28, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 20, 2026 11:40:20 UTC">October 20, 2026</span>
   </span>
 
     

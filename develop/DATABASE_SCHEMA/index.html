@@ -887,6 +887,8 @@
       
         
       
+        
+      
     
     
     
@@ -934,6 +936,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tests/products/product-discover-filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Discover Filter: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -1364,11 +1394,13 @@
   PRODUCT {
     BIGSERIAL id PK
     VARCHAR name
+    VARCHAR display_name
     VARCHAR topic
     TEXT description
     BIGINT producer_id FK
     BIGINT product_type_id FK
     VARCHAR source
+    VARCHAR format
   }
   PRODUCT_CONSUMER {
     BIGSERIAL id PK
@@ -1517,11 +1549,13 @@
 <p>Columns:
 - <code>id</code> BIGSERIAL, primary key
 - <code>name</code> VARCHAR(50), not null
+- <code>display_name</code> VARCHAR(150), nullable: the name a user interface shows in place of <code>name</code>, which stays the stable identifier. Text-searched by discovery, and returned as <code>displayName</code>. Backfilled by data owners; existing rows have none
 - <code>topic</code> VARCHAR(150), not null: logical topic or channel for the product
-- <code>description</code> TEXT, nullable: prose describing the product. Together with <code>name</code>, this is what discovery's free-text search matches against (<code>topic</code> and <code>source</code> are identifiers, not prose, and are deliberately not text-searched). Backfilled by data owners; existing rows have none
+- <code>description</code> TEXT, nullable: prose describing the product. Together with <code>name</code> and <code>display_name</code>, this is what discovery's free-text search matches against (<code>topic</code> and <code>source</code> are identifiers, not prose, and are deliberately not text-searched). Backfilled by data owners; existing rows have none
 - <code>producer_id</code> BIGINT, not null, foreign key → <code>producer(id)</code>
 - <code>product_type_id</code> BIGINT, nullable, foreign key → <code>product_type(id)</code>: categorization of the product
-- <code>source</code> VARCHAR(500), nullable: optional source identifier/URI for the product</p>
+- <code>source</code> VARCHAR(500), nullable: optional source identifier/URI for the product
+- <code>format</code> VARCHAR(100), nullable: the format the product's data is published in (e.g. <code>JSON</code>, <code>XML</code>, <code>CSV</code>, <code>RDF</code>). Deliberately free text, with no lookup table or check constraint, because the set of formats is open. Filterable and sortable in discovery, case-insensitively</p>
 <p>Usage:
 - The resource being granted to Consumers via <code>product_consumer</code>.
 - Migration defaults existing rows to the <code>topic</code> product type.</p>
@@ -1686,7 +1720,7 @@
 <li>Schema is versioned and applied with Flyway on application startup.</li>
 <li>Foreign keys enforce referential integrity among core entities.</li>
 <li>Foreign key columns are not indexed automatically by PostgreSQL. The ones product discovery joins on every search are indexed by <code>V20260918122000__add_product_discovery_indexes.sql</code>: <code>product.producer_id</code>, <code>producer.org_id</code>, <code>product_consumer.product_id</code> and <code>consumer.org_id</code>. Consider the same for <code>product_consumer.consumer_id</code> and <code>product_consumer_attribute.product_consumer_id</code> if query plans show it.</li>
-<li>Discovery's free-text search is a leading-wildcard <code>LIKE</code> over <code>product.name</code> and <code>product.description</code>, which no b-tree index can serve. A <code>pg_trgm</code> GIN index is the remedy if <code>EXPLAIN</code> shows it is needed; <code>CREATE EXTENSION</code> needs a privileged role, so agree it with whoever owns the database.</li>
+<li>Discovery's free-text search is a leading-wildcard <code>LIKE</code> over <code>product.name</code>, <code>product.display_name</code> and <code>product.description</code>, which no b-tree index can serve. A <code>pg_trgm</code> GIN index is the remedy if <code>EXPLAIN</code> shows it is needed; <code>CREATE EXTENSION</code> needs a privileged role, so agree it with whoever owns the database.</li>
 </ul>
 <h2 id="data-protection-and-security">Data Protection and Security</h2>
 <ul>
@@ -1713,7 +1747,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 24, 2026 11:15:04 UTC">September 24, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 20, 2026 11:40:20 UTC">October 20, 2026</span>
   </span>
 
     

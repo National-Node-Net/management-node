@@ -15,7 +15,7 @@
         <link rel="canonical" href="https://docs.ndtp.co.uk/develop/tests/products/product-discover/">
       
       
-        <link rel="prev" href="../">
+        <link rel="prev" href="../product-discover-filter/">
       
       
         <link rel="next" href="../product-view/">
@@ -640,6 +640,8 @@
       
         
       
+        
+      
     
     
     
@@ -687,6 +689,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../product-discover-filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Discover Filter: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -866,6 +896,50 @@
     <span class="md-ellipsis">
       
         subscriptionStatus
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#displayname-and-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        displayName and format
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isownproduct" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        isOwnProduct
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#displayname-and-format_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        displayName and format
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isownproduct_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        isOwnProduct
       
     </span>
   </a>
@@ -1096,10 +1170,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#tc-05-free-text-matches-name-or-description" class="md-nav__link">
+  <a href="#tc-05-free-text-matches-name-displayname-or-description" class="md-nav__link">
     <span class="md-ellipsis">
       
-        TC-05: Free text matches name or description
+        TC-05: Free text matches name, displayName or description
       
     </span>
   </a>
@@ -1687,6 +1761,78 @@
     <span class="md-ellipsis">
       
         TC-46: The status is the caller's own, not anyone else's
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#k-display-name-format-and-own-products" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        K. Display name, format and own products
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="K. Display name, format and own products">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tc-47-free-text-matches-a-display-name-the-name-does-not" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-47: Free text matches a display name the name does not
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-48-filter-and-sort-on-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-48: Filter and sort on format
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-49-isownproduct-follows-the-caller" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-49: isOwnProduct follows the caller
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-50-filter-on-isownproduct" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-50: Filter on isOwnProduct
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-51-isownproduct-takes-booleans-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-51: isOwnProduct takes booleans only
       
     </span>
   </a>
@@ -1966,6 +2112,50 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#displayname-and-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        displayName and format
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isownproduct" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        isOwnProduct
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#displayname-and-format_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        displayName and format
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isownproduct_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        isOwnProduct
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#the-page-object" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2189,10 +2379,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#tc-05-free-text-matches-name-or-description" class="md-nav__link">
+  <a href="#tc-05-free-text-matches-name-displayname-or-description" class="md-nav__link">
     <span class="md-ellipsis">
       
-        TC-05: Free text matches name or description
+        TC-05: Free text matches name, displayName or description
       
     </span>
   </a>
@@ -2791,6 +2981,78 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#k-display-name-format-and-own-products" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        K. Display name, format and own products
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="K. Display name, format and own products">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tc-47-free-text-matches-a-display-name-the-name-does-not" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-47: Free text matches a display name the name does not
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-48-filter-and-sort-on-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-48: Filter and sort on format
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-49-isownproduct-follows-the-caller" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-49: isOwnProduct follows the caller
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-50-filter-on-isownproduct" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-50: Filter on isOwnProduct
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-51-isownproduct-takes-booleans-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-51: isOwnProduct takes booleans only
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2981,6 +3243,7 @@ will look like a policy defect. It is not one.</p>
 <li><a href="#h-malformed-requests--400">H. Malformed requests, 400 (TC-40 – TC-42)</a></li>
 <li><a href="#i-policy-switched-off">I. Policy switched off (TC-43 – TC-44)</a></li>
 <li><a href="#j-subscription-status">J. Subscription status (TC-45 – TC-46)</a></li>
+<li><a href="#k-display-name-format-and-own-products">K. Display name, format and own products (TC-47 – TC-51)</a></li>
 <li><a href="#9-edge-cases">9. Edge cases</a></li>
 <li><a href="#10-defect-triage">10. Defect triage</a></li>
 </ul>
@@ -3294,27 +3557,30 @@ text-searchable, so a single value defaults to <code>eq</code> and must match th
 </span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="p">{</span>
 </span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">      </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">12</span><span class="p">,</span>
 </span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">      </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"FloodRiskMapZones"</span><span class="p">,</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">      </span><span class="nt">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Flood risk zones for England and Wales as geographic areas, …"</span><span class="p">,</span>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">      </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"topic"</span><span class="p">,</span>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">      </span><span class="nt">"organisation"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"key"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ENV"</span><span class="p">,</span><span class="w"> </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Environment Agency (ENV)"</span><span class="w"> </span><span class="p">},</span>
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">      </span><span class="nt">"subscriptionStatus"</span><span class="p">:</span><span class="w"> </span><span class="s2">"NOT_SUBSCRIBED"</span>
-</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">    </span><span class="p">}</span>
-</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">  </span><span class="p">],</span>
-</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="w">  </span><span class="nt">"page"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"number"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nt">"size"</span><span class="p">:</span><span class="w"> </span><span class="mi">20</span><span class="p">,</span><span class="w"> </span><span class="nt">"numberOfElements"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"totalElements"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"totalPages"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">},</span>
-</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="w">  </span><span class="nt">"policy"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">    </span><span class="nt">"filterableFields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"description"</span><span class="p">,</span><span class="w"> </span><span class="s2">"name"</span><span class="p">,</span><span class="w"> </span><span class="s2">"organisation.key"</span><span class="p">,</span><span class="w"> </span><span class="s2">"organisation.name"</span><span class="p">,</span><span class="w"> </span><span class="s2">"source"</span><span class="p">,</span><span class="w"> </span><span class="s2">"subscribedBy"</span><span class="p">,</span><span class="w"> </span><span class="s2">"topic"</span><span class="p">,</span><span class="w"> </span><span class="s2">"type"</span><span class="p">],</span>
-</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">    </span><span class="nt">"filterableAttributes"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"identifiability"</span><span class="p">,</span><span class="w"> </span><span class="s2">"organisation.jurisdictions"</span><span class="p">,</span><span class="w"> </span><span class="s2">"organisation.responsibility_areas"</span><span class="p">,</span><span class="w"> </span><span class="s2">"population_risk_tags"</span><span class="p">,</span><span class="w"> </span><span class="s2">"quality_designation"</span><span class="p">,</span><span class="w"> </span><span class="s2">"record_unit"</span><span class="p">],</span>
-</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">    </span><span class="nt">"textSearchFields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"name"</span><span class="p">,</span><span class="w"> </span><span class="s2">"description"</span><span class="p">],</span>
-</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="w">    </span><span class="nt">"maskedFields"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
-</span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="w">    </span><span class="nt">"maskedAttributes"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
-</span><span id="__span-3-19"><a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="w">    </span><span class="nt">"maxPageSize"</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span>
-</span><span id="__span-3-20"><a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="w">    </span><span class="nt">"obligations"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"audit_access"</span><span class="p">]</span>
-</span><span id="__span-3-21"><a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="w">  </span><span class="p">}</span>
-</span><span id="__span-3-22"><a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span class="p">}</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">      </span><span class="nt">"displayName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Flood Risk Map Zones"</span><span class="p">,</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">      </span><span class="nt">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Flood risk zones for England and Wales as geographic areas, …"</span><span class="p">,</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">      </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"topic"</span><span class="p">,</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">      </span><span class="nt">"format"</span><span class="p">:</span><span class="w"> </span><span class="s2">"GeoJSON"</span><span class="p">,</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">      </span><span class="nt">"isOwnProduct"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">      </span><span class="nt">"organisation"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"key"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ENV"</span><span class="p">,</span><span class="w"> </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Environment Agency (ENV)"</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="w">      </span><span class="nt">"subscriptionStatus"</span><span class="p">:</span><span class="w"> </span><span class="s2">"NOT_SUBSCRIBED"</span>
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">  </span><span class="p">],</span>
+</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">  </span><span class="nt">"page"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"number"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nt">"size"</span><span class="p">:</span><span class="w"> </span><span class="mi">20</span><span class="p">,</span><span class="w"> </span><span class="nt">"numberOfElements"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"totalElements"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"totalPages"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">  </span><span class="nt">"policy"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="w">    </span><span class="nt">"filterableFields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"description"</span><span class="p">,</span><span class="w"> </span><span class="s2">"displayName"</span><span class="p">,</span><span class="w"> </span><span class="s2">"format"</span><span class="p">,</span><span class="w"> </span><span class="s2">"isOwnProduct"</span><span class="p">,</span><span class="w"> </span><span class="s2">"name"</span><span class="p">,</span><span class="w"> </span><span class="s2">"organisation.key"</span><span class="p">,</span><span class="w"> </span><span class="s2">"organisation.name"</span><span class="p">,</span><span class="w"> </span><span class="s2">"source"</span><span class="p">,</span><span class="w"> </span><span class="s2">"subscribedBy"</span><span class="p">,</span><span class="w"> </span><span class="s2">"topic"</span><span class="p">,</span><span class="w"> </span><span class="s2">"type"</span><span class="p">],</span>
+</span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="w">    </span><span class="nt">"filterableAttributes"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"identifiability"</span><span class="p">,</span><span class="w"> </span><span class="s2">"organisation.jurisdictions"</span><span class="p">,</span><span class="w"> </span><span class="s2">"organisation.responsibility_areas"</span><span class="p">,</span><span class="w"> </span><span class="s2">"population_risk_tags"</span><span class="p">,</span><span class="w"> </span><span class="s2">"quality_designation"</span><span class="p">,</span><span class="w"> </span><span class="s2">"record_unit"</span><span class="p">],</span>
+</span><span id="__span-3-19"><a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="w">    </span><span class="nt">"textSearchFields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"name"</span><span class="p">,</span><span class="w"> </span><span class="s2">"displayName"</span><span class="p">,</span><span class="w"> </span><span class="s2">"description"</span><span class="p">],</span>
+</span><span id="__span-3-20"><a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="w">    </span><span class="nt">"maskedFields"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+</span><span id="__span-3-21"><a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="w">    </span><span class="nt">"maskedAttributes"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+</span><span id="__span-3-22"><a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span class="w">    </span><span class="nt">"maxPageSize"</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span>
+</span><span id="__span-3-23"><a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a><span class="w">    </span><span class="nt">"obligations"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"audit_access"</span><span class="p">]</span>
+</span><span id="__span-3-24"><a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-3-25"><a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a><span class="p">}</span>
 </span></code></pre></div>
 <h3 id="a-result-is-a-summary">A result is a summary</h3>
-<p>A discovery result carries <strong>only</strong>: <code>id</code>, <code>name</code>, <code>description</code>, <code>type</code>, an <code>organisation</code>
-carrying <code>key</code> and <code>name</code>, and <code>subscriptionStatus</code>.</p>
+<p>A discovery result carries <strong>only</strong>: <code>id</code>, <code>name</code>, <code>displayName</code>, <code>description</code>, <code>type</code>, <code>format</code>,
+<code>isOwnProduct</code>, an <code>organisation</code> carrying <code>key</code> and <code>name</code>, and <code>subscriptionStatus</code>.</p>
 <p><strong>Filtering and sorting are not limited to those members.</strong> A caller may filter and sort on
 anything in its allowed lists, including <code>topic</code> and <code>source</code>, which no result carries. This
 separation is deliberate and has its own test case (<a href="#tc-09--filter-on-a-field-the-result-does-not-carry">TC-09</a>).</p>
@@ -3328,7 +3594,49 @@ has no <code>description</code> key.</p>
   still sees its own status.</li>
 <li>A grant counts whatever its <code>validity</code>, exactly as for <code>subscribedBy</code>.</li>
 <li>An organisation holding the product on several consumers is still one <code>SUBSCRIBED</code>.</li>
-<li>Absent when the token carries no organisation.</li>
+<li>Absent when the token carries no organisation. That includes a token with no <code>organisation</code>
+  claim at all: the principal then carries the <code>UNKNOWN_ORG</code> sentinel, which discover treats as
+  no organisation (as it does a blank claim), never as an organisation called <code>UNKNOWN_ORG</code>.</li>
+<li>The organisation key is compared case-insensitively.</li>
+</ul>
+<h3 id="displayname-and-format"><code>displayName</code> and <code>format</code></h3>
+<ul>
+<li><strong><code>displayName</code></strong> is the name a UI shows. <code>name</code> stays the stable identifier; <code>displayName</code> is
+  prose its owner may change. Free text searches it alongside <code>name</code> and <code>description</code>.</li>
+<li><strong><code>format</code></strong> is the format the product's data is published in: <code>JSON</code>, <code>XML</code>, <code>CSV</code>, <code>RDF</code>,
+  <code>GeoJSON</code>, … It is free text, deliberately not a fixed list, and is filtered case-insensitively.</li>
+<li>Both are optional: a product whose owner has not provided one simply has no key.</li>
+</ul>
+<h3 id="isownproduct"><code>isOwnProduct</code></h3>
+<p><code>true</code> when the <strong>calling</strong> organisation offers the product (its <code>organisation.key</code> is the token's
+<code>organisation</code> claim, compared case-insensitively), otherwise <code>false</code>.</p>
+<ul>
+<li>Like <code>subscriptionStatus</code>, it describes the caller, so it is <strong>not masked</strong>.</li>
+<li>It is filterable with <code>eq</code>, <code>neq</code>, <code>in</code>, <code>not_in</code>, <code>any_of</code>, <code>none_of</code>, <code>exists</code> and
+  <code>not_exists</code>, taking JSON booleans (or the strings <code>"true"</code>/<code>"false"</code>). Any other value, or
+  <code>contains</code>, is a <code>400</code>. It is not sortable.</li>
+<li>Absent when the token carries no organisation (no claim, a blank one, or the <code>UNKNOWN_ORG</code>
+  sentinel); a filter <code>isOwnProduct eq true</code> then matches
+  nothing, and <code>eq false</code> matches everything the caller may see.</li>
+</ul>
+<h3 id="displayname-and-format_1"><code>displayName</code> and <code>format</code></h3>
+<ul>
+<li><strong><code>displayName</code></strong> is the name a UI shows. <code>name</code> stays the stable identifier; <code>displayName</code> is
+  prose its owner may change. Free text searches it alongside <code>name</code> and <code>description</code>.</li>
+<li><strong><code>format</code></strong> is the format the product's data is published in: <code>JSON</code>, <code>XML</code>, <code>CSV</code>, <code>RDF</code>,
+  <code>GeoJSON</code>, … It is free text, deliberately not a fixed list, and is filtered case-insensitively.</li>
+<li>Both are optional: a product whose owner has not provided one simply has no key.</li>
+</ul>
+<h3 id="isownproduct_1"><code>isOwnProduct</code></h3>
+<p><code>true</code> when the <strong>calling</strong> organisation offers the product (its <code>organisation.key</code> is the token's
+<code>organisation</code> claim, compared case-insensitively), otherwise <code>false</code>.</p>
+<ul>
+<li>Like <code>subscriptionStatus</code>, it describes the caller, so it is <strong>not masked</strong>.</li>
+<li>It is filterable with <code>eq</code>, <code>neq</code>, <code>in</code>, <code>not_in</code>, <code>any_of</code>, <code>none_of</code>, <code>exists</code> and
+  <code>not_exists</code>, taking JSON booleans (or the strings <code>"true"</code>/<code>"false"</code>). Any other value, or
+  <code>contains</code>, is a <code>400</code>. It is not sortable.</li>
+<li>Absent when the token carries no organisation; a filter <code>isOwnProduct eq true</code> then matches
+  nothing, and <code>eq false</code> matches everything the caller may see.</li>
 </ul>
 <h3 id="the-page-object">The <code>page</code> object</h3>
 <table>
@@ -3398,6 +3706,13 @@ restrictions. See <a href="#i-policy-switched-off">section I</a>.</p>
 <td>yes</td>
 </tr>
 <tr>
+<td><code>displayName</code></td>
+<td>yes</td>
+<td>yes</td>
+<td><strong>yes</strong></td>
+<td>yes</td>
+</tr>
+<tr>
 <td><code>description</code></td>
 <td>yes</td>
 <td><strong>no</strong></td>
@@ -3424,6 +3739,20 @@ restrictions. See <a href="#i-policy-switched-off">section I</a>.</p>
 <td>yes</td>
 <td>no</td>
 <td>no</td>
+</tr>
+<tr>
+<td><code>format</code></td>
+<td>yes</td>
+<td>yes</td>
+<td>no</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>isOwnProduct</code></td>
+<td>yes, booleans only</td>
+<td><strong>no</strong></td>
+<td>no</td>
+<td>yes, when the caller's organisation is known</td>
 </tr>
 <tr>
 <td><code>organisation.key</code></td>
@@ -3614,9 +3943,9 @@ is fixed; a test expecting an empty page there is now the thing that is wrong.</
 </tr>
 <tr>
 <td><strong>allowed filter fields</strong></td>
-<td><code>description</code>, <code>name</code>, <code>organisation.key</code>, <code>organisation.name</code>, <code>source</code>, <code>subscribedBy</code>, <code>topic</code>, <code>type</code></td>
+<td><code>description</code>, <code>displayName</code>, <code>format</code>, <code>isOwnProduct</code>, <code>name</code>, <code>organisation.key</code>, <code>organisation.name</code>, <code>source</code>, <code>subscribedBy</code>, <code>topic</code>, <code>type</code></td>
 <td>same as ENV</td>
-<td><code>description</code>, <code>name</code>, <code>organisation.key</code>, <code>organisation.name</code>, <code>topic</code>, <code>type</code></td>
+<td><code>description</code>, <code>displayName</code>, <code>format</code>, <code>isOwnProduct</code>, <code>name</code>, <code>organisation.key</code>, <code>organisation.name</code>, <code>topic</code>, <code>type</code></td>
 </tr>
 <tr>
 <td><strong>allowed filter attributes</strong></td>
@@ -3632,9 +3961,9 @@ is fixed; a test expecting an empty page there is now the thing that is wrong.</
 </tr>
 <tr>
 <td><code>textSearchFields</code></td>
-<td><code>name</code>, <code>description</code></td>
-<td><code>name</code>, <code>description</code></td>
-<td><code>name</code>, <code>description</code></td>
+<td><code>name</code>, <code>displayName</code>, <code>description</code></td>
+<td>same as ENV</td>
+<td>same as ENV</td>
 </tr>
 <tr>
 <td><code>maxPageSize</code></td>
@@ -4087,13 +4416,13 @@ are omitted rather than null.</p>
 absent because of masking.</p>
 <p><strong>Given</strong> ENV, which has no masked fields at all
 <strong>When</strong> the request is posted
-<strong>Then</strong> the single product carries exactly <code>id</code>, <code>name</code>, <code>description</code>, <code>type</code>, <code>organisation</code>,
-<code>subscriptionStatus</code>
+<strong>Then</strong> the single product carries exactly <code>id</code>, <code>name</code>, <code>displayName</code>, <code>description</code>, <code>type</code>,
+<code>format</code>, <code>isOwnProduct</code>, <code>organisation</code>, <code>subscriptionStatus</code>
 <strong>And</strong> <code>organisation</code> carries exactly <code>key</code> and <code>name</code>
 <strong>And</strong> <code>topic</code>, <code>source</code>, <code>producer</code>, <code>consumers</code>, <code>subscribedBy</code>, <code>attributes</code> are <strong>absent keys</strong>
 They are not present with a <code>null</code> value.</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"text":"FloodRiskMapZones"}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'.products[0] | keys, (.organisation | keys)'</span>
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="c1"># ["description","id","name","organisation","subscriptionStatus","type"]</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="c1"># ["description","displayName","format","id","isOwnProduct","name","organisation","subscriptionStatus","type"]</span>
 </span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="c1"># ["key","name"]</span>
 </span></code></pre></div>
 <p><em>Why:</em> the summary is enforced by not selecting the other columns at all. If <code>source</code> appears here
@@ -4109,9 +4438,9 @@ for any caller, the projection is not being applied to the query.</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>.policy
 </span></code></pre></div>
 <div class="language-json highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="p">{</span>
-</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="nt">"filterableFields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"description"</span><span class="p">,</span><span class="w"> </span><span class="s2">"name"</span><span class="p">,</span><span class="w"> </span><span class="s2">"organisation.key"</span><span class="p">,</span><span class="w"> </span><span class="s2">"organisation.name"</span><span class="p">,</span><span class="w"> </span><span class="s2">"topic"</span><span class="p">,</span><span class="w"> </span><span class="s2">"type"</span><span class="p">],</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="nt">"filterableFields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"description"</span><span class="p">,</span><span class="w"> </span><span class="s2">"displayName"</span><span class="p">,</span><span class="w"> </span><span class="s2">"format"</span><span class="p">,</span><span class="w"> </span><span class="s2">"isOwnProduct"</span><span class="p">,</span><span class="w"> </span><span class="s2">"name"</span><span class="p">,</span><span class="w"> </span><span class="s2">"organisation.key"</span><span class="p">,</span><span class="w"> </span><span class="s2">"organisation.name"</span><span class="p">,</span><span class="w"> </span><span class="s2">"topic"</span><span class="p">,</span><span class="w"> </span><span class="s2">"type"</span><span class="p">],</span>
 </span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span><span class="nt">"filterableAttributes"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"organisation.jurisdictions"</span><span class="p">,</span><span class="w"> </span><span class="s2">"organisation.responsibility_areas"</span><span class="p">,</span><span class="w"> </span><span class="s2">"quality_designation"</span><span class="p">,</span><span class="w"> </span><span class="s2">"record_unit"</span><span class="p">],</span>
-</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span><span class="nt">"textSearchFields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"name"</span><span class="p">,</span><span class="w"> </span><span class="s2">"description"</span><span class="p">],</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span><span class="nt">"textSearchFields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"name"</span><span class="p">,</span><span class="w"> </span><span class="s2">"displayName"</span><span class="p">,</span><span class="w"> </span><span class="s2">"description"</span><span class="p">],</span>
 </span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">  </span><span class="nt">"maskedFields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"consumers"</span><span class="p">,</span><span class="w"> </span><span class="s2">"policyAttributes"</span><span class="p">,</span><span class="w"> </span><span class="s2">"source"</span><span class="p">,</span><span class="w"> </span><span class="s2">"subscribedBy"</span><span class="p">],</span>
 </span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">  </span><span class="nt">"maskedAttributes"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
 </span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">  </span><span class="nt">"maxPageSize"</span><span class="p">:</span><span class="w"> </span><span class="mi">20</span><span class="p">,</span>
@@ -4140,7 +4469,7 @@ BristolSchoolPlaces, BristolTemporaryAccommodation, <code>Bristol_Cycle%Counts</
 products still cannot reach the three that are directly identifiable or risk-tagged.</p>
 <hr />
 <h3 id="b-free-text-search">B. Free-text search</h3>
-<h4 id="tc-05-free-text-matches-name-or-description">TC-05: Free text matches <code>name</code> <strong>or</strong> <code>description</code></h4>
+<h4 id="tc-05-free-text-matches-name-displayname-or-description">TC-05: Free text matches <code>name</code>, <code>displayName</code> <strong>or</strong> <code>description</code></h4>
 <p><strong>Objective.</strong> Confirm the text term runs against both text-searchable columns, case-insensitively,
 as a substring.</p>
 <p><strong>Preconditions.</strong> P1–P4.</p>
@@ -5669,6 +5998,90 @@ PollutionIncidentReports but cannot discover it, so it does not appear.</p>
 </span><span id="__span-22-6"><a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a><span class="c1"># SUBSCRIBED</span>
 </span></code></pre></div>
 <hr />
+<h3 id="k-display-name-format-and-own-products">K. Display name, format and own products</h3>
+<p>The sample values are set by <code>db/samples/V20261018121000__add_sample_product_display_names_and_formats.sql</code>.
+<code>UnclassifiedDraftDataset</code> and <code>Bristol_Cycle%Counts</code> have neither a display name nor a format.</p>
+<h4 id="tc-47-free-text-matches-a-display-name-the-name-does-not">TC-47: Free text matches a display name the name does not</h4>
+<p><strong>Objective.</strong> Confirm <code>displayName</code> is text-searched in its own right.</p>
+<p><strong>Preconditions.</strong> P1–P4.</p>
+<p><strong>Given</strong> FloodRiskMapZones, whose display name is "Flood Risk Map Zones"
+<strong>When</strong> ENV posts <code>{"text": "risk map"}</code> (with a space, which the <code>name</code> cannot contain)
+<strong>Then</strong> FloodRiskMapZones is returned, matched by its display name alone.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"text":"risk map"}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">'.products[].name'</span>
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="c1"># FloodRiskMapZones</span>
+</span></code></pre></div>
+<p><em>Why:</em> "risk map" appears in neither the name nor the description, so only <code>displayName</code> can match it.</p>
+<h4 id="tc-48-filter-and-sort-on-format">TC-48: Filter and sort on <code>format</code></h4>
+<p><strong>Objective.</strong> Confirm <code>format</code> filters case-insensitively and sorts.</p>
+<p><strong>Preconditions.</strong> P1–P4.</p>
+<table>
+<thead>
+<tr>
+<th>Body</th>
+<th>Caller</th>
+<th>Expected names</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{"filters":[{"field":"format","values":["csv"]}]}</code></td>
+<td>ENV</td>
+<td>every discoverable product whose format is <code>CSV</code>, e.g. BrownfieldLandAvailability, WaterAbstractionLicences</td>
+</tr>
+<tr>
+<td><code>{"filters":[{"field":"format","operator":"not_exists"}]}</code></td>
+<td>ENV</td>
+<td>only products with no format recorded</td>
+</tr>
+<tr>
+<td><code>{"sort":[{"field":"format"}]}</code></td>
+<td>any</td>
+<td>ordered by format, products without one last</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Then</strong> every returned product's <code>format</code> matches, whatever case was sent.</p>
+<h4 id="tc-49-isownproduct-follows-the-caller">TC-49: <code>isOwnProduct</code> follows the caller</h4>
+<p><strong>Objective.</strong> Confirm each product reports whether the caller offers it.</p>
+<p><strong>Preconditions.</strong> P1–P4.</p>
+<p><strong>Given</strong> the three callers
+<strong>When</strong> each posts <code>{}</code>
+<strong>Then</strong> <code>isOwnProduct</code> is <code>true</code> exactly on the products whose <code>organisation.key</code> is the caller's.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$HEG_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-c<span class="w"> </span><span class="s1">'[.products[] | select(.isOwnProduct != (.organisation.key == "HEG"))] | length'</span>
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="c1"># 0 - and likewise for ENV and BCC with their own keys</span>
+</span></code></pre></div>
+<h4 id="tc-50-filter-on-isownproduct">TC-50: Filter on <code>isOwnProduct</code></h4>
+<p><strong>Objective.</strong> Confirm the filter splits the caller's results exactly in two.</p>
+<p><strong>Preconditions.</strong> P1–P4.</p>
+<p><strong>Given</strong> HEG
+<strong>When</strong> it posts <code>{"filters":[{"field":"isOwnProduct","values":[true]}]}</code>, then the same with <code>false</code>
+<strong>Then</strong> the first returns only HEG's products, the second only other organisations'
+<strong>And</strong> the two <code>totalElements</code> add up to that of <code>{}</code>.</p>
+<h4 id="tc-51-isownproduct-takes-booleans-only">TC-51: <code>isOwnProduct</code> takes booleans only</h4>
+<p><strong>Objective.</strong> Confirm a malformed <code>isOwnProduct</code> filter is a <code>400</code>, not a <code>403</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Body</th>
+<th>Expected</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{"filters":[{"field":"isOwnProduct","values":["yes"]}]}</code></td>
+<td><strong><code>400</code></strong>: <code>The values of 'isOwnProduct' must be true or false</code></td>
+</tr>
+<tr>
+<td><code>{"filters":[{"field":"isOwnProduct","operator":"contains","values":["tr"]}]}</code></td>
+<td><strong><code>400</code></strong>: <code>Operator 'contains' does not apply to the field 'isOwnProduct'</code></td>
+</tr>
+<tr>
+<td><code>{"sort":[{"field":"isOwnProduct"}]}</code></td>
+<td><strong><code>400</code></strong>: <code>Products cannot be sorted by 'isOwnProduct'</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
 <h2 id="9-edge-cases">9. Edge cases</h2>
 <p>Each is cheap to run and each has caught, or is designed to catch, a real class of defect.</p>
 <table>
@@ -5907,7 +6320,7 @@ PollutionIncidentReports but cannot discover it, so it does not appear.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 18, 2026 17:33:46 UTC">October 18, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 20, 2026 11:40:20 UTC">October 20, 2026</span>
   </span>
 
     

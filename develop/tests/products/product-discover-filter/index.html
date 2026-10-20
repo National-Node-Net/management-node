@@ -1,0 +1,3926 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Management Node is is the control plane for the National Digital Twin Programme IA Node Net.">
+      
+      
+        <meta name="author" content="NDTP">
+      
+      
+        <link rel="canonical" href="https://docs.ndtp.co.uk/develop/tests/products/product-discover-filter/">
+      
+      
+        <link rel="prev" href="../">
+      
+      
+        <link rel="next" href="../product-discover/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/android-chrome-512x512-1-150x150.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Product Discover Filter: Test Requirement Specification - Management-Node Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#product-discover-filter-test-requirement-specification" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="Management-Node Documentation" class="md-header__button md-logo" aria-label="Management-Node Documentation" data-md-component="logo">
+      
+  <img src="../../../assets/light-page_header_logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Management-Node Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Product Discover Filter: Test Requirement Specification
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="Management-Node Documentation" class="md-nav__button md-logo" aria-label="Management-Node Documentation" data-md-component="logo">
+      
+  <img src="../../../assets/light-page_header_logo.png" alt="logo">
+
+    </a>
+    Management-Node Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    README
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../AUTHENTICATION_REQUIREMENTS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication Requirements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../BOOTSTRAP_ONBOARDING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bootstrap Onboarding Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../DATABASE_SCHEMA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../DISCOVERY_TEST_SCENARIOS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Discovery and View: Test Scenarios
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../JACOCO_COVERAGE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JaCoCo Code Coverage Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../KAFKA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kafka Events
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../MOCKITO_USAGE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockito Testing Tool Usage Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../MTLS_CONFIGURATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MTLS Configuration Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../POLICY_ENFORCEMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Policy Enforcement
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../entity-dto-converter-pattern/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entity-DTO Converter Pattern
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../jobs-scheduler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Jobs Scheduler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_13" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tests
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tests
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_13_1" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Products
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_13_1" id="__nav_13_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_13_1_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_13_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Products
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Discover Filter: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Discover Filter: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#read-together-with-product-discovermd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read together with product-discover.md
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-what-the-api-does" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. What the API does
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-what-governs-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. What governs it
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-the-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. The request
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-the-response" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. The response
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. The response">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#totalelements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        totalElements
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#textsearch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        textSearch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#filters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        filters[]
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-target-label-datatype-multivalued-operators-defaultoperator-sortable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        key, target, label, dataType, multiValued, operators, defaultOperator, sortable
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        values[]
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#missingcount" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        missingCount
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#truncated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        truncated
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-counting-rule" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The counting rule
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-critical-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Critical fields
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Critical fields">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51-product-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 Product fields
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-policy-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 Policy attributes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53-which-filters-appear-and-in-what-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.3 Which filters appear, and in what order
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-test-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Test data
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Test data">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61-format-by-product" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 format, by product
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62-the-panel-per-organisation-empty-body-policy-on" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 The panel per organisation (empty body, policy on)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-shared-preconditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Shared preconditions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-test-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Test cases
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. Test cases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a-baseline-and-response-shape" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A. Baseline and response shape
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="A. Baseline and response shape">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tc-01-an-empty-body-returns-the-callers-whole-panel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-01: An empty body returns the caller's whole panel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-02-the-five-text-searched-and-identifier-fields-are-permitted-but-not-offered" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-02: The five text-searched and identifier fields are permitted but not offered
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-03-target-round-trips-into-a-discover-filter-for-a-field-and-for-an-attribute" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-03: target round-trips into a discover filter, for a field and for an attribute
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-04-totalelements-equals-discovers-totalelements-for-the-same-body" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-04: totalElements equals discover's totalElements for the same body
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#b-narrowing-and-the-counting-rule" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        B. Narrowing and the counting rule
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="B. Narrowing and the counting rule">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tc-05-each-field-and-attribute-groups-values-are-the-callers-whole-visible-set" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-05: Each field and attribute group's values are the caller's whole visible set
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-06-narrowing-changes-counts-and-totalelements-together" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-06: Narrowing changes counts and totalElements together
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-07-choosing-organisationkey-env-narrows-format-and-type-while-organisation-stays-put" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-07: Choosing organisation.key = ENV narrows Format and Type while Organisation stays put
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-08-several-filters-on-different-targets-compose-and-each-is-excluded-only-from-its-own-target" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-08: Several filters on different targets compose, and each is excluded only from its own target
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#c-masking-and-permission" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        C. Masking and permission
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="C. Masking and permission">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tc-09-bcc-sees-quality_designation-and-record_unit-but-no-subscribedby" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-09: BCC sees quality_designation and record_unit, but no subscribedBy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-10-population_risk_tags-is-offered-to-env-only-and-refused-the-same-way-a-filter-on-it-would-be" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-10: population_risk_tags is offered to ENV only, and refused the same way a filter on it would be
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#d-isownproduct" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        D. isOwnProduct
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="D. isOwnProduct">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tc-11-isownproduct-lists-both-values-with-the-callers-own-split" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-11: isOwnProduct lists both values with the caller's own split
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-12-isownproduct-is-absent-from-the-panel-for-a-caller-whose-organisation-is-not-known" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-12: isOwnProduct is absent from the panel for a caller whose organisation is not known
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#e-free-text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E. Free text
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="E. Free text">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tc-13-a-text-term-narrows-every-groups-counts-including-its-own-targets-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-13: A text term narrows every group's counts, including its own target's values
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#f-refusals-shared-with-discover" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F. Refusals shared with discover
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="F. Refusals shared with discover">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tc-14-a-refused-filter-is-403-with-the-identical-reason-discover-gives" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-14: A refused filter is 403 with the identical reason discover gives
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-15-malformed-bodies-are-400-identically-to-discover-for-every-caller" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-15: Malformed bodies are 400, identically to discover, for every caller
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-16-sort-page-and-size-are-accepted-validated-and-ignored" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-16: sort, page and size are accepted, validated and ignored
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#g-policy-switched-off" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        G. Policy switched off
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="G. Policy switched off">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tc-17-with-policy-off-the-panel-is-wide-open-and-sensitive-attributes-appear" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-17: With policy off, the panel is wide open, and sensitive attributes appear
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-18-switching-policy-back-on-restores-both-the-masking-and-the-policy-block" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-18: Switching policy back on restores both the masking and the policy block
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-edge-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Edge cases
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9. Edge cases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#things-that-should-never-happen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Things that should never happen
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-defect-triage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Defect triage
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../product-discover/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Discover: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../product-view/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product View API: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../subscribe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Subscribe API: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#read-together-with-product-discovermd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read together with product-discover.md
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-what-the-api-does" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. What the API does
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-what-governs-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. What governs it
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-the-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. The request
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-the-response" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. The response
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. The response">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#totalelements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        totalElements
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#textsearch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        textSearch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#filters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        filters[]
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-target-label-datatype-multivalued-operators-defaultoperator-sortable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        key, target, label, dataType, multiValued, operators, defaultOperator, sortable
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        values[]
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#missingcount" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        missingCount
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#truncated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        truncated
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-counting-rule" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The counting rule
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-critical-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Critical fields
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Critical fields">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51-product-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 Product fields
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-policy-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 Policy attributes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53-which-filters-appear-and-in-what-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.3 Which filters appear, and in what order
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-test-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Test data
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Test data">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61-format-by-product" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 format, by product
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62-the-panel-per-organisation-empty-body-policy-on" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 The panel per organisation (empty body, policy on)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-shared-preconditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Shared preconditions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-test-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Test cases
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. Test cases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a-baseline-and-response-shape" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A. Baseline and response shape
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="A. Baseline and response shape">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tc-01-an-empty-body-returns-the-callers-whole-panel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-01: An empty body returns the caller's whole panel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-02-the-five-text-searched-and-identifier-fields-are-permitted-but-not-offered" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-02: The five text-searched and identifier fields are permitted but not offered
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-03-target-round-trips-into-a-discover-filter-for-a-field-and-for-an-attribute" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-03: target round-trips into a discover filter, for a field and for an attribute
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-04-totalelements-equals-discovers-totalelements-for-the-same-body" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-04: totalElements equals discover's totalElements for the same body
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#b-narrowing-and-the-counting-rule" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        B. Narrowing and the counting rule
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="B. Narrowing and the counting rule">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tc-05-each-field-and-attribute-groups-values-are-the-callers-whole-visible-set" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-05: Each field and attribute group's values are the caller's whole visible set
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-06-narrowing-changes-counts-and-totalelements-together" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-06: Narrowing changes counts and totalElements together
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-07-choosing-organisationkey-env-narrows-format-and-type-while-organisation-stays-put" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-07: Choosing organisation.key = ENV narrows Format and Type while Organisation stays put
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-08-several-filters-on-different-targets-compose-and-each-is-excluded-only-from-its-own-target" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-08: Several filters on different targets compose, and each is excluded only from its own target
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#c-masking-and-permission" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        C. Masking and permission
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="C. Masking and permission">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tc-09-bcc-sees-quality_designation-and-record_unit-but-no-subscribedby" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-09: BCC sees quality_designation and record_unit, but no subscribedBy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-10-population_risk_tags-is-offered-to-env-only-and-refused-the-same-way-a-filter-on-it-would-be" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-10: population_risk_tags is offered to ENV only, and refused the same way a filter on it would be
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#d-isownproduct" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        D. isOwnProduct
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="D. isOwnProduct">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tc-11-isownproduct-lists-both-values-with-the-callers-own-split" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-11: isOwnProduct lists both values with the caller's own split
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-12-isownproduct-is-absent-from-the-panel-for-a-caller-whose-organisation-is-not-known" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-12: isOwnProduct is absent from the panel for a caller whose organisation is not known
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#e-free-text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E. Free text
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="E. Free text">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tc-13-a-text-term-narrows-every-groups-counts-including-its-own-targets-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-13: A text term narrows every group's counts, including its own target's values
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#f-refusals-shared-with-discover" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F. Refusals shared with discover
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="F. Refusals shared with discover">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tc-14-a-refused-filter-is-403-with-the-identical-reason-discover-gives" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-14: A refused filter is 403 with the identical reason discover gives
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-15-malformed-bodies-are-400-identically-to-discover-for-every-caller" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-15: Malformed bodies are 400, identically to discover, for every caller
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-16-sort-page-and-size-are-accepted-validated-and-ignored" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-16: sort, page and size are accepted, validated and ignored
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#g-policy-switched-off" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        G. Policy switched off
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="G. Policy switched off">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tc-17-with-policy-off-the-panel-is-wide-open-and-sensitive-attributes-appear" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-17: With policy off, the panel is wide open, and sensitive attributes appear
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-18-switching-policy-back-on-restores-both-the-masking-and-the-policy-block" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-18: Switching policy back on restores both the masking and the policy block
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-edge-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Edge cases
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9. Edge cases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#things-that-should-never-happen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Things that should never happen
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-defect-triage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Defect triage
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="../../.." class="md-path__link">
+        
+  <span class="md-ellipsis">
+    README
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Tests
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Products
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="product-discover-filter-test-requirement-specification">Product Discover Filter: Test Requirement Specification</h1>
+<p><strong>Repository:</strong> <code>management-node</code>
+<strong>Endpoint:</strong> <code>POST /api/v1/product/discover/filter</code>
+<strong>Role required:</strong> <code>product_discovery</code>
+<strong>Policy rule:</strong> <code>policies.product.discover</code>, reached via the route <code>route-product-discover-filter</code>
+(<code>docker/opa/policies/routing/data.json</code>)
+<strong>SPDX-License-Identifier:</strong> <code>Apache-2.0 AND OGL-UK-3.0</code></p>
+<hr />
+<p>A formal test specification for a manual testing team, in the structure of
+<a href="../product-discover/"><code>product-discover.md</code></a>. It states what the API does, what decides its
+behaviour, then gives numbered test cases (<strong>Objective / Preconditions / Test data /
+Given-When-Then</strong>), and finally the edge cases.</p>
+<blockquote>
+<h2 id="read-together-with-product-discovermd">Read together with <a href="../product-discover/"><code>product-discover.md</code></a></h2>
+<p>This endpoint shares its request grammar, its validation, its policy rule and every refusal with
+<code>POST /api/v1/product/discover</code>. This document does not repeat discover's full operator matrix,
+its 400/403 catalogue, or its per-organisation entitlement reasoning - only what the filter panel
+adds: counts, value lists, and which filters are offered. Read discover's §2, §3, §5 and §7
+first; this document cross-references them by test-case number rather than restating them.</p>
+<p><strong>Product ids differ between environments</strong> (discover's product-id warning applies here too, but
+this endpoint never returns one). <strong>No expected value in this document is written in terms of an
+id.</strong></p>
+</blockquote>
+<h2 id="contents">Contents</h2>
+<ul>
+<li><a href="#1-what-the-api-does">1. What the API does</a></li>
+<li><a href="#2-what-governs-it">2. What governs it</a></li>
+<li><a href="#3-the-request">3. The request</a></li>
+<li><a href="#4-the-response">4. The response</a></li>
+<li><a href="#totalelements"><code>totalElements</code></a></li>
+<li><a href="#textsearch"><code>textSearch</code></a></li>
+<li><a href="#filters"><code>filters[]</code></a></li>
+<li><a href="#key-target-label-datatype-multivalued-operators-defaultoperator-sortable"><code>key</code>, <code>target</code>, <code>label</code>, <code>dataType</code>, <code>multiValued</code>, <code>operators</code>, <code>defaultOperator</code>, <code>sortable</code></a></li>
+<li><a href="#values"><code>values[]</code></a></li>
+<li><a href="#missingcount"><code>missingCount</code></a></li>
+<li><a href="#truncated"><code>truncated</code></a></li>
+<li><a href="#policy"><code>policy</code></a></li>
+<li><a href="#the-counting-rule">The counting rule</a></li>
+<li><a href="#5-critical-fields">5. Critical fields</a></li>
+<li><a href="#6-test-data">6. Test data</a></li>
+<li><a href="#7-shared-preconditions">7. Shared preconditions</a></li>
+<li><a href="#8-test-cases">8. Test cases</a></li>
+<li><a href="#a-baseline-and-response-shape">A. Baseline and response shape (TC-01 – TC-04)</a></li>
+<li><a href="#b-narrowing-and-the-counting-rule">B. Narrowing and the counting rule (TC-05 – TC-08)</a></li>
+<li><a href="#c-masking-and-permission">C. Masking and permission (TC-09 – TC-10)</a></li>
+<li><a href="#d-isownproduct">D. <code>isOwnProduct</code> (TC-11 – TC-12)</a></li>
+<li><a href="#e-free-text">E. Free text (TC-13)</a></li>
+<li><a href="#f-refusals-shared-with-discover">F. Refusals shared with discover (TC-14 – TC-16)</a></li>
+<li><a href="#g-policy-switched-off">G. Policy switched off (TC-17 – TC-18)</a></li>
+<li><a href="#9-edge-cases">9. Edge cases</a></li>
+<li><a href="#10-defect-triage">10. Defect triage</a></li>
+</ul>
+<hr />
+<h2 id="1-what-the-api-does">1. What the API does</h2>
+<p><code>POST /api/v1/product/discover/filter</code> returns the product catalogue's <strong>filter panel</strong> for one
+search: every filter the caller may apply, what it is, how it compares, and - where listing them
+is worth it - the distinct values it holds with how many products carry each one, for <em>this</em>
+request.</p>
+<p>It exists so a UI never has to guess the vocabulary or pay for it one value at a time. Before this
+endpoint, the catalogue UI hard-coded every field, attribute and value list
+(<code>ui/src/vocabulary.js</code>) and fired one <code>discover</code> call per value per group to get a count - 13
+requests per refresh, and only for the four groups someone had written down. This endpoint gives
+the whole panel in one request, built from the same policy decision and the same search criteria
+as discover, so the panel can never offer or count more than discover would return.</p>
+<p>Three things follow from "built from the same decision as discover":</p>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Answered the same way discover answers it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>May this caller search at all?</td>
+<td>the <code>product_discovery</code> role, then the policy's caller gates</td>
+</tr>
+<tr>
+<td>Which products exist for this caller?</td>
+<td>the policy's <code>row_filter</code>; this is what every count is computed under</td>
+</tr>
+<tr>
+<td>What may be asked, and what is shown?</td>
+<td>the policy's allowed / masked lists decide which filters appear at all</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The filter <em>permission</em> decides what appears here, not result <em>visibility</em>.</strong> An attribute the
+contract lets the caller filter on is listed with its values and counts even when policy hides
+that block from the caller's own discover <em>results</em> - BCC (<code>OFFICIAL</code>) sees <code>quality_designation</code>
+and <code>record_unit</code> values in its panel although its own products' <code>policyAttributes</code> block is masked
+in discover's response. This discloses nothing discover does not already answer through
+<code>totalElements</code>: BCC could already learn the same counts by sending discover once per value. The
+panel answers it in one request instead. See <a href="#tc-09-bcc-sees-quality_designation-and-record_unit-but-no-subscribedby">TC-09</a>.</p>
+<h2 id="2-what-governs-it">2. What governs it</h2>
+<p>The same four gates as discover, with one difference in how the fourth is resolved:</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Gate</th>
+<th>Refusal</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Authentication: a valid bearer token</td>
+<td><code>401</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>Authorisation: the <code>product_discovery</code> role</td>
+<td><code>403 "Access denied: insufficient permissions for this operation"</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>Request binding and bean validation (<code>@Valid</code> on the body)</td>
+<td><code>400</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>Policy: <code>product.discover_filter</code> → <strong>routed</strong> to <code>policies.product.discover</code></td>
+<td><code>403 "Access denied by policy"</code> with <code>reasons</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td>Criteria validation inside the handler</td>
+<td><code>400 "Invalid search criteria: …"</code></td>
+</tr>
+</tbody>
+</table>
+<p>The handler is annotated <code>@Policy(resource = "product", action = "discover_filter", details =
+ProductDiscoveryPolicyDecisionDetails.class)</code>. There is no <code>policies.product.discover_filter</code>
+module; an entry in <code>docker/opa/policies/routing/data.json</code> sends the action to
+<code>policies.product.discover</code> instead:</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"route-product-discover-filter"</span><span class="p">,</span><span class="w"> </span><span class="nt">"resource"</span><span class="p">:</span><span class="w"> </span><span class="s2">"product"</span><span class="p">,</span><span class="w"> </span><span class="nt">"action"</span><span class="p">:</span><span class="w"> </span><span class="s2">"discover_filter"</span><span class="p">,</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w"> </span><span class="nt">"policy"</span><span class="p">:</span><span class="w"> </span><span class="s2">"product.discover"</span><span class="p">,</span><span class="w"> </span><span class="nt">"priority"</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="nt">"enabled"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">}</span>
+</span></code></pre></div>
+<p>This matters for two things a tester should expect:</p>
+<ul>
+<li><strong>Provenance differs from discover's even though the rule is the same.</strong> <code>policy.resolution</code> is
+  <code>route</code> here, <code>exact</code> on discover, and <code>policy.id</code> is <code>product.discover</code> on both. A log line can
+  therefore tell the two endpoints apart even though one rule answers both.</li>
+<li><strong>A caller gets the identical allow/deny verdict and the identical contract</strong> <code>POST
+  /api/v1/product/discover</code> would give the same token the same body, because it is the same rule
+  seeing the same input, module for module. <code>dispatch_test.rego</code>'s
+  <code>test_discover_filter_is_routed_to_the_discover_rule</code> asserts exactly this at build time.</li>
+</ul>
+<p>Everything else in discover's §2 applies unchanged: the calling organisation comes from the
+token's <code>organisation</code> claim, never the body; OPA fails closed.</p>
+<h2 id="3-the-request">3. The request</h2>
+<p><strong>Identical to discover's</strong>: <code>ProductDiscoveryRequestDTO</code>, the same <code>text</code>, <code>filters</code>, <code>sort</code>,
+<code>page</code> and <code>size</code> members, the same limits, the same operators, the same default-operator rules.
+See <a href="../product-discover/#3-the-request">discover §3</a> for the full table.</p>
+<p>Two members are accepted but have no effect here:</p>
+<table>
+<thead>
+<tr>
+<th>Member</th>
+<th>Effect on discover</th>
+<th>Effect on discover/filter</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>text</code></td>
+<td>the free-text condition</td>
+<td>drives counts (narrows every group as a request filter would) and enables/disables <code>textSearch</code></td>
+</tr>
+<tr>
+<td><code>filters</code></td>
+<td>the <code>WHERE</code> clause</td>
+<td>drives counts, each excluded from its own target's counts (see <a href="#the-counting-rule">counting rule</a>)</td>
+</tr>
+<tr>
+<td><code>sort</code></td>
+<td>the <code>ORDER BY</code></td>
+<td><strong>accepted, validated identically, then ignored</strong> - there is no page to order</td>
+</tr>
+<tr>
+<td><code>page</code>, <code>size</code></td>
+<td>paging</td>
+<td><strong>accepted, validated identically, then ignored</strong> - there is no page to return</td>
+</tr>
+</tbody>
+</table>
+<p><code>sort</code>, <code>page</code> and <code>size</code> are still validated exactly as discover validates them (an invalid
+<code>direction</code> is still a <code>400</code>), because validation and the policy decision happen before the
+service knows which members it will use. See <a href="#tc-16-sort-page-and-size-are-accepted-validated-and-ignored">TC-16</a>.</p>
+<h2 id="4-the-response">4. The response</h2>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">"totalElements"</span><span class="p">:</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="nt">"textSearch"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"enabled"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nt">"fields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"name"</span><span class="p">,</span><span class="w"> </span><span class="s2">"displayName"</span><span class="p">,</span><span class="w"> </span><span class="s2">"description"</span><span class="p">]</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="nt">"filters"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="p">{</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">      </span><span class="nt">"key"</span><span class="p">:</span><span class="w"> </span><span class="s2">"field:type"</span><span class="p">,</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">      </span><span class="nt">"target"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"field"</span><span class="p">:</span><span class="w"> </span><span class="s2">"type"</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">      </span><span class="nt">"label"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Type"</span><span class="p">,</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">      </span><span class="nt">"dataType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"TEXT"</span><span class="p">,</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">      </span><span class="nt">"multiValued"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">      </span><span class="nt">"operators"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"eq"</span><span class="p">,</span><span class="w"> </span><span class="s2">"neq"</span><span class="p">,</span><span class="w"> </span><span class="s2">"in"</span><span class="p">,</span><span class="w"> </span><span class="s2">"not_in"</span><span class="p">,</span><span class="w"> </span><span class="s2">"any_of"</span><span class="p">,</span><span class="w"> </span><span class="s2">"none_of"</span><span class="p">,</span><span class="w"> </span><span class="s2">"contains"</span><span class="p">,</span><span class="w"> </span><span class="s2">"exists"</span><span class="p">,</span><span class="w"> </span><span class="s2">"not_exists"</span><span class="p">],</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">      </span><span class="nt">"defaultOperator"</span><span class="p">:</span><span class="w"> </span><span class="s2">"in"</span><span class="p">,</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">      </span><span class="nt">"sortable"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">      </span><span class="nt">"values"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"file"</span><span class="p">,</span><span class="w"> </span><span class="nt">"count"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="nt">"selected"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"topic"</span><span class="p">,</span><span class="w"> </span><span class="nt">"count"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="nt">"selected"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">      </span><span class="p">]</span>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">    </span><span class="p">},</span>
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="w">    </span><span class="p">{</span>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">      </span><span class="nt">"key"</span><span class="p">:</span><span class="w"> </span><span class="s2">"field:format"</span><span class="p">,</span>
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="w">      </span><span class="nt">"target"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"field"</span><span class="p">:</span><span class="w"> </span><span class="s2">"format"</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="w">      </span><span class="nt">"label"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Format"</span><span class="p">,</span>
+</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="w">      </span><span class="nt">"dataType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"TEXT"</span><span class="p">,</span>
+</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="w">      </span><span class="nt">"multiValued"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="w">      </span><span class="nt">"operators"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"eq"</span><span class="p">,</span><span class="w"> </span><span class="s2">"neq"</span><span class="p">,</span><span class="w"> </span><span class="s2">"in"</span><span class="p">,</span><span class="w"> </span><span class="s2">"not_in"</span><span class="p">,</span><span class="w"> </span><span class="s2">"any_of"</span><span class="p">,</span><span class="w"> </span><span class="s2">"none_of"</span><span class="p">,</span><span class="w"> </span><span class="s2">"contains"</span><span class="p">,</span><span class="w"> </span><span class="s2">"exists"</span><span class="p">,</span><span class="w"> </span><span class="s2">"not_exists"</span><span class="p">],</span>
+</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="w">      </span><span class="nt">"defaultOperator"</span><span class="p">:</span><span class="w"> </span><span class="s2">"in"</span><span class="p">,</span>
+</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="w">      </span><span class="nt">"sortable"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="w">      </span><span class="nt">"values"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CSV"</span><span class="p">,</span><span class="w"> </span><span class="nt">"count"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"selected"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-1-30"><a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"GeoJSON"</span><span class="p">,</span><span class="w"> </span><span class="nt">"count"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"selected"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-1-31"><a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"JSON"</span><span class="p">,</span><span class="w"> </span><span class="nt">"count"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"selected"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-1-32"><a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"NetCDF"</span><span class="p">,</span><span class="w"> </span><span class="nt">"count"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"selected"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-1-33"><a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"XML"</span><span class="p">,</span><span class="w"> </span><span class="nt">"count"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"selected"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-1-34"><a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a><span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Avro"</span><span class="p">,</span><span class="w"> </span><span class="nt">"count"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nt">"selected"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-1-35"><a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a><span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"RDF"</span><span class="p">,</span><span class="w"> </span><span class="nt">"count"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nt">"selected"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-1-36"><a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a><span class="w">      </span><span class="p">],</span>
+</span><span id="__span-1-37"><a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a><span class="w">      </span><span class="nt">"missingCount"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
+</span><span id="__span-1-38"><a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a><span class="w">    </span><span class="p">},</span>
+</span><span id="__span-1-39"><a id="__codelineno-1-39" name="__codelineno-1-39" href="#__codelineno-1-39"></a><span class="w">    </span><span class="p">{</span>
+</span><span id="__span-1-40"><a id="__codelineno-1-40" name="__codelineno-1-40" href="#__codelineno-1-40"></a><span class="w">      </span><span class="nt">"key"</span><span class="p">:</span><span class="w"> </span><span class="s2">"field:organisation.key"</span><span class="p">,</span>
+</span><span id="__span-1-41"><a id="__codelineno-1-41" name="__codelineno-1-41" href="#__codelineno-1-41"></a><span class="w">      </span><span class="nt">"target"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"field"</span><span class="p">:</span><span class="w"> </span><span class="s2">"organisation.key"</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-1-42"><a id="__codelineno-1-42" name="__codelineno-1-42" href="#__codelineno-1-42"></a><span class="w">      </span><span class="nt">"label"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Organisation"</span><span class="p">,</span>
+</span><span id="__span-1-43"><a id="__codelineno-1-43" name="__codelineno-1-43" href="#__codelineno-1-43"></a><span class="w">      </span><span class="nt">"dataType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"TEXT"</span><span class="p">,</span>
+</span><span id="__span-1-44"><a id="__codelineno-1-44" name="__codelineno-1-44" href="#__codelineno-1-44"></a><span class="w">      </span><span class="nt">"multiValued"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+</span><span id="__span-1-45"><a id="__codelineno-1-45" name="__codelineno-1-45" href="#__codelineno-1-45"></a><span class="w">      </span><span class="nt">"operators"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"eq"</span><span class="p">,</span><span class="w"> </span><span class="s2">"neq"</span><span class="p">,</span><span class="w"> </span><span class="s2">"in"</span><span class="p">,</span><span class="w"> </span><span class="s2">"not_in"</span><span class="p">,</span><span class="w"> </span><span class="s2">"any_of"</span><span class="p">,</span><span class="w"> </span><span class="s2">"none_of"</span><span class="p">,</span><span class="w"> </span><span class="s2">"contains"</span><span class="p">,</span><span class="w"> </span><span class="s2">"exists"</span><span class="p">,</span><span class="w"> </span><span class="s2">"not_exists"</span><span class="p">],</span>
+</span><span id="__span-1-46"><a id="__codelineno-1-46" name="__codelineno-1-46" href="#__codelineno-1-46"></a><span class="w">      </span><span class="nt">"defaultOperator"</span><span class="p">:</span><span class="w"> </span><span class="s2">"eq"</span><span class="p">,</span>
+</span><span id="__span-1-47"><a id="__codelineno-1-47" name="__codelineno-1-47" href="#__codelineno-1-47"></a><span class="w">      </span><span class="nt">"sortable"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+</span><span id="__span-1-48"><a id="__codelineno-1-48" name="__codelineno-1-48" href="#__codelineno-1-48"></a><span class="w">      </span><span class="nt">"values"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-1-49"><a id="__codelineno-1-49" name="__codelineno-1-49" href="#__codelineno-1-49"></a><span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ENV"</span><span class="p">,</span><span class="w"> </span><span class="nt">"count"</span><span class="p">:</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span><span class="w"> </span><span class="nt">"selected"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-1-50"><a id="__codelineno-1-50" name="__codelineno-1-50" href="#__codelineno-1-50"></a><span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"BCC"</span><span class="p">,</span><span class="w"> </span><span class="nt">"count"</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="nt">"selected"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-1-51"><a id="__codelineno-1-51" name="__codelineno-1-51" href="#__codelineno-1-51"></a><span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"HEG"</span><span class="p">,</span><span class="w"> </span><span class="nt">"count"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="nt">"selected"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-1-52"><a id="__codelineno-1-52" name="__codelineno-1-52" href="#__codelineno-1-52"></a><span class="w">      </span><span class="p">]</span>
+</span><span id="__span-1-53"><a id="__codelineno-1-53" name="__codelineno-1-53" href="#__codelineno-1-53"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-1-54"><a id="__codelineno-1-54" name="__codelineno-1-54" href="#__codelineno-1-54"></a><span class="w">  </span><span class="p">],</span>
+</span><span id="__span-1-55"><a id="__codelineno-1-55" name="__codelineno-1-55" href="#__codelineno-1-55"></a><span class="w">  </span><span class="nt">"policy"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"..."</span><span class="p">:</span><span class="w"> </span><span class="s2">"the policy block discover returns, unchanged; absent when policy is switched off"</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-1-56"><a id="__codelineno-1-56" name="__codelineno-1-56" href="#__codelineno-1-56"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>This is a real response: ENV, posting <code>{"filters":[{"field":"organisation.key","values":["ENV"]}]}</code>
+(<code>filters[]</code> abbreviated to three of its twelve entries for ENV; see <a href="#6-test-data">§6</a> and
+<a href="#tc-07-choosing-organisationkey--env-narrows-format-and-type-while-organisation-stays-put">TC-07</a>
+for the full derivation).</p>
+<h3 id="totalelements"><code>totalElements</code></h3>
+<p>How many products match the <strong>whole</strong> request - <code>text</code>, every <code>filters[]</code> entry, under the
+caller's row filter. Exactly what <code>page.totalElements</code> of <code>POST /api/v1/product/discover</code> would
+report for the identical body and token. See <a href="#tc-04-totalelements-equals-discovers-totalelements-for-the-same-body">TC-04</a>.</p>
+<h3 id="textsearch"><code>textSearch</code></h3>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span><span class="w"> </span><span class="nt">"enabled"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nt">"fields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"name"</span><span class="p">,</span><span class="w"> </span><span class="s2">"displayName"</span><span class="p">,</span><span class="w"> </span><span class="s2">"description"</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
+</span></code></pre></div>
+<ul>
+<li><code>enabled</code>: whether the caller may send <code>text</code> at all - <code>contract.textSearchFields()</code> non-empty.</li>
+<li><code>fields</code>: the fields a term is matched against, same list, same order, as discover's
+  <code>policy.textSearchFields</code>.</li>
+</ul>
+<p><code>fields</code> is <code>[]</code> and <code>enabled</code> is <code>false</code> only for a caller whose policy masks every text-searchable
+field - the same condition discover's <a href="../product-discover/#tc-35-textnot_permitted">TC-35</a> covers,
+which no shipped organisation triggers without editing the policy.</p>
+<h3 id="filters"><code>filters[]</code></h3>
+<p>One entry per filter the caller may use, <strong>in this fixed order</strong>: fields in <code>ProductField</code>
+declaration order (never <code>id</code> - see the note under <a href="#5-critical-fields">§5</a>), then product
+attributes sorted by label (case-insensitive), then organisation attributes sorted by label. A
+filter the contract does not permit (masked, or not in the allowed list) is not in the array at
+all - there is no "disabled" entry.</p>
+<h3 id="key-target-label-datatype-multivalued-operators-defaultoperator-sortable"><code>key</code>, <code>target</code>, <code>label</code>, <code>dataType</code>, <code>multiValued</code>, <code>operators</code>, <code>defaultOperator</code>, <code>sortable</code></h3>
+<p>These eight describe the filter itself, independent of the request; two callers with the same
+entitlement get byte-identical values for all eight, whatever criteria either one sent.</p>
+<table>
+<thead>
+<tr>
+<th>Member</th>
+<th>Meaning</th>
+<th>Field example</th>
+<th>Attribute example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>key</code></td>
+<td>stable id for UI state</td>
+<td><code>field:format</code></td>
+<td><code>attribute:product.quality_designation</code></td>
+</tr>
+<tr>
+<td><code>target</code></td>
+<td>copied verbatim into a discover <code>filters[]</code> entry</td>
+<td><code>{"field": "format"}</code></td>
+<td><code>{"scope": "product", "attribute": "quality_designation"}</code></td>
+</tr>
+<tr>
+<td><code>label</code></td>
+<td>caller-facing name</td>
+<td><code>"Format"</code>, a fixed label per field (§5.1)</td>
+<td><code>policy_attribute_definition.display_name</code>, e.g. <code>"Quality designation"</code>; falls back to the bare name when none is set</td>
+</tr>
+<tr>
+<td><code>dataType</code></td>
+<td><code>TEXT</code>, <code>NUMBER</code> or <code>BOOLEAN</code></td>
+<td><code>ProductField.Kind</code></td>
+<td>the definition's <code>data_type</code>, mapped (<code>STRING</code>→<code>TEXT</code>; no <code>NUMBER</code> or <code>BOOLEAN</code> attribute exists in the sample data)</td>
+</tr>
+<tr>
+<td><code>multiValued</code></td>
+<td>can the target carry more than one value at once</td>
+<td>always <code>false</code>, <strong>except <code>subscribedBy</code></strong></td>
+<td>the definition's <code>multi_valued</code> flag</td>
+</tr>
+<tr>
+<td><code>operators</code></td>
+<td>comparisons this target accepts, by wire name</td>
+<td>the field operator set (§5.1) minus whatever discover would refuse</td>
+<td>the attribute operator set (§5.2), <code>all_of</code> added when multi-valued, ordering operators added when <code>dataType</code> is <code>NUMBER</code></td>
+</tr>
+<tr>
+<td><code>defaultOperator</code></td>
+<td>what the UI should send for a value pick</td>
+<td><code>contains</code> for <code>name</code>/<code>displayName</code>/<code>description</code>; <code>eq</code> for the boolean <code>isOwnProduct</code>; <code>any_of</code> for the multi-valued <code>subscribedBy</code>; <code>in</code> for every other listing field</td>
+<td><code>eq</code> for a boolean attribute (none exist); <code>any_of</code> when multi-valued; <code>in</code> otherwise</td>
+</tr>
+<tr>
+<td><code>sortable</code></td>
+<td>may the caller sort on this target in <code>POST /api/v1/product/discover</code></td>
+<td><code>ProductField.isSortable()</code> - <code>false</code> for <code>description</code> and <code>subscribedBy</code></td>
+<td>always <code>true</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>operators</code> <strong>must never offer something discover would refuse.</strong> <code>subscribedBy</code>'s set has no
+<code>contains</code> (discover never accepts it there); every multi-valued attribute's set gains <code>all_of</code>;
+a <code>NUMBER</code> attribute's set gains <code>lt</code>/<code>lte</code>/<code>gt</code>/<code>gte</code>. See <a href="#5-critical-fields">§5</a> for the
+complete per-target tables.</p>
+<h3 id="values"><code>values[]</code></h3>
+<p>Present on every entry the panel offers. The three prose fields that would otherwise carry no
+<code>values</code> (<code>name</code>, <code>displayName</code>, <code>description</code>) are not offered in the panel at all (see the
+<a href="#51-product-fields">§5.1 note</a>), and <code>topic</code> and <code>source</code> are excluded for the same reason, so no
+entry in <code>filters[]</code> lacks <code>values</code> any more. Each entry:</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span><span class="w"> </span><span class="nt">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CSV"</span><span class="p">,</span><span class="w"> </span><span class="nt">"count"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"selected"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">}</span>
+</span></code></pre></div>
+<ul>
+<li><code>value</code>: a string, or a JSON boolean for <code>isOwnProduct</code>. Reported <strong>as stored</strong>
+  (<code>"CSV"</code>, not <code>"csv"</code>).</li>
+<li><code>count</code>: how many products satisfy the <a href="#the-counting-rule">counting rule</a> for this value.</li>
+<li><code>selected</code>: <code>true</code> when the caller's own request already has an <code>eq</code>, <code>in</code> or <code>any_of</code> filter on
+  this exact target naming this value, compared the way discover matches that filter:
+  <strong>case-insensitively for a field</strong> (discover compares fields with <code>LOWER()</code>, so <code>csv</code> selects
+  <code>CSV</code>) and <strong>exactly for an attribute</strong> (discover matches attributes with <code>a.item IN (...)</code>, so
+  <code>Anonymised</code> does not select <code>anonymised</code>). A <code>neq</code>, <code>contains</code>, <code>exists</code>
+  or any other operator narrows the other groups but never marks a value <code>selected</code> - the request
+  did not <em>pick</em> that value, it excluded or tested for others.</li>
+</ul>
+<p>Which values are listed is decided <strong>once, by the row filter alone</strong> - ignoring the request's own
+<code>filters</code> and <code>text</code> entirely: the distinct values held by at least one product the caller can see
+at all. Narrowing the request narrows <em>counts</em>, never the <em>set of rows shown</em>; see
+<a href="#tc-07-choosing-organisationkey--env-narrows-format-and-type-while-organisation-stays-put">TC-07</a>.
+A value no visible product holds is never listed, even when a <code>policy_attribute_definition</code>
+declares it in <code>allowed_values</code> - <code>rare_condition_cohorts</code> is a declared value of
+<code>population_risk_tags</code> that no sample product carries, and it never appears; see
+<a href="#6-test-data">§6</a>.</p>
+<p><strong>Ordering</strong>: count descending, then value ascending case-insensitively; capped at 50 (§<a href="#truncated"><code>truncated</code></a>).
+<code>isOwnProduct</code> is the one exception: always exactly <code>true</code> then <code>false</code>, in that order, whatever
+their counts, because there are only ever two.</p>
+<p><strong>Case merging applies to fields, never to attributes.</strong> <code>format</code> values compare
+case-insensitively in the database (<code>LOWER(p.format) IN (...)</code>), so <code>CSV</code> and <code>csv</code> would be one
+row at search time; the panel merges them the same way, summing their counts under the spelling
+with the most products (ties broken by the lexicographically smaller spelling). An attribute
+filter compares exactly (<code>a.item IN (...)</code>), so <code>validated</code> and <code>Validated</code> would be two different
+rows to discover, and the panel lists them as two distinct values too - never merged. The sample
+data happens to be consistently cased, so this only shows up if a row is edited to differ; it is
+exercised directly in <code>FacetValuesTest</code>.</p>
+<h3 id="missingcount"><code>missingCount</code></h3>
+<p>How many products in the <strong>narrowed</strong> set (the whole request, minus this target's own filters -
+see the counting rule) have no value at all for this target: what a <code>not_exists</code> filter on it
+would match. Present only alongside <code>values</code>, and omitted - not <code>0</code> - when it would be zero,
+matching the rest of the API's "absent, never a zero default" convention.</p>
+<h3 id="truncated"><code>truncated</code></h3>
+<p><code>true</code>, and present, only when more than 50 distinct values existed for this target and the list
+was cut to the 50 most-matched. Omitted - not <code>false</code> - otherwise. No shipped sample attribute or
+field has more than a handful of distinct values, so every example in this document is untruncated;
+exercising <code>truncated: true</code> needs seeded data with 51+ distinct values for one target (see
+<code>FacetValuesTest</code> for the unit-level proof the cap and flag are applied).</p>
+<h3 id="policy"><code>policy</code></h3>
+<p>The identical object <code>POST /api/v1/product/discover</code> returns in its own <code>policy</code> member - same
+builder, same contract (<code>ProductDiscoveryServiceImpl.policyBlock</code>). Present only when policy
+enforcement is on; absent (not <code>null</code>) when <code>application.opa.enabled=false</code>. See discover's
+<a href="../product-discover/#the-policy-block">§4 "The <code>policy</code> block"</a> and
+<a href="#tc-17-with-policy-off-the-panel-is-wide-open-and-sensitive-attributes-appear">TC-17</a>.</p>
+<h3 id="the-counting-rule">The counting rule</h3>
+<p>This is standard <strong>disjunctive faceting</strong>, stated once in the design and reproduced here because
+every test case in §8.B depends on it:</p>
+<blockquote>
+<p>A value's <code>count</code> is the number of products that satisfy the policy's row filter, the request's
+<code>text</code>, and every request filter <strong>except those on this same target</strong>, and that hold the value.</p>
+</blockquote>
+<p>Two things fall out of that sentence that are easy to get backwards:</p>
+<ol>
+<li><strong>A target's own filter never narrows its own counts.</strong> Choosing <code>organisation.key = ENV</code>
+   narrows every <em>other</em> group (<code>format</code>, <code>type</code>, every attribute) to ENV's products, but the
+   <strong>Organisation</strong> group keeps showing what BCC's and HEG's counts would be if the caller switched</li>
+<li>that is the whole point of a facet panel: it tells you what picking something else would give
+   you, not just what you already picked.</li>
+<li><strong>Every other filter and the text term still apply</strong>, including filters on <em>other</em> targets.
+   Several filters on one target are all excluded together from that target's own counts (picking
+   two values of <code>type</code> does not stop the Type group reporting what a <em>third</em> value of <code>type</code> would
+   give).</li>
+</ol>
+<p><strong>Worked example</strong>, ENV posting <code>{"filters":[{"field":"organisation.key","values":["ENV"]}]}</code>
+(the response shown in <a href="#4-the-response">§4</a> above):</p>
+<table>
+<thead>
+<tr>
+<th>Group</th>
+<th>Own filter excluded from its own count?</th>
+<th>Narrowed by the <code>organisation.key=ENV</code> filter?</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Organisation</td>
+<td>yes - it <em>is</em> this group</td>
+<td>no</td>
+<td>unchanged from the baseline <code>{}</code> panel: <code>ENV:6, BCC:5, HEG:4</code></td>
+</tr>
+<tr>
+<td>Format</td>
+<td>n/a - no filter on <code>format</code></td>
+<td>yes</td>
+<td>ENV's 15-product baseline (<code>CSV:4, JSON:4, Avro:1, GeoJSON:1, NetCDF:1, RDF:1, XML:1</code>, <code>missingCount:2</code>) narrows to ENV's own 6: <code>CSV:1, GeoJSON:1, JSON:1, NetCDF:1, XML:1, Avro:0, RDF:0</code>, <code>missingCount:1</code></td>
+</tr>
+<tr>
+<td>Type</td>
+<td>n/a</td>
+<td>yes</td>
+<td>baseline <code>topic:8, file:6</code>, <code>missingCount:1</code> narrows to <code>topic:3, file:3</code>, <code>missingCount:0</code></td>
+</tr>
+<tr>
+<td><code>totalElements</code></td>
+<td>n/a</td>
+<td>yes</td>
+<td>15 → <strong>6</strong></td>
+</tr>
+</tbody>
+</table>
+<p><code>RDF</code> and <code>Avro</code> staying in the list at <code>count: 0</code> is the value-listing rule in action: both are
+values held by a product ENV can <em>see</em> but does not <em>own</em>
+(<code>ScotlandLandRegisterExtract</code> and <code>HelpToBuyApplicants</code>, both HEG's), so they are listed, even
+though no product in the <em>narrowed</em> set (ENV's own 6) holds either. The UI greys them out rather
+than removing them, so switching the organisation filter back off does not make the group's rows
+jump around.</p>
+<h2 id="5-critical-fields">5. Critical fields</h2>
+<p>Everything here mirrors discover's <a href="../product-discover/#5-critical-fields-for-filtering">§5</a>
+exactly - the panel offers nothing discover would refuse and withholds nothing discover would
+accept - with the operator, label and default-operator mechanics this endpoint adds on top.</p>
+<h3 id="51-product-fields">5.1 Product fields</h3>
+<p>Only six of the eleven filterable product fields are ever offered in the panel at all; the other
+five are filterable on <code>POST /api/v1/product/discover</code> exactly as before, but
+<code>FilterOptionTargets.isOfferedInPanel</code> excludes them from <code>filters[]</code> unconditionally, before the
+contract is consulted - so even a caller whose contract would permit them never sees them here.
+Being left out this way is a third reason an entry can be absent, alongside "not in the caller's
+allowed list" and "masked", and unlike those two it does not depend on the caller at all.</p>
+<table>
+<thead>
+<tr>
+<th>API name</th>
+<th><code>dataType</code></th>
+<th><code>multiValued</code></th>
+<th><code>operators</code></th>
+<th><code>defaultOperator</code></th>
+<th>offered in panel?</th>
+<th>lists <code>values</code>?</th>
+<th><code>label</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id</code></td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td><strong>never</strong> (policy or no, see note below)</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>TEXT</td>
+<td>false</td>
+<td>9: eq, neq, in, not_in, any_of, none_of, contains, exists, not_exists</td>
+<td><code>contains</code></td>
+<td><strong>never</strong> - prose, already searched by <code>textSearch</code></td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>displayName</code></td>
+<td>TEXT</td>
+<td>false</td>
+<td>same 9</td>
+<td><code>contains</code></td>
+<td><strong>never</strong> - prose, already searched by <code>textSearch</code></td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>TEXT</td>
+<td>false</td>
+<td>same 9</td>
+<td><code>contains</code></td>
+<td><strong>never</strong> - prose, already searched by <code>textSearch</code></td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>topic</code></td>
+<td>TEXT</td>
+<td>false</td>
+<td>same 9</td>
+<td><code>in</code></td>
+<td><strong>never</strong> - an identifier nobody browses by</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>source</code></td>
+<td>TEXT</td>
+<td>false</td>
+<td>same 9</td>
+<td><code>in</code></td>
+<td><strong>never</strong> - an identifier nobody browses by</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>type</code></td>
+<td>TEXT</td>
+<td>false</td>
+<td>same 9</td>
+<td><code>in</code></td>
+<td>when permitted</td>
+<td>yes</td>
+<td>Type</td>
+</tr>
+<tr>
+<td><code>format</code></td>
+<td>TEXT</td>
+<td>false</td>
+<td>same 9</td>
+<td><code>in</code></td>
+<td>when permitted</td>
+<td>yes</td>
+<td>Format</td>
+</tr>
+<tr>
+<td><code>organisation.key</code></td>
+<td>TEXT</td>
+<td>false</td>
+<td>same 9</td>
+<td><code>eq</code></td>
+<td>when permitted</td>
+<td>yes</td>
+<td>Organisation</td>
+</tr>
+<tr>
+<td><code>organisation.name</code></td>
+<td>TEXT</td>
+<td>false</td>
+<td>same 9</td>
+<td><code>eq</code></td>
+<td>when permitted</td>
+<td>yes</td>
+<td>Organisation name</td>
+</tr>
+<tr>
+<td><code>subscribedBy</code></td>
+<td>TEXT</td>
+<td><strong>true</strong></td>
+<td>8: eq, neq, in, not_in, any_of, none_of, exists, not_exists (<strong>no <code>contains</code></strong>)</td>
+<td><code>any_of</code></td>
+<td>when permitted</td>
+<td>yes</td>
+<td>Subscribed by</td>
+</tr>
+<tr>
+<td><code>isOwnProduct</code></td>
+<td>BOOLEAN</td>
+<td>false</td>
+<td>8: eq, neq, in, not_in, any_of, none_of, exists, not_exists</td>
+<td><code>eq</code></td>
+<td>when permitted and the caller's organisation is known</td>
+<td>yes, always both <code>true</code>/<code>false</code></td>
+<td>My organisation's products</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong><code>id</code> is never a filter option, whether or not policy is enforced.</strong> <code>FilterOptionTargets</code>
+excludes <code>ProductField.ID</code> unconditionally, before consulting the contract at all. This is
+<em>stricter</em> than "allowed − masked": with policy <strong>switched off</strong>, discover's own open contract
+would in fact accept a filter on <code>id</code> (<code>contract.mayFilterOn</code> returns <code>true</code> for every target when
+enforcement is off), but the filter panel still never lists it as an option in that state. This
+is a deliberate implementation choice beyond what the design note ("<code>id</code> never appears while
+policy is enforced") states outright - see the report accompanying this document.</p>
+<p><strong><code>name</code>, <code>displayName</code>, <code>description</code>, <code>topic</code> and <code>source</code> are never filter options either, for
+the same unconditional reason as <code>id</code>.</strong> <code>FilterOptionTargets.isOfferedInPanel</code> leaves them out
+before the contract is consulted, whether or not the caller's contract would otherwise permit
+them: the first three are prose already covered by the free-text box (<code>textSearch</code>), and the last
+two are identifiers nobody browses a value list for. <strong>Discover itself is unchanged</strong>: a caller
+who names one of these five directly in <code>POST /api/v1/product/discover</code>'s <code>filters[]</code> is answered
+exactly as before, and each still appears in <code>policy.filterableFields</code> - only the panel stops
+offering it. See <a href="#tc-02-the-five-text-searched-and-identifier-fields-are-permitted-but-not-offered">TC-02</a>.</p>
+</blockquote>
+<p>Because the six remaining fields all list values when they are offered at all, <strong>every entry
+<code>filters[]</code> now carries, <code>values</code> is present on every one of them</strong> - there is no field entry
+without <code>values</code> any more. (An attribute entry always listed <code>values</code> already; see §5.2.)</p>
+<h3 id="52-policy-attributes">5.2 Policy attributes</h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Scope</th>
+<th><code>dataType</code></th>
+<th><code>multiValued</code></th>
+<th><code>operators</code></th>
+<th><code>defaultOperator</code></th>
+<th><code>label</code> (from <code>display_name</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>record_unit</code></td>
+<td>product</td>
+<td>TEXT</td>
+<td>no</td>
+<td>9 (as <code>topic</code> above)</td>
+<td><code>in</code></td>
+<td>Record unit</td>
+</tr>
+<tr>
+<td><code>identifiability</code></td>
+<td>product</td>
+<td>TEXT</td>
+<td>no</td>
+<td>9</td>
+<td><code>in</code></td>
+<td>Identifiability</td>
+</tr>
+<tr>
+<td><code>quality_designation</code></td>
+<td>product</td>
+<td>TEXT</td>
+<td>no</td>
+<td>9</td>
+<td><code>in</code></td>
+<td>Quality designation</td>
+</tr>
+<tr>
+<td><code>temporal_resolution</code></td>
+<td>product</td>
+<td>TEXT</td>
+<td>no</td>
+<td>9</td>
+<td><code>in</code></td>
+<td>Temporal resolution</td>
+</tr>
+<tr>
+<td><code>population_risk_tags</code></td>
+<td>product</td>
+<td>TEXT</td>
+<td><strong>yes</strong></td>
+<td>10 (9 + <code>all_of</code>)</td>
+<td><code>any_of</code></td>
+<td>Population risk tags</td>
+</tr>
+<tr>
+<td><code>coverage_jurisdictions</code></td>
+<td>product</td>
+<td>TEXT</td>
+<td><strong>yes</strong></td>
+<td>10</td>
+<td><code>any_of</code></td>
+<td>Coverage jurisdictions</td>
+</tr>
+<tr>
+<td><code>jurisdictions</code></td>
+<td>organisation</td>
+<td>TEXT</td>
+<td><strong>yes</strong></td>
+<td>10</td>
+<td><code>any_of</code></td>
+<td>Jurisdictions</td>
+</tr>
+<tr>
+<td><code>responsibility_areas</code></td>
+<td>organisation</td>
+<td>TEXT</td>
+<td><strong>yes</strong></td>
+<td>10</td>
+<td><code>any_of</code></td>
+<td>Responsibility areas</td>
+</tr>
+<tr>
+<td><code>authorised_classifications</code></td>
+<td>organisation</td>
+<td>TEXT</td>
+<td><strong>yes</strong></td>
+<td>10</td>
+<td><code>any_of</code></td>
+<td>Authorised classifications</td>
+</tr>
+<tr>
+<td><code>permitted_purposes</code></td>
+<td>organisation</td>
+<td>TEXT</td>
+<td><strong>yes</strong></td>
+<td>10</td>
+<td><code>any_of</code></td>
+<td>Permitted purposes</td>
+</tr>
+<tr>
+<td><code>department_id</code></td>
+<td>organisation</td>
+<td>TEXT</td>
+<td>no</td>
+<td>9</td>
+<td><code>in</code></td>
+<td>Department id</td>
+</tr>
+<tr>
+<td><code>nationality</code></td>
+<td>organisation</td>
+<td>TEXT</td>
+<td>no</td>
+<td>9</td>
+<td><code>in</code></td>
+<td>Nationality</td>
+</tr>
+</tbody>
+</table>
+<p>No sample-data attribute is <code>NUMBER</code> or <code>BOOLEAN</code>, so no attribute in the shipped catalogue carries
+an ordering operator (<code>lt</code>/<code>lte</code>/<code>gt</code>/<code>gte</code>) or the boolean operator set; both are exercised at the
+unit level only (<code>FilterOptionTargetsTest</code>).</p>
+<p><strong>None of these twelve is automatically a filter option.</strong> Whether one appears in a given caller's
+<code>filters[]</code> is decided the same three ways discover decides <code>policy.filterableAttributes</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Reason an attribute is absent from the panel</th>
+<th>Example, enforced</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>not in the caller's <code>allowed_filtered_attributes</code></td>
+<td><code>coverage_jurisdictions</code>, <code>department_id</code>, <code>nationality</code> - <strong>absent for every organisation</strong>, none permits them</td>
+</tr>
+<tr>
+<td>masked for this caller (<code>allowed − masked</code>)</td>
+<td>n/a for attributes in the sample policy - no organisation's allowed list and masked list overlap today, unlike fields (<code>source</code> for BCC)</td>
+</tr>
+<tr>
+<td>flagged <code>sensitive</code> in the catalogue, while <code>mask_sensitive_attributes</code> is on</td>
+<td><code>population_risk_tags</code> for HEG and BCC (below SECRET); <code>authorised_classifications</code> and <code>permitted_purposes</code> are sensitive too, but neither is in <strong>any</strong> organisation's allowed list regardless</td>
+</tr>
+</tbody>
+</table>
+<p><code>organisation.jurisdictions</code> and <code>organisation.responsibility_areas</code> are the only attributes every
+sample organisation may filter on; see <a href="#6-test-data">§6</a> for the per-organisation panel.</p>
+<h3 id="53-which-filters-appear-and-in-what-order">5.3 Which filters appear, and in what order</h3>
+<p>Reproduced from the design, ground-truthed against <code>FilterOptionTargets.permitted</code>:</p>
+<ol>
+<li><code>ProductField</code> members that are filterable, offered in the panel (<code>isOfferedInPanel</code> - never
+   <code>id</code>, <code>name</code>, <code>displayName</code>, <code>description</code>, <code>topic</code> or <code>source</code>, §5.1), <strong>and</strong> permitted by the
+   contract, in declaration order.</li>
+<li>Product-scoped attributes permitted by the contract, sorted by <code>label</code> (case-insensitive).</li>
+<li>Organisation-scoped attributes permitted by the contract, sorted by <code>label</code> (case-insensitive).</li>
+</ol>
+<h2 id="6-test-data">6. Test data</h2>
+<p>The catalogue, the three organisations, their clearances and purposes, and every attribute value
+are exactly discover's - reproduced in full in
+<a href="../product-discover/#6-test-data"><code>product-discover.md</code> §6</a>. This section adds only what that one
+does not need: product <code>format</code>, and the panel each organisation is given.</p>
+<h3 id="61-format-by-product">6.1 <code>format</code>, by product</h3>
+<p>Set by <code>src/main/resources/db/samples/V20261018121000__add_sample_product_display_names_and_formats.sql</code>
+(the same migration TC-47/TC-48 of discover's spec exercise through <code>displayName</code>).
+<code>UnclassifiedDraftDataset</code> and <code>Bristol_Cycle%Counts</code> have neither a <code>displayName</code> nor a <code>format</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Product</th>
+<th>Owner</th>
+<th><code>format</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FloodRiskMapZones</td>
+<td>ENV</td>
+<td>GeoJSON</td>
+</tr>
+<tr>
+<td>RiverLevelTelemetry</td>
+<td>ENV</td>
+<td>JSON</td>
+</tr>
+<tr>
+<td>CoastalErosionForecast</td>
+<td>ENV</td>
+<td>NetCDF</td>
+</tr>
+<tr>
+<td>PollutionIncidentReports</td>
+<td>ENV</td>
+<td>XML</td>
+</tr>
+<tr>
+<td>WaterAbstractionLicences</td>
+<td>ENV</td>
+<td>CSV</td>
+</tr>
+<tr>
+<td>UnclassifiedDraftDataset</td>
+<td>ENV</td>
+<td><em>(none)</em></td>
+</tr>
+<tr>
+<td>BrownfieldLandAvailability</td>
+<td>HEG</td>
+<td>CSV</td>
+</tr>
+<tr>
+<td>AffordableHousingCompletions</td>
+<td>HEG</td>
+<td>CSV</td>
+</tr>
+<tr>
+<td>HelpToBuyApplicants</td>
+<td>HEG</td>
+<td>Avro</td>
+</tr>
+<tr>
+<td>HousingNeedSurvey</td>
+<td>HEG</td>
+<td>Parquet</td>
+</tr>
+<tr>
+<td>EmptyHomesRegister</td>
+<td>HEG</td>
+<td>XML</td>
+</tr>
+<tr>
+<td>ScotlandLandRegisterExtract</td>
+<td>HEG</td>
+<td>RDF</td>
+</tr>
+<tr>
+<td>PendingPlanningApplications</td>
+<td>BCC</td>
+<td>JSON</td>
+</tr>
+<tr>
+<td>BristolAirQualitySensors</td>
+<td>BCC</td>
+<td>JSON</td>
+</tr>
+<tr>
+<td>BristolSchoolPlaces</td>
+<td>BCC</td>
+<td>CSV</td>
+</tr>
+<tr>
+<td>BristolTemporaryAccommodation</td>
+<td>BCC</td>
+<td>JSON</td>
+</tr>
+<tr>
+<td><code>Bristol_Cycle%Counts</code></td>
+<td>BCC</td>
+<td><em>(none)</em></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Environment check before trusting any <code>format</code> number in this document:</strong> this migration and
+its schema counterpart (<code>V20261018120000__add_product_display_name_and_format.sql</code>) are the two
+newest in <code>src/main/resources/db/migration</code> and <code>db/samples</code>. If
+<code>SELECT format FROM mn.product LIMIT 1</code> errors with "column does not exist", or every <code>format</code> is
+<code>NULL</code>, the environment has not applied them yet; apply migrations before running §8's Format
+cases, or treat every count derived from this table as unobserved until you have.</p>
+</blockquote>
+<h3 id="62-the-panel-per-organisation-empty-body-policy-on">6.2 The panel per organisation (empty body, policy on)</h3>
+<p>Derived from discover's §5.4 allowed/masked lists, which this endpoint shares exactly, narrowed
+further by the panel's own unconditional exclusions: <code>id</code>, <code>name</code>, <code>displayName</code>, <code>description</code>,
+<code>topic</code> and <code>source</code> never count here, per §5.1, whatever the contract would permit. Of the six
+fields the panel can ever offer (<code>type</code>, <code>format</code>, <code>organisation.key</code>, <code>organisation.name</code>,
+<code>subscribedBy</code>, <code>isOwnProduct</code>), only <code>subscribedBy</code> is masked for any sample organisation (BCC).</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><strong>ENV</strong></th>
+<th><strong>HEG</strong></th>
+<th><strong>BCC</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>field filters offered</td>
+<td>6: Type, Format, Organisation, Organisation name, Subscribed by, My organisation's products (every panel-eligible field)</td>
+<td>6 (same as ENV - <code>consumers</code> has no field name to exclude)</td>
+<td>5: Type, Format, Organisation, Organisation name, My organisation's products (<code>subscribedBy</code> absent - masked)</td>
+</tr>
+<tr>
+<td>product-attribute filters offered</td>
+<td>4: Identifiability, Population risk tags, Quality designation, Record unit</td>
+<td>4: Identifiability, Quality designation, Record unit, Temporal resolution</td>
+<td>2: Quality designation, Record unit</td>
+</tr>
+<tr>
+<td>organisation-attribute filters offered</td>
+<td>2: Jurisdictions, Responsibility areas</td>
+<td>2: Jurisdictions, Responsibility areas</td>
+<td>2: Jurisdictions, Responsibility areas</td>
+</tr>
+<tr>
+<td><strong>total <code>filters[]</code> entries</strong></td>
+<td><strong>12</strong></td>
+<td><strong>12</strong></td>
+<td><strong>9</strong></td>
+</tr>
+<tr>
+<td><code>totalElements</code> (<code>{}</code>)</td>
+<td>15</td>
+<td>12</td>
+<td>8</td>
+</tr>
+<tr>
+<td><code>textSearch.enabled</code></td>
+<td>true</td>
+<td>true</td>
+<td>true</td>
+</tr>
+</tbody>
+</table>
+<p>ENV and HEG each lose five entries from the pre-panel-narrowing count of 17 (<code>name</code>, <code>displayName</code>,
+<code>description</code>, <code>topic</code>, <code>source</code>); BCC loses four from its 13 (<code>source</code> was already masked for BCC,
+so only <code>name</code>, <code>displayName</code>, <code>description</code> and <code>topic</code> are newly dropped from its field count).</p>
+<p><strong><code>Type</code> group, baseline <code>{}</code></strong> (used throughout §8): ENV <code>topic:8, file:6, missingCount:1</code>; the
+full per-caller breakdown follows directly from discover's §6.1 product list and is left as an
+exercise identical to TC-08 of discover's spec, with <code>in</code> replaced by "every value, with its
+count".</p>
+<p><strong><code>Format</code> group, baseline <code>{}</code>, ENV</strong>: <code>CSV:4, JSON:4, Avro:1, GeoJSON:1, NetCDF:1, RDF:1, XML:1,
+missingCount:2</code> (derived from §6.1 above against ENV's visible 15 products: <code>CSV</code> -
+WaterAbstractionLicences, BrownfieldLandAvailability, AffordableHousingCompletions,
+BristolSchoolPlaces; <code>JSON</code> - RiverLevelTelemetry, PendingPlanningApplications,
+BristolAirQualitySensors, BristolTemporaryAccommodation; <code>Avro</code> - HelpToBuyApplicants; <code>GeoJSON</code> -
+FloodRiskMapZones; <code>NetCDF</code> - CoastalErosionForecast; <code>RDF</code> - ScotlandLandRegisterExtract; <code>XML</code> -
+PollutionIncidentReports; missing - UnclassifiedDraftDataset, <code>Bristol_Cycle%Counts</code>).</p>
+<p><strong><code>record_unit</code> and <code>quality_designation</code>, baseline <code>{}</code>, BCC</strong> (BCC's visible 8: its own 5 plus
+FloodRiskMapZones, RiverLevelTelemetry, AffordableHousingCompletions):</p>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Values and counts</th>
+<th><code>missingCount</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>quality_designation</code></td>
+<td><code>validated:6, provisional:2</code></td>
+<td>0</td>
+</tr>
+<tr>
+<td><code>record_unit</code></td>
+<td><code>geographic_area:4, household:2, person:1, property:1</code></td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p><strong><code>organisation.jurisdictions</code>, baseline <code>{}</code>, ENV</strong> (multi-valued, so each visible product counts
+under every jurisdiction its <em>owning organisation</em> holds - ENV: England, Wales; HEG: England,
+Scotland; BCC: England, Bristol):</p>
+<p><code>England:15, Wales:6, Bristol:5, Scotland:4</code>, <code>missingCount:0</code> - every organisation has at least one
+jurisdiction recorded.</p>
+<p><strong><code>population_risk_tags</code>, policy switched off, every caller, baseline <code>{}</code></strong> (every product
+visible, no row filter; tags from discover's §6 test-data table):</p>
+<p><code>children:2</code> (HelpToBuyApplicants, BristolSchoolPlaces), <code>domestic_abuse_survivors:2</code>
+(PendingPlanningApplications, BristolTemporaryAccommodation), <code>protected_witnesses:1</code>
+(PendingPlanningApplications); <code>rare_condition_cohorts</code> <strong>absent</strong> - a declared <code>allowed_values</code>
+entry no sample product carries, so the value-listing rule never surfaces it;
+<code>missingCount:13</code> (17 products total, 4 carry at least one tag).</p>
+<h2 id="7-shared-preconditions">7. Shared preconditions</h2>
+<p>Identical to discover's <a href="../product-discover/#7-shared-preconditions">§7</a>, <strong>P1–P5</strong>. Add one
+helper alongside its <code>discover()</code> and <code>names()</code>:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>filters<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w">   </span><span class="c1"># filters &lt;TOKEN&gt; '&lt;json body&gt;'</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span>curl<span class="w"> </span>-sk<span class="w"> </span>--cert<span class="w"> </span>client.crt<span class="w"> </span>--key<span class="w"> </span>client.key<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s1">'https://localhost:8090/api/v1/product/discover/filter'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$1</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span>-d<span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">2</span><span class="k">:-</span><span class="se">\{\}</span><span class="si">}</span><span class="s2">"</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="o">}</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>values_of<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w"> </span>jq<span class="w"> </span>--arg<span class="w"> </span>k<span class="w"> </span><span class="s2">"</span><span class="nv">$1</span><span class="s2">"</span><span class="w"> </span><span class="s1">'.filters[] | select(.key==$k) | .values'</span><span class="p">;</span><span class="w"> </span><span class="o">}</span><span class="w">   </span><span class="c1"># values_of &lt;key&gt;</span>
+</span></code></pre></div>
+<hr />
+<h2 id="8-test-cases">8. Test cases</h2>
+<h3 id="a-baseline-and-response-shape">A. Baseline and response shape</h3>
+<h4 id="tc-01-an-empty-body-returns-the-callers-whole-panel">TC-01: An empty body returns the caller's whole panel</h4>
+<p><strong>Objective.</strong> Confirm the panel reflects the caller's catalogue size and that the three
+organisations differ, exactly as discover's TC-01.</p>
+<p><strong>Preconditions.</strong> P1–P4.</p>
+<p><strong>Test data.</strong> <code>{}</code> as each of the three tokens.</p>
+<p><strong>Given</strong> the sample catalogue
+<strong>When</strong> an empty body is posted as ENV, then HEG, then BCC
+<strong>Then</strong> each response is <code>200</code> with <code>totalElements</code> 15, 12, 8 respectively (§6.2)
+<strong>And</strong> the <code>filters</code> array has 12, 12, 9 entries respectively (§6.2).</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">for</span><span class="w"> </span>t<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$HEG_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span>filters<span class="w"> </span><span class="s2">"</span><span class="nv">$t</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'{total: .totalElements, groups: (.filters | length)}'</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="k">done</span>
+</span></code></pre></div>
+<p><em>Why:</em> identical numbers for all three callers mean either the same token was sent three times, or
+the panel is not built from the per-caller contract at all - the same tell discover's TC-01 uses.</p>
+<hr />
+<h4 id="tc-02-the-five-text-searched-and-identifier-fields-are-permitted-but-not-offered">TC-02: The five text-searched and identifier fields are permitted but not offered</h4>
+<p><strong>Objective.</strong> Confirm <code>name</code>, <code>displayName</code>, <code>description</code>, <code>topic</code> and <code>source</code> are left out of
+<code>filters[]</code> unconditionally - even for ENV, which permits filtering on every one of them - while
+<code>POST /api/v1/product/discover</code> still accepts a filter on each and still lists each in its own
+<code>policy.filterableFields</code>. This also establishes, for every entry that <em>is</em> offered, that <code>values</code>
+is never absent: there is no longer a "non-listing" shape to contrast it with.</p>
+<p><strong>Preconditions.</strong> P1–P4.</p>
+<p><strong>Test data.</strong> <code>{}</code> as ENV, to both <code>/discover</code> and <code>/discover/filter</code>.</p>
+<p><strong>Given</strong> ENV's contract permits <code>name</code>, <code>displayName</code>, <code>description</code>, <code>topic</code> and <code>source</code> as
+discover filters (discover's §5.4: ENV has no masked fields at all)
+<strong>When</strong> ENV's filter panel is read
+<strong>Then</strong> <code>filters[]</code> contains <strong>no</strong> entry whose <code>key</code> is <code>field:name</code>, <code>field:displayName</code>,
+<code>field:description</code>, <code>field:topic</code> or <code>field:source</code>
+<strong>And</strong> the identical token's <code>POST /api/v1/product/discover</code> response still lists <code>name</code>,
+<code>displayName</code>, <code>description</code>, <code>topic</code> and <code>source</code> in <code>policy.filterableFields</code>
+<strong>And</strong> every entry that <em>is</em> in <code>filters[]</code> carries a <code>values</code> member - there is no entry with
+<code>key, target, label, dataType, multiValued, operators, defaultOperator, sortable</code> and nothing else.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>filters<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'[.filters[].key] | any(. == "field:name" or . == "field:displayName" or . == "field:description" or . == "field:topic" or . == "field:source")'</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="c1"># false</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'.policy.filterableFields | sort'</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="c1"># contains "description", "displayName", "name", "source", "topic" alongside the rest</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>filters<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'all(.filters[]; has("values"))'</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="c1"># true</span>
+</span></code></pre></div>
+<p><em>Why:</em> this is the behaviour change itself - a field the contract permits can still be withheld
+from the panel for a reason that has nothing to do with the caller or policy, namely that the panel
+is not the right surface for it (prose already has the free-text box; an identifier has no list
+anyone browses). Checking <code>policy.filterableFields</code> on the sibling endpoint is what proves the gap
+is deliberate narrowing by <code>FilterOptionTargets</code>, not a masking regression that would also make
+discover refuse the field.</p>
+<hr />
+<h4 id="tc-03-target-round-trips-into-a-discover-filter-for-a-field-and-for-an-attribute">TC-03: <code>target</code> round-trips into a discover filter, for a field and for an attribute</h4>
+<p><strong>Objective.</strong> Confirm <code>target</code> is exactly what a caller would paste into <code>POST
+/api/v1/product/discover</code>'s <code>filters[]</code>.</p>
+<p><strong>Preconditions.</strong> P1–P4.</p>
+<p><strong>Test data.</strong> <code>{}</code> as ENV; inspect <code>field:organisation.key</code> and
+<code>attribute:organisation.jurisdictions</code>.</p>
+<p><strong>Given</strong> ENV's panel
+<strong>When</strong> both entries' <code>target</code> are read
+<strong>Then</strong> <code>field:organisation.key</code> carries <code>{"field": "organisation.key"}</code>
+<strong>And</strong> <code>attribute:organisation.jurisdictions</code> carries
+<code>{"scope": "organisation", "attribute": "jurisdictions"}</code>
+<strong>And</strong> posting either verbatim as a discover <code>filters[]</code> entry (adding <code>"values":[...]</code>) is
+accepted, never a <code>403 filter.field_not_permitted</code> or <code>filter.attribute_not_permitted</code>.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>filters<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'.filters[] | select(.key|test("organisation")) | {key, target}'</span>
+</span></code></pre></div>
+<p><em>Why:</em> <code>target</code> exists so the UI never has to re-derive the <code>scope</code>/<code>field</code>/<code>attribute</code> split the
+caller's criteria needs; if it round-tripped to a <code>403</code>, the panel would be describing a filter
+discover does not recognise as the same one.</p>
+<hr />
+<h4 id="tc-04-totalelements-equals-discovers-totalelements-for-the-same-body">TC-04: <code>totalElements</code> equals discover's <code>totalElements</code> for the same body</h4>
+<p><strong>Objective.</strong> Confirm the two endpoints agree on the headline count.</p>
+<p><strong>Preconditions.</strong> P1–P4.</p>
+<p><strong>Test data.</strong> <code>{"filters":[{"field":"type","values":["file"]}]}</code> as ENV (discover's
+<a href="../product-discover/#tc-08-filter-on-a-product-field-type">TC-08</a> gives <strong>6</strong> for this body).</p>
+<p><strong>Given</strong> the identical body and token
+<strong>When</strong> it is posted to <code>/discover</code> and to <code>/discover/filter</code>
+<strong>Then</strong> <code>discover</code>'s <code>page.totalElements</code> and <code>discover/filter</code>'s <code>totalElements</code> are both <strong>6</strong>.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nv">d</span><span class="o">=</span><span class="k">$(</span>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"filters":[{"field":"type","values":["file"]}]}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'.page.totalElements'</span><span class="k">)</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="nv">f</span><span class="o">=</span><span class="k">$(</span>filters<span class="w">  </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"filters":[{"field":"type","values":["file"]}]}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'.totalElements'</span><span class="k">)</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="o">[</span><span class="w"> </span><span class="s2">"</span><span class="nv">$d</span><span class="s2">"</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"</span><span class="nv">$f</span><span class="s2">"</span><span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span>MATCH
+</span></code></pre></div>
+<p>Repeat with any other body from discover's §8.C/D and the two counts never diverge - that is the
+whole guarantee of sharing one query plan (<code>ProductQueryPlanner.compile</code>) and one <code>count</code> call.</p>
+<p><em>Why:</em> the two endpoints are explicitly built not to have two sources of truth for how many
+products match. A divergence here is a defect in the shared planner, not in either endpoint alone.</p>
+<hr />
+<h3 id="b-narrowing-and-the-counting-rule">B. Narrowing and the counting rule</h3>
+<h4 id="tc-05-each-field-and-attribute-groups-values-are-the-callers-whole-visible-set">TC-05: Each field and attribute group's values are the caller's <strong>whole</strong> visible set</h4>
+<p><strong>Objective.</strong> Confirm which values are <em>listed</em> is independent of the request's own filters.</p>
+<p><strong>Preconditions.</strong> P1–P4.</p>
+<p><strong>Test data.</strong> <code>{}</code> and <code>{"filters":[{"field":"type","values":["topic"]}]}</code>, both as ENV.</p>
+<p><strong>Given</strong> ENV's 15 visible products, of which 6 have <code>type=topic</code>
+<strong>When</strong> the <code>format</code> group is read from both responses
+<strong>Then</strong> both list the <strong>same seven</strong> distinct <code>format</code> values (<code>Avro, CSV, GeoJSON, JSON,
+NetCDF, RDF, XML</code>) - the second response's counts are lower, but <strong>no value is added or removed</strong>.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>diff<span class="w"> </span>&lt;<span class="o">(</span>filters<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>values_of<span class="w"> </span>field:format<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'[.[].value] | sort'</span><span class="o">)</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">     </span>&lt;<span class="o">(</span>filters<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"filters":[{"field":"type","values":["topic"]}]}'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">         </span><span class="p">|</span><span class="w"> </span>values_of<span class="w"> </span>field:format<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'[.[].value] | sort'</span><span class="o">)</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="c1"># no output: identical value sets</span>
+</span></code></pre></div>
+<p><em>Why:</em> this is the rule the whole panel depends on - "values" answers <em>what exists</em>, "counts"
+answer <em>how many, given what you've already picked</em>. If filtering changed which rows appear, a
+user who narrows their search would watch filter options disappear under them.</p>
+<hr />
+<h4 id="tc-06-narrowing-changes-counts-and-totalelements-together">TC-06: Narrowing changes counts and <code>totalElements</code> together</h4>
+<p><strong>Objective.</strong> Confirm every count in the panel narrows consistently with <code>totalElements</code> when a
+filter is added.</p>
+<p><strong>Preconditions.</strong> P1–P4.</p>
+<p><strong>Test data.</strong> <code>{}</code>, then <code>{"filters":[{"attribute":"record_unit","values":["geographic_area"]}]}</code>,
+both as ENV (discover's <a href="../product-discover/#tc-16-filter-on-an-attribute-every-caller-may-use-record_unit">TC-16</a>
+gives <strong>6</strong> for the narrowed body).</p>
+<p><strong>Given</strong> ENV's baseline Type group <code>topic:8, file:6, missingCount:1</code>
+<strong>When</strong> the <code>record_unit = geographic_area</code> filter is added
+<strong>Then</strong> <code>totalElements</code> drops from 15 to <strong>6</strong>
+<strong>And</strong> the Type group narrows to the six <code>geographic_area</code> products: FloodRiskMapZones,
+RiverLevelTelemetry, CoastalErosionForecast, UnclassifiedDraftDataset, BristolAirQualitySensors,
+<code>Bristol_Cycle%Counts</code> → <code>topic:3</code> (FloodRiskMapZones, RiverLevelTelemetry, BristolAirQualitySensors),
+<code>file:2</code> (CoastalErosionForecast, UnclassifiedDraftDataset), <code>missingCount:1</code>
+(<code>Bristol_Cycle%Counts</code>).</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>filters<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"filters":[{"attribute":"record_unit","values":["geographic_area"]}]}'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'{total: .totalElements, type: (.filters[] | select(.key=="field:type") | .values)}'</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="c1"># {"total":6,"type":[{"value":"file","count":3,"selected":false},{"value":"topic","count":3,"selected":false}]}</span>
+</span></code></pre></div>
+<p><em>Why:</em> <code>record_unit</code> is a different target from <code>type</code>, so unlike TC-07 below, <em>every</em> group
+including Type is narrowed by this filter - there is no exemption for another group's own choice.</p>
+<hr />
+<h4 id="tc-07-choosing-organisationkey-env-narrows-format-and-type-while-organisation-stays-put">TC-07: Choosing <code>organisation.key = ENV</code> narrows Format and Type while Organisation stays put</h4>
+<p><strong>Objective.</strong> The signature disjunctive-faceting case: confirm a group's own filter is excluded
+from its own counts while narrowing every other group, and that a narrowed-to-zero value is still
+listed.</p>
+<p><strong>Preconditions.</strong> P1–P4.</p>
+<p><strong>Test data.</strong> <code>{"filters":[{"field":"organisation.key","values":["ENV"]}]}</code> as ENV. This is the
+exact response shown in <a href="#4-the-response">§4</a> and worked through in
+<a href="#the-counting-rule">the counting rule</a>.</p>
+<p><strong>Given</strong> ENV's baseline panel (<code>{}</code>): Organisation <code>ENV:6, BCC:5, HEG:4</code>; Format
+<code>CSV:4, JSON:4, Avro:1, GeoJSON:1, NetCDF:1, RDF:1, XML:1, missingCount:2</code>; Type <code>topic:8, file:6,
+missingCount:1</code>; <code>totalElements:15</code>
+<strong>When</strong> the organisation filter is posted
+<strong>Then</strong> <code>totalElements</code> becomes <strong>6</strong>
+<strong>And</strong> the <strong>Organisation</strong> group is <strong>unchanged</strong>: <code>ENV:6 (selected:true), BCC:5, HEG:4</code>
+<strong>And</strong> the <strong>Format</strong> group narrows to <code>CSV:1, GeoJSON:1, JSON:1, NetCDF:1, XML:1, Avro:0, RDF:0,
+missingCount:1</code> - <code>Avro</code> and <code>RDF</code> stay listed at <strong>zero</strong>, since <code>HelpToBuyApplicants</code> and
+<code>ScotlandLandRegisterExtract</code> (both HEG's) are still products ENV can <em>see</em>, just not ones that now
+match
+<strong>And</strong> the <strong>Type</strong> group narrows to <code>topic:3, file:3, missingCount:0</code>.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>filters<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"filters":[{"field":"organisation.key","values":["ENV"]}]}'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'{total: .totalElements,</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="s1">         org: (.filters[] | select(.key=="field:organisation.key") | .values),</span>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="s1">         format: (.filters[] | select(.key=="field:format") | .values)}'</span>
+</span></code></pre></div>
+<p><em>Why:</em> this is the behaviour the whole endpoint exists for - "if I switched to HEG's products
+instead, how many would there be?" - and the one a naive implementation gets wrong first, usually
+by letting a group's own filter narrow its own counts to a single value with everything else at
+zero, or by dropping a zero-count row instead of greying it out.</p>
+<hr />
+<h4 id="tc-08-several-filters-on-different-targets-compose-and-each-is-excluded-only-from-its-own-target">TC-08: Several filters on different targets compose, and each is excluded only from its own target</h4>
+<p><strong>Objective.</strong> Confirm the exclusion is per-target, not "the most recent filter" or "all filters".</p>
+<p><strong>Preconditions.</strong> P1–P4.</p>
+<p><strong>Test data.</strong>
+<code>{"filters":[{"field":"type","values":["file"]},{"attribute":"quality_designation","values":["validated"]}]}</code>
+as ENV (discover's <a href="../product-discover/#tc-14-several-filters-are-and-ed">TC-14</a> gives <strong>3</strong> for
+this body: WaterAbstractionLicences, AffordableHousingCompletions, ScotlandLandRegisterExtract).</p>
+<p><strong>Given</strong> ENV's baseline Type (<code>topic:8, file:6</code>) and Quality designation groups
+<strong>When</strong> the two-filter body is posted
+<strong>Then</strong> <code>totalElements</code> is <strong>3</strong>
+<strong>And</strong> the <strong>Type</strong> group is narrowed only by the <code>quality_designation</code> filter (its own <code>type</code>
+filter excluded), so it reports what each type would give <em>among validated products</em>, not among
+the 3 the whole request matches
+<strong>And</strong> symmetrically the <strong>Quality designation</strong> group is narrowed only by the <code>type=file</code> filter,
+reporting each quality value's count among <code>file</code>-typed products: <code>validated:3, experimental:1,
+provisional:1, missingCount:1</code>
+<strong>And</strong> the <strong>Type</strong> group, narrowed only by the <code>quality_designation=validated</code> filter, reports
+<code>topic:6, file:3, missingCount:1</code>
+<strong>And</strong> neither group is narrowed by <strong>both</strong> filters at once - that number is <code>totalElements</code>, not
+a group count.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>filters<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="s1">'{"filters":[{"field":"type","values":["file"]},{"attribute":"quality_designation","values":["validated"]}]}'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">  </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'{total: .totalElements,</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="s1">         type: (.filters[] | select(.key=="field:type") | .values),</span>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="s1">         quality: (.filters[] | select(.key=="attribute:product.quality_designation") | .values)}'</span>
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="c1"># totalElements: 3</span>
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="c1"># type:    topic:6, file:3, missingCount:1   (narrowed by quality_designation=validated only)</span>
+</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="c1"># quality: validated:3, experimental:1, provisional:1, missingCount:1   (narrowed by type=file only)</span>
+</span></code></pre></div>
+<p><em>Why:</em> this is the case that would expose a bug where the "exclude this target's own filter" rule
+was implemented as "exclude the most recently added filter" or "exclude nothing" - it needs two
+filters on two different targets to catch either mistake.</p>
+<hr />
+<h3 id="c-masking-and-permission">C. Masking and permission</h3>
+<h4 id="tc-09-bcc-sees-quality_designation-and-record_unit-but-no-subscribedby">TC-09: BCC sees <code>quality_designation</code> and <code>record_unit</code>, but no <code>subscribedBy</code></h4>
+<p><strong>Objective.</strong> Confirm the filter panel reflects <code>allowed − masked</code> exactly as discover's own
+<code>policy.filterableFields</code>/<code>filterableAttributes</code>, for the organisation with the most withheld.
+<code>source</code> cannot be the field this case checks any more - it is now absent from <strong>every</strong>
+organisation's panel unconditionally (§5.1), so it can no longer distinguish masking from the
+panel's own narrowing; <code>subscribedBy</code> is the one BCC-masked field the panel still ever offers to
+anybody, so it carries the whole masking check here.</p>
+<p><strong>Preconditions.</strong> P1–P4.</p>
+<p><strong>Test data.</strong> <code>{}</code> as BCC.</p>
+<p><strong>Given</strong> BCC's contract: <code>source</code> and <code>subscribedBy</code> masked, <code>quality_designation</code> and
+<code>record_unit</code> allowed and unmasked (discover's §5.4)
+<strong>When</strong> the panel is read
+<strong>Then</strong> <code>filters[]</code> contains <code>attribute:product.quality_designation</code>
+(<code>validated:6, provisional:2</code>) and <code>attribute:product.record_unit</code>
+(<code>geographic_area:4, household:2, person:1, property:1</code>) - §6.2
+<strong>And</strong> <code>filters[]</code> contains <strong>no</strong> entry whose <code>key</code> is <code>field:subscribedBy</code>
+<strong>And</strong> the same request as ENV or HEG <strong>does</strong> carry <code>field:subscribedBy</code>
+<strong>And</strong> <code>field:source</code> is absent for BCC <strong>and</strong> for ENV and HEG alike - that absence is the panel's
+unconditional exclusion (§5.1), not masking, and proves nothing about BCC on its own.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>filters<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'any(.filters[]; .key=="field:subscribedBy")'</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="c1"># false</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>filters<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'any(.filters[]; .key=="field:subscribedBy")'</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="c1"># true</span>
+</span></code></pre></div>
+<p><em>Why:</em> a masked field appearing here with no <code>values</code> (so it "looks" withheld) would still be a
+disclosure, because the caller could still send it as a discover filter and get a <code>200</code> instead of
+a <code>403</code> if the mechanisms disagreed. There is exactly one way to check this is right: the key is
+<strong>absent</strong>, not present-but-empty. With <code>source</code> now excluded for everyone, <code>subscribedBy</code> is the
+only remaining field whose absence can be pinned on BCC's own contract rather than on the panel's
+blanket exclusions.</p>
+<hr />
+<h4 id="tc-10-population_risk_tags-is-offered-to-env-only-and-refused-the-same-way-a-filter-on-it-would-be">TC-10: <code>population_risk_tags</code> is offered to ENV only, and refused the same way a filter on it would be</h4>
+<p><strong>Objective.</strong> Confirm a sensitive attribute below its clearance is absent from the panel exactly
+as discover refuses it as a filter.</p>
+<p><strong>Preconditions.</strong> P1–P4.</p>
+<p><strong>Test data.</strong> <code>{}</code> as each of the three tokens.</p>
+<p><strong>Given</strong> <code>population_risk_tags</code> is flagged <code>sensitive</code> and needs SECRET clearance (discover's
+<a href="../product-discover/#tc-18-population_risk_tags-is-filterable-by-env-only-secret">TC-18</a>)
+<strong>When</strong> the panel is read
+<strong>Then</strong> ENV's <code>filters[]</code> contains <code>attribute:product.population_risk_tags</code>
+<strong>And</strong> HEG's and BCC's do <strong>not</strong>
+<strong>And</strong> posting <code>{"filters":[{"attribute":"population_risk_tags","operator":"any_of","values":["children"]}]}</code>
+to <code>/discover/filter</code> as HEG or BCC is <strong><code>403</code></strong>, <code>filter.attribute_not_permitted:population_risk_tags</code>
+- the same refusal discover gives, since both run the same <code>ProductSearchCriteriaFactory.create</code>.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="k">for</span><span class="w"> </span>t<span class="w"> </span><span class="k">in</span><span class="w"> </span>ENV_TOKEN<span class="w"> </span>HEG_TOKEN<span class="w"> </span>BCC_TOKEN<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">  </span><span class="nb">echo</span><span class="w"> </span>-n<span class="w"> </span><span class="s2">"</span><span class="nv">$t</span><span class="s2">: "</span><span class="p">;</span><span class="w"> </span>filters<span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="p">!t</span><span class="si">}</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'any(.filters[]; .key=="attribute:product.population_risk_tags")'</span>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="k">done</span>
+</span></code></pre></div>
+<p><em>Why:</em> "absent from the panel" and "refused as a filter" must be the same decision, made once, not
+two independently-maintained lists that could drift.</p>
+<hr />
+<h3 id="d-isownproduct">D. <code>isOwnProduct</code></h3>
+<h4 id="tc-11-isownproduct-lists-both-values-with-the-callers-own-split">TC-11: <code>isOwnProduct</code> lists both values with the caller's own split</h4>
+<p><strong>Objective.</strong> Confirm the two-value, always-both rule, and that counts match the caller's
+own/other split.</p>
+<p><strong>Preconditions.</strong> P1–P4.</p>
+<p><strong>Test data.</strong> <code>{}</code> as HEG.</p>
+<p><strong>Given</strong> HEG's 12 visible products: its own 6, plus 4 of ENV's and 2 of BCC's (discover §6.1)
+<strong>When</strong> the panel is read
+<strong>Then</strong> <code>field:isOwnProduct</code> carries exactly two values, in order:
+<code>{"value": true, "count": 6, "selected": false}</code>, <code>{"value": false, "count": 6, "selected": false}</code>
+<strong>And</strong> no <code>missingCount</code> key (every product reports one or the other; the field has no "absent"
+state for a caller whose organisation is known).</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>filters<span class="w"> </span><span class="s2">"</span><span class="nv">$HEG_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>values_of<span class="w"> </span>field:isOwnProduct
+</span></code></pre></div>
+<p><em>Why:</em> <code>isOwnProduct</code> always sums to <code>totalElements</code> exactly - 6 + 6 = 12 - so any mismatch is
+either a counting bug or the <code>true</code>/<code>false</code> ordering rule not being special-cased.</p>
+<hr />
+<h4 id="tc-12-isownproduct-is-absent-from-the-panel-for-a-caller-whose-organisation-is-not-known">TC-12: <code>isOwnProduct</code> is absent from the panel for a caller whose organisation is not known</h4>
+<p><strong>Objective.</strong> Confirm the field is withheld, not shown with misleading counts, when the caller's
+own identity is not established.</p>
+<p><strong>Preconditions.</strong> P1, P2, P4, <strong>P5</strong> (<code>application.opa.enabled=false</code>; see §G - this is the only
+state in which a request lacking the <code>organisation</code> claim is not refused outright before reaching
+the service, since <code>organisation.missing</code> denies it while policy is on).</p>
+<p><strong>Test data.</strong> <code>{}</code> with a token carrying the <code>product_discovery</code> role but <strong>no</strong> <code>organisation</code>
+claim.</p>
+<p><strong>Given</strong> <code>EnhancedPrincipal.organisation()</code> substitutes the <code>UNKNOWN_ORG</code> sentinel for a missing
+claim, which the service turns into "not known" at its entry
+(<code>UnknownIdentifiers.knownOrganisationOrNull</code>, as discover and view do) before anything reads it
+<strong>When</strong> the panel is read
+<strong>Then</strong> <code>filters[]</code> contains <strong>no</strong> entry with <code>key: "field:isOwnProduct"</code>
+<strong>And</strong> every other field and attribute is still listed (policy is off, so nothing else is
+withheld).</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>filters<span class="w"> </span><span class="s2">"</span><span class="nv">$NO_ORG_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'any(.filters[]; .key=="field:isOwnProduct")'</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="c1"># false</span>
+</span></code></pre></div>
+<p><em>Why:</em> reporting <code>isOwnProduct</code> with every value <code>false</code> (treating "unknown" as "not mine") would
+be a quiet wrong answer rather than an honest absence - the same reasoning discover applies when it
+omits the member from a result for the same caller.</p>
+<hr />
+<h3 id="e-free-text">E. Free text</h3>
+<h4 id="tc-13-a-text-term-narrows-every-groups-counts-including-its-own-targets-values">TC-13: A text term narrows every group's counts, including its own target's values</h4>
+<p><strong>Objective.</strong> Confirm <code>text</code> behaves as a filter on every group's counts - unlike a <code>filters[]</code>
+entry, <code>text</code> is <strong>never</strong> excluded from any group's own counts, because no filter target <em>is</em>
+"free text".</p>
+<p><strong>Preconditions.</strong> P1–P4.</p>
+<p><strong>Test data.</strong> <code>{"text": "Bristol_Cycle%Counts"}</code> as BCC (discover's
+<a href="../product-discover/#tc-07-a-text-term-is-a-value-never-a-pattern">TC-07</a> gives exactly <strong>1</strong> for
+this body, proving <code>%</code> and <code>_</code> are escaped, not wildcards).</p>
+<p><strong>Given</strong> BCC's baseline <code>record_unit</code> group: <code>geographic_area:4, household:2, person:1,
+property:1, missingCount:0</code>
+<strong>When</strong> the text term is posted
+<strong>Then</strong> <code>totalElements</code> is <strong>1</strong>
+<strong>And</strong> <code>textSearch.enabled</code> is still <code>true</code> (the term matched, it did not disable searching)
+<strong>And</strong> the <code>record_unit</code> group narrows to <code>geographic_area:1, household:0, person:0, property:0,
+missingCount:0</code> - <code>Bristol_Cycle%Counts</code>'s own <code>record_unit</code> is <code>geographic_area</code>, so only that
+value keeps a non-zero count, and the other three remain listed at zero rather than disappearing.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>filters<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"text":"Bristol_Cycle%Counts"}'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">  </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'{total: .totalElements, record_unit: (.filters[] | select(.key=="attribute:product.record_unit") | .values)}'</span>
+</span></code></pre></div>
+<p><strong>And</strong> <code>{"text":"%"}</code> as BCC gives <code>totalElements: 0</code> and every group's counts at <strong>zero</strong> (not an
+error, and not "everything", proving the term is bound as a value here exactly as in discover).</p>
+<p><em>Why:</em> text and filters narrow the same way syntactically, but a text term has no "own target" to
+be excluded from, so the asymmetry in <a href="#the-counting-rule">the counting rule</a> between <code>text</code> and
+<code>filters[]</code> is deliberate, not an oversight - every group, including one a text match happens to
+agree with, is narrowed by it.</p>
+<hr />
+<h3 id="f-refusals-shared-with-discover">F. Refusals shared with discover</h3>
+<h4 id="tc-14-a-refused-filter-is-403-with-the-identical-reason-discover-gives">TC-14: A refused filter is <code>403</code> with the identical reason discover gives</h4>
+<p><strong>Objective.</strong> Confirm the panel endpoint refuses exactly as discover does for the same body and
+token - same status, same message, same <code>reasons</code>.</p>
+<p><strong>Preconditions.</strong> P1–P4.</p>
+<p><strong>Test data.</strong> <code>{"filters":[{"field":"source","values":["x"]}]}</code> as BCC (discover's
+<a href="../product-discover/#tc-32-filterfield_not_permittedname">TC-32</a>).</p>
+<p><strong>Given</strong> <code>source</code> is masked for BCC
+<strong>When</strong> the body is posted to both endpoints as BCC
+<strong>Then</strong> both are <code>403</code> with body
+<code>{"status":403,"message":"Access denied by policy","reasons":["filter.field_not_permitted:source"],"errorId":"…"}</code>
+(<code>errorId</code> differs between the two calls; everything else is identical)
+<strong>And</strong> the same body as ENV or HEG is <code>200</code> on both endpoints.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>diff<span class="w"> </span>&lt;<span class="o">(</span>filters<span class="w">  </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"filters":[{"field":"source","values":["x"]}]}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'del(.errorId)'</span><span class="o">)</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">     </span>&lt;<span class="o">(</span>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"filters":[{"field":"source","values":["x"]}]}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'del(.errorId)'</span><span class="o">)</span>
+</span></code></pre></div>
+<p><em>Why:</em> because both run <code>ProductSearchCriteriaFactory.create</code> against the identical contract, a
+divergence here can only mean the two endpoints are no longer sharing that contract - the single
+most serious regression this endpoint could have, since it is the one the whole design exists to
+prevent. Also applicable unchanged: discover's
+<a href="../product-discover/#tc-33-filterattribute_not_permittedname">TC-33</a>,
+<a href="../product-discover/#tc-36-an-unknown-name-is-refused-identically-to-a-forbidden-one">TC-36</a> and
+<a href="../product-discover/#tc-37-several-refusals-are-reported-at-once">TC-37</a>.</p>
+<hr />
+<h4 id="tc-15-malformed-bodies-are-400-identically-to-discover-for-every-caller">TC-15: Malformed bodies are <code>400</code>, identically to discover, for every caller</h4>
+<p><strong>Objective.</strong> Confirm body-shape validation runs the same way, before policy, on this endpoint.</p>
+<p><strong>Preconditions.</strong> P1–P4.</p>
+<p><strong>Test data.</strong> Each row of discover's
+<a href="../product-discover/#tc-41-body-shape-400s-refused-before-policy">TC-41</a> table, posted to
+<code>/discover/filter</code> as ENV <strong>and</strong> as BCC.</p>
+<p><strong>Given</strong> each malformed body
+<strong>When</strong> it is posted to <code>/discover/filter</code>
+<strong>Then</strong> the status is <code>400</code> with the identical message discover gives, <strong>no <code>reasons</code> field</strong>,
+and identically for both callers - validation runs before the policy decision on this endpoint too.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>filters<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{not-json'</span><span class="w"> </span><span class="p">;</span><span class="w"> </span><span class="nb">echo</span>
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>filters<span class="w"> </span><span class="s2">"</span><span class="nv">$BCC_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"page":-1}'</span>
+</span></code></pre></div>
+<p><em>Why:</em> this endpoint must not become a second place where a validation rule could be loosened or
+tightened independently of discover's - both call the same <code>@Valid</code> binding on the same DTO.</p>
+<hr />
+<h4 id="tc-16-sort-page-and-size-are-accepted-validated-and-ignored">TC-16: <code>sort</code>, <code>page</code> and <code>size</code> are accepted, validated and ignored</h4>
+<p><strong>Objective.</strong> Confirm the three members with no effect here are still bound and validated, never
+silently dropped at the JSON level, and never change the response.</p>
+<p><strong>Preconditions.</strong> P1–P4.</p>
+<p><strong>Test data.</strong> <code>{"sort":[{"field":"name","direction":"desc"}],"page":2,"size":3}</code> and
+<code>{"sort":[{"field":"name","direction":"sideways"}]}</code>, as ENV.</p>
+<p><strong>Given</strong> ENV's baseline panel for <code>{}</code>
+<strong>When</strong> the first body is posted
+<strong>Then</strong> the response is <code>200</code> and <strong>byte-identical</strong> to <code>{}</code>'s response (<code>totalElements</code>,
+<code>textSearch</code>, every group's values and counts all unchanged - there is no page 2 of a filter panel)
+<strong>When</strong> the second body is posted
+<strong>Then</strong> the response is <strong><code>400</code></strong>, the identical message discover's
+<a href="../product-discover/#tc-41-body-shape-400s-refused-before-policy">TC-41h</a> gives for the same
+fragment, because the member is still validated even though the service never reads the result.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>diff<span class="w"> </span>&lt;<span class="o">(</span>filters<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="o">)</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="w">     </span>&lt;<span class="o">(</span>filters<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{"sort":[{"field":"name","direction":"desc"}],"page":2,"size":3}'</span><span class="o">)</span>
+</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="c1"># no output</span>
+</span></code></pre></div>
+<p><em>Why:</em> "ignored" must mean "has no effect on the answer", not "skips validation" - a caller sending
+a stray <code>sort</code> with a typo should get the same <code>400</code> discover would give, not a <code>200</code> that silently
+threw the member away.</p>
+<hr />
+<h3 id="g-policy-switched-off">G. Policy switched off</h3>
+<h4 id="tc-17-with-policy-off-the-panel-is-wide-open-and-sensitive-attributes-appear">TC-17: With policy off, the panel is wide open, and sensitive attributes appear</h4>
+<p><strong>Objective.</strong> Confirm the switched-off mode: nothing withheld, no <code>policy</code> block, and the
+previously-masked sensitive attribute now listed - the supported, honestly-reported "everything" state.</p>
+<p><strong>Preconditions.</strong> P1, P2, P4, <strong>P5</strong> (<code>application.opa.enabled=false</code>, service restarted). OPA may
+be stopped entirely.</p>
+<p><strong>Test data.</strong> <code>{}</code> as any token with the <code>product_discovery</code> role.</p>
+<p><strong>Given</strong> policy enforcement is off
+<strong>When</strong> the panel is read
+<strong>Then</strong> <code>totalElements</code> is <strong>17</strong> (every product, no row filter)
+<strong>And</strong> <code>filters[]</code> has <strong>no</strong> <code>policy</code> key at the top level (absent, not <code>null</code>, not filled with
+defaults - identical rule to discover's <a href="../product-discover/#tc-43-with-policy-off-every-caller-sees-the-whole-catalogue">TC-43</a>)
+<strong>And</strong> <code>filters[]</code> now carries <strong>all twelve</strong> policy attributes, including the organisation-scoped
+<code>authorised_classifications</code> and <code>permitted_purposes</code> and the product-scoped
+<code>population_risk_tags</code> and <code>coverage_jurisdictions</code>, none of which any organisation's enforced
+contract permits
+<strong>And</strong> <code>attribute:product.population_risk_tags</code>'s values are
+<code>children:2, domestic_abuse_survivors:2, protected_witnesses:1</code>, <code>missingCount: 13</code> (§6.2) -
+exactly the values discover itself would now return unmasked for the same request, per
+<a href="../product-discover/#tc-43-with-policy-off-every-caller-sees-the-whole-catalogue">TC-43</a>
+<strong>And</strong> <code>filters[]</code> still contains <strong>no</strong> <code>field:name</code>, <code>field:displayName</code>, <code>field:description</code>,
+<code>field:topic</code> or <code>field:source</code> entry - the panel's exclusion of those five is unconditional
+(§5.1) and the master switch does not reopen it, unlike every attribute and every other field.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>filters<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'has("policy")'</span>
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="c1"># false</span>
+</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>filters<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>values_of<span class="w"> </span>attribute:product.population_risk_tags
+</span></code></pre></div>
+<p><em>Why:</em> a filter panel is a second surface for exactly the same disclosure risk discover has, so it
+must honour the master switch's honesty rule too: there is nothing truthful to report about who
+<em>would</em> be withheld something when no decision was taken at all. If a <code>policy</code> block appeared here
+full of defaults while discover's did not, the two endpoints would be lying about the same request
+in two different ways.</p>
+<hr />
+<h4 id="tc-18-switching-policy-back-on-restores-both-the-masking-and-the-policy-block">TC-18: Switching policy back on restores both the masking and the <code>policy</code> block</h4>
+<p><strong>Objective.</strong> Confirm the switch is the only difference, on this endpoint too.</p>
+<p><strong>Preconditions.</strong> P1–P4 (restart with <code>application.opa.enabled=true</code>).</p>
+<p><strong>Given</strong> TC-17 has just been run
+<strong>When</strong> the service is restarted with policy on and TC-01 and TC-10 are repeated
+<strong>Then</strong> <code>totalElements</code> returns to 15 / 12 / 8 per caller
+<strong>And</strong> <code>population_risk_tags</code> is absent again for HEG and BCC
+<strong>And</strong> the <code>policy</code> block reappears, identical to discover's for the same caller.</p>
+<p><em>Why:</em> the same reasoning as discover's <a href="../product-discover/#tc-44-switching-policy-back-on-restores-the-contract">TC-44</a>
+- a panel that stays "open" after the switch is flipped back on is the single most serious failure
+mode either endpoint has.</p>
+<hr />
+<h2 id="9-edge-cases">9. Edge cases</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Case</th>
+<th>Request</th>
+<th>Expected</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>E1</td>
+<td><strong>A declared value no visible product holds</strong></td>
+<td><code>{}</code> as ENV, inspect <code>attribute:product.population_risk_tags</code></td>
+<td><code>rare_condition_cohorts</code> is <strong>absent</strong> from <code>values</code>, although it is a declared <code>allowed_values</code> entry</td>
+<td>listing a declared-but-unused value would disclose the vocabulary rather than the data, which TC-22 of discover's spec specifically guards against for filtering; the panel must not reopen that gap for listing</td>
+</tr>
+<tr>
+<td>E2</td>
+<td><strong>A target with no permitted values at all narrows to nothing</strong></td>
+<td>an attribute filter that matches zero products, e.g. <code>{"filters":[{"attribute":"record_unit","values":["spaceship"]}]}</code> as ENV</td>
+<td><code>200</code>, <code>totalElements: 0</code>, every other group's counts all zero, every value still <strong>listed</strong></td>
+<td>mirrors discover's TC-22: an unknown value is data, not an error, and the panel must not drop rows just because nothing currently matches</td>
+</tr>
+<tr>
+<td>E3</td>
+<td><strong>Metacharacters in <code>text</code></strong></td>
+<td><code>{"text":"%"}</code> as BCC</td>
+<td><code>200</code>, <code>totalElements: 0</code>, every count zero</td>
+<td>the term is bound as a value in the facet query exactly as in the count query (TC-13)</td>
+</tr>
+<tr>
+<td>E4</td>
+<td><strong>SQL-injection-shaped <code>text</code> or filter value</strong></td>
+<td><code>{"text":"' OR 1=1 --"}</code>; <code>{"filters":[{"field":"name","values":["'; DROP TABLE product; --"]}]}</code></td>
+<td><code>200</code> with every count at 0; never a <code>500</code>; <code>SELECT count(*) FROM mn.product</code> unchanged afterwards</td>
+<td>the facet query binds the same way the count query does - one <code>SqlPredicateCompiler</code>, one set of bound parameters, reused</td>
+</tr>
+<tr>
+<td>E5</td>
+<td><strong>An attribute name that does not exist</strong></td>
+<td><code>{"filters":[{"attribute":"no_such_attribute_at_all","values":["x"]}]}</code></td>
+<td><code>403</code>, <code>filter.attribute_not_permitted:no_such_attribute_at_all</code> - same as discover's TC-36, <strong>not</strong> a <code>400</code></td>
+<td>the filter-options endpoint does not get its own, looser error path for an unrecognised name</td>
+</tr>
+<tr>
+<td>E6</td>
+<td><strong>No filter is worth listing values for</strong></td>
+<td>not reachable with the shipped sample policy (every enforced contract offers at least one of the six panel-eligible fields, and every panel-eligible field lists values - see §5.1); confirm instead that a caller whose contract permits <strong>zero</strong> panel-eligible fields and <strong>zero</strong> attributes still gets <code>200</code> with <code>filters: []</code>, not an error</td>
+<td><code>200</code>, <code>filters: []</code>, <code>totalElements</code> still correct</td>
+<td><code>ProductFacetQueryBuilder.build</code> throws on an <strong>empty</strong> target list by contract (<code>IllegalArgumentException</code>), so <code>ProductFilterOptionsServiceImpl.facetCounts</code> must short-circuit before calling it whenever no listing target is permitted - exercised at the unit level in <code>ProductFilterOptionsServiceImplTest</code>, not reachable through the sample policy</td>
+</tr>
+<tr>
+<td>E7</td>
+<td><strong>The same request posted twice</strong></td>
+<td>any body, twice, same token</td>
+<td>byte-identical responses</td>
+<td>counts are a pure function of caller, body and the catalogue's current state</td>
+</tr>
+<tr>
+<td>E8</td>
+<td><strong>A caller holding the role but failing policy's organisation gate</strong></td>
+<td>a token with <code>product_discovery</code> but no <code>organisation</code> claim, policy <strong>on</strong></td>
+<td><code>403</code>, <code>reasons: ["organisation.missing"]</code> - the <strong>same</strong> gate discover's TC-39c hits, since the decision is taken before either service runs</td>
+<td>this endpoint cannot be used to get a panel for an unidentified caller while policy is enforced; TC-12 is the one state (policy off) where that is even observable</td>
+</tr>
+</tbody>
+</table>
+<h3 id="things-that-should-never-happen">Things that should never happen</h3>
+<ol>
+<li>A <code>500</code> from any input in this document.</li>
+<li><code>filters[]</code> containing <code>field:name</code>, <code>field:displayName</code>, <code>field:description</code>, <code>field:topic</code> or
+   <code>field:source</code> for <strong>any</strong> caller, policy on or off (§5.1's unconditional exclusion) - or
+   <code>field:subscribedBy</code> for BCC, or <code>attribute:product.population_risk_tags</code> for HEG or BCC, while
+   policy is enforced.</li>
+<li>A value listed in <code>values[]</code> that no product the caller can see actually holds.</li>
+<li><code>totalElements</code> here differing from <code>POST /api/v1/product/discover</code>'s <code>page.totalElements</code> for
+   the identical body and token.</li>
+<li>A <code>policy</code> key present while <code>application.opa.enabled=false</code>, or absent while it is <code>true</code>.</li>
+<li>A reason beginning <code>policy.</code> or <code>dispatch.</code> in a response body (same rule as discover).</li>
+<li>The Organisation group's own counts changing when an <code>organisation.key</code> filter is added to the
+   request (TC-07) - that is the one group a request can never narrow with its own choice.</li>
+</ol>
+<h2 id="10-defect-triage">10. Defect triage</h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Most likely cause</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>every group's counts collapse to the same single value when one filter is added</td>
+<td>the "exclude this target's own filter" rule in <code>ProductFacetQueryBuilder.narrowedCondition</code> is excluding every filter, not just this target's; re-check with TC-08's two-filter case</td>
+</tr>
+<tr>
+<td>a value disappears from a group after adding an unrelated filter</td>
+<td>the value-listing query (ignoring request filters) is being re-run with the request's filters applied after all; re-check with TC-05</td>
+</tr>
+<tr>
+<td><code>totalElements</code> here disagrees with discover's for the same body</td>
+<td>the two endpoints have drifted from a shared <code>ProductQueryPlanner.compile</code> / <code>count</code> call; see TC-04</td>
+</tr>
+<tr>
+<td>a masked field or a below-clearance attribute appears in <code>filters[]</code></td>
+<td><code>FilterOptionTargets.permitted</code> is not consulting the same <code>ProductSearchCriteriaFactory.permits</code> discover's refusal path uses; see TC-09/TC-10</td>
+</tr>
+<tr>
+<td><code>field:name</code>, <code>field:displayName</code>, <code>field:description</code>, <code>field:topic</code> or <code>field:source</code> appears in <code>filters[]</code> for any caller, or <code>source</code>/<code>subscribedBy</code> is missing from discover's own <code>policy.filterableFields</code></td>
+<td><code>FilterOptionTargets.isOfferedInPanel</code> was weakened to consult the contract for one of these five, or discover's contract was changed to stop permitting them - the panel's exclusion is meant to be unconditional and independent of discover's own filtering; see TC-02</td>
+</tr>
+<tr>
+<td><code>GROUP BY</code> / "must appear in the GROUP BY clause" error from PostgreSQL</td>
+<td>a new value expression added to <code>ProductFacetQueryBuilder.valueExpression</code> binds a parameter (like <code>isOwnProduct</code>'s <code>CASE</code>) and is being grouped by the expression itself rather than by ordinal position 2 - see the class Javadoc</td>
+</tr>
+<tr>
+<td>the <code>format</code> column, or its values, are missing or all-null</td>
+<td>the two newest migrations (<code>V20261018120000</code>, <code>V20261018121000</code>) are not applied in this environment; see §6.1's note</td>
+</tr>
+<tr>
+<td>every count is lower than expected by the same offset</td>
+<td>an edited <code>Bristol_Cycle%Counts</code> or other row with missing fields is being counted as "missing" when a count was expected, or vice versa; re-derive from §6 before reporting</td>
+</tr>
+<tr>
+<td>you want to see the compiled facet SQL</td>
+<td>the same switch as discover's defect triage: set</td>
+</tr>
+<tr>
+<td><code>logging.level.uk.gov.dbt.ndtp.ia.node.management.service.data.impl.ProductFilterOptionsServiceImpl: DEBUG</code></td>
+<td></td>
+</tr>
+<tr>
+<td>alongside discover's <code>ProductDiscoveryServiceImpl</code> one</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>See discover's <a href="../product-discover/#10-defect-triage">§10</a> for every symptom shared with the search
+endpoint itself (identity sent three times, OPA down, a <code>403</code> where a <code>400</code> was expected, …) -
+nothing there is repeated here.</p>
+
+
+
+
+
+
+
+  
+    
+  
+  
+
+
+  <aside class="md-source-file">
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="Last update">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 20, 2026 11:40:20 UTC">October 20, 2026</span>
+  </span>
+
+    
+    
+    
+    
+  </aside>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      &copy;Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally attributed to the UK's Department for Business, Innovation, Science and Trade (BIST) as the governing entity.  
+
+    </div>
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.code.annotate", "content.code.copy", "content.code.select", "content.tooltips", "navigation.indexes", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "search.share", "navigation.instant", "navigation.instant.prefetch", "navigation.instant", "navigation.instant.progress", "navigation.path", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1013,6 +1013,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#post-apiv1productdiscoverfilter-the-panel-for-discoverys-own-decision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/v1/product/discover/filter: the panel for discovery's own decision
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#post-apiv1productsubscribe-exact-rule-with-typed-details" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1210,6 +1221,8 @@
       
         
       
+        
+      
     
     
     
@@ -1257,6 +1270,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tests/products/product-discover-filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Discover Filter: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -1846,6 +1887,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#post-apiv1productdiscoverfilter-the-panel-for-discoverys-own-decision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/v1/product/discover/filter: the panel for discovery's own decision
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#post-apiv1productsubscribe-exact-rule-with-typed-details" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2191,6 +2243,10 @@ development switches it off deliberately: <code>OPA_ENABLED=false</code>, or the
 <td><code>Optional&lt;PolicyDecision&lt;ProductDiscoveryPolicyDecisionDetails&gt;&gt;</code>, passed to the service, which searches with the open contract when it is empty</td>
 </tr>
 <tr>
+<td><code>POST /api/v1/product/discover/filter</code></td>
+<td><code>Optional&lt;PolicyDecision&lt;ProductDiscoveryPolicyDecisionDetails&gt;&gt;</code>, passed to <code>ProductFilterOptionsService</code>, which builds the filter panel from the same contract discovery would get, open when the decision is empty</td>
+</tr>
+<tr>
 <td><code>POST /api/v1/product/subscribe</code></td>
 <td><code>Optional&lt;PolicyDecision&lt;ProductSubscriptionPolicyDecisionDetails&gt;&gt;</code></td>
 </tr>
@@ -2250,7 +2306,7 @@ development switches it off deliberately: <code>OPA_ENABLED=false</code>, or the
 <td>otherwise the decision taken could never be handed to it</td>
 </tr>
 <tr>
-<td><code>details</code> is concrete and has a no-argument constructor</td>
+<td><code>details</code> is concrete and has a public no-argument constructor</td>
 <td>details are bound by Jackson, and a decision no rule answered carries empty details of that type</td>
 </tr>
 </tbody>
@@ -2456,6 +2512,13 @@ development switches it off deliberately: <code>OPA_ENABLED=false</code>, or the
 <td><code>[]</code> when allowed</td>
 </tr>
 <tr>
+<td><code>product</code> / <code>discover_filter</code></td>
+<td><code>route</code> (<code>route-product-discover-filter</code>)</td>
+<td><code>product.discover</code></td>
+<td>identical allow/deny and <code>details</code> to <code>product</code> / <code>discover</code> for the same input - the route sends it to discovery's rule rather than a rule of its own</td>
+<td><code>[]</code> when allowed</td>
+</tr>
+<tr>
 <td><code>product</code> / <code>subscribe</code></td>
 <td><code>exact</code></td>
 <td><code>product.subscribe</code></td>
@@ -2598,7 +2661,7 @@ development switches it off deliberately: <code>OPA_ENABLED=false</code>, or the
 </span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="p">}</span>
 </span></code></pre></div>
 <p><code>PolicyDecisionClient.evaluate(input, detailsType)</code> returns <code>PolicyDecision&lt;D&gt;</code>, converting the details with the application's <code>ObjectMapper</code> so they bind like any other JSON in the service; <code>evaluate(input)</code> returns the generic form. No cast is needed anywhere: <code>decision.details()</code> is already <code>D</code>. <code>withDetails(E)</code> returns the same envelope carrying other details.</p>
-<p>A details subclass must be concrete, have a no-argument constructor (checked at startup), use <code>@JsonIgnoreProperties(ignoreUnknown = true)</code>, and implement <code>equals</code> over its fields (e.g. Lombok <code>@EqualsAndHashCode(callSuper = true)</code>) so empty details can be recognised when decisions combine. A missing field should read as null, or an empty list for a list.</p>
+<p>A details subclass must be concrete, have a public no-argument constructor (checked at startup), use <code>@JsonIgnoreProperties(ignoreUnknown = true)</code>, and implement <code>equals</code> over its fields (e.g. Lombok <code>@EqualsAndHashCode(callSuper = true)</code>) so empty details can be recognised when decisions combine. A missing field should read as null, or an empty list for a list.</p>
 <h3 id="reading-failures-are-deny">Reading failures are DENY</h3>
 <table>
 <thead>
@@ -2941,10 +3004,12 @@ and it writes one entry per decision, so it is just as noisy a bring-up aid. Pro
 <ol>
 <li><strong>Give the endpoint its role check</strong> (<code>@PreAuthorize</code>) and document the role in <a href="../AUTHENTICATION_REQUIREMENTS/">Authentication Requirements</a>. Policy applies on top of it.</li>
 <li><strong>Annotate the handler</strong> with <code>@Policy(resource = "...", action = "...")</code>. Both must match <code>[a-z][a-z0-9_]*</code> and must not be <code>fallback</code>; startup fails otherwise.</li>
-<li><strong>Decide who answers</strong>, in <code>docker/opa/policies/</code>:</li>
+<li><strong>Decide who answers</strong>, in <code>docker/opa/policies/</code>:<ul>
 <li>a dedicated rule: <code>&lt;resource&gt;/&lt;action&gt;.rego</code>, package <code>policies.&lt;resource&gt;.&lt;action&gt;</code>, declaring <code>contract</code>, <code>version</code> and a total <code>decision</code>; see <a href="#writing-a-policy">Writing a policy</a>;</li>
 <li>or an existing rule, via a route in <code>routing/data.json</code>;</li>
 <li>or deliberately nothing, relying on <code>policies.&lt;resource&gt;.fallback</code>, and if the resource has none, the global fallback denies.</li>
+</ul>
+</li>
 <li><strong>Receive the decision</strong>: declare <code>@Parameter(hidden = true) Optional&lt;PolicyDecision&lt;D&gt;&gt; policyDecision</code> on the handler. If the rule returns details the endpoint acts on, define <code>&lt;Resource&gt;&lt;Action&gt;PolicyDecisionDetails extends PolicyDecisionDetails</code> under <code>model/policy/&lt;resource&gt;/</code> (see <a href="#dynamic-details">Dynamic <code>details</code></a>), name it in <code>@Policy(details = ...)</code> and use it as <code>D</code>; otherwise use <code>PolicyDecisionDetails</code>. Handle the empty <code>Optional</code> (policy switched off) explicitly.</li>
 <li><strong>Write the tests</strong>: a <code>&lt;action&gt;_test.rego</code> beside the rule covering the allow case, each deny reason and the <code>details</code>; and Java unit tests for the handler, including the empty-decision case and how the details shape the response.</li>
 <li><strong>Run the checks</strong>, see <a href="#testing">Testing</a>, and restart OPA (<code>docker compose restart opa</code>) to load the change locally.</li>
@@ -3021,8 +3086,8 @@ and it writes one entry per decision, so it is just as noisy a bring-up aid. Pro
 </ul>
 <p>The rule for the endpoint in the example would be annotated <code>@Policy(resource = "invoice", action = "read")</code>. See <code>docker/opa/Readme.md</code> for the directory layout, running OPA, and querying a decision directly with <code>curl</code>.</p>
 <h2 id="reference-endpoints">Reference endpoints</h2>
-<p>Three endpoints on <code>ProductController</code> exercise the mechanism end to end. Their rules are built from the organisation and product attributes in the database, and are walked through per organisation, with every expected output, in <a href="../docker/opa/policy_sample_stories.md"><code>docker/opa/policy_sample_stories.md</code></a>.</p>
-<p>For testing them rather than reading about them: <a href="../tests/products/"><code>docs/tests/products/</code></a> holds a test requirement specification per API: <a href="../tests/products/product-discover/">Product Discover</a> and <a href="../tests/products/product-view/">Product View</a>, and <a href="../DISCOVERY_TEST_SCENARIOS/"><code>docs/DISCOVERY_TEST_SCENARIOS.md</code></a> is the guided tour over the sample data.</p>
+<p>Three endpoints on <code>ProductController</code> exercise the mechanism end to end. Their rules are built from the organisation and product attributes in the database, and are walked through per organisation, with every expected output, in <a href="../docker/opa/policy_sample_stories.md"><code>docker/opa/policy_sample_stories.md</code></a>. A fourth, <code>POST /api/v1/product/discover/filter</code>, is routed to discovery's rule rather than carrying one of its own; see its own subsection below.</p>
+<p>For testing them rather than reading about them: <a href="../tests/products/"><code>docs/tests/products/</code></a> holds a test requirement specification per API: <a href="../tests/products/product-discover/">Product Discover</a>, <a href="../tests/products/product-discover-filter/">Product Discover Filter</a> and <a href="../tests/products/product-view/">Product View</a>, and <a href="../DISCOVERY_TEST_SCENARIOS/"><code>docs/DISCOVERY_TEST_SCENARIOS.md</code></a> is the guided tour over the sample data.</p>
 <p>All three rules read the caller through four facts in <code>lib/entitlements.rego</code>:</p>
 <table>
 <thead>
@@ -3062,7 +3127,7 @@ and it writes one entry per decision, so it is just as noisy a bring-up aid. Pro
 <li>Answered by <code>policies.product.discover</code> (resolution <code>exact</code>). <code>POST</code> is not a read for the product fallback, so without this rule discovery would be refused.</li>
 </ul>
 <p>This is the endpoint where a decision stops being a verdict and becomes a <em>search contract</em>: the rule's <code>details</code> say which products exist for this caller, what they may ask, and what is withheld, and <code>ProductDiscoveryServiceImpl</code> compiles all three into one parameterised SQL statement. No entitlement logic lives in Java: no clearance comparison, no purpose check, no attribute name. Changing who may discover what is a Rego or attribute-data change.</p>
-<p><strong>A search result is a summary.</strong> Discovery returns <code>id</code>, <code>name</code>, <code>description</code>, <code>type</code> and an <code>organisation</code> block carrying its <code>key</code> and <code>name</code>, enough to recognise a product, see whose it is, and ask for it by id, and the rest of the object model is what <a href="#get-apiv1productproductid--a-search-that-returns-one-product">the view endpoint</a> is for. The organisation is the one block a search carries, because its two columns come from a join the query already makes; its <em>attributes</em> would be a query of their own, so they are left to the view. That narrowing is <code>ProductProjection.SUMMARY</code>, and it is <strong>Java's, not policy's</strong>: the rule answers both endpoints identically, and each decides how much of the answer it returns. It is applied to the query, so a search does not select the columns it will not return and runs no block or attribute query at all.</p>
+<p><strong>A search result is a summary.</strong> Discovery returns <code>id</code>, <code>name</code>, <code>displayName</code>, <code>description</code>, <code>type</code>, <code>format</code>, <code>isOwnProduct</code> (when the caller's organisation is known) and an <code>organisation</code> block carrying its <code>key</code> and <code>name</code>, enough to recognise a product, see whose it is, and ask for it by id, and the rest of the object model is what <a href="#get-apiv1productproductid--a-search-that-returns-one-product">the view endpoint</a> is for. The organisation is the one block a search carries, because its two columns come from a join the query already makes; its <em>attributes</em> would be a query of their own, so they are left to the view. That narrowing is <code>ProductProjection.SUMMARY</code>, and it is <strong>Java's, not policy's</strong>: the rule answers both endpoints identically, and each decides how much of the answer it returns. It is applied to the query, so a search does not select the columns it will not return and runs no block or attribute query at all.</p>
 <p>Two things follow, and both matter. It can only <strong>narrow</strong>: the projection is intersected with the decision, so a field policy withholds stays withheld and no projection can widen access. And it does not limit <strong>searching</strong>: a caller may still filter and sort on anything policy allows, including fields the summary does not carry, such as <code>organisation.key</code> and <code>topic</code>, say.</p>
 <p>Filtering is described separately for <strong>fields</strong> (properties of the product as the API names them, mirrored in <code>lib/product.rego</code> and owned by <code>ProductField</code>) and <strong>attributes</strong> (policy attributes stored against an entity). The caller states which it means, so nothing is inferred from the name. A name outside the product's own scope is qualified: <code>organisation.key</code>, <code>consumer.name</code>.</p>
 <table>
@@ -3107,7 +3172,7 @@ and it writes one entry per decision, so it is just as noisy a bring-up aid. Pro
 <tr>
 <td><code>text_search_fields</code></td>
 <td><code>textSearchFields()</code></td>
-<td>the columns a free-text term runs against (<code>name</code>, <code>description</code>). Empty with a term given is a refusal</td>
+<td>the columns a free-text term runs against (<code>name</code>, <code>displayName</code>, <code>description</code>). Empty with a term given is a refusal</td>
 </tr>
 <tr>
 <td><code>mask_sensitive_attributes</code></td>
@@ -3189,6 +3254,35 @@ and it writes one entry per decision, so it is just as noisy a bring-up aid. Pro
 </tr>
 </tbody>
 </table>
+<h3 id="post-apiv1productdiscoverfilter-the-panel-for-discoverys-own-decision"><code>POST /api/v1/product/discover/filter</code>: the panel for discovery's own decision</h3>
+<ul>
+<li>Role: <code>product_discovery</code>, as discover.</li>
+<li><code>@Policy(resource = "product", action = "discover_filter", details = ProductDiscoveryPolicyDecisionDetails.class)</code>; the handler passes the decision to <code>ProductFilterOptionsService</code>, which makes no decision of its own.</li>
+<li>Answered by <code>policies.product.discover</code>, reached by a <strong>route</strong> (<code>route-product-discover-filter</code> in <code>docker/opa/policies/routing/data.json</code>) rather than its own rule, so <code>policy.resolution</code> reports <code>route</code> here and <code>exact</code> on discover even though <code>policy.id</code> is <code>product.discover</code> on both.</li>
+</ul>
+<p>This endpoint has no rule of its own because it has no question of its own: it returns the same
+search contract discovery's decision already carries, turned into the catalogue's filter panel
+instead of into a page of products - every filter the caller may use, with its data type and
+operators, and the distinct values it has among the caller's visible products and how many
+products hold each one <em>for this request</em>. The same three caller-level gates, the same row filter,
+the same allowed/masked lists as discover apply unchanged, because they are literally the same
+decision, not a second one evaluated the same way.</p>
+<p>The panel narrows the contract further, on top of policy: <code>name</code>, <code>displayName</code> and <code>description</code>
+(already searched by discover's free-text box) and <code>topic</code> and <code>source</code> (identifiers, not
+something browsed by value) are never offered as panel filters, even when the contract permits
+filtering on them - <code>FilterOptionTargets.isOfferedInPanel</code> excludes them unconditionally, before
+the contract is consulted at all. <code>POST /api/v1/product/discover</code> itself is unaffected: a caller
+may still filter on any of the five directly. The panel's remaining fields - <code>type</code>, <code>format</code>,
+<code>organisation.key</code>, <code>organisation.name</code>, <code>subscribedBy</code>, <code>isOwnProduct</code> - always carry their
+distinct values when offered, so no entry in the panel lacks a value list any more.</p>
+<p><strong>Counting is disjunctive faceting, computed without a second decision.</strong> For each permitted,
+value-listing target, a count is the number of products satisfying the row filter, the request's
+<code>text</code>, and every request filter <em>except those on the same target</em>, that hold the value - so
+choosing one value of a group narrows every <em>other</em> group, while that group's own counts keep
+reporting what choosing a different value would give. This is built from <code>ProductSearchContract</code>
+and <code>SqlPredicateCompiler</code> exactly as discovery's own query is, in <code>ProductFacetQueryBuilder</code>, at a
+fixed statement cost per request regardless of how many values exist. Full specification:
+<a href="../tests/products/product-discover-filter/"><code>docs/tests/products/product-discover-filter.md</code></a>.</p>
 <h3 id="post-apiv1productsubscribe-exact-rule-with-typed-details"><code>POST /api/v1/product/subscribe</code>: exact rule with typed details</h3>
 <ul>
 <li>Role: <code>product_subscribe</code>.</li>
@@ -3364,6 +3458,12 @@ of a provisional, directly identifiable one.</p>
 <li><code>ProductQueryPlannerTest</code>: the single enforcement point both product endpoints share: the contract a decision yields, the open contract when policy is off, and the three refusals that must never widen access: no decision while policy is on, an obligation the service cannot fulfil, and a contract that will not compile.</li>
 <li><code>ProductDiscoveryServiceImplTest</code>: the search covers the query built from the contract, page-size clamping, paging, and that no <code>PolicyDecisionClient</code> is a collaborator at all.</li>
 <li><code>ProductViewServiceImplTest</code>: reading one product covers the id constraint AND-ed with the row filter, no count query, and that a product excluded by the row filter is indistinguishable from one that does not exist.</li>
+<li><code>ProductFilterOptionsServiceImplTest</code>: the discover filter panel runs discover's front half unchanged (contract, criteria refusals, count), uses the planner's sensitive attribute set for both the criteria and the offered filters, marks <code>selected</code> only for <code>eq</code>/<code>in</code>/<code>any_of</code>, and treats <code>UNKNOWN_ORG</code> as no organisation.</li>
+<li><code>FilterOptionTargetsTest</code>: which filters the panel offers - every filterable field but <code>id</code>, the attributes the contract permits minus discover's sensitive set when it is masked, <code>isOwnProduct</code> only for a known caller - and each target's operators, default operator and order.</li>
+<li><code>ProductFacetQueryBuilderTest</code>: the single facet statement - each target excluded from its own counts, the row filter and text applied, the schema prefix - and that it is built from the targets <code>FilterOptionTargets</code> actually returns.</li>
+<li><code>FacetValuesTest</code>: one target's facet rows summarised - <code>missingCount</code>, case-merging for fields only, both booleans always listed, ordering, the cap and <code>truncated</code>, and <code>selected</code> matched case-insensitively for a field and exactly for an attribute.</li>
+<li><code>ProductDiscoveryRepositoryFilterOptionsTest</code>: the repository's filter-option reads - the attribute definitions and the facet counts - by capturing the SQL and the row mapper, null branches included.</li>
+<li><code>UnknownIdentifiersTest</code>: <code>knownOrganisationOrNull</code>, which turns null, blank and <code>UNKNOWN_ORG</code> into "not known" at the entry of discover, view and the filter panel.</li>
 <li><code>ProductViewPolicyDecisionDetailsTest</code>: the view rule's details, including that an absent row filter reads as deny-all.</li>
 <li><code>ProductControllerTest</code>: the product endpoints, including <code>404</code> for a product this caller has no access to.</li>
 </ul>
@@ -3388,7 +3488,7 @@ of a provisional, directly identifiable one.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 24, 2026 11:15:04 UTC">September 24, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 20, 2026 11:40:20 UTC">October 20, 2026</span>
   </span>
 
     
