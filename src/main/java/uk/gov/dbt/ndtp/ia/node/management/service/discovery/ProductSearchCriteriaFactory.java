@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
- * attributed to the UK's Department for Business, Innovation, Science and Trade (BIST) as the governing entity.
+ * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 package uk.gov.dbt.ndtp.ia.node.management.service.discovery;
 
@@ -76,7 +76,7 @@ public class ProductSearchCriteriaFactory {
         List<FilterNode.Comparison> filters = new ArrayList<>();
         for (ProductDiscoveryFilterDTO filter : body.filters()) {
             FilterTarget target = target(filter.scope(), filter.field(), filter.attribute(), "filter");
-            if (permitted(target, contract, sensitiveAttributes)) {
+            if (permits(target, contract, sensitiveAttributes)) {
                 filters.add(comparison(target, filter));
             } else {
                 refusals.add((target.field() ? REASON_FIELD : REASON_ATTRIBUTE) + target.qualifiedName());
@@ -97,7 +97,7 @@ public class ProductSearchCriteriaFactory {
         List<ProductSearchCriteria.SortKey> sort = new ArrayList<>();
         for (ProductDiscoverySortDTO key : body.sort()) {
             FilterTarget target = target(key.scope(), key.field(), key.attribute(), "sort key");
-            if (permitted(target, contract, sensitiveAttributes)) {
+            if (permits(target, contract, sensitiveAttributes)) {
                 sort.add(sortKey(target, key.descending()));
             } else {
                 refusals.add(REASON_SORT + target.qualifiedName());
@@ -127,8 +127,7 @@ public class ProductSearchCriteriaFactory {
         return FilterTarget.parse(scope, isField, isField ? field : attribute);
     }
 
-    private static boolean permitted(
-            FilterTarget target, ProductSearchContract contract, Set<String> sensitiveAttributes) {
+    static boolean permits(FilterTarget target, ProductSearchContract contract, Set<String> sensitiveAttributes) {
         boolean sensitive =
                 !target.field() && contract.masksSensitiveAttributes() && sensitiveAttributes.contains(target.name());
         return !sensitive && contract.mayFilterOn(target);
@@ -144,24 +143,53 @@ public class ProductSearchCriteriaFactory {
                     + "' cannot take " + filter.values().size() + " value(s)");
         }
         for (Object value : filter.values()) {
-            if (!(value instanceof String || value instanceof Number || value instanceof Boolean)) {
-                throw new InvalidSearchCriteriaException(
-                        "The values of '" + name + "' must be text, numbers or booleans");
-            }
-            if (String.valueOf(value).length() > MAX_VALUE_LENGTH) {
-                throw new InvalidSearchCriteriaException(
-                        "A value of '" + name + "' is longer than " + MAX_VALUE_LENGTH + " characters");
-            }
-            if (operator.isOrdering() && !(value instanceof Number)) {
-                throw new InvalidSearchCriteriaException(
-                        "Operator '" + operator.wireName() + "' on '" + name + "' needs a number");
-            }
+            checkValue(value, operator, name);
         }
-        if (field != null && (operator.isOrdering() || operator == ComparisonOperator.ALL_OF)) {
-            throw new InvalidSearchCriteriaException(
-                    "Operator '" + operator.wireName() + "' does not apply to the field '" + name + "'");
+        if (field != null) {
+            checkFieldOperator(field, operator, filter.values(), name);
         }
         return new FilterNode.Comparison(target, operator, filter.values());
+    }
+
+    /** One filter value: text, a number or a boolean, not too long, and a number for an ordering operator. */
+    private static void checkValue(Object value, ComparisonOperator operator, String name) {
+        if (!(value instanceof String || value instanceof Number || value instanceof Boolean)) {
+            throw new InvalidSearchCriteriaException("The values of '" + name + "' must be text, numbers or booleans");
+        }
+        if (String.valueOf(value).length() > MAX_VALUE_LENGTH) {
+            throw new InvalidSearchCriteriaException(
+                    "A value of '" + name + "' is longer than " + MAX_VALUE_LENGTH + " characters");
+        }
+        if (operator.isOrdering() && !(value instanceof Number)) {
+            throw new InvalidSearchCriteriaException(
+                    "Operator '" + operator.wireName() + "' on '" + name + "' needs a number");
+        }
+    }
+
+    /**
+     * What a product field accepts: no ordering or {@code all_of} operator on any field, and on a
+     * boolean field no {@code contains} and only true or false.
+     */
+    private static void checkFieldOperator(
+            ProductField field, ComparisonOperator operator, List<Object> values, String name) {
+        if (operator.isOrdering() || operator == ComparisonOperator.ALL_OF) {
+            throw notApplicableToField(operator, name);
+        }
+        if (field.kind() != ProductField.Kind.BOOLEAN) {
+            return;
+        }
+        if (operator == ComparisonOperator.CONTAINS) {
+            throw notApplicableToField(operator, name);
+        }
+        if (values.stream()
+                .anyMatch(value -> SqlPredicateCompiler.booleanValue(value).isEmpty())) {
+            throw new InvalidSearchCriteriaException("The values of '" + name + "' must be true or false");
+        }
+    }
+
+    private static InvalidSearchCriteriaException notApplicableToField(ComparisonOperator operator, String name) {
+        return new InvalidSearchCriteriaException(
+                "Operator '" + operator.wireName() + "' does not apply to the field '" + name + "'");
     }
 
     /** Text fields are searched by substring, as a person would expect; everything else exactly. */

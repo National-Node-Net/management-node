@@ -78,11 +78,13 @@ erDiagram
   PRODUCT {
     BIGSERIAL id PK
     VARCHAR name
+    VARCHAR display_name
     VARCHAR topic
     TEXT description
     BIGINT producer_id FK
     BIGINT product_type_id FK
     VARCHAR source
+    VARCHAR format
   }
   PRODUCT_CONSUMER {
     BIGSERIAL id PK
@@ -254,11 +256,13 @@ Represents a Product (e.g., a data stream or dataset) offered by a Producer.
 Columns:
 - `id` BIGSERIAL, primary key
 - `name` VARCHAR(50), not null
+- `display_name` VARCHAR(150), nullable: the name a user interface shows in place of `name`, which stays the stable identifier. Text-searched by discovery, and returned as `displayName`. Backfilled by data owners; existing rows have none
 - `topic` VARCHAR(150), not null: logical topic or channel for the product
-- `description` TEXT, nullable: prose describing the product. Together with `name`, this is what discovery's free-text search matches against (`topic` and `source` are identifiers, not prose, and are deliberately not text-searched). Backfilled by data owners; existing rows have none
+- `description` TEXT, nullable: prose describing the product. Together with `name` and `display_name`, this is what discovery's free-text search matches against (`topic` and `source` are identifiers, not prose, and are deliberately not text-searched). Backfilled by data owners; existing rows have none
 - `producer_id` BIGINT, not null, foreign key → `producer(id)`
 - `product_type_id` BIGINT, nullable, foreign key → `product_type(id)`: categorization of the product
 - `source` VARCHAR(500), nullable: optional source identifier/URI for the product
+- `format` VARCHAR(100), nullable: the format the product's data is published in (e.g. `JSON`, `XML`, `CSV`, `RDF`). Deliberately free text, with no lookup table or check constraint, because the set of formats is open. Filterable and sortable in discovery, case-insensitively
 
 Usage:
 - The resource being granted to Consumers via `product_consumer`.
@@ -470,7 +474,7 @@ Usage:
 - Schema is versioned and applied with Flyway on application startup.
 - Foreign keys enforce referential integrity among core entities.
 - Foreign key columns are not indexed automatically by PostgreSQL. The ones product discovery joins on every search are indexed by `V20260918122000__add_product_discovery_indexes.sql`: `product.producer_id`, `producer.org_id`, `product_consumer.product_id` and `consumer.org_id`. Consider the same for `product_consumer.consumer_id` and `product_consumer_attribute.product_consumer_id` if query plans show it.
-- Discovery's free-text search is a leading-wildcard `LIKE` over `product.name` and `product.description`, which no b-tree index can serve. A `pg_trgm` GIN index is the remedy if `EXPLAIN` shows it is needed; `CREATE EXTENSION` needs a privileged role, so agree it with whoever owns the database.
+- Discovery's free-text search is a leading-wildcard `LIKE` over `product.name`, `product.display_name` and `product.description`, which no b-tree index can serve. A `pg_trgm` GIN index is the remedy if `EXPLAIN` shows it is needed; `CREATE EXTENSION` needs a privileged role, so agree it with whoever owns the database.
 
 ## Data Protection and Security
 - Identity fields like `idp_client_id` are not foreign keys; they link to external IdP configuration (e.g., Keycloak) at the application layer.

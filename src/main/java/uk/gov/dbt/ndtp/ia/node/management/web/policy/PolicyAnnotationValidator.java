@@ -29,7 +29,7 @@ import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecisio
  * <ul>
  *   <li>{@code resource} and {@code action} must match {@value #IDENTIFIER}, since they name a Rego
  *       package, and neither may be {@value #RESERVED}, which names the fallback rules
- *   <li>{@code details} must be a concrete {@link PolicyDecisionDetails} type with a no-argument
+ *   <li>{@code details} must be a concrete {@link PolicyDecisionDetails} type with a public no-argument
  *       constructor, since the decision's details are instantiated as it
  *   <li>a handler asking for {@code Optional<PolicyDecision<D>>} must carry {@link Policy}: without
  *       it no decision is ever published, and the parameter would always be empty
@@ -121,7 +121,8 @@ public class PolicyAnnotationValidator implements SmartInitializingSingleton {
             return;
         }
         try {
-            details.getDeclaredConstructor();
+            // Public, because empty details are created through it without overriding access checks.
+            details.getConstructor();
         } catch (NoSuchMethodException e) {
             violations.add(handler + " has @Policy details " + details.getName()
                     + ", which has no no-argument constructor to create empty details with");

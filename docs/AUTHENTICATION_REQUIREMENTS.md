@@ -79,6 +79,7 @@ versioning the API does not change which rule decides (see
 | `GET /api/v1/certificate/intermediate` | `access_public_certificates` | not annotated | n/a | n/a |
 | `POST /api/v1/certificate/bootstrap` | `request_bootstrap_certificate` | not annotated | n/a | n/a |
 | `POST /api/v1/product/discover` | `product_discovery` | `policies.product.discover` (exact) | `product` | `discover` |
+| `POST /api/v1/product/discover/filter` | `product_discovery` | `policies.product.discover` (route `route-product-discover-filter`) | `product` | `discover_filter` |
 | `POST /api/v1/product/subscribe` | `product_subscribe` | `policies.product.subscribe` (exact) | `product` | `subscribe` |
 | `GET /api/v1/product/{productId}` | `product_view` | `policies.product.view` (exact) | `product` | `view` |
 | `GET /api/v1/network/map` | `product_discovery` | **not annotated** | n/a | n/a |
@@ -172,6 +173,7 @@ curl -k 'https://localhost:8090/api/v1/configuration/producer' \
   - Intermediate Certificate API requires role: `access_public_certificates`.
   - Bootstrap Certificate API requires role: `request_bootstrap_certificate`.
   - Product Discovery API requires role: `product_discovery` (plus policy, which decides which products are returned and what is shown of each; see [Policy Enforcement](POLICY_ENFORCEMENT.md)).
+  - Product Discover Filter API requires role: `product_discovery` (same policy as discovery, reached via a route to `policies.product.discover` rather than its own rule; see [Policy Enforcement](POLICY_ENFORCEMENT.md)).
   - Product Subscription API requires role: `product_subscribe` (plus policy, which also sets the subscription terms).
   - Product View API requires role: `product_view` (plus policy, which decides whether this product exists for the caller and what is shown of it; see [Policy Enforcement](POLICY_ENFORCEMENT.md)).
   - Network Map API requires role: `product_discovery`. **No policy**: it returns the whole topology, and exposes relationships rather than product content.

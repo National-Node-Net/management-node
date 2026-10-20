@@ -31,6 +31,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -609,5 +611,36 @@ class ProductViewServiceImplTest {
                          "obligations": ["audit_access", "mask_response", "aggregate_before_release"]}"""));
 
         assertThat(product).isPresent();
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // An unknown organisation is no organisation
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * {@code UNKNOWN_ORG} is the sentinel for a token without an organisation claim. It must read
+     * as "not known" - no {@code isOwnProduct} column and no subscription status - rather than as
+     * an organisation whose key happens to be {@code UNKNOWN_ORG}.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"UNKNOWN_ORG", " "})
+    void view_unknownOrganisation_carriesNoIsOwnProductAndNoSubscriptionStatus(String callerOrganisation) {
+        databaseReturns(product(PRODUCT_ID, "FloodRiskMapZones"));
+
+        service().view(PRODUCT_ID, callerOrganisation, permissiveDecision());
+
+        assertThat(selectList(capturedQuery())).doesNotContain(ProductSearchQuery.IS_OWN_PRODUCT);
+        verify(assembler).assemble(any(), any(), any(), isNull());
+    }
+
+    /** The contrast that keeps the test above honest: a known organisation does get both. */
+    @Test
+    void view_knownOrganisation_carriesIsOwnProductAndReachesTheAssembler() {
+        databaseReturns(product(PRODUCT_ID, "FloodRiskMapZones"));
+
+        service().view(PRODUCT_ID, "ENV", permissiveDecision());
+
+        assertThat(selectList(capturedQuery())).contains(ProductSearchQuery.IS_OWN_PRODUCT);
+        verify(assembler).assemble(any(), any(), any(), eq("ENV"));
     }
 }

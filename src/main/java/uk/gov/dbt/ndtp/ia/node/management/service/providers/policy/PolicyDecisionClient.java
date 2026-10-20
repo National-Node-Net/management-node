@@ -109,7 +109,7 @@ public class PolicyDecisionClient {
                     .retrieve()
                     .body(PolicyDecisionResponse.class);
 
-            output = response == null || response.result() == null ? PolicyDecision.DENY : response.result();
+            output = response == null || response.result() == null ? PolicyDecision.DENIED : response.result();
             policyOutputLogger.logOutput(input, output);
         } catch (Exception e) {
             log.warn("PDP invocation failed for resource {} action {}: {}", resourceKind, input.action(), e.toString());

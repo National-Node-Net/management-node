@@ -74,10 +74,10 @@ class KafkaEventPublishingIntegrationTest {
 
             publisher.publish(TOPIC, key, event);
 
-            ConsumerRecord<String, String> record =
+            ConsumerRecord<String, String> consumerRecord =
                     KafkaTestUtils.getSingleRecord(consumer, TOPIC, Duration.ofSeconds(15));
-            assertThat(record.key()).isEqualTo(key);
-            JsonNode json = objectMapper.readTree(record.value());
+            assertThat(consumerRecord.key()).isEqualTo(key);
+            JsonNode json = objectMapper.readTree(consumerRecord.value());
             assertThat(json.get("eventId").asText()).isEqualTo(event.eventId().toString());
             assertThat(json.get("eventType").asText()).isEqualTo(event.eventType());
             assertThat(json.get("version").asInt()).isEqualTo(event.version());

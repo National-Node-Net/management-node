@@ -10,15 +10,19 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
+import uk.gov.dbt.ndtp.ia.node.management.model.policy.filter.FilterScope;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeScopeCode;
 import uk.gov.dbt.ndtp.ia.node.management.service.discovery.DiscoverySchema;
+import uk.gov.dbt.ndtp.ia.node.management.service.discovery.FacetQuery;
 import uk.gov.dbt.ndtp.ia.node.management.service.discovery.ProductSearchQuery;
 
 /**
@@ -53,6 +57,7 @@ import uk.gov.dbt.ndtp.ia.node.management.service.discovery.ProductSearchQuery;
  * registry of column names ({@code ProductField}), not from caller input.
  */
 @Repository
+@Slf4j
 public class ProductDiscoveryRepository {
 
     private final NamedParameterJdbcTemplate jdbc;
@@ -69,6 +74,7 @@ public class ProductDiscoveryRepository {
     private final String grantsSql;
     private final String subscribingOrganisationsSql;
     private final String subscribedProductIdsSql;
+    private final String filterAttributeDefinitionsSql;
 
     public ProductDiscoveryRepository(NamedParameterJdbcTemplate jdbc, DiscoverySchema schema) {
         this.jdbc = jdbc;
@@ -100,7 +106,14 @@ public class ProductDiscoveryRepository {
                 + " FROM " + this.schema + "product_consumer pc"
                 + " JOIN " + this.schema + "consumer c ON c.id = pc.consumer_id"
                 + " JOIN " + this.schema + "organisation o ON o.id = c.org_id"
-                + " WHERE pc.product_id IN (:ids) AND o.organisation_key = :organisationKey";
+                + " WHERE pc.product_id IN (:ids) AND LOWER(o.organisation_key) = LOWER(:organisationKey)";
+        this.filterAttributeDefinitionsSql = "SELECT s.code AS scope_code, d.name, d.display_name,"
+                + " d.data_type, d.multi_valued, d.sensitive"
+                + " FROM " + this.schema + "policy_attribute_definition d"
+                + " JOIN " + this.schema + "policy_attribute_definition_scope ds ON ds.attribute_definition_id = d.id"
+                + " JOIN " + this.schema + "policy_attribute_scope s ON s.id = ds.attribute_scope_id"
+                + " WHERE s.code IN ('PRODUCT', 'ORGANISATION') AND d.is_deleted = FALSE AND ds.is_deleted = FALSE"
+                + " ORDER BY s.code DESC, d.name, d.namespace";
     }
 
     /** One row per product of the page, keyed by the column aliases of {@link ProductSearchQuery}. */
@@ -203,6 +216,8 @@ public class ProductDiscoveryRepository {
     /**
      * Which of the given products an organisation holds a grant on, through any of its consumers. As
      * for {@link #findSubscribingOrganisations}, a grant row is access and its validity plays no part.
+     * The organisation key is compared case-insensitively, as everywhere else keys are matched
+     * against the caller's organisation.
      */
     public Set<Long> findSubscribedProductIds(String organisationKey, Collection<Long> productIds) {
         if (organisationKey == null || productIds.isEmpty()) {
@@ -210,6 +225,57 @@ public class ProductDiscoveryRepository {
         }
         return Set.copyOf(jdbc.queryForList(
                 subscribedProductIdsSql, Map.of("ids", productIds, "organisationKey", organisationKey), Long.class));
+    }
+
+    /**
+     * The live {@code PRODUCT} and {@code ORGANISATION} policy attribute definitions the filter
+     * panel can offer, each catalogue's own definition, not the per-entity values. Deduplicated on
+     * {@code (scope, name)}: when the same name is defined under two namespaces for one scope, the
+     * first one returned (by {@code namespace} order) is kept and the clash is logged, in the same
+     * "keep the first, warn" style {@link
+     * uk.gov.dbt.ndtp.ia.node.management.service.data.impl.PolicyAttributeServiceImpl#findAttributeMap}
+     * uses for a per-entity name collision.
+     */
+    public List<FilterAttributeDefinition> findFilterAttributeDefinitions() {
+        List<FilterAttributeDefinition> rows = jdbc.query(
+                filterAttributeDefinitionsSql,
+                Map.of(),
+                (row, index) -> new FilterAttributeDefinition(
+                        FilterScope.valueOf(row.getString("scope_code")),
+                        row.getString("name"),
+                        row.getString("display_name"),
+                        row.getString("data_type"),
+                        row.getBoolean("multi_valued"),
+                        row.getBoolean("sensitive")));
+
+        List<FilterAttributeDefinition> definitions = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+        for (FilterAttributeDefinition definition : rows) {
+            if (seen.add(definition.scope() + ":" + definition.name())) {
+                definitions.add(definition);
+            } else {
+                log.warn(
+                        "Duplicate filter attribute definition name {} for scope {} across namespaces;"
+                                + " keeping the first definition",
+                        definition.name(),
+                        definition.scope());
+            }
+        }
+        return definitions;
+    }
+
+    /**
+     * Runs one caller-supplied facet-count statement and reads its {@code facet}, {@code value} and
+     * {@code matching} columns. A null {@code value} means "products with no value for this facet".
+     * The statement itself - its row filter, grouping and value cap - is assembled by the caller;
+     * this method runs exactly what it is given.
+     */
+    public List<FacetCount> findFacetCounts(FacetQuery query) {
+        return jdbc.query(
+                query.sql(),
+                query.parameters(),
+                (row, index) ->
+                        new FacetCount(row.getString("facet"), row.getString("value"), row.getLong("matching")));
     }
 
     /** One grant ({@code product_consumer} row) with its consumer and the consumer's organisation. */
@@ -228,6 +294,25 @@ public class ProductDiscoveryRepository {
     /** One organisation using one product. */
     public record SubscribingOrganisation(
             long productId, String organisationKey, String organisationName, int consumers, LocalDateTime since) {}
+
+    /**
+     * One catalogue definition the filter panel can offer: which scope it belongs to, its name,
+     * optional display name, data type, whether it is multi-valued, and whether the catalogue flags
+     * it sensitive.
+     */
+    public record FilterAttributeDefinition(
+            FilterScope scope,
+            String name,
+            String displayName,
+            String dataType,
+            boolean multiValued,
+            boolean sensitive) {}
+
+    /**
+     * One row of a facet-count statement: how many products match {@code value} for {@code facet}.
+     * A null {@code value} means "products with no value".
+     */
+    public record FacetCount(String facet, String value, long count) {}
 
     /** A multi-valued attribute collects its values; a single-valued one keeps the first. */
     @SuppressWarnings("unchecked")

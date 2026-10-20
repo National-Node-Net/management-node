@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
- * attributed to the UK's Department for Business, Innovation, Science and Trade (BIST) as the governing entity.
+ * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 
 package uk.gov.dbt.ndtp.ia.node.management.service.providers.policy;
@@ -58,6 +58,8 @@ class ProductPolicyResourceLoaderTest {
         product.setName("FloodRiskMapZones");
         product.setTopic("topic.FloodRiskMapZones");
         product.setSource("kafka://flood");
+        product.setDisplayName("Flood Risk Map Zones");
+        product.setFormat("GeoJSON");
         product.setProducer(producer);
         product.setProductType(type);
         return product;
@@ -83,6 +85,8 @@ class ProductPolicyResourceLoaderTest {
         assertThat(resource.get().attributes()).containsEntry("identifiability", "non_personal");
         assertThat(resource.get().fields())
                 .containsEntry("name", "FloodRiskMapZones")
+                .containsEntry("displayName", "Flood Risk Map Zones")
+                .containsEntry("format", "GeoJSON")
                 .containsEntry("type", "topic")
                 .containsEntry("producer", "env-producer")
                 .containsEntry("organisation", "ENV");
@@ -116,7 +120,9 @@ class ProductPolicyResourceLoaderTest {
 
         Map<String, Object> fields = loader.load("product", "9").orElseThrow().fields();
 
-        assertThat(fields).containsKeys("id", "name", "topic");
-        assertThat(fields).doesNotContainKeys("description", "source", "type", "producer", "organisation");
+        assertThat(fields)
+                .containsKeys("id", "name", "topic")
+                .doesNotContainKeys(
+                        "displayName", "description", "source", "format", "type", "producer", "organisation");
     }
 }

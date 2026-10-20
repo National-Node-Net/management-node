@@ -45,10 +45,14 @@ class PolicyBodyCachingFilterTest {
 
         @Policy(resource = "product", action = "subscribe")
         @PostMapping("/api/v1/product/subscribe")
-        public void subscribe(@RequestBody String body) {}
+        public void subscribe(@RequestBody String body) {
+            // no-op: test stub, only its mapping and @Policy annotation are looked up
+        }
 
         @PostMapping("/api/v1/product/discover")
-        public void discover(@RequestBody String body) {}
+        public void discover(@RequestBody String body) {
+            // no-op: test stub, only its mapping and @Policy annotation are looked up
+        }
     }
 
     private RequestMappingHandlerMapping handlerMapping;

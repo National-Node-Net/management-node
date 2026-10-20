@@ -39,15 +39,21 @@ class RequestEnforcementConfigTest {
     static class SampleController {
 
         @Policy(resource = "product", action = "view")
-        public void enforced() {}
+        public void enforced() {
+            // no-op: only the annotations matter to the pointcut under test
+        }
 
-        public void unenforced() {}
+        public void unenforced() {
+            // no-op: only the annotations matter to the pointcut under test
+        }
     }
 
     static class NotAController {
 
         @Policy(resource = "product", action = "view")
-        public void enforced() {}
+        public void enforced() {
+            // no-op: only the annotations matter to the pointcut under test
+        }
     }
 
     private final CertificateValidationInterceptor certificateInterceptor =

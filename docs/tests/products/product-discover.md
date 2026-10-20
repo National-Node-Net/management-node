@@ -58,6 +58,7 @@ Related documents:
   - [H. Malformed requests, 400 (TC-40 – TC-42)](#h-malformed-requests--400)
   - [I. Policy switched off (TC-43 – TC-44)](#i-policy-switched-off)
   - [J. Subscription status (TC-45 – TC-46)](#j-subscription-status)
+  - [K. Display name, format and own products (TC-47 – TC-51)](#k-display-name-format-and-own-products)
 - [9. Edge cases](#9-edge-cases)
 - [10. Defect triage](#10-defect-triage)
 
@@ -197,17 +198,20 @@ text-searchable, so a single value defaults to `eq` and must match the whole nam
     {
       "id": 12,
       "name": "FloodRiskMapZones",
+      "displayName": "Flood Risk Map Zones",
       "description": "Flood risk zones for England and Wales as geographic areas, …",
       "type": "topic",
+      "format": "GeoJSON",
+      "isOwnProduct": true,
       "organisation": { "key": "ENV", "name": "Environment Agency (ENV)" },
       "subscriptionStatus": "NOT_SUBSCRIBED"
     }
   ],
   "page": { "number": 0, "size": 20, "numberOfElements": 1, "totalElements": 1, "totalPages": 1 },
   "policy": {
-    "filterableFields": ["description", "name", "organisation.key", "organisation.name", "source", "subscribedBy", "topic", "type"],
+    "filterableFields": ["description", "displayName", "format", "isOwnProduct", "name", "organisation.key", "organisation.name", "source", "subscribedBy", "topic", "type"],
     "filterableAttributes": ["identifiability", "organisation.jurisdictions", "organisation.responsibility_areas", "population_risk_tags", "quality_designation", "record_unit"],
-    "textSearchFields": ["name", "description"],
+    "textSearchFields": ["name", "displayName", "description"],
     "maskedFields": [],
     "maskedAttributes": [],
     "maxPageSize": 100,
@@ -218,8 +222,8 @@ text-searchable, so a single value defaults to `eq` and must match the whole nam
 
 ### A result is a summary
 
-A discovery result carries **only**: `id`, `name`, `description`, `type`, an `organisation`
-carrying `key` and `name`, and `subscriptionStatus`.
+A discovery result carries **only**: `id`, `name`, `displayName`, `description`, `type`, `format`,
+`isOwnProduct`, an `organisation` carrying `key` and `name`, and `subscriptionStatus`.
 
 **Filtering and sorting are not limited to those members.** A caller may filter and sort on
 anything in its allowed lists, including `topic` and `source`, which no result carries. This
@@ -237,7 +241,51 @@ Whether the **calling** organisation holds a grant on the product, through any o
   still sees its own status.
 - A grant counts whatever its `validity`, exactly as for `subscribedBy`.
 - An organisation holding the product on several consumers is still one `SUBSCRIBED`.
-- Absent when the token carries no organisation.
+- Absent when the token carries no organisation. That includes a token with no `organisation`
+  claim at all: the principal then carries the `UNKNOWN_ORG` sentinel, which discover treats as
+  no organisation (as it does a blank claim), never as an organisation called `UNKNOWN_ORG`.
+- The organisation key is compared case-insensitively.
+
+### `displayName` and `format`
+
+- **`displayName`** is the name a UI shows. `name` stays the stable identifier; `displayName` is
+  prose its owner may change. Free text searches it alongside `name` and `description`.
+- **`format`** is the format the product's data is published in: `JSON`, `XML`, `CSV`, `RDF`,
+  `GeoJSON`, … It is free text, deliberately not a fixed list, and is filtered case-insensitively.
+- Both are optional: a product whose owner has not provided one simply has no key.
+
+### `isOwnProduct`
+
+`true` when the **calling** organisation offers the product (its `organisation.key` is the token's
+`organisation` claim, compared case-insensitively), otherwise `false`.
+
+- Like `subscriptionStatus`, it describes the caller, so it is **not masked**.
+- It is filterable with `eq`, `neq`, `in`, `not_in`, `any_of`, `none_of`, `exists` and
+  `not_exists`, taking JSON booleans (or the strings `"true"`/`"false"`). Any other value, or
+  `contains`, is a `400`. It is not sortable.
+- Absent when the token carries no organisation (no claim, a blank one, or the `UNKNOWN_ORG`
+  sentinel); a filter `isOwnProduct eq true` then matches
+  nothing, and `eq false` matches everything the caller may see.
+
+### `displayName` and `format`
+
+- **`displayName`** is the name a UI shows. `name` stays the stable identifier; `displayName` is
+  prose its owner may change. Free text searches it alongside `name` and `description`.
+- **`format`** is the format the product's data is published in: `JSON`, `XML`, `CSV`, `RDF`,
+  `GeoJSON`, … It is free text, deliberately not a fixed list, and is filtered case-insensitively.
+- Both are optional: a product whose owner has not provided one simply has no key.
+
+### `isOwnProduct`
+
+`true` when the **calling** organisation offers the product (its `organisation.key` is the token's
+`organisation` claim, compared case-insensitively), otherwise `false`.
+
+- Like `subscriptionStatus`, it describes the caller, so it is **not masked**.
+- It is filterable with `eq`, `neq`, `in`, `not_in`, `any_of`, `none_of`, `exists` and
+  `not_exists`, taking JSON booleans (or the strings `"true"`/`"false"`). Any other value, or
+  `contains`, is a `400`. It is not sortable.
+- Absent when the token carries no organisation; a filter `isOwnProduct eq true` then matches
+  nothing, and `eq false` matches everything the caller may see.
 
 ### The `page` object
 
@@ -272,10 +320,13 @@ These are the levers. Everything in section 8 is a permutation of them.
 |---|---|---|---|---|
 | `id` | yes (service-level), but **no policy permits it**, so `403` while policy is on | no | no | yes, always |
 | `name` | yes | yes | **yes** | yes |
+| `displayName` | yes | yes | **yes** | yes |
 | `description` | yes | **no** | **yes** | yes |
 | `topic` | yes | yes | no | no |
 | `type` | yes | yes | no | yes |
 | `source` | yes | yes | no | no |
+| `format` | yes | yes | no | yes |
+| `isOwnProduct` | yes, booleans only | **no** | no | yes, when the caller's organisation is known |
 | `organisation.key` | yes | yes | no | yes |
 | `organisation.name` | yes | yes | no | yes |
 | `subscribedBy` | yes | **no** | no | no |
@@ -339,10 +390,10 @@ Measured against the running policy. This table is the oracle for every `403` in
 | clearance | SECRET | OFFICIAL-SENSITIVE | OFFICIAL |
 | purposes | `service_delivery`, `regulatory_oversight` | `service_delivery`, `statistical_analysis` | `service_delivery` |
 | jurisdictions | England, Wales | England, Scotland | England, **Bristol** (local remit) |
-| **allowed filter fields** | `description`, `name`, `organisation.key`, `organisation.name`, `source`, `subscribedBy`, `topic`, `type` | same as ENV | `description`, `name`, `organisation.key`, `organisation.name`, `topic`, `type` |
+| **allowed filter fields** | `description`, `displayName`, `format`, `isOwnProduct`, `name`, `organisation.key`, `organisation.name`, `source`, `subscribedBy`, `topic`, `type` | same as ENV | `description`, `displayName`, `format`, `isOwnProduct`, `name`, `organisation.key`, `organisation.name`, `topic`, `type` |
 | **allowed filter attributes** | `identifiability`, `organisation.jurisdictions`, `organisation.responsibility_areas`, `population_risk_tags`, `quality_designation`, `record_unit` | `identifiability`, `organisation.jurisdictions`, `organisation.responsibility_areas`, `quality_designation`, `record_unit`, `temporal_resolution` | `organisation.jurisdictions`, `organisation.responsibility_areas`, `quality_designation`, `record_unit` |
 | **masked fields** | *(none)* | `consumers` | `consumers`, `policyAttributes`, `source`, `subscribedBy` |
-| `textSearchFields` | `name`, `description` | `name`, `description` | `name`, `description` |
+| `textSearchFields` | `name`, `displayName`, `description` | same as ENV | same as ENV |
 | `maxPageSize` | 100 | 50 | 20 |
 | `obligations` | `audit_access` | `aggregate_before_release`, `audit_access`, `mask_response` | `audit_access`, `mask_response` |
 
@@ -489,15 +540,15 @@ absent because of masking.
 
 **Given** ENV, which has no masked fields at all
 **When** the request is posted
-**Then** the single product carries exactly `id`, `name`, `description`, `type`, `organisation`,
-`subscriptionStatus`
+**Then** the single product carries exactly `id`, `name`, `displayName`, `description`, `type`,
+`format`, `isOwnProduct`, `organisation`, `subscriptionStatus`
 **And** `organisation` carries exactly `key` and `name`
 **And** `topic`, `source`, `producer`, `consumers`, `subscribedBy`, `attributes` are **absent keys**
 They are not present with a `null` value.
 
 ```bash
 discover "$ENV_TOKEN" '{"text":"FloodRiskMapZones"}' | jq '.products[0] | keys, (.organisation | keys)'
-# ["description","id","name","organisation","subscriptionStatus","type"]
+# ["description","displayName","format","id","isOwnProduct","name","organisation","subscriptionStatus","type"]
 # ["key","name"]
 ```
 
@@ -524,9 +575,9 @@ discover "$BCC_TOKEN" '{}' | jq .policy
 
 ```json
 {
-  "filterableFields": ["description", "name", "organisation.key", "organisation.name", "topic", "type"],
+  "filterableFields": ["description", "displayName", "format", "isOwnProduct", "name", "organisation.key", "organisation.name", "topic", "type"],
   "filterableAttributes": ["organisation.jurisdictions", "organisation.responsibility_areas", "quality_designation", "record_unit"],
-  "textSearchFields": ["name", "description"],
+  "textSearchFields": ["name", "displayName", "description"],
   "maskedFields": ["consumers", "policyAttributes", "source", "subscribedBy"],
   "maskedAttributes": [],
   "maxPageSize": 20,
@@ -567,7 +618,7 @@ products still cannot reach the three that are directly identifiable or risk-tag
 
 ### B. Free-text search
 
-#### TC-05: Free text matches `name` **or** `description`
+#### TC-05: Free text matches `name`, `displayName` **or** `description`
 
 **Objective.** Confirm the text term runs against both text-searchable columns, case-insensitively,
 as a substring.
@@ -1692,6 +1743,80 @@ done
 # SUBSCRIBED
 # SUBSCRIBED
 ```
+
+---
+
+### K. Display name, format and own products
+
+The sample values are set by `db/samples/V20261018121000__add_sample_product_display_names_and_formats.sql`.
+`UnclassifiedDraftDataset` and `Bristol_Cycle%Counts` have neither a display name nor a format.
+
+#### TC-47: Free text matches a display name the name does not
+
+**Objective.** Confirm `displayName` is text-searched in its own right.
+
+**Preconditions.** P1–P4.
+
+**Given** FloodRiskMapZones, whose display name is "Flood Risk Map Zones"
+**When** ENV posts `{"text": "risk map"}` (with a space, which the `name` cannot contain)
+**Then** FloodRiskMapZones is returned, matched by its display name alone.
+
+```bash
+discover "$ENV_TOKEN" '{"text":"risk map"}' | jq -r '.products[].name'
+# FloodRiskMapZones
+```
+
+*Why:* "risk map" appears in neither the name nor the description, so only `displayName` can match it.
+
+#### TC-48: Filter and sort on `format`
+
+**Objective.** Confirm `format` filters case-insensitively and sorts.
+
+**Preconditions.** P1–P4.
+
+| Body | Caller | Expected names |
+|---|---|---|
+| `{"filters":[{"field":"format","values":["csv"]}]}` | ENV | every discoverable product whose format is `CSV`, e.g. BrownfieldLandAvailability, WaterAbstractionLicences |
+| `{"filters":[{"field":"format","operator":"not_exists"}]}` | ENV | only products with no format recorded |
+| `{"sort":[{"field":"format"}]}` | any | ordered by format, products without one last |
+
+**Then** every returned product's `format` matches, whatever case was sent.
+
+#### TC-49: `isOwnProduct` follows the caller
+
+**Objective.** Confirm each product reports whether the caller offers it.
+
+**Preconditions.** P1–P4.
+
+**Given** the three callers
+**When** each posts `{}`
+**Then** `isOwnProduct` is `true` exactly on the products whose `organisation.key` is the caller's.
+
+```bash
+discover "$HEG_TOKEN" '{}' | jq -c '[.products[] | select(.isOwnProduct != (.organisation.key == "HEG"))] | length'
+# 0 - and likewise for ENV and BCC with their own keys
+```
+
+#### TC-50: Filter on `isOwnProduct`
+
+**Objective.** Confirm the filter splits the caller's results exactly in two.
+
+**Preconditions.** P1–P4.
+
+**Given** HEG
+**When** it posts `{"filters":[{"field":"isOwnProduct","values":[true]}]}`, then the same with `false`
+**Then** the first returns only HEG's products, the second only other organisations'
+**And** the two `totalElements` add up to that of `{}`.
+
+#### TC-51: `isOwnProduct` takes booleans only
+
+**Objective.** Confirm a malformed `isOwnProduct` filter is a `400`, not a `403`.
+
+| Body | Expected |
+|---|---|
+| `{"filters":[{"field":"isOwnProduct","values":["yes"]}]}` | **`400`**: `The values of 'isOwnProduct' must be true or false` |
+| `{"filters":[{"field":"isOwnProduct","operator":"contains","values":["tr"]}]}` | **`400`**: `Operator 'contains' does not apply to the field 'isOwnProduct'` |
+| `{"sort":[{"field":"isOwnProduct"}]}` | **`400`**: `Products cannot be sorted by 'isOwnProduct'` |
 
 ---
 

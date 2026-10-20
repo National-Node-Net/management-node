@@ -170,11 +170,12 @@ class PolicyInputFactoryTest {
         Map<String, String> headers =
                 factory.create(request, null, TARGET).request().headers();
 
+        // Authorization is configured above, yet must still be refused.
         assertThat(headers)
                 .containsEntry("content-type", "application/json")
-                .containsEntry("x-correlation-id", "abc-123");
-        // Authorization is configured above, yet must still be refused.
-        assertThat(headers).doesNotContainKey("authorization").doesNotContainKey("x-not-listed");
+                .containsEntry("x-correlation-id", "abc-123")
+                .doesNotContainKey("authorization")
+                .doesNotContainKey("x-not-listed");
         assertThat(headers.toString()).doesNotContain("super-secret");
     }
 

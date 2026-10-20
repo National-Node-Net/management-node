@@ -164,8 +164,10 @@ class PolicyAttributeServiceImplTest {
 
         Map<String, Object> result = service.findAttributeMap(10L, PolicyAttributeScopeCode.PRODUCT);
 
-        assertThat(result).containsEntry("tier", 3).containsEntry("sensitive", true);
-        assertThat(result).containsEntry("scores", List.of(1, 2));
+        assertThat(result)
+                .containsEntry("tier", 3)
+                .containsEntry("sensitive", true)
+                .containsEntry("scores", List.of(1, 2));
     }
 
     @Test

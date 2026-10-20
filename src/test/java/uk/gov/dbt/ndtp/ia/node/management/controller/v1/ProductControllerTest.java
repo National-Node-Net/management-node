@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
- * attributed to the UK's Department for Business, Innovation, Science and Trade (BIST) as the governing entity.
+ * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 
 package uk.gov.dbt.ndtp.ia.node.management.controller.v1;
@@ -48,6 +48,7 @@ import uk.gov.dbt.ndtp.ia.node.management.exception.handlers.GlobalExceptionHand
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.DiscoveredProductDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductDiscoveryRequestDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductDiscoveryResponseDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductFilterOptionsResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.product.ProductSubscriptionResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.jwt.EnhancedPrincipal;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.filter.ComparisonOperator;
@@ -56,6 +57,7 @@ import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductDiscoveryP
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductSubscriptionPolicyDecisionDetails;
 import uk.gov.dbt.ndtp.ia.node.management.model.policy.product.ProductViewPolicyDecisionDetails;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductDiscoveryService;
+import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductFilterOptionsService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductSubscriptionService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.ProductViewService;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecision;
@@ -86,6 +88,9 @@ class ProductControllerTest {
     @Mock
     private ProductSubscriptionService productSubscriptionService;
 
+    @Mock
+    private ProductFilterOptionsService productFilterOptionsService;
+
     private MockMvc mockMvc;
 
     @BeforeEach
@@ -95,8 +100,11 @@ class ProductControllerTest {
     }
 
     private MockMvc mockMvc(boolean opaEnabled) {
-        return MockMvcBuilders.standaloneSetup(
-                        new ProductController(productDiscoveryService, productViewService, productSubscriptionService))
+        return MockMvcBuilders.standaloneSetup(new ProductController(
+                        productDiscoveryService,
+                        productViewService,
+                        productSubscriptionService,
+                        productFilterOptionsService))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(
                         new AuthenticationPrincipalArgumentResolver(),
@@ -157,6 +165,29 @@ class ProductControllerTest {
                 .andExpect(status().isOk());
 
         verify(productDiscoveryService).discover(any(), eq("test-organisation"), any());
+    }
+
+    @Test
+    void discover_displayNameFormatAndIsOwnProduct_areSerialisedInCamelCase() throws Exception {
+        serviceReturns(ProductDiscoveryResponseDTO.builder()
+                .products(List.of(DiscoveredProductDTO.builder()
+                        .id(3L)
+                        .name("FloodRiskMapZones")
+                        .displayName("Flood Risk Map Zones")
+                        .format("GeoJSON")
+                        .isOwnProduct(true)
+                        .build()))
+                .page(ProductDiscoveryResponseDTO.Page.of(0, 20, 1, 1))
+                .build());
+
+        mockMvc.perform(post("/api/v1/product/discover")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.products[0].displayName").value("Flood Risk Map Zones"))
+                .andExpect(jsonPath("$.products[0].format").value("GeoJSON"))
+                .andExpect(jsonPath("$.products[0].isOwnProduct").value(true))
+                .andExpect(jsonPath("$.products[0].ownProduct").doesNotExist());
     }
 
     @Test
@@ -681,5 +712,82 @@ class ProductControllerTest {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("Access denied by policy"))
                 .andExpect(jsonPath("$.reasons[0]").value("policy.obligation_unsupported"));
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // Discover filter: the catalogue's filter panel
+    // ---------------------------------------------------------------------------------------
+
+    private static ProductFilterOptionsResponseDTO filterPanel() {
+        return ProductFilterOptionsResponseDTO.builder()
+                .totalElements(4)
+                .filters(List.of(
+                        ProductFilterOptionsResponseDTO.FilterOption.builder()
+                                .key("field:format")
+                                .target(new ProductFilterOptionsResponseDTO.Target("format", null, null))
+                                .values(List.of(new ProductFilterOptionsResponseDTO.Value("CSV", 4, true)))
+                                .build(),
+                        ProductFilterOptionsResponseDTO.FilterOption.builder()
+                                .key("field:type")
+                                .target(new ProductFilterOptionsResponseDTO.Target("type", null, null))
+                                .build()))
+                .build();
+    }
+
+    @Test
+    void discoverFilters_passesTheBodyCallerAndDecisionToTheService() throws Exception {
+        when(productFilterOptionsService.filterOptions(any(), any(), any())).thenReturn(filterPanel());
+        PolicyDecision<ProductDiscoveryPolicyDecisionDetails> published = new PolicyDecision<>(
+                true,
+                List.of(),
+                new PolicyProvenance("product.discover", "policies.product.discover/3.0.0", "route"),
+                new ProductDiscoveryPolicyDecisionDetails(
+                        ProductDiscoveryPolicyDecisionDetails.EVALUATION_REQUEST,
+                        new ProductDiscoveryPolicyDecisionDetails.Filtering(
+                                List.of("name", "topic"), List.of(), List.of("consumers")),
+                        new ProductDiscoveryPolicyDecisionDetails.Filtering(
+                                List.of("identifiability"), List.of(), List.of("population_risk_tags"))));
+
+        mockMvc.perform(post("/api/v1/product/discover/filter")
+                        .requestAttr(PolicyDecision.REQUEST_ATTRIBUTE, published)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"text\":\"flood\"}"))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<ProductDiscoveryRequestDTO> criteria = ArgumentCaptor.forClass(ProductDiscoveryRequestDTO.class);
+        ArgumentCaptor<Optional<PolicyDecision<ProductDiscoveryPolicyDecisionDetails>>> decision =
+                ArgumentCaptor.forClass(Optional.class);
+        verify(productFilterOptionsService)
+                .filterOptions(criteria.capture(), eq("test-organisation"), decision.capture());
+        assertThat(criteria.getValue().text()).isEqualTo("flood");
+        assertThat(decision.getValue()).containsSame(published);
+    }
+
+    @Test
+    void discoverFilters_serialisesTheFilterPanel() throws Exception {
+        when(productFilterOptionsService.filterOptions(any(), any(), any())).thenReturn(filterPanel());
+
+        mockMvc.perform(post("/api/v1/product/discover/filter")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(4))
+                .andExpect(jsonPath("$.filters[0].key").value("field:format"))
+                .andExpect(jsonPath("$.filters[0].target.field").value("format"))
+                .andExpect(jsonPath("$.filters[0].target.scope").doesNotExist())
+                .andExpect(jsonPath("$.filters[0].values[0].value").value("CSV"))
+                .andExpect(jsonPath("$.filters[0].values[0].count").value(4))
+                .andExpect(jsonPath("$.filters[0].values[0].selected").value(true))
+                .andExpect(jsonPath("$.filters[1].values").doesNotExist());
+    }
+
+    @Test
+    void discoverFilters_malformedBodyIs400() throws Exception {
+        mockMvc.perform(post("/api/v1/product/discover/filter")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{not-json"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(productFilterOptionsService);
     }
 }

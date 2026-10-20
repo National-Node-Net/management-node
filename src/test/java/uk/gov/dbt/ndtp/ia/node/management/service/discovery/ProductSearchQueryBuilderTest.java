@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
- * attributed to the UK's Department for Business, Innovation, Science and Trade (BIST) as the governing entity.
+ * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 package uk.gov.dbt.ndtp.ia.node.management.service.discovery;
 
@@ -91,8 +91,9 @@ class ProductSearchQueryBuilderTest {
 
         assertThat(query.pageSql())
                 .isEqualTo("SELECT " + IDS
-                        + ", p.name AS name, p.description AS description, p.topic AS topic, pt.name AS type,"
-                        + " p.source AS source, o.organisation_key AS organisation_key, o.name AS organisation_name,"
+                        + ", p.name AS name, p.display_name AS display_name, p.description AS description,"
+                        + " p.topic AS topic, pt.name AS type, p.source AS source, p.format AS format,"
+                        + " o.organisation_key AS organisation_key, o.name AS organisation_name,"
                         + " pr.name AS producer_name, pr.description AS producer_description,"
                         + " pr.active AS producer_active"
                         + FROM
@@ -450,7 +451,8 @@ class ProductSearchQueryBuilderTest {
         // so by not selecting the columns at all. The owning organisation's key and name are in,
         // because a caller needs to know whose product each result is.
         assertThat(selectListOf(query))
-                .isEqualTo(IDS + ", p.name AS name, p.description AS description, pt.name AS type,"
+                .isEqualTo(IDS + ", p.name AS name, p.display_name AS display_name, p.description AS description,"
+                        + " pt.name AS type, p.format AS format,"
                         + " o.organisation_key AS organisation_key, o.name AS organisation_name");
         assertThat(query.pageSql()).doesNotContain("p.source", "pr.name", "pr.description", "pr.active", "p.topic");
     }
@@ -524,5 +526,53 @@ class ProductSearchQueryBuilderTest {
         // ... and the one difference: the sorted-on column is not among the ones read back.
         assertThat(summary.pageSql()).doesNotContain("p.source AS source");
         assertThat(full.pageSql()).contains("p.source AS source");
+    }
+
+    // -----------------------------------------------------------------------------------------
+    // isOwnProduct: selected and filtered against the caller's organisation
+    // -----------------------------------------------------------------------------------------
+
+    @Test
+    void build_knownCaller_selectsWhetherEachProductIsTheCallersOwn() {
+        ProductSearchQuery query =
+                builder.build(ProductSearchContract.open(), criteria(), ProductProjection.SUMMARY, "ENV");
+
+        assertThat(selectListOf(query))
+                .endsWith(", CASE WHEN LOWER(o.organisation_key) = :p0 THEN TRUE ELSE FALSE END AS "
+                        + ProductSearchQuery.IS_OWN_PRODUCT);
+        assertThat(query.parameters()).containsEntry("p0", "env");
+        // It describes the page's rows, so the count does not need it.
+        assertThat(query.countSql()).doesNotContain(ProductSearchQuery.IS_OWN_PRODUCT);
+    }
+
+    @Test
+    void build_unknownCaller_doesNotSelectIsOwnProduct() {
+        assertThat(builder.build(ProductSearchContract.open(), criteria(), ProductProjection.FULL)
+                        .pageSql())
+                .doesNotContain(ProductSearchQuery.IS_OWN_PRODUCT);
+        assertThat(builder.build(ProductSearchContract.open(), criteria(), ProductProjection.FULL, " ")
+                        .pageSql())
+                .doesNotContain(ProductSearchQuery.IS_OWN_PRODUCT);
+    }
+
+    @Test
+    void build_isOwnProductFilter_comparesTheOwnerWithTheCaller() {
+        ProductSearchCriteria criteria =
+                criteria(null, List.of(FilterNode.Comparison.ofField("isOwnProduct", ComparisonOperator.EQ, false)));
+
+        ProductSearchQuery query =
+                builder.build(ProductSearchContract.open(), criteria, ProductProjection.SUMMARY, "BCC");
+
+        assertThat(whereOf(query)).contains("(NOT (LOWER(o.organisation_key) = :p0))");
+        assertThat(query.countSql()).contains("NOT (LOWER(o.organisation_key) = :p0)");
+        assertThat(query.parameters()).containsEntry("p0", "bcc");
+    }
+
+    @Test
+    void build_textSearch_includesTheDisplayName() {
+        ProductSearchQuery query =
+                builder.build(ProductSearchContract.open(), criteria("flood", List.of()), ProductProjection.SUMMARY);
+
+        assertThat(whereOf(query)).contains("LOWER(p.display_name) LIKE");
     }
 }

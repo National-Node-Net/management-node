@@ -7,6 +7,14 @@
             "policy": "product.fallback",
             "priority": 10,
             "enabled": true
+        },
+        {
+            "id": "route-product-discover-filter",
+            "resource": "product",
+            "action": "discover_filter",
+            "policy": "product.discover",
+            "priority": 10,
+            "enabled": true
         }
     ]
 }

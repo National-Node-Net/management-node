@@ -213,10 +213,13 @@ text_requested if {
 # 4. What the caller may ask for
 # ---------------------------------------------------------------------------
 
-# Everything about a product that anyone may search on: what it is called, whose it is, where its
-# data comes from and who uses it.
+# Everything about a product that anyone may search on: what it is called, what format it comes
+# in, whose it is (and whether it is the caller's own), where its data comes from and who uses it.
 searchable_fields := [
 	"description",
+	"displayName",
+	"format",
+	"isOwnProduct",
 	"name",
 	"organisation.key",
 	"organisation.name",
@@ -285,9 +288,10 @@ denied_attribute_set contains name if {
 
 denied_filtered_attributes := sort(denied_attribute_set)
 
-# Free text searches the name and the description, minus whatever the caller may not use or see.
+# Free text searches the name, the display name and the description, minus whatever the caller
+# may not use or see.
 text_search_fields := sort([name |
-	some name in ["description", "name"]
+	some name in ["description", "displayName", "name"]
 	name in allowed_filtered_fields
 	not name in masked_filtered_fields
 ])

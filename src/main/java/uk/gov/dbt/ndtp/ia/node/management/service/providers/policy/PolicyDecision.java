@@ -74,10 +74,10 @@ public record PolicyDecision<D extends PolicyDecisionDetails>(
     public static final String REASON_DETAILS_UNREADABLE = "policy.details_unreadable";
 
     /** Permitted, with nothing else: what an unevaluated or switched-off decision yields. */
-    public static final PolicyDecision<PolicyDecisionDetails> ALLOW = of(true, PolicyDecisionDetails.class);
+    public static final PolicyDecision<PolicyDecisionDetails> ALLOWED = of(true, PolicyDecisionDetails.class);
 
     /** Refused, with nothing else: what an unreachable or unparsable PDP yields. */
-    public static final PolicyDecision<PolicyDecisionDetails> DENY = of(false, PolicyDecisionDetails.class);
+    public static final PolicyDecision<PolicyDecisionDetails> DENIED = of(false, PolicyDecisionDetails.class);
 
     // Only ever used to turn an already-parsed JSON tree into plain maps, lists and scalars, so it
     // needs none of the application mapper's configuration.
@@ -138,10 +138,10 @@ public record PolicyDecision<D extends PolicyDecisionDetails>(
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     static PolicyDecision<PolicyDecisionDetails> fromJson(JsonNode result) {
         if (result == null || result.isBoolean()) {
-            return result != null && result.booleanValue() ? ALLOW : DENY;
+            return result != null && result.booleanValue() ? ALLOWED : DENIED;
         }
         if (!result.isObject()) {
-            return DENY;
+            return DENIED;
         }
         PolicyProvenance policy = provenance(result.path("policy"));
         JsonNode details = result.path("details");

@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
- * attributed to the UK's Department for Business, Innovation, Science and Trade (BIST) as the governing entity.
+ * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 package uk.gov.dbt.ndtp.ia.node.management.service.discovery;
 
@@ -32,10 +32,14 @@ public enum ProductField {
      */
     ID("id", "p.id", null, Use.FILTER_ONLY, Kind.NUMBER),
     NAME("name", "p.name", null, Use.FILTER_SORT_TEXT, Kind.TEXT),
+    /** The name a user interface shows in place of {@link #NAME}; free text searches it too. */
+    DISPLAY_NAME("displayName", "p.display_name", null, Use.FILTER_SORT_TEXT, Kind.TEXT),
     DESCRIPTION("description", "p.description", null, Use.FILTER_TEXT, Kind.TEXT),
     TOPIC("topic", "p.topic", null, Use.FILTER_SORT, Kind.TEXT),
     TYPE("type", "pt.name", null, Use.FILTER_SORT, Kind.TEXT),
     SOURCE("source", "p.source", null, Use.FILTER_SORT, Kind.TEXT),
+    /** The format the product's data is published in - JSON, XML, CSV, RDF... an open set. */
+    FORMAT("format", "p.format", null, Use.FILTER_SORT, Kind.TEXT),
     ORGANISATION_KEY("organisation.key", "o.organisation_key", ProductBlock.ORGANISATION, Use.FILTER_SORT, Kind.TEXT),
     ORGANISATION_NAME("organisation.name", "o.name", ProductBlock.ORGANISATION, Use.FILTER_SORT, Kind.TEXT),
     PRODUCER_NAME("producer.name", "pr.name", ProductBlock.PRODUCER, Use.RETURN_ONLY, Kind.TEXT),
@@ -45,16 +49,25 @@ public enum ProductField {
      * The keys of the organisations holding a grant on the product. It has no column: a filter on
      * it becomes a sub-query over the grants, and it is returned as {@link ProductBlock#SUBSCRIBED_BY}.
      */
-    SUBSCRIBED_BY("subscribedBy", null, ProductBlock.SUBSCRIBED_BY, Use.FILTER_ONLY, Kind.TEXT);
+    SUBSCRIBED_BY("subscribedBy", null, ProductBlock.SUBSCRIBED_BY, Use.FILTER_ONLY, Kind.TEXT),
+    /**
+     * Whether the calling organisation offers the product. It has no column, because it depends on
+     * who is asking: a filter on it compares the owning organisation's key with the caller's, and
+     * it is selected by {@link ProductSearchQueryBuilder} in its own right whenever the caller's
+     * organisation is known - like the subscription status, it describes the caller, so it is not
+     * subject to masking.
+     */
+    IS_OWN_PRODUCT("isOwnProduct", null, null, Use.FILTER_ONLY, Kind.BOOLEAN);
 
     /**
      * How a field's column is compared. Only consulted for a field that can be filtered: text is
      * compared case-insensitively, a number is compared as a number - {@code LOWER()} on a numeric
-     * column is not a thing PostgreSQL will do.
+     * column is not a thing PostgreSQL will do - and a boolean is {@code true} or {@code false}.
      */
     public enum Kind {
         TEXT,
-        NUMBER
+        NUMBER,
+        BOOLEAN
     }
 
     /** What a field may be used for, beyond being returned. */
@@ -102,7 +115,7 @@ public enum ProductField {
         return apiName;
     }
 
-    /** The SQL expression the field is read from; null for {@link #SUBSCRIBED_BY}. */
+    /** The SQL expression the field is read from; null for {@link #SUBSCRIBED_BY} and {@link #IS_OWN_PRODUCT}. */
     public String column() {
         return column;
     }

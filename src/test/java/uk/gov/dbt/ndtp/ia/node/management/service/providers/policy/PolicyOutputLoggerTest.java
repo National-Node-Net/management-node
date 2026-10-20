@@ -71,7 +71,7 @@ class PolicyOutputLoggerTest {
         PolicyOutputLogger outputLogger = loggerWith(false);
         PolicyInput input = PolicyInputFixture.of("client-1", "product", "discover");
 
-        outputLogger.logOutput(input, PolicyDecision.ALLOW);
+        outputLogger.logOutput(input, PolicyDecision.ALLOWED);
 
         assertThat(outputLogger.isEnabled()).isFalse();
         assertThat(appender.list).isEmpty();
@@ -83,7 +83,7 @@ class PolicyOutputLoggerTest {
         PolicyInput candidate =
                 PolicyInputFixture.of("client-1", "product", "discover").withResource("42", Map.of());
 
-        outputLogger.logOutput(candidate, PolicyDecision.ALLOW);
+        outputLogger.logOutput(candidate, PolicyDecision.ALLOWED);
 
         assertThat(onlyMessage())
                 .contains("PDP decision response <- ALLOW")
@@ -116,7 +116,7 @@ class PolicyOutputLoggerTest {
         PolicyOutputLogger outputLogger = loggerWith(true);
         PolicyInput input = PolicyInputFixture.of("client-1", "product", "discover");
 
-        outputLogger.logOutput(input, PolicyDecision.DENY);
+        outputLogger.logOutput(input, PolicyDecision.DENIED);
 
         assertThat(onlyMessage()).contains("PDP decision response <- DENY");
     }
@@ -138,7 +138,7 @@ class PolicyOutputLoggerTest {
         PolicyOutputLogger outputLogger = new PolicyOutputLogger(properties(true), failingMapper);
         PolicyInput input = PolicyInputFixture.of("client-1", "product", "discover");
 
-        outputLogger.logOutput(input, PolicyDecision.ALLOW);
+        outputLogger.logOutput(input, PolicyDecision.ALLOWED);
 
         // Jackson wraps the cause, so the reported text carries its message rather than only "boom".
         assertThat(onlyMessage()).contains("<not serialisable:").contains("boom");
@@ -146,7 +146,7 @@ class PolicyOutputLoggerTest {
 
     @Test
     void nullInput_isIgnored() {
-        loggerWith(true).logOutput(null, PolicyDecision.ALLOW);
+        loggerWith(true).logOutput(null, PolicyDecision.ALLOWED);
 
         assertThat(appender.list).isEmpty();
     }

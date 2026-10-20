@@ -70,7 +70,7 @@ class PolicyDecisionClientTest {
                 .andExpect(method(HttpMethod.POST))
                 .andRespond(withSuccess("{\"result\":true}", MediaType.APPLICATION_JSON));
 
-        assertThat(client.evaluate(INPUT)).isEqualTo(PolicyDecision.ALLOW);
+        assertThat(client.evaluate(INPUT)).isEqualTo(PolicyDecision.ALLOWED);
     }
 
     @Test
@@ -80,7 +80,7 @@ class PolicyDecisionClientTest {
                 .andExpect(method(HttpMethod.POST))
                 .andRespond(withSuccess("{\"result\":false}", MediaType.APPLICATION_JSON));
 
-        assertThat(client.evaluate(INPUT)).isEqualTo(PolicyDecision.DENY);
+        assertThat(client.evaluate(INPUT)).isEqualTo(PolicyDecision.DENIED);
     }
 
     @Test
@@ -154,7 +154,7 @@ class PolicyDecisionClientTest {
                 .expect(requestTo(PROPERTIES.url() + PROPERTIES.decisionPath()))
                 .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
 
-        assertThat(client.evaluate(INPUT)).isEqualTo(PolicyDecision.DENY);
+        assertThat(client.evaluate(INPUT)).isEqualTo(PolicyDecision.DENIED);
     }
 
     @Test
@@ -163,7 +163,7 @@ class PolicyDecisionClientTest {
                 .expect(requestTo(PROPERTIES.url() + PROPERTIES.decisionPath()))
                 .andRespond(withSuccess("not-json", MediaType.APPLICATION_JSON));
 
-        assertThat(client.evaluate(INPUT)).isEqualTo(PolicyDecision.DENY);
+        assertThat(client.evaluate(INPUT)).isEqualTo(PolicyDecision.DENIED);
     }
 
     @Test
@@ -172,7 +172,7 @@ class PolicyDecisionClientTest {
                 .expect(requestTo(PROPERTIES.url() + PROPERTIES.decisionPath()))
                 .andRespond(withServerError());
 
-        assertThat(client.evaluate(INPUT)).isEqualTo(PolicyDecision.DENY);
+        assertThat(client.evaluate(INPUT)).isEqualTo(PolicyDecision.DENIED);
     }
 
     @Test
@@ -183,7 +183,7 @@ class PolicyDecisionClientTest {
                     throw new IOException("connection refused");
                 });
 
-        assertThat(client.evaluate(INPUT)).isEqualTo(PolicyDecision.DENY);
+        assertThat(client.evaluate(INPUT)).isEqualTo(PolicyDecision.DENIED);
     }
 
     @Test
@@ -194,7 +194,7 @@ class PolicyDecisionClientTest {
                     throw new SocketTimeoutException("read timed out");
                 });
 
-        assertThat(client.evaluate(INPUT)).isEqualTo(PolicyDecision.DENY);
+        assertThat(client.evaluate(INPUT)).isEqualTo(PolicyDecision.DENIED);
     }
 
     @Test
@@ -231,7 +231,7 @@ class PolicyDecisionClientTest {
                 outputLoggerFor(disabled),
                 new ObjectMapper());
 
-        assertThat(disabledClient.evaluate(INPUT)).isEqualTo(PolicyDecision.ALLOW);
+        assertThat(disabledClient.evaluate(INPUT)).isEqualTo(PolicyDecision.ALLOWED);
 
         // No request was expected on the mock server, so any call would have failed verification.
         mockServer.verify();

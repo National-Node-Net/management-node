@@ -43,13 +43,13 @@ bristol_coverage_node := {
 }
 
 every_field := [
-	"consumers", "description", "name", "organisation", "organisation.key",
+	"consumers", "description", "displayName", "format", "isOwnProduct", "name", "organisation", "organisation.key",
 	"organisation.name", "policyAttributes", "producer", "producer.active", "producer.description",
 	"producer.name", "source", "subscribedBy", "topic", "type",
 ]
 
 every_searchable_field := [
-	"description", "name", "organisation.key", "organisation.name",
+	"description", "displayName", "format", "isOwnProduct", "name", "organisation.key", "organisation.name",
 	"source", "subscribedBy", "topic", "type",
 ]
 
@@ -84,7 +84,7 @@ test_env_sees_the_full_product if {
 		"masked_filtered_attributes": [],
 		"mask_sensitive_attributes": false,
 		"visible_fields": every_field,
-		"text_search_fields": ["description", "name"],
+		"text_search_fields": ["description", "displayName", "name"],
 		"unmask_when": unmask_own("ENV"),
 		"row_filter": admitted("ENV", [
 			{"type": "comparison", "attribute": "identifiability", "operator": "in", "values": ["anonymised", "directly_identifiable", "non_personal", "pseudonymised"]},
@@ -114,7 +114,7 @@ test_heg_sees_a_summary_without_consumer_details if {
 		"masked_filtered_attributes": [],
 		"mask_sensitive_attributes": true,
 		"visible_fields": [name | some name in every_field; name != "consumers"],
-		"text_search_fields": ["description", "name"],
+		"text_search_fields": ["description", "displayName", "name"],
 		"unmask_when": unmask_own("HEG"),
 		"row_filter": admitted("HEG", [
 			{"type": "comparison", "attribute": "identifiability", "operator": "in", "values": ["anonymised", "non_personal", "pseudonymised"]},
@@ -136,7 +136,7 @@ test_bcc_views_what_it_discovers_with_the_sensitive_fields_withheld if {
 	decision.details == {
 		"access_level": "basic",
 		"filter_contract": "management-node.filter/1",
-		"allowed_filtered_fields": ["description", "name", "organisation.key", "organisation.name", "topic", "type"],
+		"allowed_filtered_fields": ["description", "displayName", "format", "isOwnProduct", "name", "organisation.key", "organisation.name", "topic", "type"],
 		"denied_filtered_fields": [],
 		"masked_filtered_fields": all_sensitive_fields,
 		"allowed_filtered_attributes": [
@@ -147,10 +147,10 @@ test_bcc_views_what_it_discovers_with_the_sensitive_fields_withheld if {
 		"masked_filtered_attributes": [],
 		"mask_sensitive_attributes": true,
 		"visible_fields": [
-			"description", "name", "organisation", "organisation.key", "organisation.name",
+			"description", "displayName", "format", "isOwnProduct", "name", "organisation", "organisation.key", "organisation.name",
 			"producer", "producer.active", "producer.description", "producer.name", "topic", "type",
 		],
-		"text_search_fields": ["description", "name"],
+		"text_search_fields": ["description", "displayName", "name"],
 		"unmask_when": unmask_own("BCC"),
 		"row_filter": admitted("BCC", [
 			{"type": "comparison", "attribute": "identifiability", "operator": "in", "values": ["anonymised", "non_personal"]},

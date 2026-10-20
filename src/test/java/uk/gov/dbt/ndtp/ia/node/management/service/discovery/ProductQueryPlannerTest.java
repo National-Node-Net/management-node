@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
- * attributed to the UK's Department for Business, Innovation, Science and Trade (BIST) as the governing entity.
+ * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 
 package uk.gov.dbt.ndtp.ia.node.management.service.discovery;
@@ -347,12 +347,29 @@ class ProductQueryPlannerTest {
         ProductSearchContract contract = planner.contractFor(WHAT, decision);
 
         ProductSearchQuery query =
-                planner.compile(WHAT, contract, noCriteria(contract), ProductProjection.FULL, decision);
+                planner.compile(WHAT, contract, noCriteria(contract), ProductProjection.FULL, null, decision);
 
         assertThat(query.pageSql()).contains("SELECT").contains("p.name");
         assertThat(query.countSql()).contains("SELECT");
         // The policy's condition is part of the statement, bound rather than interpolated.
         assertThat(query.parameters()).containsValue("identifiability");
+    }
+
+    @Test
+    void compile_callerOrganisation_reachesTheStatementAsIsOwnProduct() {
+        Optional<PolicyDecision<ProductDiscoveryPolicyDecisionDetails>> decision =
+                decision(true, details(SEARCH_CONTRACT_JSON));
+        ProductQueryPlanner planner = planner();
+        ProductSearchContract contract = planner.contractFor(WHAT, decision);
+
+        ProductSearchQuery known =
+                planner.compile(WHAT, contract, noCriteria(contract), ProductProjection.SUMMARY, "ENV", decision);
+        ProductSearchQuery unknown =
+                planner.compile(WHAT, contract, noCriteria(contract), ProductProjection.SUMMARY, null, decision);
+
+        assertThat(known.pageSql()).contains("AS " + ProductSearchQuery.IS_OWN_PRODUCT);
+        assertThat(known.parameters()).containsValue("env");
+        assertThat(unknown.pageSql()).doesNotContain(ProductSearchQuery.IS_OWN_PRODUCT);
     }
 
     /**
@@ -372,7 +389,7 @@ class ProductQueryPlannerTest {
         ProductSearchContract contract = planner.contractFor(WHAT, decision);
         ProductSearchCriteria criteria = noCriteria(contract);
 
-        assertThatThrownBy(() -> planner.compile(WHAT, contract, criteria, ProductProjection.FULL, decision))
+        assertThatThrownBy(() -> planner.compile(WHAT, contract, criteria, ProductProjection.FULL, null, decision))
                 .isInstanceOf(AccessRejectedException.class)
                 // What the caller is told is only that they were refused.
                 .hasMessage(REFUSAL_MESSAGE)
@@ -400,8 +417,9 @@ class ProductQueryPlannerTest {
         ProductSearchContract contract = planner.contractFor(WHAT, decision);
         ProductSearchCriteria criteria = noCriteria(contract);
 
-        ProductSearchQuery summary = planner.compile(WHAT, contract, criteria, ProductProjection.SUMMARY, decision);
-        ProductSearchQuery full = planner.compile(WHAT, contract, criteria, ProductProjection.FULL, decision);
+        ProductSearchQuery summary =
+                planner.compile(WHAT, contract, criteria, ProductProjection.SUMMARY, null, decision);
+        ProductSearchQuery full = planner.compile(WHAT, contract, criteria, ProductProjection.FULL, null, decision);
 
         assertThat(summary.pageSql())
                 .contains("p.name AS name", "pt.name AS type")
@@ -482,7 +500,7 @@ class ProductQueryPlannerTest {
         ProductSearchContract contract = planner.contractFor("Product view", decision);
 
         ProductSearchQuery query =
-                planner.compile("Product view", contract, noCriteria(contract), ProductProjection.FULL, decision);
+                planner.compile("Product view", contract, noCriteria(contract), ProductProjection.FULL, null, decision);
 
         // Field comparisons are case-folded and bound, never interpolated.
         assertThat(query.pageSql()).contains("LOWER(p.name) IN (").doesNotContain("FloodRiskMapZones");

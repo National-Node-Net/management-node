@@ -35,7 +35,7 @@ class PolicyDecisionTest {
 
         assertThat(output.allow()).isTrue();
         assertThat(output.verdict()).isEqualTo(PolicyVerdict.ALLOW);
-        assertThat(output).isEqualTo(PolicyDecision.ALLOW);
+        assertThat(output).isEqualTo(PolicyDecision.ALLOWED);
     }
 
     /** Attribute filtering is a rule's own term, so a top-level list is not part of the envelope. */
@@ -47,7 +47,7 @@ class PolicyDecisionTest {
                             "allowed_filtered_attributes": ["name", "topic"],
                             "masked_filtered_attributes": ["contact_email"]}}""");
 
-        assertThat(output).isEqualTo(PolicyDecision.ALLOW);
+        assertThat(output).isEqualTo(PolicyDecision.ALLOWED);
         assertThat(output.details().additional()).isEmpty();
     }
 
@@ -59,28 +59,28 @@ class PolicyDecisionTest {
     @Test
     void objectResult_withUnknownFields_isStillRead() throws Exception {
         assertThat(parseResult("{\"result\": {\"allow\": true, \"reason\": \"nationality\"}}"))
-                .isEqualTo(PolicyDecision.ALLOW);
+                .isEqualTo(PolicyDecision.ALLOWED);
     }
 
     /** A policy still answering with OPA's plain boolean result keeps working. */
     @Test
     void booleanResult_isReadAsTheVerdictWithNothingElse() throws Exception {
-        assertThat(parseResult("{\"result\": true}")).isEqualTo(PolicyDecision.ALLOW);
-        assertThat(parseResult("{\"result\": false}")).isEqualTo(PolicyDecision.DENY);
+        assertThat(parseResult("{\"result\": true}")).isEqualTo(PolicyDecision.ALLOWED);
+        assertThat(parseResult("{\"result\": false}")).isEqualTo(PolicyDecision.DENIED);
     }
 
     /** A result that cannot be understood must not be read as permission. */
     @Test
     void unreadableResult_isDeny() throws Exception {
-        assertThat(parseResult("{\"result\": \"true\"}")).isEqualTo(PolicyDecision.DENY);
-        assertThat(parseResult("{\"result\": 1}")).isEqualTo(PolicyDecision.DENY);
-        assertThat(parseResult("{\"result\": [\"allow\"]}")).isEqualTo(PolicyDecision.DENY);
+        assertThat(parseResult("{\"result\": \"true\"}")).isEqualTo(PolicyDecision.DENIED);
+        assertThat(parseResult("{\"result\": 1}")).isEqualTo(PolicyDecision.DENIED);
+        assertThat(parseResult("{\"result\": [\"allow\"]}")).isEqualTo(PolicyDecision.DENIED);
         assertThat(parseResult("{\"result\": null}")).isNull();
     }
 
     @Test
     void serialisedShape_usesTheSnakeCaseNamesThePolicyReturns() throws Exception {
-        String json = objectMapper.writeValueAsString(PolicyDecision.ALLOW);
+        String json = objectMapper.writeValueAsString(PolicyDecision.ALLOWED);
 
         assertThat(json)
                 .isEqualTo("{\"allow\":true,"
@@ -91,11 +91,11 @@ class PolicyDecisionTest {
 
     @Test
     void combinedWith_permitsOnlyWhenBothPermit() {
-        assertThat(PolicyDecision.ALLOW.combinedWith(PolicyDecision.ALLOW).allow())
+        assertThat(PolicyDecision.ALLOWED.combinedWith(PolicyDecision.ALLOWED).allow())
                 .isTrue();
-        assertThat(PolicyDecision.ALLOW.combinedWith(PolicyDecision.DENY).allow())
+        assertThat(PolicyDecision.ALLOWED.combinedWith(PolicyDecision.DENIED).allow())
                 .isFalse();
-        assertThat(PolicyDecision.DENY.combinedWith(PolicyDecision.ALLOW).allow())
+        assertThat(PolicyDecision.DENIED.combinedWith(PolicyDecision.ALLOWED).allow())
                 .isFalse();
     }
 
@@ -113,7 +113,7 @@ class PolicyDecisionTest {
 
         assertThat(decision.callerReasons())
                 .containsExactly("organisation.clearance_insufficient", "schedule.type_not_permitted");
-        assertThat(PolicyDecision.DENY.callerReasons()).isEmpty();
+        assertThat(PolicyDecision.DENIED.callerReasons()).isEmpty();
     }
 
     @Test
@@ -154,7 +154,7 @@ class PolicyDecisionTest {
         Map<String, Object> details = output.details().additional();
         // Insertion order is kept, so a logged or re-serialised document reads as the rule wrote it.
         assertThat(details.keySet()).containsExactly("zeta", "access_level", "nested");
-        assertThat(details.get("nested")).isEqualTo(Map.of("a", List.of(1, 2)));
+        assertThat(details).containsEntry("nested", Map.of("a", List.of(1, 2)));
     }
 
     @Test
@@ -187,7 +187,7 @@ class PolicyDecisionTest {
         PolicyDecision<PolicyDecisionDetails> output =
                 new PolicyDecision<>(true, null, null, new PolicyDecisionDetails());
 
-        assertThat(output).isEqualTo(PolicyDecision.ALLOW);
+        assertThat(output).isEqualTo(PolicyDecision.ALLOWED);
         assertThat(output.reasons()).isUnmodifiable();
     }
 
@@ -261,7 +261,7 @@ class PolicyDecisionTest {
         PolicyDecision<PolicyDecisionDetails> request = new PolicyDecision<>(
                 true, List.of(), FALLBACK, new PolicyDecisionDetails(Map.of("access_level", "read")));
 
-        PolicyDecision<PolicyDecisionDetails> combined = request.combinedWith(PolicyDecision.ALLOW);
+        PolicyDecision<PolicyDecisionDetails> combined = request.combinedWith(PolicyDecision.ALLOWED);
 
         assertThat(combined.policy()).isEqualTo(FALLBACK);
         assertThat(combined.details().additional()).isEqualTo(Map.of("access_level", "read"));
@@ -278,11 +278,11 @@ class PolicyDecisionTest {
 
     /** A details subclass, as an endpoint would declare for its rule. */
     @EqualsAndHashCode(callSuper = true)
-    static class Grant extends PolicyDecisionDetails {
+    public static class Grant extends PolicyDecisionDetails {
         private Boolean requiresApproval;
         private Integer maxValidityDays;
 
-        Grant() {}
+        public Grant() {}
 
         Grant(boolean requiresApproval, int maxValidityDays) {
             this.requiresApproval = requiresApproval;

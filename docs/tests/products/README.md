@@ -16,6 +16,7 @@ them: **Objective → Preconditions → Test data → Given / When / Then**, the
 | API | Endpoint | Specification |
 |---|---|---|
 | Product Discover | `POST /api/v1/product/discover` | [product-discover.md](product-discover.md) |
+| Product Discover Filter | `POST /api/v1/product/discover/filter` | [product-discover-filter.md](product-discover-filter.md) |
 | Product View | `GET /api/v1/product/{productId}` | [product-view.md](product-view.md) |
 | Product Subscribe | `POST /api/v1/product/subscribe` | [subscribe.md](subscribe.md) |
 

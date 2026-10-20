@@ -150,6 +150,7 @@ Every `@Policy` handler receives the decision by declaring an `Optional<PolicyDe
 | Endpoint | Parameter |
 |---|---|
 | `POST /api/v1/product/discover` | `Optional<PolicyDecision<ProductDiscoveryPolicyDecisionDetails>>`, passed to the service, which searches with the open contract when it is empty |
+| `POST /api/v1/product/discover/filter` | `Optional<PolicyDecision<ProductDiscoveryPolicyDecisionDetails>>`, passed to `ProductFilterOptionsService`, which builds the filter panel from the same contract discovery would get, open when the decision is empty |
 | `POST /api/v1/product/subscribe` | `Optional<PolicyDecision<ProductSubscriptionPolicyDecisionDetails>>` |
 | `GET /api/v1/product/{productId}` | `Optional<PolicyDecision<ProductViewPolicyDecisionDetails>>` |
 | `GET /api/v1/configuration/producer`, `/consumer` | `Optional<PolicyDecision<PolicyDecisionDetails>>` (generic; no typed details yet) |
@@ -171,7 +172,7 @@ Annotations are checked when the application starts; a violation fails startup r
 | neither is `fallback` | `fallback` is reserved for the resource and global fallback rules |
 | a handler declaring `Optional<PolicyDecision<...>>` carries `@Policy` | without it no decision is ever taken, so the parameter could only ever be empty, almost certainly a missing annotation |
 | that parameter's details type is assignable from the `@Policy` details type | otherwise the decision taken could never be handed to it |
-| `details` is concrete and has a no-argument constructor | details are bound by Jackson, and a decision no rule answered carries empty details of that type |
+| `details` is concrete and has a public no-argument constructor | details are bound by Jackson, and a decision no rule answered carries empty details of that type |
 
 ### Request body buffering
 
@@ -271,6 +272,7 @@ With the shipped rules and routing data (organisation known, `GET` for reads):
 | `@Policy` | Resolution | `policy.id` | Outcome | `reasons` |
 |---|---|---|---|---|
 | `product` / `discover` | `exact` | `product.discover` | allow for a UK organisation with a clearance, with its search contract in `details` (a `POST`, so the read-only fallback would have refused it) | `[]` when allowed |
+| `product` / `discover_filter` | `route` (`route-product-discover-filter`) | `product.discover` | identical allow/deny and `details` to `product` / `discover` for the same input - the route sends it to discovery's rule rather than a rule of its own | `[]` when allowed |
 | `product` / `subscribe` | `exact` | `product.subscribe` | decided by the subscription rule; terms in `details` | `[]` when allowed |
 | `product` / `view` | `exact` | `product.view` | the same gates and the same contract as `discover` (a known UK organisation with a clearance), plus `details.access_level` (`full`\|`summary`\|`basic`), which is reported, not enforced | `[]` when allowed |
 | `product` / `browse` | `route` (`route-product-browse`) | `product.fallback` | allow, `details: {"access_level": "read"}` | `[]` |
@@ -361,7 +363,7 @@ public ProductSubscriptionResponseDTO subscribe(
 
 `PolicyDecisionClient.evaluate(input, detailsType)` returns `PolicyDecision<D>`, converting the details with the application's `ObjectMapper` so they bind like any other JSON in the service; `evaluate(input)` returns the generic form. No cast is needed anywhere: `decision.details()` is already `D`. `withDetails(E)` returns the same envelope carrying other details.
 
-A details subclass must be concrete, have a no-argument constructor (checked at startup), use `@JsonIgnoreProperties(ignoreUnknown = true)`, and implement `equals` over its fields (e.g. Lombok `@EqualsAndHashCode(callSuper = true)`) so empty details can be recognised when decisions combine. A missing field should read as null, or an empty list for a list.
+A details subclass must be concrete, have a public no-argument constructor (checked at startup), use `@JsonIgnoreProperties(ignoreUnknown = true)`, and implement `equals` over its fields (e.g. Lombok `@EqualsAndHashCode(callSuper = true)`) so empty details can be recognised when decisions combine. A missing field should read as null, or an empty list for a list.
 
 ### Reading failures are DENY
 
@@ -644,9 +646,9 @@ and it writes one entry per decision, so it is just as noisy a bring-up aid. Pro
 1. **Give the endpoint its role check** (`@PreAuthorize`) and document the role in [Authentication Requirements](AUTHENTICATION_REQUIREMENTS.md). Policy applies on top of it.
 2. **Annotate the handler** with `@Policy(resource = "...", action = "...")`. Both must match `[a-z][a-z0-9_]*` and must not be `fallback`; startup fails otherwise.
 3. **Decide who answers**, in `docker/opa/policies/`:
-   - a dedicated rule: `<resource>/<action>.rego`, package `policies.<resource>.<action>`, declaring `contract`, `version` and a total `decision`; see [Writing a policy](#writing-a-policy);
-   - or an existing rule, via a route in `routing/data.json`;
-   - or deliberately nothing, relying on `policies.<resource>.fallback`, and if the resource has none, the global fallback denies.
+    - a dedicated rule: `<resource>/<action>.rego`, package `policies.<resource>.<action>`, declaring `contract`, `version` and a total `decision`; see [Writing a policy](#writing-a-policy);
+    - or an existing rule, via a route in `routing/data.json`;
+    - or deliberately nothing, relying on `policies.<resource>.fallback`, and if the resource has none, the global fallback denies.
 4. **Receive the decision**: declare `@Parameter(hidden = true) Optional<PolicyDecision<D>> policyDecision` on the handler. If the rule returns details the endpoint acts on, define `<Resource><Action>PolicyDecisionDetails extends PolicyDecisionDetails` under `model/policy/<resource>/` (see [Dynamic `details`](#dynamic-details)), name it in `@Policy(details = ...)` and use it as `D`; otherwise use `PolicyDecisionDetails`. Handle the empty `Optional` (policy switched off) explicitly.
 5. **Write the tests**: a `<action>_test.rego` beside the rule covering the allow case, each deny reason and the `details`; and Java unit tests for the handler, including the empty-decision case and how the details shape the response.
 6. **Run the checks**, see [Testing](#testing), and restart OPA (`docker compose restart opa`) to load the change locally.
@@ -708,9 +710,9 @@ The rule for the endpoint in the example would be annotated `@Policy(resource = 
 
 ## Reference endpoints
 
-Three endpoints on `ProductController` exercise the mechanism end to end. Their rules are built from the organisation and product attributes in the database, and are walked through per organisation, with every expected output, in [`docker/opa/policy_sample_stories.md`](../docker/opa/policy_sample_stories.md).
+Three endpoints on `ProductController` exercise the mechanism end to end. Their rules are built from the organisation and product attributes in the database, and are walked through per organisation, with every expected output, in [`docker/opa/policy_sample_stories.md`](../docker/opa/policy_sample_stories.md). A fourth, `POST /api/v1/product/discover/filter`, is routed to discovery's rule rather than carrying one of its own; see its own subsection below.
 
-For testing them rather than reading about them: [`docs/tests/products/`](tests/products/README.md) holds a test requirement specification per API: [Product Discover](tests/products/product-discover.md) and [Product View](tests/products/product-view.md), and [`docs/DISCOVERY_TEST_SCENARIOS.md`](DISCOVERY_TEST_SCENARIOS.md) is the guided tour over the sample data.
+For testing them rather than reading about them: [`docs/tests/products/`](tests/products/README.md) holds a test requirement specification per API: [Product Discover](tests/products/product-discover.md), [Product Discover Filter](tests/products/product-discover-filter.md) and [Product View](tests/products/product-view.md), and [`docs/DISCOVERY_TEST_SCENARIOS.md`](DISCOVERY_TEST_SCENARIOS.md) is the guided tour over the sample data.
 
 All three rules read the caller through four facts in `lib/entitlements.rego`:
 
@@ -729,7 +731,7 @@ All three rules read the caller through four facts in `lib/entitlements.rego`:
 
 This is the endpoint where a decision stops being a verdict and becomes a *search contract*: the rule's `details` say which products exist for this caller, what they may ask, and what is withheld, and `ProductDiscoveryServiceImpl` compiles all three into one parameterised SQL statement. No entitlement logic lives in Java: no clearance comparison, no purpose check, no attribute name. Changing who may discover what is a Rego or attribute-data change.
 
-**A search result is a summary.** Discovery returns `id`, `name`, `description`, `type` and an `organisation` block carrying its `key` and `name`, enough to recognise a product, see whose it is, and ask for it by id, and the rest of the object model is what [the view endpoint](#get-apiv1productproductid--a-search-that-returns-one-product) is for. The organisation is the one block a search carries, because its two columns come from a join the query already makes; its *attributes* would be a query of their own, so they are left to the view. That narrowing is `ProductProjection.SUMMARY`, and it is **Java's, not policy's**: the rule answers both endpoints identically, and each decides how much of the answer it returns. It is applied to the query, so a search does not select the columns it will not return and runs no block or attribute query at all.
+**A search result is a summary.** Discovery returns `id`, `name`, `displayName`, `description`, `type`, `format`, `isOwnProduct` (when the caller's organisation is known) and an `organisation` block carrying its `key` and `name`, enough to recognise a product, see whose it is, and ask for it by id, and the rest of the object model is what [the view endpoint](#get-apiv1productproductid--a-search-that-returns-one-product) is for. The organisation is the one block a search carries, because its two columns come from a join the query already makes; its *attributes* would be a query of their own, so they are left to the view. That narrowing is `ProductProjection.SUMMARY`, and it is **Java's, not policy's**: the rule answers both endpoints identically, and each decides how much of the answer it returns. It is applied to the query, so a search does not select the columns it will not return and runs no block or attribute query at all.
 
 Two things follow, and both matter. It can only **narrow**: the projection is intersected with the decision, so a field policy withholds stays withheld and no projection can widen access. And it does not limit **searching**: a caller may still filter and sort on anything policy allows, including fields the summary does not carry, such as `organisation.key` and `topic`, say.
 
@@ -743,7 +745,7 @@ Filtering is described separately for **fields** (properties of the product as t
 | `unmask_when` | `unmaskWhen()` | a boolean column per rule, so a name masked in general is shown on the products matching its condition (an organisation's own, say) |
 | `allowed_filtered_fields` / `_attributes` | typed | what may be filtered, sorted and text-searched on. Effective set is `allowed − masked`: something withheld can never be filtered on, or a filter would reveal it |
 | `denied_filtered_fields` / `_attributes` | typed | what the caller asked for and may not have; each becomes a named refusal |
-| `text_search_fields` | `textSearchFields()` | the columns a free-text term runs against (`name`, `description`). Empty with a term given is a refusal |
+| `text_search_fields` | `textSearchFields()` | the columns a free-text term runs against (`name`, `displayName`, `description`). Empty with a term given is a refusal |
 | `mask_sensitive_attributes` | `maskSensitiveAttributes()` | whether attributes flagged `sensitive` in the **catalogue** are withheld, in every scope. Absent reads as `true` |
 | `max_page_size` | `maxPageSize()` | the page-size cap; a larger request is clamped, not refused. Absent, or below 1, falls back to `ProductSearchContract.DEFAULT_MAX_PAGE_SIZE` (100) - a constant, not a setting, since it bounds one query's cost rather than deciding who sees what |
 | `obligations` | `obligations()` | duties the service must fulfil, or refuse; see [Obligations](#obligations) below |
@@ -774,6 +776,38 @@ XACML's rule holds: **a Policy Enforcement Point that cannot fulfil an obligatio
 | `mask_response` | satisfied by the masked lists, which are applied whether or not it is obliged |
 | `aggregate_before_release` | a duty on whoever later consumes the product's data, not something a metadata search can do; passed through to the caller in the response's `policy.obligations` |
 | anything else | the search is refused: `403`, logged `policy.obligation_unsupported` |
+
+### `POST /api/v1/product/discover/filter`: the panel for discovery's own decision
+
+- Role: `product_discovery`, as discover.
+- `@Policy(resource = "product", action = "discover_filter", details = ProductDiscoveryPolicyDecisionDetails.class)`; the handler passes the decision to `ProductFilterOptionsService`, which makes no decision of its own.
+- Answered by `policies.product.discover`, reached by a **route** (`route-product-discover-filter` in `docker/opa/policies/routing/data.json`) rather than its own rule, so `policy.resolution` reports `route` here and `exact` on discover even though `policy.id` is `product.discover` on both.
+
+This endpoint has no rule of its own because it has no question of its own: it returns the same
+search contract discovery's decision already carries, turned into the catalogue's filter panel
+instead of into a page of products - every filter the caller may use, with its data type and
+operators, and the distinct values it has among the caller's visible products and how many
+products hold each one *for this request*. The same three caller-level gates, the same row filter,
+the same allowed/masked lists as discover apply unchanged, because they are literally the same
+decision, not a second one evaluated the same way.
+
+The panel narrows the contract further, on top of policy: `name`, `displayName` and `description`
+(already searched by discover's free-text box) and `topic` and `source` (identifiers, not
+something browsed by value) are never offered as panel filters, even when the contract permits
+filtering on them - `FilterOptionTargets.isOfferedInPanel` excludes them unconditionally, before
+the contract is consulted at all. `POST /api/v1/product/discover` itself is unaffected: a caller
+may still filter on any of the five directly. The panel's remaining fields - `type`, `format`,
+`organisation.key`, `organisation.name`, `subscribedBy`, `isOwnProduct` - always carry their
+distinct values when offered, so no entry in the panel lacks a value list any more.
+
+**Counting is disjunctive faceting, computed without a second decision.** For each permitted,
+value-listing target, a count is the number of products satisfying the row filter, the request's
+`text`, and every request filter *except those on the same target*, that hold the value - so
+choosing one value of a group narrows every *other* group, while that group's own counts keep
+reporting what choosing a different value would give. This is built from `ProductSearchContract`
+and `SqlPredicateCompiler` exactly as discovery's own query is, in `ProductFacetQueryBuilder`, at a
+fixed statement cost per request regardless of how many values exist. Full specification:
+[`docs/tests/products/product-discover-filter.md`](tests/products/product-discover-filter.md).
 
 ### `POST /api/v1/product/subscribe`: exact rule with typed details
 
@@ -876,6 +910,12 @@ Plain JUnit 5 and Mockito unit tests, run by `./mvnw test`:
 - `ProductQueryPlannerTest`: the single enforcement point both product endpoints share: the contract a decision yields, the open contract when policy is off, and the three refusals that must never widen access: no decision while policy is on, an obligation the service cannot fulfil, and a contract that will not compile.
 - `ProductDiscoveryServiceImplTest`: the search covers the query built from the contract, page-size clamping, paging, and that no `PolicyDecisionClient` is a collaborator at all.
 - `ProductViewServiceImplTest`: reading one product covers the id constraint AND-ed with the row filter, no count query, and that a product excluded by the row filter is indistinguishable from one that does not exist.
+- `ProductFilterOptionsServiceImplTest`: the discover filter panel runs discover's front half unchanged (contract, criteria refusals, count), uses the planner's sensitive attribute set for both the criteria and the offered filters, marks `selected` only for `eq`/`in`/`any_of`, and treats `UNKNOWN_ORG` as no organisation.
+- `FilterOptionTargetsTest`: which filters the panel offers - every filterable field but `id`, the attributes the contract permits minus discover's sensitive set when it is masked, `isOwnProduct` only for a known caller - and each target's operators, default operator and order.
+- `ProductFacetQueryBuilderTest`: the single facet statement - each target excluded from its own counts, the row filter and text applied, the schema prefix - and that it is built from the targets `FilterOptionTargets` actually returns.
+- `FacetValuesTest`: one target's facet rows summarised - `missingCount`, case-merging for fields only, both booleans always listed, ordering, the cap and `truncated`, and `selected` matched case-insensitively for a field and exactly for an attribute.
+- `ProductDiscoveryRepositoryFilterOptionsTest`: the repository's filter-option reads - the attribute definitions and the facet counts - by capturing the SQL and the row mapper, null branches included.
+- `UnknownIdentifiersTest`: `knownOrganisationOrNull`, which turns null, blank and `UNKNOWN_ORG` into "not known" at the entry of discover, view and the filter panel.
 - `ProductViewPolicyDecisionDetailsTest`: the view rule's details, including that an absent row filter reads as deny-all.
 - `ProductControllerTest`: the product endpoints, including `404` for a product this caller has no access to.
 

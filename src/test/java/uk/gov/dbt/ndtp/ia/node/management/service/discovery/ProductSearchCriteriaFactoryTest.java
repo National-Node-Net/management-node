@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  * © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally
- * attributed to the UK's Department for Business, Innovation, Science and Trade (BIST) as the governing entity.
+ * attributed to the Department for Business and Trade (UK) as the governing entity.
  */
 
 package uk.gov.dbt.ndtp.ia.node.management.service.discovery;
@@ -225,6 +225,46 @@ class ProductSearchCriteriaFactoryTest {
         assertThatThrownBy(() -> factory.create(request, open, Set.of()))
                 .isInstanceOf(InvalidSearchCriteriaException.class)
                 .hasMessageContaining("does not apply to the field 'topic'");
+    }
+
+    @Test
+    void create_isOwnProductWithABoolean_isAnExactComparison() {
+        ProductDiscoveryRequestDTO request = request(List.of(filter(null, "isOwnProduct", null, null, List.of(true))));
+
+        ProductSearchCriteria criteria = factory.create(request, open, Set.of());
+
+        assertThat(criteria.filters()).singleElement().satisfies(comparison -> {
+            assertThat(comparison.target()).isEqualTo(FilterTarget.ofField("isOwnProduct"));
+            assertThat(comparison.operator()).isEqualTo(ComparisonOperator.EQ);
+        });
+    }
+
+    @Test
+    void create_isOwnProductWithANonBoolean_isRejected() {
+        ProductDiscoveryRequestDTO request = request(List.of(filter(null, "isOwnProduct", null, null, List.of("yes"))));
+
+        assertThatThrownBy(() -> factory.create(request, open, Set.of()))
+                .isInstanceOf(InvalidSearchCriteriaException.class)
+                .hasMessageContaining("The values of 'isOwnProduct' must be true or false");
+    }
+
+    @Test
+    void create_containsOnIsOwnProduct_isRejected() {
+        ProductDiscoveryRequestDTO request =
+                request(List.of(filter(null, "isOwnProduct", null, ComparisonOperator.CONTAINS, List.of("true"))));
+
+        assertThatThrownBy(() -> factory.create(request, open, Set.of()))
+                .isInstanceOf(InvalidSearchCriteriaException.class)
+                .hasMessageContaining("does not apply to the field 'isOwnProduct'");
+    }
+
+    @Test
+    void create_isOwnProductNotAllowedByPolicy_isRefused() throws JsonProcessingException {
+        ProductSearchContract contract = enforcing("{\"allowed_filtered_fields\": [\"name\"]}");
+        ProductDiscoveryRequestDTO request = request(List.of(filter(null, "isOwnProduct", null, null, List.of(true))));
+
+        assertThatThrownBy(() -> factory.create(request, contract, Set.of()))
+                .isInstanceOf(AccessRejectedException.class);
     }
 
     @Test

@@ -38,19 +38,24 @@ final class QueryParameters {
         }
         Map<String, List<String>> parameters = new LinkedHashMap<>();
         for (String pair : queryString.split("&")) {
-            if (pair.isEmpty()) {
-                continue;
-            }
-            int separator = pair.indexOf('=');
-            String name = decode(separator < 0 ? pair : pair.substring(0, separator));
-            if (name.isEmpty()) {
-                continue;
-            }
-            String value = separator < 0 ? "" : decode(pair.substring(separator + 1));
-            parameters.computeIfAbsent(name, key -> new ArrayList<>()).add(value);
+            addPair(parameters, pair);
         }
         parameters.replaceAll((name, values) -> List.copyOf(values));
         return parameters;
+    }
+
+    /** Adds one {@code name=value} pair; an empty pair, or one with no name, is ignored. */
+    private static void addPair(Map<String, List<String>> parameters, String pair) {
+        if (pair.isEmpty()) {
+            return;
+        }
+        int separator = pair.indexOf('=');
+        String name = decode(separator < 0 ? pair : pair.substring(0, separator));
+        if (name.isEmpty()) {
+            return;
+        }
+        String value = separator < 0 ? "" : decode(pair.substring(separator + 1));
+        parameters.computeIfAbsent(name, key -> new ArrayList<>()).add(value);
     }
 
     /** Percent-decodes one component, leaving it as-is if it is not validly encoded. */
