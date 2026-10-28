@@ -170,14 +170,15 @@ When `operator` is omitted it is chosen from the target and the number of values
 
 | Situation | Operator chosen |
 |---|---|
-| exactly one value, on a **text-searchable field** (`name`, `description`) | `contains` |
+| exactly one value, on a **prose field** (`name`, `displayName`, `description`) | `contains` |
 | exactly one value, on anything else (`topic`, `type`, `source`, `organisation.key`, `organisation.name`, `subscribedBy`, **any attribute**) | `eq` |
 | zero values, or more than one value | `in` |
 
 All comparisons are **case-insensitive**, whichever operator is used.
 
-This is the single most common source of "my filter returned nothing". `organisation.name` is not
-text-searchable, so a single value defaults to `eq` and must match the whole name.
+This is the single most common source of "my filter returned nothing". Free text searches
+`organisation.name`, but a **filter** on it is not a prose field, so a single value defaults to `eq`
+and must match the whole name.
 
 ```jsonc
 // eq, matches nothing: the organisation is called "Bristol City Council (BCC)"
@@ -211,7 +212,7 @@ text-searchable, so a single value defaults to `eq` and must match the whole nam
   "policy": {
     "filterableFields": ["description", "displayName", "format", "isOwnProduct", "name", "organisation.key", "organisation.name", "source", "subscribedBy", "topic", "type"],
     "filterableAttributes": ["identifiability", "organisation.jurisdictions", "organisation.responsibility_areas", "population_risk_tags", "quality_designation", "record_unit"],
-    "textSearchFields": ["name", "displayName", "description"],
+    "textSearchFields": ["name", "displayName", "description", "organisation.name"],
     "maskedFields": [],
     "maskedAttributes": [],
     "maxPageSize": 100,
@@ -328,7 +329,7 @@ These are the levers. Everything in section 8 is a permutation of them.
 | `format` | yes | yes | no | yes |
 | `isOwnProduct` | yes, booleans only | **no** | no | yes, when the caller's organisation is known |
 | `organisation.key` | yes | yes | no | yes |
-| `organisation.name` | yes | yes | no | yes |
+| `organisation.name` | yes | yes | **yes** (a filter on it still defaults to `eq`) | yes |
 | `subscribedBy` | yes | **no** | no | no |
 | `producer.name`, `producer.description`, `producer.active` | no | no | no | no |
 
@@ -393,7 +394,7 @@ Measured against the running policy. This table is the oracle for every `403` in
 | **allowed filter fields** | `description`, `displayName`, `format`, `isOwnProduct`, `name`, `organisation.key`, `organisation.name`, `source`, `subscribedBy`, `topic`, `type` | same as ENV | `description`, `displayName`, `format`, `isOwnProduct`, `name`, `organisation.key`, `organisation.name`, `topic`, `type` |
 | **allowed filter attributes** | `identifiability`, `organisation.jurisdictions`, `organisation.responsibility_areas`, `population_risk_tags`, `quality_designation`, `record_unit` | `identifiability`, `organisation.jurisdictions`, `organisation.responsibility_areas`, `quality_designation`, `record_unit`, `temporal_resolution` | `organisation.jurisdictions`, `organisation.responsibility_areas`, `quality_designation`, `record_unit` |
 | **masked fields** | *(none)* | `consumers` | `consumers`, `policyAttributes`, `source`, `subscribedBy` |
-| `textSearchFields` | `name`, `displayName`, `description` | same as ENV | same as ENV |
+| `textSearchFields` | `name`, `displayName`, `description`, `organisation.name` | same as ENV | same as ENV |
 | `maxPageSize` | 100 | 50 | 20 |
 | `obligations` | `audit_access` | `aggregate_before_release`, `audit_access`, `mask_response` | `audit_access`, `mask_response` |
 
@@ -577,7 +578,7 @@ discover "$BCC_TOKEN" '{}' | jq .policy
 {
   "filterableFields": ["description", "displayName", "format", "isOwnProduct", "name", "organisation.key", "organisation.name", "topic", "type"],
   "filterableAttributes": ["organisation.jurisdictions", "organisation.responsibility_areas", "quality_designation", "record_unit"],
-  "textSearchFields": ["name", "displayName", "description"],
+  "textSearchFields": ["name", "displayName", "description", "organisation.name"],
   "maskedFields": ["consumers", "policyAttributes", "source", "subscribedBy"],
   "maskedAttributes": [],
   "maxPageSize": 20,
@@ -618,9 +619,9 @@ products still cannot reach the three that are directly identifiable or risk-tag
 
 ### B. Free-text search
 
-#### TC-05: Free text matches `name`, `displayName` **or** `description`
+#### TC-05: Free text matches `name`, `displayName`, `description` **or** the organisation's name
 
-**Objective.** Confirm the text term runs against both text-searchable columns, case-insensitively,
+**Objective.** Confirm the text term runs against every text-searched column, case-insensitively,
 as a substring.
 
 **Preconditions.** P1–P4.
@@ -635,6 +636,8 @@ as a substring.
 | `{"text": "housing"}` | HEG | those two **plus** HousingNeedSurvey |
 | `{"text": "Scotland"}` | HEG | ScotlandLandRegisterExtract *(name)*, HousingNeedSurvey *(description)* |
 | `{"text": "Scotland"}` | BCC | **0 results** |
+| `{"text": "Homes England"}` | ENV | AffordableHousingCompletions, BrownfieldLandAvailability, HelpToBuyApplicants, ScotlandLandRegisterExtract *(organisation name only)* |
+| `{"text": "homes england"}` | BCC | AffordableHousingCompletions *(organisation name only)* |
 
 **Given** the catalogue
 **When** each body is posted
@@ -644,13 +647,15 @@ every case including the empty one.
 *Why:* `housing` as ENV vs HEG shows text searching and the row filter composing: HousingNeedSurvey
 is experimental, which HEG's `statistical_analysis` purpose earns and ENV's purposes do not. `Scotland`
 as BCC shows the jurisdiction condition: BCC has a local remit, and the product covers Scotland only.
+`Homes England` appears in no product's name or description, only as the owning organisation's name,
+so those two rows match through `organisation.name` alone and return nothing if it is not searched.
 
 ---
 
 #### TC-06: Free text never matches `topic` or `source`
 
-**Objective.** Confirm only `name` and `description` are text-searched, and that the same strings
-are still reachable through an explicit filter.
+**Objective.** Confirm only `name`, `displayName`, `description` and `organisation.name` are
+text-searched, and that the same strings are still reachable through an explicit filter.
 
 **Preconditions.** P1–P4.
 
@@ -827,12 +832,13 @@ products cannot reach past it.
 | c | `{"filters":[{"field":"organisation.name","values":["Bristol City Council (BCC)"]}]}` | **5**, since the whole name matches exactly |
 | d | `{"filters":[{"field":"name","values":["bristol"]}]}` | **4**: BristolAirQualitySensors, BristolSchoolPlaces, BristolTemporaryAccommodation, `Bristol_Cycle%Counts` |
 
-**Given** that `organisation.name` is **not** text-searchable and `name` **is**
+**Given** that a filter on `organisation.name` matches the whole name by default, and on `name` a substring
 **When** each is posted
 **Then** the results are as above: (a) is an exact-match miss, not an error.
 
-*Why:* a single value defaults to `contains` only on `name` and `description`. Everywhere else it
-defaults to `eq`. (a) returning nothing is correct behaviour and the commonest false defect report
+*Why:* a single value defaults to `contains` only on `name`, `displayName` and `description`.
+Everywhere else it defaults to `eq`, including `organisation.name`, although free text searches it
+(TC-05). (a) returning nothing is correct behaviour and the commonest false defect report
 against this endpoint.
 
 ---

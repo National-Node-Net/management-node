@@ -65,7 +65,7 @@ test_env_contract if {
 		"masked_filtered_attributes": [],
 		"mask_sensitive_attributes": false,
 		"visible_fields": every_field,
-		"text_search_fields": ["description", "displayName", "name"],
+		"text_search_fields": ["description", "displayName", "name", "organisation.name"],
 		"unmask_when": [{"names": ["subscribedBy", "consumers"], "when": own_node("ENV")}],
 		"row_filter": admitted("ENV", [
 			{"type": "comparison", "attribute": "identifiability", "operator": "in", "values": ["anonymised", "directly_identifiable", "non_personal", "pseudonymised"]},
@@ -94,7 +94,7 @@ test_heg_contract if {
 		"masked_filtered_attributes": [],
 		"mask_sensitive_attributes": true,
 		"visible_fields": [name | some name in every_field; name != "consumers"],
-		"text_search_fields": ["description", "displayName", "name"],
+		"text_search_fields": ["description", "displayName", "name", "organisation.name"],
 		"unmask_when": [{"names": ["subscribedBy", "consumers"], "when": own_node("HEG")}],
 		"row_filter": admitted("HEG", [
 			{"type": "comparison", "attribute": "identifiability", "operator": "in", "values": ["anonymised", "non_personal", "pseudonymised"]},
@@ -127,7 +127,7 @@ test_bcc_contract if {
 			"description", "displayName", "format", "isOwnProduct", "name", "organisation", "organisation.key", "organisation.name",
 			"producer", "producer.active", "producer.description", "producer.name", "topic", "type",
 		],
-		"text_search_fields": ["description", "displayName", "name"],
+		"text_search_fields": ["description", "displayName", "name", "organisation.name"],
 		"unmask_when": [{"names": ["subscribedBy", "consumers"], "when": own_node("BCC")}],
 		"row_filter": admitted("BCC", [
 			{"type": "comparison", "attribute": "identifiability", "operator": "in", "values": ["anonymised", "non_personal"]},
@@ -294,12 +294,12 @@ test_an_allowed_sort_key_is_not_refused if {
 }
 
 # ---------------------------------------------------------------------------
-# Free text searches the name, the display name and the description
+# Free text searches the name, the display name, the description and the organisation's name
 # ---------------------------------------------------------------------------
 
-test_text_searches_the_name_the_display_name_and_the_description if {
+test_text_searches_the_name_the_display_name_the_description_and_the_organisation_name if {
 	every org in object.keys(sample_data.organisations) {
-		discover.decision.details.text_search_fields == ["description", "displayName", "name"] with input as search(org, {"text": "flood"})
+		discover.decision.details.text_search_fields == ["description", "displayName", "name", "organisation.name"] with input as search(org, {"text": "flood"})
 	}
 }
 
@@ -310,12 +310,12 @@ test_text_counts_as_asking_to_search_the_description if {
 	decision.allow == false
 	decision.details.denied_filtered_fields == ["description"]
 	"filter.field_not_permitted:description" in decision.reasons
-	decision.details.text_search_fields == ["displayName", "name"]
+	decision.details.text_search_fields == ["displayName", "name", "organisation.name"]
 }
 
 test_text_is_refused_when_no_column_is_left_to_search if {
 	decision := discover.decision with input as search("ENV", {"text": "flood"})
-		with data.lib.product.hidden_fields as ["description", "displayName", "name"]
+		with data.lib.product.hidden_fields as ["description", "displayName", "name", "organisation.name"]
 
 	decision.allow == false
 	decision.details.text_search_fields == []
