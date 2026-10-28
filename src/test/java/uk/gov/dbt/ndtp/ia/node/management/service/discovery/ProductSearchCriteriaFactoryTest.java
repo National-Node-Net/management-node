@@ -107,6 +107,18 @@ class ProductSearchCriteriaFactoryTest {
     }
 
     @Test
+    void create_singleValueOnOrganisationName_stillDefaultsToEquals() {
+        // Free text searches the organisation's name, but a filter on it still matches the whole name.
+        ProductDiscoveryRequestDTO request =
+                request(List.of(filter(null, "organisation.name", null, null, List.of("Bristol City Council (BCC)"))));
+
+        assertThat(ProductField.ORGANISATION_NAME.isTextSearchable()).isTrue();
+        assertThat(factory.create(request, open, Set.of()).filters())
+                .extracting(FilterNode.Comparison::operator)
+                .containsExactly(ComparisonOperator.EQ);
+    }
+
+    @Test
     void create_severalValues_defaultsToIn() {
         ProductDiscoveryRequestDTO request = request(List.of(
                 filter(null, "name", null, null, List.of("flood", "fire")),

@@ -745,7 +745,7 @@ Filtering is described separately for **fields** (properties of the product as t
 | `unmask_when` | `unmaskWhen()` | a boolean column per rule, so a name masked in general is shown on the products matching its condition (an organisation's own, say) |
 | `allowed_filtered_fields` / `_attributes` | typed | what may be filtered, sorted and text-searched on. Effective set is `allowed − masked`: something withheld can never be filtered on, or a filter would reveal it |
 | `denied_filtered_fields` / `_attributes` | typed | what the caller asked for and may not have; each becomes a named refusal |
-| `text_search_fields` | `textSearchFields()` | the columns a free-text term runs against (`name`, `displayName`, `description`). Empty with a term given is a refusal |
+| `text_search_fields` | `textSearchFields()` | the columns a free-text term runs against (`name`, `displayName`, `description`, `organisation.name`). Empty with a term given is a refusal |
 | `mask_sensitive_attributes` | `maskSensitiveAttributes()` | whether attributes flagged `sensitive` in the **catalogue** are withheld, in every scope. Absent reads as `true` |
 | `max_page_size` | `maxPageSize()` | the page-size cap; a larger request is clamped, not refused. Absent, or below 1, falls back to `ProductSearchContract.DEFAULT_MAX_PAGE_SIZE` (100) - a constant, not a setting, since it bounds one query's cost rather than deciding who sees what |
 | `obligations` | `obligations()` | duties the service must fulfil, or refuse; see [Obligations](#obligations) below |

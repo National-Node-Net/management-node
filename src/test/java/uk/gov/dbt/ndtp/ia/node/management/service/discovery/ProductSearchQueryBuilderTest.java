@@ -575,4 +575,12 @@ class ProductSearchQueryBuilderTest {
 
         assertThat(whereOf(query)).contains("LOWER(p.display_name) LIKE");
     }
+
+    @Test
+    void build_textSearch_includesTheOrganisationName() {
+        ProductSearchQuery query =
+                builder.build(ProductSearchContract.open(), criteria("bristol", List.of()), ProductProjection.SUMMARY);
+
+        assertThat(whereOf(query)).contains("LOWER(o.name) LIKE");
+    }
 }
