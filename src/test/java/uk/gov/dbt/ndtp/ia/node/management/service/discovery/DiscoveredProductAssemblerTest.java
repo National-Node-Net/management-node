@@ -91,6 +91,7 @@ class DiscoveredProductAssemblerTest {
         assertThat(product.id()).isEqualTo(1L);
         assertThat(product.name()).isEqualTo("Flood risk");
         assertThat(product.description()).isEqualTo("Flood risk of every property");
+        assertThat(product.longDescription()).isEqualTo("Modelled from river and coastal flood maps");
         assertThat(product.topic()).isEqualTo("flood.risk");
         assertThat(product.type()).isEqualTo("topic");
         assertThat(product.source()).isEqualTo("https://example.test/flood");
@@ -375,6 +376,17 @@ class DiscoveredProductAssemblerTest {
         assertThat(products.get(1).format()).isNull();
     }
 
+    /** A search result carries the short description only; the long one is the view's. */
+    @Test
+    void assemble_summary_carriesNoLongDescription() {
+        DiscoveredProductDTO product = assembler
+                .assemble(List.of(summaryRow(1L)), ProductSearchContract.open(), ProductProjection.SUMMARY)
+                .get(0);
+
+        assertThat(product.description()).isEqualTo("Flood risk of every property");
+        assertThat(product.longDescription()).isNull();
+    }
+
     @Test
     void assemble_isOwnProductNotSelected_isAbsent() {
         DiscoveredProductDTO product = assembler
@@ -391,6 +403,7 @@ class DiscoveredProductAssemblerTest {
         row.put(ProductSearchQuery.PRODUCER_ID, 20L);
         row.put(ProductField.NAME.alias(), "Flood risk");
         row.put(ProductField.DESCRIPTION.alias(), "Flood risk of every property");
+        row.put(ProductField.LONG_DESCRIPTION.alias(), "Modelled from river and coastal flood maps");
         row.put(ProductField.TOPIC.alias(), "flood.risk");
         row.put(ProductField.TYPE.alias(), "topic");
         row.put(ProductField.SOURCE.alias(), "https://example.test/flood");

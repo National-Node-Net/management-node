@@ -220,6 +220,7 @@ searchable_fields := [
 	"displayName",
 	"format",
 	"isOwnProduct",
+	"longDescription",
 	"name",
 	"organisation.key",
 	"organisation.name",
@@ -288,10 +289,10 @@ denied_attribute_set contains name if {
 
 denied_filtered_attributes := sort(denied_attribute_set)
 
-# Free text searches the name, the display name and the description, minus whatever the caller
+# Free text searches the name, the display name and both descriptions, minus whatever the caller
 # may not use or see.
 text_search_fields := sort([name |
-	some name in ["description", "displayName", "name"]
+	some name in ["description", "displayName", "longDescription", "name"]
 	name in allowed_filtered_fields
 	not name in masked_filtered_fields
 ])

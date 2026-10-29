@@ -164,7 +164,7 @@ floor it named.
 | `masked_filtered_attributes` | `[]` | `[]` | `[]` |
 | `mask_sensitive_attributes` | `false` | `true` | `true` |
 | `visible_fields` | all 15 | 14 | 11 |
-| `text_search_fields` | `description`, `name` | same | same |
+| `text_search_fields` | `description`, `displayName`, `longDescription`, `name` | same | same |
 | `unmask_when` | `organisation.key eq ENV` | `eq HEG` | `eq BCC` |
 | `row_filter` | discovery's, identically (Story 3) | same | same |
 | `max_page_size` | 100 | 50 | 20 |
@@ -231,7 +231,7 @@ the 17, `HEG` 12 and `BCC` 8, including, for `BCC`, its own directly identifiabl
     "mask_sensitive_attributes": true,
     "visible_fields": ["description", "name", "organisation", "organisation.key", "organisation.name",
                        "producer", "producer.active", "producer.description", "producer.name", "topic", "type"],
-    "text_search_fields": ["description", "name"],
+    "text_search_fields": ["description", "displayName", "longDescription", "name"],
     "unmask_when": [{"names": ["subscribedBy", "consumers"],
                      "when": {"type": "comparison", "field": "organisation.key", "operator": "eq", "values": ["BCC"]}}],
     "row_filter": {"type": "group", "combinator": "or", "nodes": [
@@ -370,7 +370,7 @@ neither known nor allowed is simply refused.
 | `masked_filtered_attributes` | attributes this rule masks by name; none today | `[]` | `[]` | `[]` |
 | `mask_sensitive_attributes` | whether attributes flagged `sensitive` in the catalogue are withheld: below `SECRET` | `false` | `true` | `true` |
 | `visible_fields` | the whole vocabulary minus `masked_filtered_fields`; the `SELECT` is built from it | all 15 | 14 | 11 |
-| `text_search_fields` | `name` and `description`, minus what is denied or masked | `description`, `name` | same | same |
+| `text_search_fields` | `name`, `displayName` and both descriptions, minus what is denied or masked | `description`, `displayName`, `longDescription`, `name` | same | same |
 | `unmask_when` | shows `subscribedBy` and `consumers` on the caller's **own** products, as a condition the database evaluates | `organisation.key eq ENV` | `eq HEG` | `eq BCC` |
 | `row_filter` | which products may appear; see below | widest | middle | narrowest |
 | `max_page_size` | 100 at `SECRET`, 50 at `OFFICIAL-SENSITIVE`, 20 below | 100 | 50 | 20 |
@@ -470,7 +470,7 @@ All three are allowed. `ENV`'s full decision:
     "masked_filtered_attributes": [],
     "mask_sensitive_attributes": false,
     "visible_fields": ["subscribedBy", "consumers", "description", "name", "organisation", "organisation.key", "organisation.name", "policyAttributes", "producer", "producer.active", "producer.description", "producer.name", "source", "topic", "type"],
-    "text_search_fields": ["description", "name"],
+    "text_search_fields": ["description", "displayName", "longDescription", "name"],
     "unmask_when": [{"names": ["subscribedBy", "consumers"], "when": {"type": "comparison", "field": "organisation.key", "operator": "eq", "values": ["ENV"]}}],
     "row_filter": {"type": "group", "combinator": "or", "nodes": [
       {"type": "comparison", "field": "organisation.key", "operator": "eq", "values": ["ENV"]},

@@ -59,6 +59,8 @@ class ProductPolicyResourceLoaderTest {
         product.setTopic("topic.FloodRiskMapZones");
         product.setSource("kafka://flood");
         product.setDisplayName("Flood Risk Map Zones");
+        product.setDescription("Flood risk zones for England");
+        product.setLongDescription("Zones are modelled from river and coastal flood maps");
         product.setFormat("GeoJSON");
         product.setProducer(producer);
         product.setProductType(type);
@@ -86,6 +88,8 @@ class ProductPolicyResourceLoaderTest {
         assertThat(resource.get().fields())
                 .containsEntry("name", "FloodRiskMapZones")
                 .containsEntry("displayName", "Flood Risk Map Zones")
+                .containsEntry("description", "Flood risk zones for England")
+                .containsEntry("longDescription", "Zones are modelled from river and coastal flood maps")
                 .containsEntry("format", "GeoJSON")
                 .containsEntry("type", "topic")
                 .containsEntry("producer", "env-producer")
@@ -123,6 +127,13 @@ class ProductPolicyResourceLoaderTest {
         assertThat(fields)
                 .containsKeys("id", "name", "topic")
                 .doesNotContainKeys(
-                        "displayName", "description", "source", "format", "type", "producer", "organisation");
+                        "displayName",
+                        "description",
+                        "longDescription",
+                        "source",
+                        "format",
+                        "type",
+                        "producer",
+                        "organisation");
     }
 }

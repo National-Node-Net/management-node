@@ -146,7 +146,7 @@ class FilterOptionTargetsTest {
     void textSearchedFieldsAndIdentifiers_areNotOffered_evenWhenPermitted() throws Exception {
         ProductSearchContract contract = enforcing(
                 """
-                {"allowed_filtered_fields":["name","displayName","description","topic","source","type"]}
+                {"allowed_filtered_fields":["name","displayName","description","longDescription","topic","source","type"]}
                 """);
 
         List<FilterOptionTarget> options = FilterOptionTargets.permitted(contract, List.of(), Set.of(), "ENV");

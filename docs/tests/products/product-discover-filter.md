@@ -146,7 +146,7 @@ service knows which members it will use. See [TC-16](#tc-16-sort-page-and-size-a
 ```json
 {
   "totalElements": 6,
-  "textSearch": { "enabled": true, "fields": ["name", "displayName", "description"] },
+  "textSearch": { "enabled": true, "fields": ["name", "displayName", "description", "longDescription"] },
   "filters": [
     {
       "key": "field:type",
@@ -216,7 +216,7 @@ report for the identical body and token. See [TC-04](#tc-04-totalelements-equals
 ### `textSearch`
 
 ```json
-{ "enabled": true, "fields": ["name", "displayName", "description"] }
+{ "enabled": true, "fields": ["name", "displayName", "description", "longDescription"] }
 ```
 
 - `enabled`: whether the caller may send `text` at all - `contract.textSearchFields()` non-empty.
@@ -248,8 +248,8 @@ entitlement get byte-identical values for all eight, whatever criteria either on
 | `dataType` | `TEXT`, `NUMBER` or `BOOLEAN` | `ProductField.Kind` | the definition's `data_type`, mapped (`STRING`→`TEXT`; no `NUMBER` or `BOOLEAN` attribute exists in the sample data) |
 | `multiValued` | can the target carry more than one value at once | always `false`, **except `subscribedBy`** | the definition's `multi_valued` flag |
 | `operators` | comparisons this target accepts, by wire name | the field operator set (§5.1) minus whatever discover would refuse | the attribute operator set (§5.2), `all_of` added when multi-valued, ordering operators added when `dataType` is `NUMBER` |
-| `defaultOperator` | what the UI should send for a value pick | `contains` for `name`/`displayName`/`description`; `eq` for the boolean `isOwnProduct`; `any_of` for the multi-valued `subscribedBy`; `in` for every other listing field | `eq` for a boolean attribute (none exist); `any_of` when multi-valued; `in` otherwise |
-| `sortable` | may the caller sort on this target in `POST /api/v1/product/discover` | `ProductField.isSortable()` - `false` for `description` and `subscribedBy` | always `true` |
+| `defaultOperator` | what the UI should send for a value pick | `contains` for `name`/`displayName`/`description`/`longDescription`; `eq` for the boolean `isOwnProduct`; `any_of` for the multi-valued `subscribedBy`; `in` for every other listing field | `eq` for a boolean attribute (none exist); `any_of` when multi-valued; `in` otherwise |
+| `sortable` | may the caller sort on this target in `POST /api/v1/product/discover` | `ProductField.isSortable()` - `false` for `description`, `longDescription` and `subscribedBy` | always `true` |
 
 `operators` **must never offer something discover would refuse.** `subscribedBy`'s set has no
 `contains` (discover never accepts it there); every multi-valued attribute's set gains `all_of`;
@@ -258,8 +258,8 @@ complete per-target tables.
 
 ### `values[]`
 
-Present on every entry the panel offers. The three prose fields that would otherwise carry no
-`values` (`name`, `displayName`, `description`) are not offered in the panel at all (see the
+Present on every entry the panel offers. The four prose fields that would otherwise carry no
+`values` (`name`, `displayName`, `description`, `longDescription`) are not offered in the panel at all (see the
 [§5.1 note](#51-product-fields)), and `topic` and `source` are excluded for the same reason, so no
 entry in `filters[]` lacks `values` any more. Each entry:
 
@@ -368,8 +368,8 @@ accept - with the operator, label and default-operator mechanics this endpoint a
 
 ### 5.1 Product fields
 
-Only six of the eleven filterable product fields are ever offered in the panel at all; the other
-five are filterable on `POST /api/v1/product/discover` exactly as before, but
+Only six of the twelve filterable product fields are ever offered in the panel at all; the other
+six are filterable on `POST /api/v1/product/discover` exactly as before, but
 `FilterOptionTargets.isOfferedInPanel` excludes them from `filters[]` unconditionally, before the
 contract is consulted - so even a caller whose contract would permit them never sees them here.
 Being left out this way is a third reason an entry can be absent, alongside "not in the caller's
@@ -381,6 +381,7 @@ allowed list" and "masked", and unlike those two it does not depend on the calle
 | `name` | TEXT | false | 9: eq, neq, in, not_in, any_of, none_of, contains, exists, not_exists | `contains` | **never** - prose, already searched by `textSearch` | — | — |
 | `displayName` | TEXT | false | same 9 | `contains` | **never** - prose, already searched by `textSearch` | — | — |
 | `description` | TEXT | false | same 9 | `contains` | **never** - prose, already searched by `textSearch` | — | — |
+| `longDescription` | TEXT | false | same 9 | `contains` | **never** - prose, already searched by `textSearch` | — | — |
 | `topic` | TEXT | false | same 9 | `in` | **never** - an identifier nobody browses by | — | — |
 | `source` | TEXT | false | same 9 | `in` | **never** - an identifier nobody browses by | — | — |
 | `type` | TEXT | false | same 9 | `in` | when permitted | yes | Type |
@@ -398,14 +399,14 @@ allowed list" and "masked", and unlike those two it does not depend on the calle
 > is a deliberate implementation choice beyond what the design note ("`id` never appears while
 > policy is enforced") states outright - see the report accompanying this document.
 
-> **`name`, `displayName`, `description`, `topic` and `source` are never filter options either, for
+> **`name`, `displayName`, `description`, `longDescription`, `topic` and `source` are never filter options either, for
 > the same unconditional reason as `id`.** `FilterOptionTargets.isOfferedInPanel` leaves them out
 > before the contract is consulted, whether or not the caller's contract would otherwise permit
-> them: the first three are prose already covered by the free-text box (`textSearch`), and the last
+> them: the first four are prose already covered by the free-text box (`textSearch`), and the last
 > two are identifiers nobody browses a value list for. **Discover itself is unchanged**: a caller
-> who names one of these five directly in `POST /api/v1/product/discover`'s `filters[]` is answered
+> who names one of these six directly in `POST /api/v1/product/discover`'s `filters[]` is answered
 > exactly as before, and each still appears in `policy.filterableFields` - only the panel stops
-> offering it. See [TC-02](#tc-02-the-five-text-searched-and-identifier-fields-are-permitted-but-not-offered).
+> offering it. See [TC-02](#tc-02-the-six-text-searched-and-identifier-fields-are-permitted-but-not-offered).
 
 Because the six remaining fields all list values when they are offered at all, **every entry
 `filters[]` now carries, `values` is present on every one of them** - there is no field entry
@@ -449,7 +450,7 @@ sample organisation may filter on; see [§6](#6-test-data) for the per-organisat
 Reproduced from the design, ground-truthed against `FilterOptionTargets.permitted`:
 
 1. `ProductField` members that are filterable, offered in the panel (`isOfferedInPanel` - never
-   `id`, `name`, `displayName`, `description`, `topic` or `source`, §5.1), **and** permitted by the
+   `id`, `name`, `displayName`, `description`, `longDescription`, `topic` or `source`, §5.1), **and** permitted by the
    contract, in declaration order.
 2. Product-scoped attributes permitted by the contract, sorted by `label` (case-insensitive).
 3. Organisation-scoped attributes permitted by the contract, sorted by `label` (case-insensitive).
@@ -498,7 +499,7 @@ Set by `src/main/resources/db/samples/V20261018121000__add_sample_product_displa
 
 Derived from discover's §5.4 allowed/masked lists, which this endpoint shares exactly, narrowed
 further by the panel's own unconditional exclusions: `id`, `name`, `displayName`, `description`,
-`topic` and `source` never count here, per §5.1, whatever the contract would permit. Of the six
+`longDescription`, `topic` and `source` never count here, per §5.1, whatever the contract would permit. Of the six
 fields the panel can ever offer (`type`, `format`, `organisation.key`, `organisation.name`,
 `subscribedBy`, `isOwnProduct`), only `subscribedBy` is masked for any sample organisation (BCC).
 
@@ -511,9 +512,10 @@ fields the panel can ever offer (`type`, `format`, `organisation.key`, `organisa
 | `totalElements` (`{}`) | 15 | 12 | 8 |
 | `textSearch.enabled` | true | true | true |
 
-ENV and HEG each lose five entries from the pre-panel-narrowing count of 17 (`name`, `displayName`,
-`description`, `topic`, `source`); BCC loses four from its 13 (`source` was already masked for BCC,
-so only `name`, `displayName`, `description` and `topic` are newly dropped from its field count).
+ENV and HEG each lose six entries from the pre-panel-narrowing count of 18 (`name`, `displayName`,
+`description`, `longDescription`, `topic`, `source`); BCC loses five from its 14 (`source` was already
+masked for BCC, so only `name`, `displayName`, `description`, `longDescription` and `topic` are newly
+dropped from its field count).
 
 **`Type` group, baseline `{}`** (used throughout §8): ENV `topic:8, file:6, missingCount:1`; the
 full per-caller breakdown follows directly from discover's §6.1 product list and is left as an
@@ -598,9 +600,9 @@ the panel is not built from the per-caller contract at all - the same tell disco
 
 ---
 
-#### TC-02: The five text-searched and identifier fields are permitted but not offered
+#### TC-02: The six text-searched and identifier fields are permitted but not offered
 
-**Objective.** Confirm `name`, `displayName`, `description`, `topic` and `source` are left out of
+**Objective.** Confirm `name`, `displayName`, `description`, `longDescription`, `topic` and `source` are left out of
 `filters[]` unconditionally - even for ENV, which permits filtering on every one of them - while
 `POST /api/v1/product/discover` still accepts a filter on each and still lists each in its own
 `policy.filterableFields`. This also establishes, for every entry that *is* offered, that `values`
@@ -610,22 +612,22 @@ is never absent: there is no longer a "non-listing" shape to contrast it with.
 
 **Test data.** `{}` as ENV, to both `/discover` and `/discover/filter`.
 
-**Given** ENV's contract permits `name`, `displayName`, `description`, `topic` and `source` as
+**Given** ENV's contract permits `name`, `displayName`, `description`, `longDescription`, `topic` and `source` as
 discover filters (discover's §5.4: ENV has no masked fields at all)
 **When** ENV's filter panel is read
 **Then** `filters[]` contains **no** entry whose `key` is `field:name`, `field:displayName`,
-`field:description`, `field:topic` or `field:source`
+`field:description`, `field:longDescription`, `field:topic` or `field:source`
 **And** the identical token's `POST /api/v1/product/discover` response still lists `name`,
-`displayName`, `description`, `topic` and `source` in `policy.filterableFields`
+`displayName`, `description`, `longDescription`, `topic` and `source` in `policy.filterableFields`
 **And** every entry that *is* in `filters[]` carries a `values` member - there is no entry with
 `key, target, label, dataType, multiValued, operators, defaultOperator, sortable` and nothing else.
 
 ```bash
 filters "$ENV_TOKEN" '{}' \
-  | jq '[.filters[].key] | any(. == "field:name" or . == "field:displayName" or . == "field:description" or . == "field:topic" or . == "field:source")'
+  | jq '[.filters[].key] | any(. == "field:name" or . == "field:displayName" or . == "field:description" or . == "field:longDescription" or . == "field:topic" or . == "field:source")'
 # false
 discover "$ENV_TOKEN" '{}' | jq '.policy.filterableFields | sort'
-# contains "description", "displayName", "name", "source", "topic" alongside the rest
+# contains "description", "displayName", "longDescription", "name", "source", "topic" alongside the rest
 filters "$ENV_TOKEN" '{}' | jq 'all(.filters[]; has("values"))'
 # true
 ```
@@ -1116,7 +1118,7 @@ contract permits
 exactly the values discover itself would now return unmasked for the same request, per
 [TC-43](product-discover.md#tc-43-with-policy-off-every-caller-sees-the-whole-catalogue)
 **And** `filters[]` still contains **no** `field:name`, `field:displayName`, `field:description`,
-`field:topic` or `field:source` entry - the panel's exclusion of those five is unconditional
+`field:longDescription`, `field:topic` or `field:source` entry - the panel's exclusion of those six is unconditional
 (§5.1) and the master switch does not reopen it, unlike every attribute and every other field.
 
 ```bash
@@ -1167,8 +1169,8 @@ mode either endpoint has.
 ### Things that should never happen
 
 1. A `500` from any input in this document.
-2. `filters[]` containing `field:name`, `field:displayName`, `field:description`, `field:topic` or
-   `field:source` for **any** caller, policy on or off (§5.1's unconditional exclusion) - or
+2. `filters[]` containing `field:name`, `field:displayName`, `field:description`,
+   `field:longDescription`, `field:topic` or `field:source` for **any** caller, policy on or off (§5.1's unconditional exclusion) - or
    `field:subscribedBy` for BCC, or `attribute:product.population_risk_tags` for HEG or BCC, while
    policy is enforced.
 3. A value listed in `values[]` that no product the caller can see actually holds.
@@ -1187,7 +1189,7 @@ mode either endpoint has.
 | a value disappears from a group after adding an unrelated filter | the value-listing query (ignoring request filters) is being re-run with the request's filters applied after all; re-check with TC-05 |
 | `totalElements` here disagrees with discover's for the same body | the two endpoints have drifted from a shared `ProductQueryPlanner.compile` / `count` call; see TC-04 |
 | a masked field or a below-clearance attribute appears in `filters[]` | `FilterOptionTargets.permitted` is not consulting the same `ProductSearchCriteriaFactory.permits` discover's refusal path uses; see TC-09/TC-10 |
-| `field:name`, `field:displayName`, `field:description`, `field:topic` or `field:source` appears in `filters[]` for any caller, or `source`/`subscribedBy` is missing from discover's own `policy.filterableFields` | `FilterOptionTargets.isOfferedInPanel` was weakened to consult the contract for one of these five, or discover's contract was changed to stop permitting them - the panel's exclusion is meant to be unconditional and independent of discover's own filtering; see TC-02 |
+| `field:name`, `field:displayName`, `field:description`, `field:longDescription`, `field:topic` or `field:source` appears in `filters[]` for any caller, or `source`/`subscribedBy` is missing from discover's own `policy.filterableFields` | `FilterOptionTargets.isOfferedInPanel` was weakened to consult the contract for one of these six, or discover's contract was changed to stop permitting them - the panel's exclusion is meant to be unconditional and independent of discover's own filtering; see TC-02 |
 | `GROUP BY` / "must appear in the GROUP BY clause" error from PostgreSQL | a new value expression added to `ProductFacetQueryBuilder.valueExpression` binds a parameter (like `isOwnProduct`'s `CASE`) and is being grouped by the expression itself rather than by ordinal position 2 - see the class Javadoc |
 | the `format` column, or its values, are missing or all-null | the two newest migrations (`V20261018120000`, `V20261018121000`) are not applied in this environment; see §6.1's note |
 | every count is lower than expected by the same offset | an edited `Bristol_Cycle%Counts` or other row with missing fields is being counted as "missing" when a count was expected, or vice versa; re-derive from §6 before reporting |

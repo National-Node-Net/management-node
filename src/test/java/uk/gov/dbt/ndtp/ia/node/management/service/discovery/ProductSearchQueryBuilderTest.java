@@ -92,6 +92,7 @@ class ProductSearchQueryBuilderTest {
         assertThat(query.pageSql())
                 .isEqualTo("SELECT " + IDS
                         + ", p.name AS name, p.display_name AS display_name, p.description AS description,"
+                        + " p.long_description AS long_description,"
                         + " p.topic AS topic, pt.name AS type, p.source AS source, p.format AS format,"
                         + " o.organisation_key AS organisation_key, o.name AS organisation_name,"
                         + " pr.name AS producer_name, pr.description AS producer_description,"
@@ -454,7 +455,8 @@ class ProductSearchQueryBuilderTest {
                 .isEqualTo(IDS + ", p.name AS name, p.display_name AS display_name, p.description AS description,"
                         + " pt.name AS type, p.format AS format,"
                         + " o.organisation_key AS organisation_key, o.name AS organisation_name");
-        assertThat(query.pageSql()).doesNotContain("p.source", "pr.name", "pr.description", "pr.active", "p.topic");
+        assertThat(query.pageSql())
+                .doesNotContain("p.source", "pr.name", "pr.description", "pr.active", "p.topic", "p.long_description");
     }
 
     @Test
@@ -467,6 +469,7 @@ class ProductSearchQueryBuilderTest {
                 .contains(
                         "p.name AS name",
                         "p.description AS description",
+                        "p.long_description AS long_description",
                         "pt.name AS type",
                         "p.source AS source",
                         "o.organisation_key AS organisation_key",
@@ -574,5 +577,15 @@ class ProductSearchQueryBuilderTest {
                 builder.build(ProductSearchContract.open(), criteria("flood", List.of()), ProductProjection.SUMMARY);
 
         assertThat(whereOf(query)).contains("LOWER(p.display_name) LIKE");
+    }
+
+    /** A search result does not carry the long description, but free text still searches it. */
+    @Test
+    void build_textSearch_includesTheLongDescription_withoutSelectingIt() {
+        ProductSearchQuery query = builder.build(
+                ProductSearchContract.open(), criteria("hydrometric", List.of()), ProductProjection.SUMMARY);
+
+        assertThat(whereOf(query)).contains("LOWER(p.long_description) LIKE");
+        assertThat(selectListOf(query)).doesNotContain("p.long_description");
     }
 }

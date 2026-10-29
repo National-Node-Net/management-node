@@ -59,6 +59,7 @@ Related documents:
   - [I. Policy switched off (TC-43 – TC-44)](#i-policy-switched-off)
   - [J. Subscription status (TC-45 – TC-46)](#j-subscription-status)
   - [K. Display name, format and own products (TC-47 – TC-51)](#k-display-name-format-and-own-products)
+  - [L. Long description (TC-52)](#l-long-description)
 - [9. Edge cases](#9-edge-cases)
 - [10. Defect triage](#10-defect-triage)
 
@@ -170,7 +171,7 @@ When `operator` is omitted it is chosen from the target and the number of values
 
 | Situation | Operator chosen |
 |---|---|
-| exactly one value, on a **text-searchable field** (`name`, `description`) | `contains` |
+| exactly one value, on a **text-searchable field** (`name`, `displayName`, `description`, `longDescription`) | `contains` |
 | exactly one value, on anything else (`topic`, `type`, `source`, `organisation.key`, `organisation.name`, `subscribedBy`, **any attribute**) | `eq` |
 | zero values, or more than one value | `in` |
 
@@ -209,9 +210,9 @@ text-searchable, so a single value defaults to `eq` and must match the whole nam
   ],
   "page": { "number": 0, "size": 20, "numberOfElements": 1, "totalElements": 1, "totalPages": 1 },
   "policy": {
-    "filterableFields": ["description", "displayName", "format", "isOwnProduct", "name", "organisation.key", "organisation.name", "source", "subscribedBy", "topic", "type"],
+    "filterableFields": ["description", "displayName", "format", "isOwnProduct", "longDescription", "name", "organisation.key", "organisation.name", "source", "subscribedBy", "topic", "type"],
     "filterableAttributes": ["identifiability", "organisation.jurisdictions", "organisation.responsibility_areas", "population_risk_tags", "quality_designation", "record_unit"],
-    "textSearchFields": ["name", "displayName", "description"],
+    "textSearchFields": ["name", "displayName", "description", "longDescription"],
     "maskedFields": [],
     "maskedAttributes": [],
     "maxPageSize": 100,
@@ -232,6 +233,10 @@ separation is deliberate and has its own test case ([TC-09](#tc-09--filter-on-a-
 Absent members are **omitted**, never `null` and never `""`. A product with no description simply
 has no `description` key.
 
+`description` is the **short** description, the one a result shows. The **long** description
+(`longDescription`) is for the product's details page, so only `GET /api/v1/product/{productId}`
+carries it; a search never returns it, but free text still matches it ([TC-52](#tc-52-free-text-matches-the-long-description-which-a-result-does-not-carry)).
+
 ### `subscriptionStatus`
 
 Whether the **calling** organisation holds a grant on the product, through any of its consumers:
@@ -249,7 +254,7 @@ Whether the **calling** organisation holds a grant on the product, through any o
 ### `displayName` and `format`
 
 - **`displayName`** is the name a UI shows. `name` stays the stable identifier; `displayName` is
-  prose its owner may change. Free text searches it alongside `name` and `description`.
+  prose its owner may change. Free text searches it alongside `name` and both descriptions.
 - **`format`** is the format the product's data is published in: `JSON`, `XML`, `CSV`, `RDF`,
   `GeoJSON`, … It is free text, deliberately not a fixed list, and is filtered case-insensitively.
 - Both are optional: a product whose owner has not provided one simply has no key.
@@ -270,7 +275,7 @@ Whether the **calling** organisation holds a grant on the product, through any o
 ### `displayName` and `format`
 
 - **`displayName`** is the name a UI shows. `name` stays the stable identifier; `displayName` is
-  prose its owner may change. Free text searches it alongside `name` and `description`.
+  prose its owner may change. Free text searches it alongside `name` and both descriptions.
 - **`format`** is the format the product's data is published in: `JSON`, `XML`, `CSV`, `RDF`,
   `GeoJSON`, … It is free text, deliberately not a fixed list, and is filtered case-insensitively.
 - Both are optional: a product whose owner has not provided one simply has no key.
@@ -322,6 +327,7 @@ These are the levers. Everything in section 8 is a permutation of them.
 | `name` | yes | yes | **yes** | yes |
 | `displayName` | yes | yes | **yes** | yes |
 | `description` | yes | **no** | **yes** | yes |
+| `longDescription` | yes | **no** | **yes** | **no** - the view only |
 | `topic` | yes | yes | no | no |
 | `type` | yes | yes | no | yes |
 | `source` | yes | yes | no | no |
@@ -390,10 +396,10 @@ Measured against the running policy. This table is the oracle for every `403` in
 | clearance | SECRET | OFFICIAL-SENSITIVE | OFFICIAL |
 | purposes | `service_delivery`, `regulatory_oversight` | `service_delivery`, `statistical_analysis` | `service_delivery` |
 | jurisdictions | England, Wales | England, Scotland | England, **Bristol** (local remit) |
-| **allowed filter fields** | `description`, `displayName`, `format`, `isOwnProduct`, `name`, `organisation.key`, `organisation.name`, `source`, `subscribedBy`, `topic`, `type` | same as ENV | `description`, `displayName`, `format`, `isOwnProduct`, `name`, `organisation.key`, `organisation.name`, `topic`, `type` |
+| **allowed filter fields** | `description`, `displayName`, `format`, `isOwnProduct`, `longDescription`, `name`, `organisation.key`, `organisation.name`, `source`, `subscribedBy`, `topic`, `type` | same as ENV | `description`, `displayName`, `format`, `isOwnProduct`, `longDescription`, `name`, `organisation.key`, `organisation.name`, `topic`, `type` |
 | **allowed filter attributes** | `identifiability`, `organisation.jurisdictions`, `organisation.responsibility_areas`, `population_risk_tags`, `quality_designation`, `record_unit` | `identifiability`, `organisation.jurisdictions`, `organisation.responsibility_areas`, `quality_designation`, `record_unit`, `temporal_resolution` | `organisation.jurisdictions`, `organisation.responsibility_areas`, `quality_designation`, `record_unit` |
 | **masked fields** | *(none)* | `consumers` | `consumers`, `policyAttributes`, `source`, `subscribedBy` |
-| `textSearchFields` | `name`, `displayName`, `description` | same as ENV | same as ENV |
+| `textSearchFields` | `name`, `displayName`, `description`, `longDescription` | same as ENV | same as ENV |
 | `maxPageSize` | 100 | 50 | 20 |
 | `obligations` | `audit_access` | `aggregate_before_release`, `audit_access`, `mask_response` | `audit_access`, `mask_response` |
 
@@ -575,9 +581,9 @@ discover "$BCC_TOKEN" '{}' | jq .policy
 
 ```json
 {
-  "filterableFields": ["description", "displayName", "format", "isOwnProduct", "name", "organisation.key", "organisation.name", "topic", "type"],
+  "filterableFields": ["description", "displayName", "format", "isOwnProduct", "longDescription", "name", "organisation.key", "organisation.name", "topic", "type"],
   "filterableAttributes": ["organisation.jurisdictions", "organisation.responsibility_areas", "quality_designation", "record_unit"],
-  "textSearchFields": ["name", "displayName", "description"],
+  "textSearchFields": ["name", "displayName", "description", "longDescription"],
   "maskedFields": ["consumers", "policyAttributes", "source", "subscribedBy"],
   "maskedAttributes": [],
   "maxPageSize": 20,
@@ -618,9 +624,9 @@ products still cannot reach the three that are directly identifiable or risk-tag
 
 ### B. Free-text search
 
-#### TC-05: Free text matches `name`, `displayName` **or** `description`
+#### TC-05: Free text matches `name`, `displayName` **or** either description
 
-**Objective.** Confirm the text term runs against both text-searchable columns, case-insensitively,
+**Objective.** Confirm the text term runs against every text-searchable column, case-insensitively,
 as a substring.
 
 **Preconditions.** P1–P4.
@@ -635,6 +641,7 @@ as a substring.
 | `{"text": "housing"}` | HEG | those two **plus** HousingNeedSurvey |
 | `{"text": "Scotland"}` | HEG | ScotlandLandRegisterExtract *(name)*, HousingNeedSurvey *(description)* |
 | `{"text": "Scotland"}` | BCC | **0 results** |
+| `{"text": "hydrometric"}` | ENV | RiverLevelTelemetry *(long description only)* |
 
 **Given** the catalogue
 **When** each body is posted
@@ -644,12 +651,14 @@ every case including the empty one.
 *Why:* `housing` as ENV vs HEG shows text searching and the row filter composing: HousingNeedSurvey
 is experimental, which HEG's `statistical_analysis` purpose earns and ENV's purposes do not. `Scotland`
 as BCC shows the jurisdiction condition: BCC has a local remit, and the product covers Scotland only.
+`hydrometric` appears only in RiverLevelTelemetry's `longDescription` (see TC-52).
 
 ---
 
 #### TC-06: Free text never matches `topic` or `source`
 
-**Objective.** Confirm only `name` and `description` are text-searched, and that the same strings
+**Objective.** Confirm only `name`, `displayName`, `description` and `longDescription` are
+text-searched, and that the same strings
 are still reachable through an explicit filter.
 
 **Preconditions.** P1–P4.
@@ -831,7 +840,8 @@ products cannot reach past it.
 **When** each is posted
 **Then** the results are as above: (a) is an exact-match miss, not an error.
 
-*Why:* a single value defaults to `contains` only on `name` and `description`. Everywhere else it
+*Why:* a single value defaults to `contains` only on `name`, `displayName`, `description` and
+`longDescription`. Everywhere else it
 defaults to `eq`. (a) returning nothing is correct behaviour and the commonest false defect report
 against this endpoint.
 
@@ -1819,6 +1829,40 @@ discover "$HEG_TOKEN" '{}' | jq -c '[.products[] | select(.isOwnProduct != (.org
 | `{"sort":[{"field":"isOwnProduct"}]}` | **`400`**: `Products cannot be sorted by 'isOwnProduct'` |
 
 ---
+
+### L. Long description
+
+The sample values are set by `db/samples/V20261029121000__add_sample_product_long_descriptions.sql`.
+Five products have one: RiverLevelTelemetry, CoastalErosionForecast, AffordableHousingCompletions,
+HousingNeedSurvey and BristolAirQualitySensors. The rest have none.
+
+#### TC-52: Free text matches the long description, which a result does not carry
+
+**Objective.** Confirm `longDescription` is text-searched, left out of every search result, and
+returned by the view.
+
+**Preconditions.** P1–P4.
+
+**Given** RiverLevelTelemetry, whose long description mentions the "national hydrometric archive",
+a word that appears nowhere else in the catalogue
+**When** ENV posts `{"text": "hydrometric"}`
+**Then** RiverLevelTelemetry is the only product returned
+**And** it carries a `description` but **no** `longDescription` key
+**And** `GET /api/v1/product/{id}` for the same product returns both `description` and
+`longDescription`.
+
+```bash
+discover "$ENV_TOKEN" '{"text":"hydrometric"}' | jq '[.products[] | {name, hasLong: has("longDescription")}]'
+# [{"name":"RiverLevelTelemetry","hasLong":false}]
+ID=$(discover "$ENV_TOKEN" '{"text":"hydrometric"}' | jq '.products[0].id')
+curl -sk --cert client.crt --key client.key "https://localhost:8090/api/v1/product/$ID" \
+  -H "Authorization: Bearer $ENV_TOKEN" | jq '{description, longDescription}'
+# both present; longDescription begins "Readings are taken every fifteen minutes"
+```
+
+*Why:* the short description is what a results page shows and the long one is for the details page,
+so a search does not select the column at all. It still searches it: the `WHERE` clause does not
+need a column to be selected.
 
 ## 9. Edge cases
 
