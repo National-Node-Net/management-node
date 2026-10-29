@@ -74,6 +74,7 @@ public class ProductPolicyResourceLoader implements PolicyResourceLoader {
         putIfPresent(fields, "displayName", product.getDisplayName());
         fields.put("topic", product.getTopic());
         putIfPresent(fields, "description", product.getDescription());
+        putIfPresent(fields, "longDescription", product.getLongDescription());
         putIfPresent(fields, "source", product.getSource());
         putIfPresent(fields, "format", product.getFormat());
         if (product.getProductType() != null) {

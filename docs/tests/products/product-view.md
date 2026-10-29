@@ -55,7 +55,7 @@ catalogue (§4) rather than repeating them; read §2–§4 there once, then work
 | | `POST /api/v1/product/discover` | `GET /api/v1/product/{productId}` |
 |---|---|---|
 | how many products | a page of them | exactly one, by id |
-| how much of each | a **summary** (`id`, `name`, `displayName`, `description`, `type`, `format`, `isOwnProduct`, and the owning `organisation`'s `key` and `name`) | the **whole** object model |
+| how much of each | a **summary** (`id`, `name`, `displayName`, `description`, `type`, `format`, `isOwnProduct`, and the owning `organisation`'s `key` and `name`) | the **whole** object model, including the `longDescription` a summary leaves out |
 
 Everything else is shared, and shared **from one definition** rather than two that happen to agree:
 `docker/opa/policies/lib/product_access.rego` holds the caller gates, the refusal reasons, the row
@@ -130,6 +130,7 @@ the PDP at all.
   "name": "FloodRiskMapZones",
   "displayName": "Flood Risk Map Zones",
   "description": "Flood risk zones for England and Wales …",
+  "longDescription": "Zones are modelled from river and coastal flood maps …",
   "topic": "topic.FloodRiskMapZones",
   "type": "topic",
   "source": "kafka://…",
@@ -188,7 +189,10 @@ Rules that hold for every `200`:
 - **`isOwnProduct`** is `true` when the calling organisation offers the product, with the same
   value discovery reports, and is likewise not masked. See
   [discover §4](product-discover.md#isownproduct).
-- **`displayName`** and **`format`** are absent when the product's owner has not provided them.
+- **`description`** is the short description a search result shows; **`longDescription`** is the
+  full one, for the details page, and only the view returns it. Neither is masked.
+- **`displayName`**, **`format`** and **`longDescription`** are absent when the product's owner has
+  not provided them.
 - The response carries **no `policy` block**. Discovery's response has one (it is how a UI builds a
   filter panel); view returns the bare product.
 
@@ -1068,6 +1072,44 @@ done
 **Why.** `subscribedBy` cannot drive the CTA: it lists every organisation, and policy masks it for
 some callers. `subscriptionStatus` is the member the page reads. A grant counts whatever its
 `validity`, so an expired grant still reports `SUBSCRIBED`.
+
+---
+
+### V20: The long description is returned by the view only
+
+**Objective.** The product details page shows the long description; a search result shows the
+short one. Only the view may carry `longDescription`, and every caller who may view the product
+sees it.
+
+**Preconditions.** Policy on.
+
+**Test data.** RiverLevelTelemetry, which every caller may view and whose long description is set
+by `db/samples/V20261029121000__add_sample_product_long_descriptions.sql`. BrownfieldLandAvailability,
+which has none.
+
+**Given–When–Then.**
+
+```bash
+id=$(discover "$ENV_TOKEN" '{"text":"RiverLevelTelemetry"}' | jq -r '.products[0].id')
+discover "$ENV_TOKEN" '{"text":"RiverLevelTelemetry"}' | jq '.products[0] | has("longDescription")'
+# false
+for t in "$ENV_TOKEN" "$HEG_TOKEN" "$BCC_TOKEN"; do
+  view_body "$t" "$id" | jq -c '{short: (.description | length > 0), long: .longDescription[0:30]}'
+done
+# {"short":true,"long":"Readings are taken every fifte"}   (three times)
+none=$(discover "$ENV_TOKEN" '{"text":"BrownfieldLandAvailability"}' | jq -r '.products[0].id')
+view_body "$ENV_TOKEN" "$none" | jq 'has("longDescription")'
+# false
+```
+
+- **Given** a product with a long description,
+- **When** it is discovered, and then viewed by each organisation,
+- **Then** the discover result has no `longDescription` key,
+- **And** every organisation's view carries both `description` and `longDescription`.
+- **And** a product without a long description has no `longDescription` key, rather than a `null`.
+
+**Why.** The two descriptions serve two pages. A search does not select the column at all, so a
+results page cannot show the long text by mistake.
 
 ---
 

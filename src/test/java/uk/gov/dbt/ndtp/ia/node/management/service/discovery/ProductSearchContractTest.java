@@ -62,6 +62,7 @@ class ProductSearchContractTest {
                         ProductField.NAME,
                         ProductField.DISPLAY_NAME,
                         ProductField.DESCRIPTION,
+                        ProductField.LONG_DESCRIPTION,
                         ProductField.ORGANISATION_NAME))
                 .allMatch(ProductField::isTextSearchable);
     }
