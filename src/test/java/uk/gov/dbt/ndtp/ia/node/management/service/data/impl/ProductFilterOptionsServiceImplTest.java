@@ -347,7 +347,13 @@ class ProductFilterOptionsServiceImplTest {
 
         assertThat(response.filters())
                 .extracting(FilterOption::key)
-                .doesNotContain("field:name", "field:displayName", "field:description", "field:topic", "field:source");
+                .doesNotContain(
+                        "field:name",
+                        "field:displayName",
+                        "field:description",
+                        "field:longDescription",
+                        "field:topic",
+                        "field:source");
 
         FilterOption format = filterOption(response, "field:format");
         assertThat(format.values()).containsExactly(new Value("csv", 10, false), new Value("json", 5, false));

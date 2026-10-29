@@ -409,15 +409,18 @@ its two grants (`2026-02-11T07:00:00`), and HEG with `consumers: 1`. `consumers`
 entries, each with its subscription terms. Check that no subscription carries a `destination`
 (delivery detail is deliberately not part of discovery).
 
-### S5: Free text searches name and description, nothing else
+### S5: Free text searches names and descriptions, nothing else
 
 ```bash
 discover "$ENV_TOKEN" '{"text":"flood"}'  | jq '[.products[].name]'
+discover "$ENV_TOKEN" '{"text":"hydrometric"}'  | jq '[.products[].name]'
 discover "$ENV_TOKEN" '{"text":"kafka"}'  | jq '[.products[].name]'
 ```
 
 **Expect:** `"flood"` matches **FloodRiskMapZones** (by name) and **RiverLevelTelemetry** (its
-description ends "Used for flood warning"): a case-insensitive substring in either. `"kafka"`
+description ends "Used for flood warning"): a case-insensitive substring in either. `"hydrometric"`
+matches **RiverLevelTelemetry** through its long description alone, which the result itself does not
+carry (only the view returns `longDescription`). `"kafka"`
 matches **nothing**, because `source` and `topic` are not text-searched even though `kafka://`
 appears in several sources. They remain available as explicit filters.
 

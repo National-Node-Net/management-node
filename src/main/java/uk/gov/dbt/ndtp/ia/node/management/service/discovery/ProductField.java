@@ -34,7 +34,10 @@ public enum ProductField {
     NAME("name", "p.name", null, Use.FILTER_SORT_TEXT, Kind.TEXT),
     /** The name a user interface shows in place of {@link #NAME}; free text searches it too. */
     DISPLAY_NAME("displayName", "p.display_name", null, Use.FILTER_SORT_TEXT, Kind.TEXT),
+    /** The short description, which a search result shows. */
     DESCRIPTION("description", "p.description", null, Use.FILTER_TEXT, Kind.TEXT),
+    /** The full description, which only the view shows; free text searches it too. */
+    LONG_DESCRIPTION("longDescription", "p.long_description", null, Use.FILTER_TEXT, Kind.TEXT),
     TOPIC("topic", "p.topic", null, Use.FILTER_SORT, Kind.TEXT),
     TYPE("type", "pt.name", null, Use.FILTER_SORT, Kind.TEXT),
     SOURCE("source", "p.source", null, Use.FILTER_SORT, Kind.TEXT),

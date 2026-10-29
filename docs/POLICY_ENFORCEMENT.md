@@ -731,7 +731,7 @@ All three rules read the caller through four facts in `lib/entitlements.rego`:
 
 This is the endpoint where a decision stops being a verdict and becomes a *search contract*: the rule's `details` say which products exist for this caller, what they may ask, and what is withheld, and `ProductDiscoveryServiceImpl` compiles all three into one parameterised SQL statement. No entitlement logic lives in Java: no clearance comparison, no purpose check, no attribute name. Changing who may discover what is a Rego or attribute-data change.
 
-**A search result is a summary.** Discovery returns `id`, `name`, `displayName`, `description`, `type`, `format`, `isOwnProduct` (when the caller's organisation is known) and an `organisation` block carrying its `key` and `name`, enough to recognise a product, see whose it is, and ask for it by id, and the rest of the object model is what [the view endpoint](#get-apiv1productproductid--a-search-that-returns-one-product) is for. The organisation is the one block a search carries, because its two columns come from a join the query already makes; its *attributes* would be a query of their own, so they are left to the view. That narrowing is `ProductProjection.SUMMARY`, and it is **Java's, not policy's**: the rule answers both endpoints identically, and each decides how much of the answer it returns. It is applied to the query, so a search does not select the columns it will not return and runs no block or attribute query at all.
+**A search result is a summary.** Discovery returns `id`, `name`, `displayName`, `description` (the short one), `type`, `format`, `isOwnProduct` (when the caller's organisation is known) and an `organisation` block carrying its `key` and `name`, enough to recognise a product, see whose it is, and ask for it by id, and the rest of the object model - the `longDescription` among it - is what [the view endpoint](#get-apiv1productproductid--a-search-that-returns-one-product) is for. The organisation is the one block a search carries, because its two columns come from a join the query already makes; its *attributes* would be a query of their own, so they are left to the view. That narrowing is `ProductProjection.SUMMARY`, and it is **Java's, not policy's**: the rule answers both endpoints identically, and each decides how much of the answer it returns. It is applied to the query, so a search does not select the columns it will not return and runs no block or attribute query at all.
 
 Two things follow, and both matter. It can only **narrow**: the projection is intersected with the decision, so a field policy withholds stays withheld and no projection can widen access. And it does not limit **searching**: a caller may still filter and sort on anything policy allows, including fields the summary does not carry, such as `organisation.key` and `topic`, say.
 
@@ -745,7 +745,7 @@ Filtering is described separately for **fields** (properties of the product as t
 | `unmask_when` | `unmaskWhen()` | a boolean column per rule, so a name masked in general is shown on the products matching its condition (an organisation's own, say) |
 | `allowed_filtered_fields` / `_attributes` | typed | what may be filtered, sorted and text-searched on. Effective set is `allowed − masked`: something withheld can never be filtered on, or a filter would reveal it |
 | `denied_filtered_fields` / `_attributes` | typed | what the caller asked for and may not have; each becomes a named refusal |
-| `text_search_fields` | `textSearchFields()` | the columns a free-text term runs against (`name`, `displayName`, `description`). Empty with a term given is a refusal |
+| `text_search_fields` | `textSearchFields()` | the columns a free-text term runs against (`name`, `displayName`, `description`, `longDescription`). Empty with a term given is a refusal |
 | `mask_sensitive_attributes` | `maskSensitiveAttributes()` | whether attributes flagged `sensitive` in the **catalogue** are withheld, in every scope. Absent reads as `true` |
 | `max_page_size` | `maxPageSize()` | the page-size cap; a larger request is clamped, not refused. Absent, or below 1, falls back to `ProductSearchContract.DEFAULT_MAX_PAGE_SIZE` (100) - a constant, not a setting, since it bounds one query's cost rather than deciding who sees what |
 | `obligations` | `obligations()` | duties the service must fulfil, or refuse; see [Obligations](#obligations) below |
@@ -791,8 +791,8 @@ products hold each one *for this request*. The same three caller-level gates, th
 the same allowed/masked lists as discover apply unchanged, because they are literally the same
 decision, not a second one evaluated the same way.
 
-The panel narrows the contract further, on top of policy: `name`, `displayName` and `description`
-(already searched by discover's free-text box) and `topic` and `source` (identifiers, not
+The panel narrows the contract further, on top of policy: `name`, `displayName`, `description` and
+`longDescription` (already searched by discover's free-text box) and `topic` and `source` (identifiers, not
 something browsed by value) are never offered as panel filters, even when the contract permits
 filtering on them - `FilterOptionTargets.isOfferedInPanel` excludes them unconditionally, before
 the contract is consulted at all. `POST /api/v1/product/discover` itself is unaffected: a caller
