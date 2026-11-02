@@ -1,0 +1,67 @@
+# SPDX-License-Identifier: Apache-2.0
+# © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme
+# and is legally attributed to the UK's Department for Business, Innovation, Science and Trade (BIST) as the governing entity.
+
+name: Release on new release branch
+
+on:
+  push:
+    branches:
+      - "release/*"
+      - "hotfix/*"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  versioning:
+    name: Extract and validate release version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.branch_version.outputs.version }}
+    steps:
+      # Fetch the Maven wrapper and POM to validate the branch version.
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+
+      # Install Java so Maven can read the project version.
+      - name: Set up JDK 21
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+        with:
+          java-version: "21"
+          distribution: temurin
+          cache: maven
+
+      # Extract a semantic version from the release or hotfix branch name.
+      - name: Extract version from branch name
+        id: branch_version
+        run: |
+          # Remove release/ for a release branch; leave a hotfix branch unchanged.
+          VERSION="${GITHUB_REF_NAME#release/}"
+          # Remove hotfix/ if it remains after the release-prefix removal above.
+          VERSION="${VERSION#hotfix/}"
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Release version: $VERSION"
+
+      # Prevent a release branch from publishing an image with a mismatched POM version.
+      - name: Verify POM version
+        run: |
+          POM_VERSION="$(./mvnw --batch-mode --no-transfer-progress help:evaluate -Dexpression=project.version -q -DforceStdout)"
+          echo "POM version: $POM_VERSION"
+          test "$POM_VERSION" = "${{ steps.branch_version.outputs.version }}"
+
+  ci:
+    needs: versioning
+    # Run CI checks before publishing a staging image.
+    uses: ./.github/workflows/ci-pr.yml
+    secrets: inherit
+
+  push-to-staging-ecr:
+    needs: [versioning, ci]
+    # Build and publish the checked release image to the staging ECR account.
+    uses: ./.github/workflows/cd-push-to-ecr.yml
+    with:
+      aws_account_number: ${{ vars.STAGING_AWS_ACCOUNT_ID }}
+      repo_name: ndtp/management-node
+      version: ${{ needs.versioning.outputs.version }}
