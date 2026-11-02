@@ -24,7 +24,7 @@ federator_clients = [
     mapped_client_roles = [
       {
         client = "management-node"
-        roles  = ["access_producer_configurations", "access_consumer_configurations", "sign_certificate", "access_public_certificates", "create_keys", "product_discovery", "product_view", "product_subscribe"]
+        roles  = ["access_producer_configurations", "access_consumer_configurations", "sign_certificate", "access_public_certificates", "create_keys", "product_discovery", "product_view", "product_subscribe", "management-node-access"]
       }
     ]
   },
@@ -35,7 +35,7 @@ federator_clients = [
     mapped_client_roles = [
       {
         client = "management-node"
-        roles  = ["access_producer_configurations", "access_consumer_configurations", "sign_certificate", "access_public_certificates", "create_keys", "product_discovery", "product_view", "product_subscribe"]
+        roles  = ["access_producer_configurations", "access_consumer_configurations", "sign_certificate", "access_public_certificates", "create_keys", "product_discovery", "product_view", "product_subscribe", "management-node-access"]
       }
     ]
   },
@@ -46,7 +46,7 @@ federator_clients = [
     mapped_client_roles = [
       {
         client = "management-node"
-        roles  = ["access_producer_configurations", "access_consumer_configurations", "sign_certificate", "access_public_certificates", "create_keys", "product_discovery", "product_view", "product_subscribe"]
+        roles  = ["access_producer_configurations", "access_consumer_configurations", "sign_certificate", "access_public_certificates", "create_keys", "product_discovery", "product_view", "product_subscribe", "management-node-access"]
       }
     ]
   },
@@ -56,7 +56,7 @@ federator_clients = [
     mapped_client_roles = [
       {
         client = "management-node"
-        roles  = ["access_producer_configurations", "access_consumer_configurations", "sign_certificate", "access_public_certificates", "create_keys", "product_discovery", "product_view", "product_subscribe"]
+        roles  = ["access_producer_configurations", "access_consumer_configurations", "sign_certificate", "access_public_certificates", "create_keys", "product_discovery", "product_view", "product_subscribe", "management-node-access"]
       }
     ]
   },
