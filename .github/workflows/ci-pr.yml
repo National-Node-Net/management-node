@@ -34,22 +34,22 @@ jobs:
           cache: maven
           server-password: GH_PACKAGES_PAT
 
-      # # # Compile the application and run its test suite.
-      # # - name: Build and test
-      # #   env:
-      # #     GH_PACKAGES_PAT: ${{ secrets.GH_PACKAGES_PAT }}
-      # #   run: ./mvnw $MAVEN_CLI_OPTS verify
+      # Compile the application and run its test suite.
+      - name: Build and test
+        env:
+          GH_PACKAGES_PAT: ${{ secrets.GH_PACKAGES_PAT }}
+        run: ./mvnw $MAVEN_CLI_OPTS verify
 
-      # # # Send the coverage report produced by the verified build to SonarCloud.
-      # # - name: Publish coverage to SonarCloud
-      # #   env:
-      # #     GH_PACKAGES_PAT: ${{ secrets.GH_PACKAGES_PAT }}
-      # #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_N3 }}
-      # #   run: ./mvnw $MAVEN_CLI_OPTS verify -Dsonar.projectKey=National-Node-Net_management-node -Dsonar.organization=national-node-net -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+      # Send the coverage report produced by the verified build to SonarCloud.
+      - name: Publish coverage to SonarCloud
+        env:
+          GH_PACKAGES_PAT: ${{ secrets.GH_PACKAGES_PAT }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_N3 }}
+        run: ./mvnw $MAVEN_CLI_OPTS verify -Dsonar.projectKey=National-Node-Net_management-node -Dsonar.organization=national-node-net -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
 
-      # # # Fail early if Maven did not generate the coverage report expected by SonarCloud.
-      # # - name: Verify JaCoCo XML exists
-      # #   run: test -f target/site/jacoco/jacoco.xml
+      # Fail early if Maven did not generate the coverage report expected by SonarCloud.
+      - name: Verify JaCoCo XML exists
+        run: test -f target/site/jacoco/jacoco.xml
 
   lint:
     name: Lint
