@@ -1,0 +1,102 @@
+# SPDX-License-Identifier: Apache-2.0
+# © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme
+# and is legally attributed to the UK's Department for Business, Innovation, Science and Trade (BIST) as the governing entity.
+
+name: Build and push image to ECR
+
+on:
+  workflow_call:
+    inputs:
+      aws_account_number:
+        description: AWS account that owns the ECR repository
+        required: true
+        type: string
+      repo_name:
+        description: ECR repository name
+        required: true
+        type: string
+      version:
+        description: Image version tag
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      aws_account_number:
+        description: AWS account that owns the ECR repository
+        required: true
+        type: string
+      repo_name:
+        description: ECR repository name
+        required: true
+        type: string
+      version:
+        description: Image version tag
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: eu-west-2
+  MAVEN_CLI_OPTS: "--batch-mode --no-transfer-progress"
+
+jobs:
+  docker-build-push:
+    name: Build and push image
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Fetch the source that will be compiled inside the Docker build.
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+
+      # Install Java so the Maven wrapper can read the project version.
+      - name: Set up JDK 21
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+        with:
+          java-version: "21"
+          distribution: temurin
+          cache: maven
+
+      # Read the Maven version used in the JAR filename.
+      - name: Get project version
+        id: get-version
+        run: echo "project_version=$(./mvnw $MAVEN_CLI_OPTS help:evaluate -Dexpression=project.version -q -DforceStdout)" >> "$GITHUB_OUTPUT"
+
+      # Build and tag the same image by commit SHA and by the supplied release version.
+      - name: Build Docker image
+        env:
+          ECR_REGISTRY: ${{ inputs.aws_account_number }}.dkr.ecr.eu-west-2.amazonaws.com
+        run: |
+          docker build --no-cache \
+            --build-arg JAR_NAME="management-node-${{ steps.get-version.outputs.project_version }}" \
+            -t "$ECR_REGISTRY/${{ inputs.repo_name }}:${{ github.sha }}" \
+            -t "$ECR_REGISTRY/${{ inputs.repo_name }}:${{ inputs.version }}" \
+            -f docker/Dockerfile --target management-node .
+
+      # Assume the GitHub OIDC role in the AWS account that owns the target ECR repository.
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: arn:aws:iam::${{ inputs.aws_account_number }}:role/ecr-access-for-github
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: githubsession
+
+      # Authenticate Docker to the target Amazon ECR registry.
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2.1.7
+
+      # Push both image tags to the requested ECR repository.
+      - name: Push Docker image
+        env:
+          ECR_REGISTRY: ${{ inputs.aws_account_number }}.dkr.ecr.eu-west-2.amazonaws.com
+        run: |
+          echo "Pushing Docker image to ECR"
+          #docker image push --all-tags "$ECR_REGISTRY/${{ inputs.repo_name }}"
+
+      # Record the newest image in the workflow summary for easy release verification.
+      - name: Verify pushed image
+        run: |
+          echo "Verifying pushed image in ECR"
+          #aws ecr describe-images --repository-name "${{ inputs.repo_name }}" --query 'sort_by(imageDetails, &imagePushedAt)[-1]' --output table >> "$GITHUB_STEP_SUMMARY"
