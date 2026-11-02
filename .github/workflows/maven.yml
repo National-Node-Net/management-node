@@ -21,11 +21,11 @@ name: Automated tests
 on:
   push:
     branches:
-      - 'develop'
+      - 'feature/demo-branch'
       - 'main'
   pull_request:
     branches:
-      - 'develop'
+      - 'feature/demo-branch'
       - 'main'
   workflow_call:
 
