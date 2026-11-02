@@ -8,7 +8,7 @@
 
 ## Overview
 
-This guide checks `POST /api/v1/certificate/ocsp` end to end on a local machine. It covers eight scenarios, the metrics and the automated tests. Keycloak, Vault and certificate setup is described in the [README](../README.md) and is assumed to be working. The endpoint itself is specified in [OCSP Certificate Status API](OCSP.md).
+This guide checks `POST /api/v1/certificate/ocsp` end to end on a local machine. It covers eight scenarios, the metrics, a load test and the automated tests. Keycloak, Vault and certificate setup is described in the [README](../README.md) and is assumed to be working. The endpoint itself is specified in [OCSP Certificate Status API](OCSP.md).
 
 ---
 
@@ -278,6 +278,19 @@ ocsp_response serial=0567a4f9... issuerKeyHash=797bed38... certStatus=unknown re
 
 ---
 
+## Load test
+
+`load-test/ocsp.js` is a [k6](https://k6.io) script that sends the same DER request at a constant rate. Run it after scenario A, while `ocsp-test.pem` is still `good`. The request is built without a nonce, so the same body can be replayed:
+
+```bash
+openssl ocsp -issuer ca.pem -cert ocsp-test.pem -reqout load-test/req.der
+k6 run -e TOKEN="$TOKEN" -e INSECURE=true -e RATE=100 -e DURATION=1m load-test/ocsp.js
+```
+
+The run fails if p99 latency exceeds `P99_MS` (default 100 ms), or if any request fails or is not `successful`. The token must stay valid for the whole run, so get a fresh one first. See the header of the script for every option.
+
+---
+
 ## Automated tests
 
 Run all OCSP tests with one command. With Docker running, the integration test also starts its own Vault through Testcontainers:
@@ -319,7 +332,7 @@ Run all OCSP tests with one command. With Docker running, the integration test a
 ## Clean up
 
 ```bash
-rm -f req.der resp.der big.der bad.der garbage.bin ocsp-test.pem ca.pem client-test.p12
+rm -f req.der resp.der big.der bad.der garbage.bin ocsp-test.pem ca.pem client-test.p12 load-test/req.der
 ```
 
 The signer in `secret/management-node/ocsp-signer` can stay in Vault for later test runs. Its certificate expires after 24 hours. After that, repeat steps 2–3 of [Preparation](#preparation).

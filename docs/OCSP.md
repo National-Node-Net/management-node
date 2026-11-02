@@ -234,6 +234,12 @@ Metrics are exposed through Micrometer at `/actuator/metrics` on the management 
 
 ---
 
+## Load testing
+
+`load-test/ocsp.js` is a [k6](https://k6.io) script that POSTs a prebuilt DER request. It fails when p99 latency exceeds 100 ms or any request fails. See the header of the script for usage. Record results against the agreed SLA and load profile for the target environment.
+
+---
+
 ## Security Considerations
 
 - Only callers with the `management-node-access` role can query certificate status. Authentication (mTLS + JWT) and authorization (`@PreAuthorize`) run before any OCSP processing.
