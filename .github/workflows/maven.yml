@@ -138,26 +138,26 @@ jobs:
           trivyignores: .trivyignore
         continue-on-error: false
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
-        with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/ecr-access-for-github
-          aws-region: ${{ secrets.AWS_REGION }}
-          role-skip-session-tagging: true
-          role-duration-seconds: 3600
+      # - name: Configure AWS credentials
+      #   uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+      #   with:
+      #     role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/ecr-access-for-github
+      #     aws-region: ${{ secrets.AWS_REGION }}
+      #     role-skip-session-tagging: true
+      #     role-duration-seconds: 3600
 
-      - name: Login to ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2.1.7
+      # - name: Login to ECR
+      #   id: login-ecr
+      #   uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2.1.7
 
-      - name: Format repo name
-        run: |
-          echo MANAGEMENT_NODE="${{ steps.login-ecr.outputs.registry }}/ndtp/management-node" >> ${GITHUB_ENV}
-          echo IMAGE_TAG="${{ steps.get_version.outputs.project_version }}-$(date -u +%Y%m%d%H%M%S)" >> ${GITHUB_ENV}
+      # - name: Format repo name
+      #   run: |
+      #     echo MANAGEMENT_NODE="${{ steps.login-ecr.outputs.registry }}/ndtp/management-node" >> ${GITHUB_ENV}
+      #     echo IMAGE_TAG="${{ steps.get_version.outputs.project_version }}-$(date -u +%Y%m%d%H%M%S)" >> ${GITHUB_ENV}
     
-      - name: Push Images To AWS/ECR        
-        run: |
-          docker tag ghcr.io/${REPO}/management-node:staged "${MANAGEMENT_NODE}:${IMAGE_TAG}" && docker push "${MANAGEMENT_NODE}:${IMAGE_TAG}"
+      # - name: Push Images To AWS/ECR        
+      #   run: |
+      #     docker tag ghcr.io/${REPO}/management-node:staged "${MANAGEMENT_NODE}:${IMAGE_TAG}" && docker push "${MANAGEMENT_NODE}:${IMAGE_TAG}"
 
-      - name: Clean up docker image
-        run: docker rmi ghcr.io/${REPO}/management-node:staged
+      # - name: Clean up docker image
+      #   run: docker rmi ghcr.io/${REPO}/management-node:staged
