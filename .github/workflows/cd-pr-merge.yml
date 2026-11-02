@@ -32,11 +32,10 @@ jobs:
     steps:
       # Generate a unique, timestamped development image tag.
       - id: version
-        name: Generate development image version
-        run: |
-          MAJOR="${{ inputs.major || '1' }}"
-          MINOR="${{ inputs.minor || '0' }}"
-          echo "value=${MAJOR}.${MINOR}.$(date -u +%Y%m%d%H%M%S)" >> "$GITHUB_OUTPUT"
+        name: Generate development image version from pom
+        run: |        
+          VERSION="$(./mvnw --batch-mode --no-transfer-progress help:evaluate -Dexpression=project.version -q -DforceStdout)"
+          echo "value=${VERSION}.$(date -u +%Y%m%d%H%M%S)" >> "$GITHUB_OUTPUT"
 
   ci:
     needs: versioning
