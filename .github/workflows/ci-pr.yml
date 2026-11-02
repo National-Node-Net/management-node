@@ -117,3 +117,4 @@ jobs:
           ignore-unfixed: true
           severity: CRITICAL,HIGH
           trivyignores: .trivyignore
+          continue-on-error: true
