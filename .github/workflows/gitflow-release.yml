@@ -9,6 +9,8 @@ on:
     branches:
       - "release/*"
       - "hotfix/*"
+      - "feature/demo-release"
+      - "feature/demo-hotfix"
 
 permissions:
   contents: read
@@ -32,14 +34,27 @@ jobs:
           distribution: temurin
           cache: maven
 
-      # Extract a semantic version from the release or hotfix branch name.
+      # Extract a version from a release branch, hotfix branch, or demo test branch.
       - name: Extract version from branch name
         id: branch_version
         run: |
-          # Remove release/ for a release branch; leave a hotfix branch unchanged.
-          VERSION="${GITHUB_REF_NAME#release/}"
-          # Remove hotfix/ if it remains after the release-prefix removal above.
-          VERSION="${VERSION#hotfix/}"
+          case "$GITHUB_REF_NAME" in
+            release/*)
+              VERSION="${GITHUB_REF_NAME#release/}"
+              ;;
+            hotfix/*)
+              VERSION="${GITHUB_REF_NAME#hotfix/}"
+              ;;
+            feature/demo-release|feature/demo-hotfix)
+              # Demo branch names have no version, so use the root POM version.
+              VERSION="$(./mvnw --batch-mode --no-transfer-progress help:evaluate -Dexpression=project.version -q -DforceStdout)"
+              ;;
+            *)
+              echo "Unsupported release branch: $GITHUB_REF_NAME" >&2
+              exit 1
+              ;;
+          esac
+
           [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Release version: $VERSION"
