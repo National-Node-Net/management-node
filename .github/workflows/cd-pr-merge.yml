@@ -6,7 +6,7 @@ name: Development image on merge
 
 on:
   push:
-    branches: [feature/demo-branch]
+    branches: [develop]
   workflow_dispatch:
     inputs:
       major:

@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
   pull_request:
     branches:
-      - 'feature/demo-branch'
+      - develop
 env:
   MAVEN_CLI_OPTS: "--batch-mode --no-transfer-progress"
 
