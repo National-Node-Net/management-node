@@ -92,11 +92,9 @@ jobs:
         env:
           ECR_REGISTRY: ${{ inputs.aws_account_number }}.dkr.ecr.eu-west-2.amazonaws.com
         run: |
-          echo "Pushing Docker image to ECR"
-          #docker image push --all-tags "$ECR_REGISTRY/${{ inputs.repo_name }}"
+          docker image push --all-tags "$ECR_REGISTRY/${{ inputs.repo_name }}"
 
       # Record the newest image in the workflow summary for easy release verification.
       - name: Verify pushed image
         run: |
-          echo "Verifying pushed image in ECR"
-          #aws ecr describe-images --repository-name "${{ inputs.repo_name }}" --query 'sort_by(imageDetails, &imagePushedAt)[-1]' --output table >> "$GITHUB_STEP_SUMMARY"
+          aws ecr describe-images --repository-name "${{ inputs.repo_name }}" --query 'sort_by(imageDetails, &imagePushedAt)[-1]' --output table >> "$GITHUB_STEP_SUMMARY"

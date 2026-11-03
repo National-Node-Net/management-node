@@ -108,17 +108,13 @@ jobs:
           echo "Image ID: $IMAGE_ID" | tee -a "$GITHUB_STEP_SUMMARY"
 
       # Fail the workflow when the built image contains an unfixed critical or high vulnerability.
-      # - name: Scan image with Trivy
-      #   uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
-      #   with:
-      #     image-ref: management-node:ci
-      #     format: table
-      #     exit-code: "1"
-      #     ignore-unfixed: true
-      #     severity: CRITICAL,HIGH
-      #     trivyignores: .trivyignore
-        #
       - name: Scan image with Trivy
-        run: | 
-          echo "Starting Trivy scan for management-node:ci"
-     
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          image-ref: management-node:ci
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
+          trivyignores: .trivyignore
+      
