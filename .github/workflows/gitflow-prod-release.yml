@@ -78,7 +78,7 @@ jobs:
       pull-requests: read
     strategy:
       matrix:
-        repo_name: "ndtp/management-node"
+        repo_name: ["ndtp/management-node"]
     steps:
       # Set up AWS credentials for the source account
       - name: Set up AWS Credentials for Source Account
