@@ -9,8 +9,6 @@ on:
     branches:
       - "release/*"
       - "hotfix/*"
-      - "feature/demo-release"
-      - "feature/demo-hotfix"
 
 permissions:
   contents: read
@@ -34,27 +32,13 @@ jobs:
           distribution: temurin
           cache: maven
 
-      # Extract a version from a release branch, hotfix branch, or demo test branch.
+      # Extract a version from a release or hotfix branch.
       - name: Extract version from branch name
         id: branch_version
         run: |
-          case "$GITHUB_REF_NAME" in
-            release/*)
-              VERSION="${GITHUB_REF_NAME#release/}"
-              ;;
-            hotfix/*)
-              VERSION="${GITHUB_REF_NAME#hotfix/}"
-              ;;
-            feature/demo-release|feature/demo-hotfix)
-              # Demo branch names have no version, so use the root POM version.
-              VERSION="$(./mvnw --batch-mode --no-transfer-progress help:evaluate -Dexpression=project.version -q -DforceStdout)"
-              ;;
-            *)
-              echo "Unsupported release branch: $GITHUB_REF_NAME" >&2
-              exit 1
-              ;;
-          esac
-
+          # Each substitution removes its prefix when present, so either branch type yields x.y.z.
+          VERSION="${GITHUB_REF_NAME#release/}"
+          VERSION="${VERSION#hotfix/}"
           [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Release version: $VERSION"
