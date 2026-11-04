@@ -12,7 +12,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
   versioning:
@@ -58,6 +57,9 @@ jobs:
 
   push-to-staging-ecr:
     needs: [versioning, ci]
+    permissions:
+      contents: read
+      id-token: write
     # Build and publish the checked release image to the staging ECR account.
     uses: ./.github/workflows/cd-push-to-ecr.yml
     with:

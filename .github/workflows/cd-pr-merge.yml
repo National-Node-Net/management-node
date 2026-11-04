@@ -22,7 +22,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
   versioning:
@@ -59,6 +58,9 @@ jobs:
 
   push-to-ecr:
     needs: [versioning, ci]
+    permissions:
+      contents: read
+      id-token: write
     # Publish the checked and scanned image to the development ECR account.
     uses: ./.github/workflows/cd-push-to-ecr.yml
     with:

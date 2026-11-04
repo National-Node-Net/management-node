@@ -68,11 +68,12 @@ jobs:
       - name: Build Docker image
         env:
           ECR_REGISTRY: ${{ inputs.aws_account_number }}.dkr.ecr.eu-west-2.amazonaws.com
+          REPO_NAME: ${{ inputs.repo_name }}
         run: |
           docker build --no-cache \
             --build-arg JAR_NAME="management-node-${{ steps.get-version.outputs.project_version }}" \
-            -t "$ECR_REGISTRY/${{ inputs.repo_name }}:${{ github.sha }}" \
-            -t "$ECR_REGISTRY/${{ inputs.repo_name }}:${{ inputs.version }}" \
+            -t "$ECR_REGISTRY/$REPO_NAME:${{ github.sha }}" \
+            -t "$ECR_REGISTRY/$REPO_NAME:${{ inputs.version }}" \
             -f docker/Dockerfile --target management-node .
 
       # Assume the GitHub OIDC role in the AWS account that owns the target ECR repository.
@@ -91,10 +92,13 @@ jobs:
       - name: Push Docker image
         env:
           ECR_REGISTRY: ${{ inputs.aws_account_number }}.dkr.ecr.eu-west-2.amazonaws.com
+          REPO_NAME: ${{ inputs.repo_name }}
         run: |
-          docker image push --all-tags "$ECR_REGISTRY/${{ inputs.repo_name }}"
+          docker image push --all-tags "$ECR_REGISTRY/$REPO_NAME"
 
       # Record the newest image in the workflow summary for easy release verification.
       - name: Verify pushed image
+        env:
+          REPO_NAME: ${{ inputs.repo_name }}
         run: |
-          aws ecr describe-images --repository-name "${{ inputs.repo_name }}" --query 'sort_by(imageDetails, &imagePushedAt)[-1]' --output table >> "$GITHUB_STEP_SUMMARY"
+          aws ecr describe-images --repository-name "$REPO_NAME" --query 'sort_by(imageDetails, &imagePushedAt)[-1]' --output table >> "$GITHUB_STEP_SUMMARY"
