@@ -612,6 +612,22 @@ class ProductControllerTest {
                 .andExpect(jsonPath("$.organisation.name").doesNotExist());
     }
 
+    @Test
+    void view_bothDescriptions_areSerialisedInCamelCase() throws Exception {
+        viewReturns(DiscoveredProductDTO.builder()
+                .id(7L)
+                .name("FloodRiskMapZones")
+                .description("Flood risk zones for England")
+                .longDescription("Zones are modelled from river and coastal flood maps")
+                .build());
+
+        mockMvc.perform(get("/api/v1/product/7").requestAttr(PolicyDecision.REQUEST_ATTRIBUTE, viewDecision()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.description").value("Flood risk zones for England"))
+                .andExpect(jsonPath("$.longDescription").value("Zones are modelled from river and coastal flood maps"))
+                .andExpect(jsonPath("$.long_description").doesNotExist());
+    }
+
     /**
      * An empty answer is a 404 whether the product does not exist or the row filter excluded it.
      * The API deliberately does not distinguish the two (D1): a 403 for "excluded" would turn an id

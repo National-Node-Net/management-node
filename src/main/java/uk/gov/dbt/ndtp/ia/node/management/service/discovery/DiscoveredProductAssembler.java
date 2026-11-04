@@ -99,6 +99,7 @@ public class DiscoveredProductAssembler {
                         .name(row.text(ProductField.NAME))
                         .displayName(row.text(ProductField.DISPLAY_NAME))
                         .description(row.text(ProductField.DESCRIPTION))
+                        .longDescription(row.text(ProductField.LONG_DESCRIPTION))
                         .topic(row.text(ProductField.TOPIC))
                         .type(row.text(ProductField.TYPE))
                         .source(row.text(ProductField.SOURCE))
