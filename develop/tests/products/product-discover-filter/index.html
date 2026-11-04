@@ -1064,10 +1064,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#tc-02-the-five-text-searched-and-identifier-fields-are-permitted-but-not-offered" class="md-nav__link">
+  <a href="#tc-02-the-six-text-searched-and-identifier-fields-are-permitted-but-not-offered" class="md-nav__link">
     <span class="md-ellipsis">
       
-        TC-02: The five text-searched and identifier fields are permitted but not offered
+        TC-02: The six text-searched and identifier fields are permitted but not offered
       
     </span>
   </a>
@@ -1842,10 +1842,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#tc-02-the-five-text-searched-and-identifier-fields-are-permitted-but-not-offered" class="md-nav__link">
+  <a href="#tc-02-the-six-text-searched-and-identifier-fields-are-permitted-but-not-offered" class="md-nav__link">
     <span class="md-ellipsis">
       
-        TC-02: The five text-searched and identifier fields are permitted but not offered
+        TC-02: The six text-searched and identifier fields are permitted but not offered
       
     </span>
   </a>
@@ -2466,7 +2466,7 @@ service knows which members it will use. See <a href="#tc-16-sort-page-and-size-
 <h2 id="4-the-response">4. The response</h2>
 <div class="language-json highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">"totalElements"</span><span class="p">:</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="nt">"textSearch"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"enabled"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nt">"fields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"name"</span><span class="p">,</span><span class="w"> </span><span class="s2">"displayName"</span><span class="p">,</span><span class="w"> </span><span class="s2">"description"</span><span class="p">,</span><span class="w"> </span><span class="s2">"organisation.name"</span><span class="p">]</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="nt">"textSearch"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"enabled"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nt">"fields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"name"</span><span class="p">,</span><span class="w"> </span><span class="s2">"displayName"</span><span class="p">,</span><span class="w"> </span><span class="s2">"description"</span><span class="p">,</span><span class="w"> </span><span class="s2">"longDescription"</span><span class="p">,</span><span class="w"> </span><span class="s2">"organisation.name"</span><span class="p">]</span><span class="w"> </span><span class="p">},</span>
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="nt">"filters"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 </span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="p">{</span>
 </span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">      </span><span class="nt">"key"</span><span class="p">:</span><span class="w"> </span><span class="s2">"field:type"</span><span class="p">,</span>
@@ -2530,7 +2530,7 @@ for the full derivation).</p>
 caller's row filter. Exactly what <code>page.totalElements</code> of <code>POST /api/v1/product/discover</code> would
 report for the identical body and token. See <a href="#tc-04-totalelements-equals-discovers-totalelements-for-the-same-body">TC-04</a>.</p>
 <h3 id="textsearch"><code>textSearch</code></h3>
-<div class="language-json highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span><span class="w"> </span><span class="nt">"enabled"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nt">"fields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"name"</span><span class="p">,</span><span class="w"> </span><span class="s2">"displayName"</span><span class="p">,</span><span class="w"> </span><span class="s2">"description"</span><span class="p">,</span><span class="w"> </span><span class="s2">"organisation.name"</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span><span class="w"> </span><span class="nt">"enabled"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nt">"fields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"name"</span><span class="p">,</span><span class="w"> </span><span class="s2">"displayName"</span><span class="p">,</span><span class="w"> </span><span class="s2">"description"</span><span class="p">,</span><span class="w"> </span><span class="s2">"longDescription"</span><span class="p">,</span><span class="w"> </span><span class="s2">"organisation.name"</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
 </span></code></pre></div>
 <ul>
 <li><code>enabled</code>: whether the caller may send <code>text</code> at all - <code>contract.textSearchFields()</code> non-empty.</li>
@@ -2598,13 +2598,13 @@ entitlement get byte-identical values for all eight, whatever criteria either on
 <tr>
 <td><code>defaultOperator</code></td>
 <td>what the UI should send for a value pick</td>
-<td><code>contains</code> for <code>name</code>/<code>displayName</code>/<code>description</code>; <code>eq</code> for the boolean <code>isOwnProduct</code>; <code>any_of</code> for the multi-valued <code>subscribedBy</code>; <code>in</code> for every other listing field</td>
+<td><code>contains</code> for <code>name</code>/<code>displayName</code>/<code>description</code>/<code>longDescription</code>; <code>eq</code> for the boolean <code>isOwnProduct</code>; <code>any_of</code> for the multi-valued <code>subscribedBy</code>; <code>in</code> for every other listing field</td>
 <td><code>eq</code> for a boolean attribute (none exist); <code>any_of</code> when multi-valued; <code>in</code> otherwise</td>
 </tr>
 <tr>
 <td><code>sortable</code></td>
 <td>may the caller sort on this target in <code>POST /api/v1/product/discover</code></td>
-<td><code>ProductField.isSortable()</code> - <code>false</code> for <code>description</code> and <code>subscribedBy</code></td>
+<td><code>ProductField.isSortable()</code> - <code>false</code> for <code>description</code>, <code>longDescription</code> and <code>subscribedBy</code></td>
 <td>always <code>true</code></td>
 </tr>
 </tbody>
@@ -2614,8 +2614,8 @@ entitlement get byte-identical values for all eight, whatever criteria either on
 a <code>NUMBER</code> attribute's set gains <code>lt</code>/<code>lte</code>/<code>gt</code>/<code>gte</code>. See <a href="#5-critical-fields">§5</a> for the
 complete per-target tables.</p>
 <h3 id="values"><code>values[]</code></h3>
-<p>Present on every entry the panel offers. The three prose fields that would otherwise carry no
-<code>values</code> (<code>name</code>, <code>displayName</code>, <code>description</code>) are not offered in the panel at all (see the
+<p>Present on every entry the panel offers. The four prose fields that would otherwise carry no
+<code>values</code> (<code>name</code>, <code>displayName</code>, <code>description</code>, <code>longDescription</code>) are not offered in the panel at all (see the
 <a href="#51-product-fields">§5.1 note</a>), and <code>topic</code> and <code>source</code> are excluded for the same reason, so no
 entry in <code>filters[]</code> lacks <code>values</code> any more. Each entry:</p>
 <div class="language-json highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span><span class="w"> </span><span class="nt">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CSV"</span><span class="p">,</span><span class="w"> </span><span class="nt">"count"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"selected"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">}</span>
@@ -2736,8 +2736,8 @@ jump around.</p>
 exactly - the panel offers nothing discover would refuse and withholds nothing discover would
 accept - with the operator, label and default-operator mechanics this endpoint adds on top.</p>
 <h3 id="51-product-fields">5.1 Product fields</h3>
-<p>Only six of the eleven filterable product fields are ever offered in the panel at all; the other
-five are filterable on <code>POST /api/v1/product/discover</code> exactly as before, but
+<p>Only six of the twelve filterable product fields are ever offered in the panel at all; the other
+six are filterable on <code>POST /api/v1/product/discover</code> exactly as before, but
 <code>FilterOptionTargets.isOfferedInPanel</code> excludes them from <code>filters[]</code> unconditionally, before the
 contract is consulted - so even a caller whose contract would permit them never sees them here.
 Being left out this way is a third reason an entry can be absent, alongside "not in the caller's
@@ -2788,6 +2788,16 @@ allowed list" and "masked", and unlike those two it does not depend on the calle
 </tr>
 <tr>
 <td><code>description</code></td>
+<td>TEXT</td>
+<td>false</td>
+<td>same 9</td>
+<td><code>contains</code></td>
+<td><strong>never</strong> - prose, already searched by <code>textSearch</code></td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>longDescription</code></td>
 <td>TEXT</td>
 <td>false</td>
 <td>same 9</td>
@@ -2886,14 +2896,14 @@ would in fact accept a filter on <code>id</code> (<code>contract.mayFilterOn</co
 enforcement is off), but the filter panel still never lists it as an option in that state. This
 is a deliberate implementation choice beyond what the design note ("<code>id</code> never appears while
 policy is enforced") states outright - see the report accompanying this document.</p>
-<p><strong><code>name</code>, <code>displayName</code>, <code>description</code>, <code>topic</code> and <code>source</code> are never filter options either, for
+<p><strong><code>name</code>, <code>displayName</code>, <code>description</code>, <code>longDescription</code>, <code>topic</code> and <code>source</code> are never filter options either, for
 the same unconditional reason as <code>id</code>.</strong> <code>FilterOptionTargets.isOfferedInPanel</code> leaves them out
 before the contract is consulted, whether or not the caller's contract would otherwise permit
-them: the first three are prose already covered by the free-text box (<code>textSearch</code>), and the last
+them: the first four are prose already covered by the free-text box (<code>textSearch</code>), and the last
 two are identifiers nobody browses a value list for. <strong>Discover itself is unchanged</strong>: a caller
-who names one of these five directly in <code>POST /api/v1/product/discover</code>'s <code>filters[]</code> is answered
+who names one of these six directly in <code>POST /api/v1/product/discover</code>'s <code>filters[]</code> is answered
 exactly as before, and each still appears in <code>policy.filterableFields</code> - only the panel stops
-offering it. See <a href="#tc-02-the-five-text-searched-and-identifier-fields-are-permitted-but-not-offered">TC-02</a>.</p>
+offering it. See <a href="#tc-02-the-six-text-searched-and-identifier-fields-are-permitted-but-not-offered">TC-02</a>.</p>
 </blockquote>
 <p>Because the six remaining fields all list values when they are offered at all, <strong>every entry
 <code>filters[]</code> now carries, <code>values</code> is present on every one of them</strong> - there is no field entry
@@ -3055,7 +3065,7 @@ sample organisation may filter on; see <a href="#6-test-data">§6</a> for the pe
 <p>Reproduced from the design, ground-truthed against <code>FilterOptionTargets.permitted</code>:</p>
 <ol>
 <li><code>ProductField</code> members that are filterable, offered in the panel (<code>isOfferedInPanel</code> - never
-   <code>id</code>, <code>name</code>, <code>displayName</code>, <code>description</code>, <code>topic</code> or <code>source</code>, §5.1), <strong>and</strong> permitted by the
+   <code>id</code>, <code>name</code>, <code>displayName</code>, <code>description</code>, <code>longDescription</code>, <code>topic</code> or <code>source</code>, §5.1), <strong>and</strong> permitted by the
    contract, in declaration order.</li>
 <li>Product-scoped attributes permitted by the contract, sorted by <code>label</code> (case-insensitive).</li>
 <li>Organisation-scoped attributes permitted by the contract, sorted by <code>label</code> (case-insensitive).</li>
@@ -3176,7 +3186,7 @@ cases, or treat every count derived from this table as unobserved until you have
 <h3 id="62-the-panel-per-organisation-empty-body-policy-on">6.2 The panel per organisation (empty body, policy on)</h3>
 <p>Derived from discover's §5.4 allowed/masked lists, which this endpoint shares exactly, narrowed
 further by the panel's own unconditional exclusions: <code>id</code>, <code>name</code>, <code>displayName</code>, <code>description</code>,
-<code>topic</code> and <code>source</code> never count here, per §5.1, whatever the contract would permit. Of the six
+<code>longDescription</code>, <code>topic</code> and <code>source</code> never count here, per §5.1, whatever the contract would permit. Of the six
 fields the panel can ever offer (<code>type</code>, <code>format</code>, <code>organisation.key</code>, <code>organisation.name</code>,
 <code>subscribedBy</code>, <code>isOwnProduct</code>), only <code>subscribedBy</code> is masked for any sample organisation (BCC).</p>
 <table>
@@ -3227,9 +3237,10 @@ fields the panel can ever offer (<code>type</code>, <code>format</code>, <code>o
 </tr>
 </tbody>
 </table>
-<p>ENV and HEG each lose five entries from the pre-panel-narrowing count of 17 (<code>name</code>, <code>displayName</code>,
-<code>description</code>, <code>topic</code>, <code>source</code>); BCC loses four from its 13 (<code>source</code> was already masked for BCC,
-so only <code>name</code>, <code>displayName</code>, <code>description</code> and <code>topic</code> are newly dropped from its field count).</p>
+<p>ENV and HEG each lose six entries from the pre-panel-narrowing count of 18 (<code>name</code>, <code>displayName</code>,
+<code>description</code>, <code>longDescription</code>, <code>topic</code>, <code>source</code>); BCC loses five from its 14 (<code>source</code> was already
+masked for BCC, so only <code>name</code>, <code>displayName</code>, <code>description</code>, <code>longDescription</code> and <code>topic</code> are newly
+dropped from its field count).</p>
 <p><strong><code>Type</code> group, baseline <code>{}</code></strong> (used throughout §8): ENV <code>topic:8, file:6, missingCount:1</code>; the
 full per-caller breakdown follows directly from discover's §6.1 product list and is left as an
 exercise identical to TC-08 of discover's spec, with <code>in</code> replaced by "every value, with its
@@ -3306,28 +3317,28 @@ organisations differ, exactly as discover's TC-01.</p>
 <p><em>Why:</em> identical numbers for all three callers mean either the same token was sent three times, or
 the panel is not built from the per-caller contract at all - the same tell discover's TC-01 uses.</p>
 <hr />
-<h4 id="tc-02-the-five-text-searched-and-identifier-fields-are-permitted-but-not-offered">TC-02: The five text-searched and identifier fields are permitted but not offered</h4>
-<p><strong>Objective.</strong> Confirm <code>name</code>, <code>displayName</code>, <code>description</code>, <code>topic</code> and <code>source</code> are left out of
+<h4 id="tc-02-the-six-text-searched-and-identifier-fields-are-permitted-but-not-offered">TC-02: The six text-searched and identifier fields are permitted but not offered</h4>
+<p><strong>Objective.</strong> Confirm <code>name</code>, <code>displayName</code>, <code>description</code>, <code>longDescription</code>, <code>topic</code> and <code>source</code> are left out of
 <code>filters[]</code> unconditionally - even for ENV, which permits filtering on every one of them - while
 <code>POST /api/v1/product/discover</code> still accepts a filter on each and still lists each in its own
 <code>policy.filterableFields</code>. This also establishes, for every entry that <em>is</em> offered, that <code>values</code>
 is never absent: there is no longer a "non-listing" shape to contrast it with.</p>
 <p><strong>Preconditions.</strong> P1–P4.</p>
 <p><strong>Test data.</strong> <code>{}</code> as ENV, to both <code>/discover</code> and <code>/discover/filter</code>.</p>
-<p><strong>Given</strong> ENV's contract permits <code>name</code>, <code>displayName</code>, <code>description</code>, <code>topic</code> and <code>source</code> as
+<p><strong>Given</strong> ENV's contract permits <code>name</code>, <code>displayName</code>, <code>description</code>, <code>longDescription</code>, <code>topic</code> and <code>source</code> as
 discover filters (discover's §5.4: ENV has no masked fields at all)
 <strong>When</strong> ENV's filter panel is read
 <strong>Then</strong> <code>filters[]</code> contains <strong>no</strong> entry whose <code>key</code> is <code>field:name</code>, <code>field:displayName</code>,
-<code>field:description</code>, <code>field:topic</code> or <code>field:source</code>
+<code>field:description</code>, <code>field:longDescription</code>, <code>field:topic</code> or <code>field:source</code>
 <strong>And</strong> the identical token's <code>POST /api/v1/product/discover</code> response still lists <code>name</code>,
-<code>displayName</code>, <code>description</code>, <code>topic</code> and <code>source</code> in <code>policy.filterableFields</code>
+<code>displayName</code>, <code>description</code>, <code>longDescription</code>, <code>topic</code> and <code>source</code> in <code>policy.filterableFields</code>
 <strong>And</strong> every entry that <em>is</em> in <code>filters[]</code> carries a <code>values</code> member - there is no entry with
 <code>key, target, label, dataType, multiValued, operators, defaultOperator, sortable</code> and nothing else.</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>filters<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'[.filters[].key] | any(. == "field:name" or . == "field:displayName" or . == "field:description" or . == "field:topic" or . == "field:source")'</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'[.filters[].key] | any(. == "field:name" or . == "field:displayName" or . == "field:description" or . == "field:longDescription" or . == "field:topic" or . == "field:source")'</span>
 </span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="c1"># false</span>
 </span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>discover<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'.policy.filterableFields | sort'</span>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="c1"># contains "description", "displayName", "name", "source", "topic" alongside the rest</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="c1"># contains "description", "displayName", "longDescription", "name", "source", "topic" alongside the rest</span>
 </span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>filters<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'all(.filters[]; has("values"))'</span>
 </span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="c1"># true</span>
 </span></code></pre></div>
@@ -3677,7 +3688,7 @@ contract permits
 exactly the values discover itself would now return unmasked for the same request, per
 <a href="../product-discover/#tc-43-with-policy-off-every-caller-sees-the-whole-catalogue">TC-43</a>
 <strong>And</strong> <code>filters[]</code> still contains <strong>no</strong> <code>field:name</code>, <code>field:displayName</code>, <code>field:description</code>,
-<code>field:topic</code> or <code>field:source</code> entry - the panel's exclusion of those five is unconditional
+<code>field:longDescription</code>, <code>field:topic</code> or <code>field:source</code> entry - the panel's exclusion of those six is unconditional
 (§5.1) and the master switch does not reopen it, unlike every attribute and every other field.</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>filters<span class="w"> </span><span class="s2">"</span><span class="nv">$ENV_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'has("policy")'</span>
 </span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="c1"># false</span>
@@ -3774,8 +3785,8 @@ mode either endpoint has.</p>
 <h3 id="things-that-should-never-happen">Things that should never happen</h3>
 <ol>
 <li>A <code>500</code> from any input in this document.</li>
-<li><code>filters[]</code> containing <code>field:name</code>, <code>field:displayName</code>, <code>field:description</code>, <code>field:topic</code> or
-   <code>field:source</code> for <strong>any</strong> caller, policy on or off (§5.1's unconditional exclusion) - or
+<li><code>filters[]</code> containing <code>field:name</code>, <code>field:displayName</code>, <code>field:description</code>,
+   <code>field:longDescription</code>, <code>field:topic</code> or <code>field:source</code> for <strong>any</strong> caller, policy on or off (§5.1's unconditional exclusion) - or
    <code>field:subscribedBy</code> for BCC, or <code>attribute:product.population_risk_tags</code> for HEG or BCC, while
    policy is enforced.</li>
 <li>A value listed in <code>values[]</code> that no product the caller can see actually holds.</li>
@@ -3812,8 +3823,8 @@ mode either endpoint has.</p>
 <td><code>FilterOptionTargets.permitted</code> is not consulting the same <code>ProductSearchCriteriaFactory.permits</code> discover's refusal path uses; see TC-09/TC-10</td>
 </tr>
 <tr>
-<td><code>field:name</code>, <code>field:displayName</code>, <code>field:description</code>, <code>field:topic</code> or <code>field:source</code> appears in <code>filters[]</code> for any caller, or <code>source</code>/<code>subscribedBy</code> is missing from discover's own <code>policy.filterableFields</code></td>
-<td><code>FilterOptionTargets.isOfferedInPanel</code> was weakened to consult the contract for one of these five, or discover's contract was changed to stop permitting them - the panel's exclusion is meant to be unconditional and independent of discover's own filtering; see TC-02</td>
+<td><code>field:name</code>, <code>field:displayName</code>, <code>field:description</code>, <code>field:longDescription</code>, <code>field:topic</code> or <code>field:source</code> appears in <code>filters[]</code> for any caller, or <code>source</code>/<code>subscribedBy</code> is missing from discover's own <code>policy.filterableFields</code></td>
+<td><code>FilterOptionTargets.isOfferedInPanel</code> was weakened to consult the contract for one of these six, or discover's contract was changed to stop permitting them - the panel's exclusion is meant to be unconditional and independent of discover's own filtering; see TC-02</td>
 </tr>
 <tr>
 <td><code>GROUP BY</code> / "must appear in the GROUP BY clause" error from PostgreSQL</td>
@@ -3864,7 +3875,7 @@ nothing there is repeated here.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 4, 2026 10:13:15 UTC">November 4, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 29, 2026 10:37:33 UTC">October 29, 2026</span>
   </span>
 
     

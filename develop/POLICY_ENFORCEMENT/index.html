@@ -3127,7 +3127,7 @@ and it writes one entry per decision, so it is just as noisy a bring-up aid. Pro
 <li>Answered by <code>policies.product.discover</code> (resolution <code>exact</code>). <code>POST</code> is not a read for the product fallback, so without this rule discovery would be refused.</li>
 </ul>
 <p>This is the endpoint where a decision stops being a verdict and becomes a <em>search contract</em>: the rule's <code>details</code> say which products exist for this caller, what they may ask, and what is withheld, and <code>ProductDiscoveryServiceImpl</code> compiles all three into one parameterised SQL statement. No entitlement logic lives in Java: no clearance comparison, no purpose check, no attribute name. Changing who may discover what is a Rego or attribute-data change.</p>
-<p><strong>A search result is a summary.</strong> Discovery returns <code>id</code>, <code>name</code>, <code>displayName</code>, <code>description</code>, <code>type</code>, <code>format</code>, <code>isOwnProduct</code> (when the caller's organisation is known) and an <code>organisation</code> block carrying its <code>key</code> and <code>name</code>, enough to recognise a product, see whose it is, and ask for it by id, and the rest of the object model is what <a href="#get-apiv1productproductid--a-search-that-returns-one-product">the view endpoint</a> is for. The organisation is the one block a search carries, because its two columns come from a join the query already makes; its <em>attributes</em> would be a query of their own, so they are left to the view. That narrowing is <code>ProductProjection.SUMMARY</code>, and it is <strong>Java's, not policy's</strong>: the rule answers both endpoints identically, and each decides how much of the answer it returns. It is applied to the query, so a search does not select the columns it will not return and runs no block or attribute query at all.</p>
+<p><strong>A search result is a summary.</strong> Discovery returns <code>id</code>, <code>name</code>, <code>displayName</code>, <code>description</code> (the short one), <code>type</code>, <code>format</code>, <code>isOwnProduct</code> (when the caller's organisation is known) and an <code>organisation</code> block carrying its <code>key</code> and <code>name</code>, enough to recognise a product, see whose it is, and ask for it by id, and the rest of the object model - the <code>longDescription</code> among it - is what <a href="#get-apiv1productproductid--a-search-that-returns-one-product">the view endpoint</a> is for. The organisation is the one block a search carries, because its two columns come from a join the query already makes; its <em>attributes</em> would be a query of their own, so they are left to the view. That narrowing is <code>ProductProjection.SUMMARY</code>, and it is <strong>Java's, not policy's</strong>: the rule answers both endpoints identically, and each decides how much of the answer it returns. It is applied to the query, so a search does not select the columns it will not return and runs no block or attribute query at all.</p>
 <p>Two things follow, and both matter. It can only <strong>narrow</strong>: the projection is intersected with the decision, so a field policy withholds stays withheld and no projection can widen access. And it does not limit <strong>searching</strong>: a caller may still filter and sort on anything policy allows, including fields the summary does not carry, such as <code>organisation.key</code> and <code>topic</code>, say.</p>
 <p>Filtering is described separately for <strong>fields</strong> (properties of the product as the API names them, mirrored in <code>lib/product.rego</code> and owned by <code>ProductField</code>) and <strong>attributes</strong> (policy attributes stored against an entity). The caller states which it means, so nothing is inferred from the name. A name outside the product's own scope is qualified: <code>organisation.key</code>, <code>consumer.name</code>.</p>
 <table>
@@ -3172,7 +3172,7 @@ and it writes one entry per decision, so it is just as noisy a bring-up aid. Pro
 <tr>
 <td><code>text_search_fields</code></td>
 <td><code>textSearchFields()</code></td>
-<td>the columns a free-text term runs against (<code>name</code>, <code>displayName</code>, <code>description</code>, <code>organisation.name</code>). Empty with a term given is a refusal</td>
+<td>the columns a free-text term runs against (<code>name</code>, <code>displayName</code>, <code>description</code>, <code>longDescription</code>, <code>organisation.name</code>). Empty with a term given is a refusal</td>
 </tr>
 <tr>
 <td><code>mask_sensitive_attributes</code></td>
@@ -3267,8 +3267,8 @@ operators, and the distinct values it has among the caller's visible products an
 products hold each one <em>for this request</em>. The same three caller-level gates, the same row filter,
 the same allowed/masked lists as discover apply unchanged, because they are literally the same
 decision, not a second one evaluated the same way.</p>
-<p>The panel narrows the contract further, on top of policy: <code>name</code>, <code>displayName</code> and <code>description</code>
-(already searched by discover's free-text box) and <code>topic</code> and <code>source</code> (identifiers, not
+<p>The panel narrows the contract further, on top of policy: <code>name</code>, <code>displayName</code>, <code>description</code> and
+<code>longDescription</code> (already searched by discover's free-text box) and <code>topic</code> and <code>source</code> (identifiers, not
 something browsed by value) are never offered as panel filters, even when the contract permits
 filtering on them - <code>FilterOptionTargets.isOfferedInPanel</code> excludes them unconditionally, before
 the contract is consulted at all. <code>POST /api/v1/product/discover</code> itself is unaffected: a caller
@@ -3488,7 +3488,7 @@ of a provisional, directly identifiable one.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 4, 2026 10:13:15 UTC">November 4, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 29, 2026 10:37:33 UTC">October 29, 2026</span>
   </span>
 
     
