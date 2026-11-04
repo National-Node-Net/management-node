@@ -69,11 +69,12 @@ jobs:
         env:
           ECR_REGISTRY: ${{ inputs.aws_account_number }}.dkr.ecr.eu-west-2.amazonaws.com
           REPO_NAME: ${{ inputs.repo_name }}
+          VERSION: ${{ inputs.version }}
         run: |
           docker build --no-cache \
             --build-arg JAR_NAME="management-node-${{ steps.get-version.outputs.project_version }}" \
             -t "$ECR_REGISTRY/$REPO_NAME:${{ github.sha }}" \
-            -t "$ECR_REGISTRY/$REPO_NAME:${{ inputs.version }}" \
+            -t "$ECR_REGISTRY/$REPO_NAME:$VERSION" \
             -f docker/Dockerfile --target management-node .
 
       # Assume the GitHub OIDC role in the AWS account that owns the target ECR repository.
