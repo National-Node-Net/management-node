@@ -179,15 +179,6 @@ A signer that fails any check is rejected and logged. A warning is logged once t
 
    The Management Node's Vault token needs `read` on `secret/data/management-node/ocsp-signer`, in addition to its PKI permissions.
 
-4. Point the AIA OCSP URL of newly issued certificates at the Management Node:
-
-   ```sh
-   docker exec -e VAULT_TOKEN=$VAULT_TOKEN vault vault write pki-int/config/urls \
-     issuing_certificates="http://localhost:8200/v1/pki-int/ca" \
-     crl_distribution_points="http://localhost:8200/v1/pki-int/crl" \
-     ocsp_servers="https://localhost:8090/api/v1/certificate/ocsp"
-   ```
-
 ---
 
 ## Verifying with OpenSSL
@@ -256,4 +247,5 @@ Metrics are exposed through Micrometer at `/actuator/metrics` on the management 
 
 - **Revocation reason:** Vault PKI does not record a reason when a certificate is revoked. `revoked` responses therefore carry Vault's revocation time without the optional `revocationReason`.
 - **Transport:** the endpoint is served on the existing HTTPS connector with mTLS and JWT, like the other Management Node APIs. A plain-HTTP listener, which would let nodes check status even when their own certificate is broken, is not implemented yet. Response integrity does not depend on transport, because every successful response is signed.
+- **AIA:** do not set this endpoint as `ocsp_servers` in `pki-int/config/urls`. TLS libraries call an AIA OCSP URL automatically and cannot send a JWT, so their requests would be rejected. Depending on the client's configuration, that either fails the handshake or silently skips the revocation check. Vault embeds the URL in every certificate it issues, so it cannot be changed for certificates already issued. Nodes call the endpoint directly with their token. An AIA URL must point at a responder that needs no authentication.
 - **Signer lifecycle:** issuing and renewing the OCSP signer certificate (renewal at 70% of its lifetime) is manual for now; see [Setting up the OCSP signer](#setting-up-the-ocsp-signer).
