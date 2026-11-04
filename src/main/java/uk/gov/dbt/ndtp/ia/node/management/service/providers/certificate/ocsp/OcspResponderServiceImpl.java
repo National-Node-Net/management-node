@@ -109,9 +109,29 @@ public class OcspResponderServiceImpl implements OcspResponderService {
     }
 
     private OcspResponseDTO process(byte[] request, List<EntryLog> entries) throws Exception {
+        Optional<OCSPReq> ocspReq = parseRequest(request);
+        if (ocspReq.isEmpty()) {
+            return unsigned(OCSPRespBuilder.MALFORMED_REQUEST);
+        }
+
+        Optional<OcspSigner> currentSigner = signerService.currentSigner();
+        if (currentSigner.isEmpty()) {
+            log.warn("No valid OCSP signer available; answering tryLater");
+            return unsigned(OCSPRespBuilder.TRY_LATER);
+        }
+
+        return buildResponse(ocspReq.get(), currentSigner.get(), entries);
+    }
+
+    /**
+     * Parses the request body and checks it against the size and entry limits.
+     *
+     * @return the parsed request, or empty if it must be answered with {@code malformedRequest}
+     */
+    private Optional<OCSPReq> parseRequest(byte[] request) {
         if (request == null || request.length == 0 || request.length > properties.maxRequestBytes()) {
             log.debug("Rejecting OCSP request with size {}", request == null ? 0 : request.length);
-            return unsigned(OCSPRespBuilder.MALFORMED_REQUEST);
+            return Optional.empty();
         }
 
         OCSPReq ocspReq;
@@ -121,41 +141,33 @@ public class OcspResponderServiceImpl implements OcspResponderService {
             requestList = ocspReq.getRequestList();
         } catch (IOException | RuntimeException e) {
             log.debug("Rejecting OCSP request that could not be parsed: {}", e.getMessage());
-            return unsigned(OCSPRespBuilder.MALFORMED_REQUEST);
+            return Optional.empty();
         }
         if (requestList.length == 0 || requestList.length > properties.maxRequestEntries()) {
             log.debug("Rejecting OCSP request with {} entries", requestList.length);
-            return unsigned(OCSPRespBuilder.MALFORMED_REQUEST);
+            return Optional.empty();
         }
+        return Optional.of(ocspReq);
+    }
 
-        Optional<OcspSigner> currentSigner = signerService.currentSigner();
-        if (currentSigner.isEmpty()) {
-            log.warn("No valid OCSP signer available; answering tryLater");
-            return unsigned(OCSPRespBuilder.TRY_LATER);
-        }
-        OcspSigner signer = currentSigner.get();
-
+    private OcspResponseDTO buildResponse(OCSPReq ocspReq, OcspSigner signer, List<EntryLog> entries) throws Exception {
         Instant thisUpdate = clock.instant().truncatedTo(ChronoUnit.SECONDS);
         Instant nextUpdate = thisUpdate.plus(properties.validity());
         BasicOCSPRespBuilder builder = new BasicOCSPRespBuilder(
                 signer.certificate().getSubjectPublicKeyInfo(), digestCalculatorProvider.get(CertificateID.HASH_SHA1));
 
-        for (Req req : requestList) {
+        for (Req req : ocspReq.getRequestList()) {
             CertificateID certId = req.getCertID();
             String serial = certId.getSerialNumber().toString(16);
             String issuerKeyHash =
                     Hex.toHexString(certId.toASN1Primitive().getIssuerKeyHash().getOctets());
 
             CertificateStatusDTO status;
-            if (!matchesIssuer(certId, signer.issuer())) {
-                status = CertificateStatusDTO.unknown();
-            } else {
-                try {
-                    status = statusProvider.getStatus(certId.getSerialNumber(), signer.issuer());
-                } catch (CertificateStatusUnavailableException e) {
-                    entries.add(new EntryLog(serial, issuerKeyHash, "unavailable"));
-                    return unsigned(OCSPRespBuilder.TRY_LATER);
-                }
+            try {
+                status = lookUpStatus(certId, signer.issuer());
+            } catch (CertificateStatusUnavailableException e) {
+                entries.add(new EntryLog(serial, issuerKeyHash, "unavailable"));
+                return unsigned(OCSPRespBuilder.TRY_LATER);
             }
             entries.add(new EntryLog(serial, issuerKeyHash, statusName(status)));
             builder.addResponse(certId, toOcspStatus(status), Date.from(thisUpdate), Date.from(nextUpdate), null);
@@ -174,6 +186,13 @@ public class OcspResponderServiceImpl implements OcspResponderService {
                 .responseStatus(OCSPRespBuilder.SUCCESSFUL)
                 .nextUpdate(nextUpdate)
                 .build();
+    }
+
+    private CertificateStatusDTO lookUpStatus(CertificateID certId, X509CertificateHolder issuer) {
+        if (!matchesIssuer(certId, issuer)) {
+            return CertificateStatusDTO.unknown();
+        }
+        return statusProvider.getStatus(certId.getSerialNumber(), issuer);
     }
 
     /**
