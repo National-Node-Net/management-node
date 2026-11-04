@@ -146,7 +146,7 @@ service knows which members it will use. See [TC-16](#tc-16-sort-page-and-size-a
 ```json
 {
   "totalElements": 6,
-  "textSearch": { "enabled": true, "fields": ["name", "displayName", "description"] },
+  "textSearch": { "enabled": true, "fields": ["name", "displayName", "description", "organisation.name"] },
   "filters": [
     {
       "key": "field:type",
@@ -216,7 +216,7 @@ report for the identical body and token. See [TC-04](#tc-04-totalelements-equals
 ### `textSearch`
 
 ```json
-{ "enabled": true, "fields": ["name", "displayName", "description"] }
+{ "enabled": true, "fields": ["name", "displayName", "description", "organisation.name"] }
 ```
 
 - `enabled`: whether the caller may send `text` at all - `contract.textSearchFields()` non-empty.

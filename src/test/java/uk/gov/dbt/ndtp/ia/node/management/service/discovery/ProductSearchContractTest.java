@@ -58,8 +58,11 @@ class ProductSearchContractTest {
         ProductSearchContract contract = ProductSearchContract.open();
 
         assertThat(contract.textSearchFields())
-                .containsExactlyElementsOf(
-                        List.of(ProductField.NAME, ProductField.DISPLAY_NAME, ProductField.DESCRIPTION))
+                .containsExactlyElementsOf(List.of(
+                        ProductField.NAME,
+                        ProductField.DISPLAY_NAME,
+                        ProductField.DESCRIPTION,
+                        ProductField.ORGANISATION_NAME))
                 .allMatch(ProductField::isTextSearchable);
     }
 

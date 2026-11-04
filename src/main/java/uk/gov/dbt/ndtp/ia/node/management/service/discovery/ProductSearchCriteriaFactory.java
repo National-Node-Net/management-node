@@ -192,12 +192,12 @@ public class ProductSearchCriteriaFactory {
                 "Operator '" + operator.wireName() + "' does not apply to the field '" + name + "'");
     }
 
-    /** Text fields are searched by substring, as a person would expect; everything else exactly. */
+    /** Text fields are matched by substring, as a person would expect; everything else exactly. */
     private static ComparisonOperator defaultOperator(ProductField field, ProductDiscoveryFilterDTO filter) {
         if (filter.values().size() != 1) {
             return ComparisonOperator.IN;
         }
-        return field != null && field.isTextSearchable() ? ComparisonOperator.CONTAINS : ComparisonOperator.EQ;
+        return field != null && field.isContainsByDefault() ? ComparisonOperator.CONTAINS : ComparisonOperator.EQ;
     }
 
     private static ProductSearchCriteria.SortKey sortKey(FilterTarget target, boolean descending) {

@@ -41,7 +41,11 @@ public enum ProductField {
     /** The format the product's data is published in - JSON, XML, CSV, RDF... an open set. */
     FORMAT("format", "p.format", null, Use.FILTER_SORT, Kind.TEXT),
     ORGANISATION_KEY("organisation.key", "o.organisation_key", ProductBlock.ORGANISATION, Use.FILTER_SORT, Kind.TEXT),
-    ORGANISATION_NAME("organisation.name", "o.name", ProductBlock.ORGANISATION, Use.FILTER_SORT, Kind.TEXT),
+    /**
+     * Free text searches the owning organisation's name too, so a search for "Bristol" finds what
+     * Bristol City Council offers. A filter on it still matches the whole name by default.
+     */
+    ORGANISATION_NAME("organisation.name", "o.name", ProductBlock.ORGANISATION, Use.FILTER_SORT_SEARCHED, Kind.TEXT),
     PRODUCER_NAME("producer.name", "pr.name", ProductBlock.PRODUCER, Use.RETURN_ONLY, Kind.TEXT),
     PRODUCER_DESCRIPTION("producer.description", "pr.description", ProductBlock.PRODUCER, Use.RETURN_ONLY, Kind.TEXT),
     PRODUCER_ACTIVE("producer.active", "pr.active", ProductBlock.PRODUCER, Use.RETURN_ONLY, Kind.TEXT),
@@ -76,18 +80,26 @@ public enum ProductField {
         FILTER_ONLY(true, false, false, false),
         FILTER_SORT(true, true, false, true),
         FILTER_TEXT(true, false, true, true),
-        FILTER_SORT_TEXT(true, true, true, true);
+        FILTER_SORT_TEXT(true, true, true, true),
+        /** Searched by free text, but a single filter value matches exactly unless told otherwise. */
+        FILTER_SORT_SEARCHED(true, true, true, true, false);
 
         private final boolean filter;
         private final boolean sort;
         private final boolean text;
         private final boolean selected;
+        private final boolean containsByDefault;
 
         Use(boolean filter, boolean sort, boolean text, boolean selected) {
+            this(filter, sort, text, selected, text);
+        }
+
+        Use(boolean filter, boolean sort, boolean text, boolean selected, boolean containsByDefault) {
             this.filter = filter;
             this.sort = sort;
             this.text = text;
             this.selected = selected;
+            this.containsByDefault = containsByDefault;
         }
     }
 
@@ -145,6 +157,11 @@ public enum ProductField {
 
     public boolean isTextSearchable() {
         return use.text;
+    }
+
+    /** Whether a filter with a single value and no operator matches a substring rather than the whole value. */
+    public boolean isContainsByDefault() {
+        return use.containsByDefault;
     }
 
     /** Whether the field is a column of the page query (as opposed to a filter-only field). */

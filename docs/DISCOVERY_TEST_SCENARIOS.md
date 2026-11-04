@@ -409,15 +409,17 @@ its two grants (`2026-02-11T07:00:00`), and HEG with `consumers: 1`. `consumers`
 entries, each with its subscription terms. Check that no subscription carries a `destination`
 (delivery detail is deliberately not part of discovery).
 
-### S5: Free text searches name and description, nothing else
+### S5: Free text searches names, descriptions and the organisation's name, nothing else
 
 ```bash
-discover "$ENV_TOKEN" '{"text":"flood"}'  | jq '[.products[].name]'
-discover "$ENV_TOKEN" '{"text":"kafka"}'  | jq '[.products[].name]'
+discover "$ENV_TOKEN" '{"text":"flood"}'          | jq '[.products[].name]'
+discover "$BCC_TOKEN" '{"text":"homes england"}'  | jq '[.products[].name]'
+discover "$ENV_TOKEN" '{"text":"kafka"}'          | jq '[.products[].name]'
 ```
 
 **Expect:** `"flood"` matches **FloodRiskMapZones** (by name) and **RiverLevelTelemetry** (its
-description ends "Used for flood warning"): a case-insensitive substring in either. `"kafka"`
+description ends "Used for flood warning"): a case-insensitive substring in either. `"homes england"`
+matches **AffordableHousingCompletions** for BCC, through its owning organisation's name alone. `"kafka"`
 matches **nothing**, because `source` and `topic` are not text-searched even though `kafka://`
 appears in several sources. They remain available as explicit filters.
 
