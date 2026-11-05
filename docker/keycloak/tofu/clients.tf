@@ -82,6 +82,13 @@ resource "keycloak_role" "request_bootstrap_certificate" {
   description = "Allows requesting bootstrap certificate packages"
 }
 
+resource "keycloak_role" "management_node_access" {
+  realm_id    = keycloak_realm.management-node.id
+  client_id   = keycloak_openid_client.management_node.id
+  name        = "management-node-access"
+  description = "Allows checking certificate revocation status via the OCSP endpoint"
+}
+
 # Configure clients from federator_clients variable
 module "federator_client" {
   source = "./modules/federator_client"
@@ -103,6 +110,7 @@ module "federator_client" {
     keycloak_role.product_discovery,
     keycloak_role.product_view,
     keycloak_role.product_subscribe,
+    keycloak_role.management_node_access,
   ]
 
   # The organisation the client acts for. Policy resolves the calling organisation's attributes

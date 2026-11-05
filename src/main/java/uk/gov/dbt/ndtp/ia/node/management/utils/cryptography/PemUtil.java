@@ -37,9 +37,21 @@ public class PemUtil {
      * @throws PkiException if the key cannot be parsed or the algorithm is unavailable
      */
     public static PrivateKey parsePkcs8PrivateKey(String pem) {
+        return parsePkcs8PrivateKey(pem, KEY_ALG);
+    }
+
+    /**
+     * Parses a PKCS#8 encoded private key of the given algorithm from a PEM string.
+     *
+     * @param pem the PEM encoded private key string
+     * @param algorithm the key algorithm (e.g. "RSA", "EC")
+     * @return the parsed PrivateKey
+     * @throws PkiException if the key cannot be parsed or the algorithm is unavailable
+     */
+    public static PrivateKey parsePkcs8PrivateKey(String pem, String algorithm) {
         try {
             byte[] der = decodePem(pem);
-            return KeyFactory.getInstance(KEY_ALG).generatePrivate(new PKCS8EncodedKeySpec(der));
+            return KeyFactory.getInstance(algorithm).generatePrivate(new PKCS8EncodedKeySpec(der));
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             throw new PkiException("Failed to parse private key", e);
         }

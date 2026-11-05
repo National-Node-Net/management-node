@@ -75,6 +75,15 @@ application:
   bootstrap:
     ttl: ${BOOTSTRAP_CERT_TTL:2h} # TTL for bootstrap certificates
     oid: ${BOOTSTRAP_OID:1.3.6.1.4.1.32473.1.1} # OID for bootstrap cert marker (RFC 5612 example PEN)
+  ocsp:
+    validity: ${OCSP_VALIDITY:PT5M} # nextUpdate - thisUpdate of OCSP responses; must be > 0 and <= PT10M
+    max-request-entries: 10 # certificate IDs answered per request; more gives malformedRequest
+    max-request-bytes: 16384 # larger request bodies give malformedRequest
+    status-backend: vault # certificate status source
+    signer:
+      kv-mount: ${OCSP_SIGNER_KV_MOUNT:secret} # Vault KV v2 mount holding the OCSP signer
+      kv-path: ${OCSP_SIGNER_KV_PATH:management-node/ocsp-signer} # secret with private_key (PKCS#8 PEM) and certificate (PEM)
+      refresh-interval: PT5M # how often the signer is reloaded from Vault
   client:
     key-store: keystore.jks # path to MTLS client keystore
     key-store-password: ${CERTPASSWORD:} # MTLS client keystore password

@@ -357,6 +357,15 @@
                     "clientRole": true,
                     "containerId": "e6362bd1-4515-42f4-be71-3434e3e0d6da",
                     "attributes": {}
+                },
+                {
+                    "id": "a1b2c3d4-5555-4000-a000-000000000005",
+                    "name": "management-node-access",
+                    "description": "Check certificate revocation status via the OCSP endpoint",
+                    "composite": false,
+                    "clientRole": true,
+                    "containerId": "e6362bd1-4515-42f4-be71-3434e3e0d6da",
+                    "attributes": {}
                 }
             ],
             "broker": [
@@ -533,7 +542,8 @@
                     "access_consumer_configurations",
                     "create_keys",
                     "sign_certificate",
-                    "access_public_certificates"
+                    "access_public_certificates",
+                    "management-node-access"
                 ]
             },
             "notBefore": 0,
