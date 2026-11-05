@@ -1,0 +1,69 @@
+# SPDX-License-Identifier: Apache-2.0
+# © Crown Copyright 2026. This work has been developed by the National Digital Twin Programme
+# and is legally attributed to the UK's Department for Business, Innovation, Science and Trade (BIST) as the governing entity.
+
+name: Development image on merge
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+    inputs:
+      major:
+        description: Major version
+        required: false
+        default: "1"
+        type: string
+      minor:
+        description: Minor version
+        required: false
+        default: "0"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  versioning:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.value }}
+    steps:
+      # Fetch the Maven wrapper and POM used to derive the development image tag.
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+
+      # Install Java for Maven Wrapper commands.
+      - name: Set up JDK 21
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+        with:
+          java-version: "21"
+          distribution: temurin
+          cache: maven
+
+      # Generate a unique, timestamped development image tag.
+      - id: version
+        name: Generate development image version from pom
+        run: |
+          VERSION="$(./mvnw --batch-mode --no-transfer-progress help:evaluate -Dexpression=project.version -q -DforceStdout)"
+          IMAGE_VERSION="${VERSION}.$(date -u +%Y%m%d%H%M%S)"
+          echo "POM version: $VERSION"
+          echo "Image version: $IMAGE_VERSION"
+          echo "value=$IMAGE_VERSION" >> "$GITHUB_OUTPUT"
+
+  ci:
+    needs: versioning
+    # Run checks before building an image that can be deployed.
+    uses: ./.github/workflows/ci-pr.yml
+    secrets: inherit
+
+  push-to-ecr:
+    needs: [versioning, ci]
+    permissions:
+      contents: read
+      id-token: write
+    # Publish the checked and scanned image to the development ECR account.
+    uses: ./.github/workflows/cd-push-to-ecr.yml
+    with:
+      aws_account_number: ${{ vars.DEV_AWS_ACCOUNT_ID }}
+      repo_name: ndtp/management-node
+      version: ${{ needs.versioning.outputs.version }}
