@@ -61,6 +61,7 @@
     <httpcore5.version>5.4.3</httpcore5.version>
     <tomcat.version>10.1.59</tomcat.version>
     <lz4-java.version>1.11.4</lz4-java.version>
+    <snappy-java.version>1.1.10.9</snappy-java.version>
     <sonar.coverage.exclusions>**/config/**,
             **/dto/**,
             **/entity/**,
@@ -89,6 +90,11 @@
         <groupId>at.yawk.lz4</groupId>
         <artifactId>lz4-java</artifactId>
         <version>${lz4-java.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.xerial.snappy</groupId>
+        <artifactId>snappy-java</artifactId>
+        <version>${snappy-java.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

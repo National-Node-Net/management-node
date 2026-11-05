@@ -68,8 +68,10 @@ federator_clients = [
     default_client_scopes = ["roles"]
     mapped_client_roles = [
       {
+        # Only what the Identity Management Service does: find clients and read their roles and service
+        # accounts (view-clients) and give a service account a client role (manage-users). Not realm-admin.
         client = "realm-management"
-        roles  = ["realm-admin"]
+        roles  = ["view-clients", "manage-users"]
       }
     ]
   }
