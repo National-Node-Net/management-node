@@ -101,12 +101,6 @@ jobs:
       - name: Build image
         run: docker build --no-cache --build-arg JAR_NAME="management-node-${{ steps.get-version.outputs.project_version }}" -t management-node:ci -f docker/Dockerfile --target management-node .
 
-      # Report Docker's local SHA-256 image ID for comparison with other workflows.
-      - name: Report image ID
-        run: |
-          IMAGE_ID="$(docker image inspect --format='{{.Id}}' management-node:ci)"
-          echo "Image ID: $IMAGE_ID" | tee -a "$GITHUB_STEP_SUMMARY"
-
       # Fail the workflow when the built image contains an unfixed critical or high vulnerability.
       - name: Scan image with Trivy
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
