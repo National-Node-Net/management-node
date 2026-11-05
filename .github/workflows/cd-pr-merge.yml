@@ -45,7 +45,7 @@ jobs:
         name: Generate development image version from pom
         run: |
           VERSION="$(./mvnw --batch-mode --no-transfer-progress help:evaluate -Dexpression=project.version -q -DforceStdout)"
-          IMAGE_VERSION="${VERSION}.$(date -u +%Y%m%d%H%M%S)"
+          IMAGE_VERSION="${VERSION}-$(date -u +%Y%m%d%H%M%S)" # use a hypen as the versions in this repo are x.x.x-<timestamp>
           echo "POM version: $VERSION"
           echo "Image version: $IMAGE_VERSION"
           echo "value=$IMAGE_VERSION" >> "$GITHUB_OUTPUT"
