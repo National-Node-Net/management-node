@@ -35,7 +35,7 @@ public enum ProductProjection {
      * page of products to open needs to know who offers each one, and {@code organisation.key} and
      * {@code organisation.name} are columns of a join the search already makes, so carrying them
      * costs no extra statement. That organisation's <em>attributes</em> would, so they are left to
-     * the view.
+     * the view, as are its {@code description} and {@code logoUrl}.
      *
      * <p>The long description is left to the view too: a result shows the short one, and the
      * details page is where the rest is read. Free text still searches it - the {@code WHERE}

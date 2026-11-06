@@ -55,7 +55,7 @@ catalogue (§4) rather than repeating them; read §2–§4 there once, then work
 | | `POST /api/v1/product/discover` | `GET /api/v1/product/{productId}` |
 |---|---|---|
 | how many products | a page of them | exactly one, by id |
-| how much of each | a **summary** (`id`, `name`, `displayName`, `description`, `type`, `format`, `isOwnProduct`, and the owning `organisation`'s `key` and `name`) | the **whole** object model, including the `longDescription` a summary leaves out |
+| how much of each | a **summary** (`id`, `name`, `displayName`, `description`, `type`, `format`, `isOwnProduct`, and the owning `organisation`'s `key` and `name`) | the **whole** object model, including the `longDescription` and the organisation's `description` and `logoUrl` a summary leaves out |
 
 Everything else is shared, and shared **from one definition** rather than two that happen to agree:
 `docker/opa/policies/lib/product_access.rego` holds the caller gates, the refusal reasons, the row
@@ -140,6 +140,8 @@ the PDP at all.
   "organisation": {
     "key": "ENV",
     "name": "Environment Agency",
+    "description": "The Environment Agency protects and improves the environment in England …",
+    "logoUrl": "https://example.org/logos/env.svg",
     "attributes": { "jurisdictions": ["England", "Wales"], "authorised_classifications": ["OFFICIAL", "SECRET"] }
   },
   "producer": {
@@ -180,7 +182,8 @@ Rules that hold for every `200`:
 - **Producer connection details are never returned at all**: `host`, `port`, `tls` and
   `idp_client_id` are not members of the model, for any caller, at any clearance.
 - **A subscription's `destination` is never returned at all**, for the same reason.
-- A nested `consumers[].organisation` carries `key` and `name` only; it never carries `attributes`.
+- A nested `consumers[].organisation` carries `key` and `name` only; it never carries `attributes`,
+  `description` or `logoUrl`.
 - Attribute maps keep their JSON types: a multi-valued attribute is an array, a number stays a
   number.
 - **`subscriptionStatus`** is the calling organisation's own status, `SUBSCRIBED` or
@@ -193,6 +196,10 @@ Rules that hold for every `200`:
   full one, for the details page, and only the view returns it. Neither is masked.
 - **`displayName`**, **`format`** and **`longDescription`** are absent when the product's owner has
   not provided them.
+- **`organisation.description`** and **`organisation.logoUrl`** describe the organisation offering
+  the product, for the details page; only the view returns them, they are not masked, and each is
+  absent when none has been provided. `logoUrl` is a link to an image hosted elsewhere: the service
+  never fetches it, so whether it loads is for the user interface to handle.
 - The response carries **no `policy` block**. Discovery's response has one (it is how a UI builds a
   filter panel); view returns the bare product.
 
@@ -1110,6 +1117,47 @@ view_body "$ENV_TOKEN" "$none" | jq 'has("longDescription")'
 
 **Why.** The two descriptions serve two pages. A search does not select the column at all, so a
 results page cannot show the long text by mistake.
+
+---
+
+### V21: The organisation's description and logo are returned by the view only
+
+**Objective.** The product details page shows who offers the product: the organisation's name,
+description and logo. Only the view carries `organisation.description` and `organisation.logoUrl`,
+every caller who may view the product sees them, and an organisation without them is still shown.
+
+**Preconditions.** Policy on.
+
+**Test data.** Set by `db/samples/V20261106121000__add_sample_organisation_descriptions_and_logos.sql`:
+ENV and HEG have both a description and a logo; BCC has a description and **no** logo.
+RiverLevelTelemetry (ENV) and BristolAirQualitySensors (BCC).
+
+**Given–When–Then.**
+
+```bash
+id=$(discover "$ENV_TOKEN" '{"text":"RiverLevelTelemetry"}' | jq -r '.products[0].id')
+discover "$ENV_TOKEN" '{"text":"RiverLevelTelemetry"}' | jq -c '.products[0].organisation'
+# {"key":"ENV","name":"Environment Agency (ENV)"}
+for t in "$ENV_TOKEN" "$HEG_TOKEN" "$BCC_TOKEN"; do
+  view_body "$t" "$id" | jq -c '.organisation | {key, description: .description[0:30], logoUrl}'
+done
+# {"key":"ENV","description":"The Environment Agency protect","logoUrl":"https://example.org/logos/env.svg"}   (three times)
+bcc=$(discover "$BCC_TOKEN" '{"text":"BristolAirQualitySensors"}' | jq -r '.products[0].id')
+view_body "$BCC_TOKEN" "$bcc" | jq -c '.organisation | {key, hasDescription: has("description"), hasLogo: has("logoUrl")}'
+# {"key":"BCC","hasDescription":true,"hasLogo":false}
+```
+
+- **Given** a product whose organisation has a description and a logo,
+- **When** it is discovered, and then viewed by each organisation,
+- **Then** the discover result's `organisation` carries only `key` and `name`,
+- **And** every organisation's view carries the organisation's `description` and `logoUrl`.
+- **And** an organisation without a logo has no `logoUrl` key, rather than a `null`, and the rest
+  of the product is returned as usual.
+
+**Why.** A search result needs only to say whose a product is; who they are is for the details
+page, and repeating it on every result would only add weight. The logo is a link the user
+interface loads itself, so a logo that is missing or fails to load is the user interface's to
+handle (show a placeholder), and never fails the view.
 
 ---
 

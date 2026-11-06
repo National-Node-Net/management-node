@@ -27,7 +27,8 @@ import lombok.Builder;
  *       organisation's own {@code attributes} are among the things absent: a block can be returned
  *       without them;
  *   <li>{@code GET /api/v1/product/{productId}} returns the <b>whole</b> model below, including
- *       the {@code longDescription} a search leaves out.
+ *       the {@code longDescription} and the organisation's {@code description} and
+ *       {@code logoUrl} that a search leaves out.
  * </ul>
  *
  * <p>What a particular caller receives is then decided by policy, which can only narrow further: a
@@ -85,9 +86,11 @@ public record DiscoveredProductDTO(
         NOT_SUBSCRIBED
     }
 
+    /** {@code description} and {@code logoUrl} are carried by the view only. */
     @Builder
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record Organisation(String key, String name, Map<String, Object> attributes) {}
+    public record Organisation(
+            String key, String name, String description, String logoUrl, Map<String, Object> attributes) {}
 
     /** Connection details (host, port, client id) are deliberately not part of discovery. */
     @Builder

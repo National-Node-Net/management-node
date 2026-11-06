@@ -30,6 +30,12 @@ public class Organisation {
     @Column(name = "organisation_key", nullable = false, unique = true, length = 50)
     private String organisationKey;
 
+    @Column(name = "description")
+    private String description;
+
+    @Column(name = "logo_url", length = 2048)
+    private String logoUrl;
+
     @Column(name = "certificate_automation_enabled", nullable = false)
     private Boolean certificateAutomationEnabled = true;
 }

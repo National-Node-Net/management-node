@@ -628,6 +628,43 @@ class ProductControllerTest {
                 .andExpect(jsonPath("$.long_description").doesNotExist());
     }
 
+    @Test
+    void view_organisationDescriptionAndLogo_areSerialisedInCamelCase() throws Exception {
+        viewReturns(DiscoveredProductDTO.builder()
+                .id(7L)
+                .name("FloodRiskMapZones")
+                .organisation(DiscoveredProductDTO.Organisation.builder()
+                        .key("ENV")
+                        .name("Environment Agency")
+                        .description("Protects and improves the environment")
+                        .logoUrl("https://example.test/env.svg")
+                        .build())
+                .build());
+
+        mockMvc.perform(get("/api/v1/product/7").requestAttr(PolicyDecision.REQUEST_ATTRIBUTE, viewDecision()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.organisation.description").value("Protects and improves the environment"))
+                .andExpect(jsonPath("$.organisation.logoUrl").value("https://example.test/env.svg"))
+                .andExpect(jsonPath("$.organisation.logo_url").doesNotExist());
+    }
+
+    @Test
+    void view_organisationWithoutDescriptionOrLogo_leavesBothOut() throws Exception {
+        viewReturns(DiscoveredProductDTO.builder()
+                .id(7L)
+                .organisation(DiscoveredProductDTO.Organisation.builder()
+                        .key("BCC")
+                        .name("Bristol City Council")
+                        .build())
+                .build());
+
+        mockMvc.perform(get("/api/v1/product/7").requestAttr(PolicyDecision.REQUEST_ATTRIBUTE, viewDecision()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.organisation.name").value("Bristol City Council"))
+                .andExpect(jsonPath("$.organisation.description").doesNotExist())
+                .andExpect(jsonPath("$.organisation.logoUrl").doesNotExist());
+    }
+
     /**
      * An empty answer is a 404 whether the product does not exist or the row filter excluded it.
      * The API deliberately does not distinguish the two (D1): a 403 for "excluded" would turn an id

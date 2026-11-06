@@ -114,6 +114,8 @@ public class DiscoveredProductAssembler {
                                         ? new DiscoveredProductDTO.Organisation(
                                                 row.text(ProductField.ORGANISATION_KEY),
                                                 row.text(ProductField.ORGANISATION_NAME),
+                                                row.text(ProductField.ORGANISATION_DESCRIPTION),
+                                                row.text(ProductField.ORGANISATION_LOGO_URL),
                                                 attributesOf(
                                                         organisationAttributes,
                                                         row.organisationId(),
@@ -150,7 +152,8 @@ public class DiscoveredProductAssembler {
                 .filter(grant -> grant.productId() == productId)
                 .map(grant -> new DiscoveredProductDTO.Consumer(
                         grant.consumerName(),
-                        new DiscoveredProductDTO.Organisation(grant.organisationKey(), grant.organisationName(), null),
+                        new DiscoveredProductDTO.Organisation(
+                                grant.organisationKey(), grant.organisationName(), null, null, null),
                         consumerAttributes.getOrDefault(grant.consumerId(), Map.of()),
                         new DiscoveredProductDTO.Subscription(
                                 grant.grantedAt(),
