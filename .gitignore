@@ -53,6 +53,7 @@ cert-backup-*/
 .terraform/
 *.tfstate
 *.tfstate.backup
+tfplan
 *.hcl
 
 ### application local file
