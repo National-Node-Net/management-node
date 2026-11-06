@@ -98,14 +98,18 @@ class DiscoveredProductAssemblerTest {
         assertThat(product.attributes()).containsExactly(Map.entry("identifiability", "anonymised"));
         assertThat(product.organisation())
                 .isEqualTo(new DiscoveredProductDTO.Organisation(
-                        "ENV", "Environment Agency", Map.of("jurisdictions", List.of("England"))));
+                        "ENV",
+                        "Environment Agency",
+                        "Protects and improves the environment",
+                        "https://example.test/env.svg",
+                        Map.of("jurisdictions", List.of("England"))));
         assertThat(product.producer())
                 .isEqualTo(new DiscoveredProductDTO.Producer(
                         "Flood producer", "Publishes flood data", true, Map.of("tier", 3)));
         assertThat(product.consumers())
                 .containsExactly(new DiscoveredProductDTO.Consumer(
                         "Council consumer",
-                        new DiscoveredProductDTO.Organisation("BCC", "Borough Council", null),
+                        new DiscoveredProductDTO.Organisation("BCC", "Borough Council", null, null, null),
                         Map.of("operating_remit", "national"),
                         new DiscoveredProductDTO.Subscription(
                                 EARLIEST, new BigDecimal("30"), "cron", "0 0 * * *", Map.of("delivery", "batch"))));
@@ -388,6 +392,16 @@ class DiscoveredProductAssemblerTest {
     }
 
     @Test
+    void assemble_summary_carriesTheOrganisationKeyAndNameOnly() {
+        DiscoveredProductDTO product = assembler
+                .assemble(List.of(summaryRow(1L)), ProductSearchContract.open(), ProductProjection.SUMMARY)
+                .get(0);
+
+        assertThat(product.organisation())
+                .isEqualTo(new DiscoveredProductDTO.Organisation("ENV", "Environment Agency", null, null, null));
+    }
+
+    @Test
     void assemble_isOwnProductNotSelected_isAbsent() {
         DiscoveredProductDTO product = assembler
                 .assemble(List.of(summaryRow(1L)), ProductSearchContract.open(), ProductProjection.SUMMARY)
@@ -409,6 +423,8 @@ class DiscoveredProductAssemblerTest {
         row.put(ProductField.SOURCE.alias(), "https://example.test/flood");
         row.put(ProductField.ORGANISATION_KEY.alias(), "ENV");
         row.put(ProductField.ORGANISATION_NAME.alias(), "Environment Agency");
+        row.put(ProductField.ORGANISATION_DESCRIPTION.alias(), "Protects and improves the environment");
+        row.put(ProductField.ORGANISATION_LOGO_URL.alias(), "https://example.test/env.svg");
         row.put(ProductField.PRODUCER_NAME.alias(), "Flood producer");
         row.put(ProductField.PRODUCER_DESCRIPTION.alias(), "Publishes flood data");
         row.put(ProductField.PRODUCER_ACTIVE.alias(), Boolean.TRUE);

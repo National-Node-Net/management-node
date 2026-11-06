@@ -47,6 +47,8 @@ erDiagram
     BIGSERIAL id PK
     VARCHAR name
     VARCHAR organisation_key UK
+    TEXT description
+    VARCHAR logo_url
     BOOLEAN certificate_automation_enabled
   }
   PRODUCER {
@@ -185,6 +187,8 @@ Columns:
 - `id` BIGSERIAL, primary key
 - `name` VARCHAR(150), not null
 - `organisation_key` VARCHAR(50), not null: stable, human-readable identifier for the organisation (e.g. `ENV`, `BCC`, `HEG`), so callers can address an organisation without depending on ids that differ between environments
+- `description` TEXT, nullable: who the organisation is, shown on the details page of each product it offers. Returned as `organisation.description` by `GET /api/v1/product/{productId}` only; a search result carries the organisation's `key` and `name`. Not text-searched. Existing rows have none until someone provides it
+- `logo_url` VARCHAR(2048), nullable: absolute URL of the organisation's logo image. The image is hosted elsewhere and loaded by the user interface; the service stores and serves no images. Returned as `organisation.logoUrl`, like `description`
 - `certificate_automation_enabled` BOOLEAN, not null, default TRUE
 
 Indexes and constraints:
@@ -193,6 +197,7 @@ Indexes and constraints:
 Usage:
 - Parent entity for `producer`, `consumer`, and `organisation_certificate`.
 - `organisation_key` is exposed as `organisation.key` on the producer and consumer configuration APIs.
+- No API writes `description` or `logo_url`; they are set by migration.
 
 ---
 

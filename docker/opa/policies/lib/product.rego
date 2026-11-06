@@ -38,6 +38,8 @@ fields := {
 	"organisation",
 	"organisation.key",
 	"organisation.name",
+	"organisation.description",
+	"organisation.logoUrl",
 	"producer",
 	"producer.name",
 	"producer.description",

@@ -336,6 +336,7 @@ These are the levers. Everything in section 8 is a permutation of them.
 | `isOwnProduct` | yes, booleans only | **no** | no | yes, when the caller's organisation is known |
 | `organisation.key` | yes | yes | no | yes |
 | `organisation.name` | yes | yes | **yes** (a filter on it still defaults to `eq`) | yes |
+| `organisation.description`, `organisation.logoUrl` | no | no | no | **no** - the view only |
 | `subscribedBy` | yes | **no** | no | no |
 | `producer.name`, `producer.description`, `producer.active` | no | no | no | no |
 
