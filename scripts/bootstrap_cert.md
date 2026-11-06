@@ -1,6 +1,6 @@
 # Bootstrap Certificate Script
 
-`bootrap_cert.sh` issues a bootstrap certificate for an organisation from the Management Node and
+`bootstrap_cert.sh` issues a bootstrap certificate for an organisation from the Management Node and
 packages it as a password-protected keystore and truststore, written into one JSON document,
 `bootstrap.json`:
 
@@ -57,10 +57,10 @@ with the private key from step 2 into the two `.p12` stores.
 Run from the repository root:
 
 ```bash
-bash scripts/bootrap_cert.sh [options]
+bash scripts/bootstrap_cert.sh [options]
 ```
 
-`bash scripts/bootrap_cert.sh --help` prints the same list. Every option can also be set by the
+`bash scripts/bootstrap_cert.sh --help` prints the same list. Every option can also be set by the
 environment variable shown.
 
 | Option | Environment variable | Default | Meaning |
@@ -93,7 +93,7 @@ environment variable shown.
 Uses `FEDERATOR_BCC`, organisation `2` and the default CSR fields:
 
 ```bash
-bash scripts/bootrap_cert.sh \
+bash scripts/bootstrap_cert.sh \
   --cert /path/to/client-org1.crt \
   --key  /path/to/client-org1.key \
   --out  ./my-bootstrap
@@ -118,7 +118,7 @@ Done. Bootstrap certificate issued for organisation 2.
 ### Another organisation and client
 
 ```bash
-bash scripts/bootrap_cert.sh \
+bash scripts/bootstrap_cert.sh \
   --client-id FEDERATOR_ENV \
   --org-id 1 \
   --cert /path/to/client-env.crt \
@@ -130,7 +130,7 @@ bash scripts/bootrap_cert.sh \
 The first `--san` replaces the default SANs, and each further one adds to the list:
 
 ```bash
-bash scripts/bootrap_cert.sh \
+bash scripts/bootstrap_cert.sh \
   --cert /path/to/client-org1.crt --key /path/to/client-org1.key \
   --cn federator.bcc.example \
   --org "Birmingham City Council" --ou Federation --country GB \
@@ -144,7 +144,7 @@ Passwords are generated at random unless given. Set them when the consumer of th
 known values:
 
 ```bash
-bash scripts/bootrap_cert.sh --cert client.crt --key client.key \
+bash scripts/bootstrap_cert.sh --cert client.crt --key client.key \
   --keystore-password "$KEYSTORE_PW" --truststore-password "$TRUSTSTORE_PW" --alias federator
 ```
 
@@ -155,7 +155,7 @@ Pass passwords through variables rather than literally, so they stay out of your
 ```bash
 export CLIENT_CERT=/path/to/client-org1.crt
 export CLIENT_KEY=/path/to/client-org1.key
-ORGANISATION_ID=2 CSR_CN=federator.bcc.example bash scripts/bootrap_cert.sh
+ORGANISATION_ID=2 CSR_CN=federator.bcc.example bash scripts/bootstrap_cert.sh
 ```
 
 ### A different environment
@@ -163,13 +163,13 @@ ORGANISATION_ID=2 CSR_CN=federator.bcc.example bash scripts/bootrap_cert.sh
 ```bash
 IDP_URL=https://idp.example.org/realms/mng-node/protocol/openid-connect/token \
 MN_URL=https://management-node.example.org \
-bash scripts/bootrap_cert.sh --cert client.crt --key client.key --org-id 3
+bash scripts/bootstrap_cert.sh --cert client.crt --key client.key --org-id 3
 ```
 
 ### A client with a secret, or a server certificate that is not trusted
 
 ```bash
-bash scripts/bootrap_cert.sh --cert client.crt --key client.key --client-secret "$SECRET" --insecure
+bash scripts/bootstrap_cert.sh --cert client.crt --key client.key --client-secret "$SECRET" --insecure
 ```
 
 Use `--insecure` only against a local or test environment.
