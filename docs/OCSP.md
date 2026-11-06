@@ -141,22 +141,9 @@ On every load the Management Node checks that the signer:
 
 A signer that fails any check is rejected and logged. A warning is logged once the signer has passed 70% of its lifetime.
 
-1. Create a Vault role for OCSP signer certificates:
+The `ocsp-signer` role and the KV mount come from [docker/vault/tofu](../docker/vault/tofu/README.md). The role accepts only the common name `ocsp-signer.management-node`, and issues certificates for 7 days at most. See [Vault Access](VAULT_ACCESS.md#the-ocsp-signer-role).
 
-   ```sh
-   docker exec -e VAULT_TOKEN=$VAULT_TOKEN vault vault write pki-int/roles/ocsp-signer \
-     allow_any_name=true \
-     server_flag=false \
-     client_flag=false \
-     ext_key_usage=OCSPSigning \
-     key_usage=DigitalSignature \
-     key_type=any \
-     max_ttl=72h
-   ```
-
-   `key_type=any` is required for EC signer keys; the Vault default only accepts RSA.
-
-2. Generate the signer key (PKCS#8) and CSR, and have Vault sign it with a short lifetime:
+1. Generate the signer key (PKCS#8) and CSR, and have Vault sign it with a short lifetime:
 
    ```sh
    openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out ocsp-signer.key   # or: -algorithm RSA -pkeyopt rsa_keygen_bits:2048
@@ -166,7 +153,7 @@ A signer that fails any check is rejected and logged. A warning is logged once t
      csr=@/tmp/ocsp-signer.csr ttl=24h > ocsp-signer.pem
    ```
 
-3. Store the key and certificate in Vault KV v2 at `application.ocsp.signer.kv-mount`/`kv-path`:
+2. Store the key and certificate in Vault KV v2 at `application.ocsp.signer.kv-mount`/`kv-path`:
 
    ```sh
    docker cp ocsp-signer.key vault:/tmp/ocsp-signer.key
@@ -177,7 +164,7 @@ A signer that fails any check is rejected and logged. A warning is logged once t
    shred -u ocsp-signer.key   # the key must only live in Vault
    ```
 
-   The Management Node's Vault token needs `read` on `secret/data/management-node/ocsp-signer`, in addition to its PKI permissions.
+   These commands use an administrator token. The Management Node's own token can only read this secret.
 
 ---
 
@@ -196,8 +183,9 @@ curl -k --cert client.crt --key client.key \
   --data-binary @req.der -o resp.der \
   https://localhost:8090/api/v1/certificate/ocsp
 
-# 3. Verify the signature against the federation CA, check the nonce and print the statuses
-openssl ocsp -reqin req.der -respin resp.der -issuer ca.pem -CAfile ca.pem -resp_text
+# 3. Verify the signature against the CA chain, check the nonce and print the statuses
+# ca-chain.pem comes from pki-int/cert/ca_chain: the intermediate alone cannot be verified up to a trusted root
+openssl ocsp -reqin req.der -respin resp.der -issuer ca.pem -CAfile ca-chain.pem -resp_text
 ```
 
 Expected output includes `Response verify OK`, one `Cert Status: good|revoked|unknown` per certificate, and an `OCSP Nonce` matching the request.
@@ -237,7 +225,7 @@ Metrics are exposed through Micrometer at `/actuator/metrics` on the management 
 - `/api/v1/certificate/**` is **excluded from the CertificateValidationInterceptor**, so the OCSP endpoint does not require the caller to have an `organisation_certificate` record. A node must be able to check a peer's status regardless of the state of its own certificate record.
 - The responder **never answers `good` when the status is not known**: a Vault failure for any certificate ID turns the whole response into `tryLater`, and certificates not issued by the federation CA are `unknown`.
 - Status results are **never cached** on the Management Node. Clients may cache a successful response until its `nextUpdate`, which is at most 10 minutes away.
-- The **signer private key** lives only in Vault KV v2 and in memory. It is never written to disk or logged. The Management Node's Vault token needs `read` on the signer secret; restrict that policy to this path.
+- The **signer private key** lives only in Vault KV v2 and in memory. It is never written to disk or logged. The Management Node's Vault policies allow `read` on this one secret; see [Vault Access](VAULT_ACCESS.md).
 - Error responses (`malformedRequest`, `tryLater`, `internalError`) are unsigned, as RFC 6960 allows, and carry `Cache-Control: no-store`.
 - The request body size and the number of certificate IDs per request are bounded (`max-request-bytes`, `max-request-entries`), which limits the Vault calls a single request can trigger.
 
@@ -247,5 +235,6 @@ Metrics are exposed through Micrometer at `/actuator/metrics` on the management 
 
 - **Revocation reason:** Vault PKI does not record a reason when a certificate is revoked. `revoked` responses therefore carry Vault's revocation time without the optional `revocationReason`.
 - **Transport:** the endpoint is served on the existing HTTPS connector with mTLS and JWT, like the other Management Node APIs. A plain-HTTP listener, which would let nodes check status even when their own certificate is broken, is not implemented yet. Response integrity does not depend on transport, because every successful response is signed.
-- **AIA:** do not set this endpoint as `ocsp_servers` in `pki-int/config/urls`. TLS libraries call an AIA OCSP URL automatically and cannot send a JWT, so their requests would be rejected. Depending on the client's configuration, that either fails the handshake or silently skips the revocation check. Vault embeds the URL in every certificate it issues, so it cannot be changed for certificates already issued. Nodes call the endpoint directly with their token. An AIA URL must point at a responder that needs no authentication.
+- **AIA:** certificates carry no OCSP URL while this endpoint requires authentication, and `docker/vault/tofu` keeps `ocsp_servers` empty. TLS libraries call an AIA OCSP URL automatically and cannot send a JWT, so their requests would be rejected. Depending on the client's configuration, that either fails the handshake or silently skips the revocation check. Vault embeds the URL in every certificate it issues, so it cannot be removed from certificates already issued. Federators get status through the shared revocation library, which calls this endpoint with its own configured URL, token and circuit breaker, so nothing depends on the AIA field. Vault's built-in responder is not an alternative, because nodes must never call Vault directly. Revisit this only if a standard client needs it.
+- **Tidied certificates:** auto-tidy removes certificates 72 hours after they expire. An OCSP request for such a serial returns `unknown`, even if the certificate had been revoked.
 - **Signer lifecycle:** issuing and renewing the OCSP signer certificate (renewal at 70% of its lifetime) is manual for now; see [Setting up the OCSP signer](#setting-up-the-ocsp-signer).
