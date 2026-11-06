@@ -56,7 +56,7 @@ set -euo pipefail
 
 IDP_URL="${IDP_URL:-https://ia-idp.dev.ndtp.co.uk/realms/mng-node/protocol/openid-connect/token}"
 MN_URL="${MN_URL:-https://ia-management-node.dev.ndtp.co.uk:443}"
-CERT_DIR_DEFAULT="/home/developer/IdeaProjects/ndtp-application-continuous-delivery/applications/environments/dev/ia-node/workload/core/5-management-node/idp/certs"
+CERT_DIR_DEFAULT="/certs"
 
 CLIENT_ID="${CLIENT_ID:-FEDERATOR_BCC}"
 CLIENT_SECRET="${CLIENT_SECRET:-}"
