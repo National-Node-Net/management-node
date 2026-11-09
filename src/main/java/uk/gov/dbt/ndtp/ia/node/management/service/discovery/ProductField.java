@@ -49,6 +49,9 @@ public enum ProductField {
      * Bristol City Council offers. A filter on it still matches the whole name by default.
      */
     ORGANISATION_NAME("organisation.name", "o.name", ProductBlock.ORGANISATION, Use.FILTER_SORT_SEARCHED, Kind.TEXT),
+    ORGANISATION_DESCRIPTION(
+            "organisation.description", "o.description", ProductBlock.ORGANISATION, Use.RETURN_ONLY, Kind.TEXT),
+    ORGANISATION_LOGO_URL("organisation.logoUrl", "o.logo_url", ProductBlock.ORGANISATION, Use.RETURN_ONLY, Kind.TEXT),
     PRODUCER_NAME("producer.name", "pr.name", ProductBlock.PRODUCER, Use.RETURN_ONLY, Kind.TEXT),
     PRODUCER_DESCRIPTION("producer.description", "pr.description", ProductBlock.PRODUCER, Use.RETURN_ONLY, Kind.TEXT),
     PRODUCER_ACTIVE("producer.active", "pr.active", ProductBlock.PRODUCER, Use.RETURN_ONLY, Kind.TEXT),

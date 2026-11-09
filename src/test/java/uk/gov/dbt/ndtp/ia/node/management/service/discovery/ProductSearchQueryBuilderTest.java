@@ -95,6 +95,7 @@ class ProductSearchQueryBuilderTest {
                         + " p.long_description AS long_description,"
                         + " p.topic AS topic, pt.name AS type, p.source AS source, p.format AS format,"
                         + " o.organisation_key AS organisation_key, o.name AS organisation_name,"
+                        + " o.description AS organisation_description, o.logo_url AS organisation_logo_url,"
                         + " pr.name AS producer_name, pr.description AS producer_description,"
                         + " pr.active AS producer_active"
                         + FROM
@@ -115,7 +116,8 @@ class ProductSearchQueryBuilderTest {
 
         assertThat(query.pageSql())
                 .startsWith("SELECT " + IDS
-                        + ", p.name AS name, p.topic AS topic, o.organisation_key AS organisation_key FROM ");
+                        + ", p.name AS name, p.topic AS topic, o.organisation_key AS organisation_key,"
+                        + " o.description AS organisation_description, o.logo_url AS organisation_logo_url FROM ");
     }
 
     /** The central guarantee: what the caller may not see is never read out of the database. */
@@ -428,6 +430,10 @@ class ProductSearchQueryBuilderTest {
                         + " CASE WHEN (LOWER(o.organisation_key) IN (:p0)) THEN o.organisation_key END"
                         + " AS organisation_key,"
                         + " CASE WHEN (LOWER(o.organisation_key) IN (:p0)) THEN o.name END AS organisation_name,"
+                        + " CASE WHEN (LOWER(o.organisation_key) IN (:p0)) THEN o.description END"
+                        + " AS organisation_description,"
+                        + " CASE WHEN (LOWER(o.organisation_key) IN (:p0)) THEN o.logo_url END"
+                        + " AS organisation_logo_url,"
                         + " CASE WHEN LOWER(o.organisation_key) IN (:p0) THEN TRUE ELSE FALSE END AS unmask_0,"
                         + " CASE WHEN 1 = 1 THEN TRUE ELSE FALSE END AS unmask_1 FROM ");
         assertThat(query.parameters()).containsEntry("p0", Set.of("bcc"));
@@ -456,7 +462,15 @@ class ProductSearchQueryBuilderTest {
                         + " pt.name AS type, p.format AS format,"
                         + " o.organisation_key AS organisation_key, o.name AS organisation_name");
         assertThat(query.pageSql())
-                .doesNotContain("p.source", "pr.name", "pr.description", "pr.active", "p.topic", "p.long_description");
+                .doesNotContain(
+                        "p.source",
+                        "pr.name",
+                        "pr.description",
+                        "pr.active",
+                        "p.topic",
+                        "p.long_description",
+                        "o.description",
+                        "o.logo_url");
     }
 
     @Test
@@ -474,6 +488,8 @@ class ProductSearchQueryBuilderTest {
                         "p.source AS source",
                         "o.organisation_key AS organisation_key",
                         "o.name AS organisation_name",
+                        "o.description AS organisation_description",
+                        "o.logo_url AS organisation_logo_url",
                         "pr.name AS producer_name",
                         "pr.description AS producer_description",
                         "pr.active AS producer_active");
