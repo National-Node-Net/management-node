@@ -10,6 +10,9 @@ spring:
         role-id: ${VAULT_ROLE_ID:}
         secret-id: ${VAULT_SECRET_ID:}
         app-role-path: approle
+      kubernetes: # only used when authentication is kubernetes
+        role: ${VAULT_KUBERNETES_ROLE:management-node}
+        kubernetes-path: ${VAULT_KUBERNETES_PATH:kubernetes}
       session:
         lifecycle:
           enabled: true # renews the token, and logs in again once it reaches its maximum TTL
