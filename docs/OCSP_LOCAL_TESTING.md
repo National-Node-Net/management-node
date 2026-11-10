@@ -21,7 +21,7 @@ Run every command from the repository root. On Windows, use Git Bash. Check the 
 - A federator client exists, for example `FEDERATOR_ENV`. The role `management-node-access` is assigned to the service account of that client. Federator clients are the consumer and producer nodes that call the OCSP endpoint in a real deployment. You can create the client in either of two ways:
   - **OpenTofu** (`docker/keycloak/tofu`): `terraform.tfvars` already maps the role to `FEDERATOR_ENV`, `FEDERATOR_BCC` and `FEDERATOR_HEG`. These clients authenticate with their mTLS certificate (`client-x509`) and have no secret.
   - **Manually**: follow "Testing further with a federator client" under [Testing API Endpoints](../README.md#testing-api-endpoints) in the README, and in step 5 also assign `management-node-access`. Such a client authenticates with a client secret.
-- [docker/vault/tofu](../docker/vault/tofu/README.md) has been applied and the [intermediate CA is signed](../docker/vault/tofu/README.md#setting-up-the-ca). It creates `default-role`, through which the Management Node issues its OCSP signer.
+- Vault is set up as in [Vault Setup](../README.md#vault-setup-optional-required-for-certificate-manager). The role `default-role` accepts EC keys (`key_type=any`); the Management Node issues its OCSP signer through it.
 - `client.crt` and `client.key` are in the repository root.
 
 Session variables:
@@ -294,8 +294,6 @@ Run all OCSP tests with one command. With Docker running, the integration test a
 | `OcspControllerSecurityTest` | `@PreAuthorize` with the `management-node-access` role |
 | `OcspPropertiesTest` | `validity` must be > 0 and ≤ `PT10M`; signer `ttl` at least four times `refresh-interval` |
 | `OcspVaultIntegrationTest` | the full flow against a real Vault; skipped without Docker |
-
-The Management Node's Vault permissions have their own tests; see [Vault Access](VAULT_ACCESS.md#tests).
 
 ---
 

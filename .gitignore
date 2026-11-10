@@ -53,8 +53,8 @@ cert-backup-*/
 .terraform/
 *.tfstate
 *.tfstate.backup
-tfplan
 *.hcl
+!docker/vault/policies/*.hcl
 
 ### application local file
 **src/main/resources/application-local.yml
