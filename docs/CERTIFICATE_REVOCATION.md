@@ -196,49 +196,71 @@ That client's tokens then carry `organisation=ENV` and the role, and can revoke 
 
 This uses the session variables, `ca.pem`, a running application and a token as in the [OCSP Local Testing Guide](OCSP_LOCAL_TESTING.md), with the role assigned as above.
 
-1. Issue a certificate and put its serial in organisation `ENV`'s record. A bootstrap ([Bootstrap Onboarding](BOOTSTRAP_ONBOARDING.md)) does that for you. For a quick test, write it directly:
+1. Define two helpers and give organisation `ENV` a certificate:
+   - `pg` runs `psql` inside the Postgres container of `docker/keycloak` (the one published on port 5433), so `psql` need not be installed.
+   - `issue_for <organisation key> <common name> [ttl]` has Vault sign a certificate with `default-role` (`ttl` defaults to `2h`) and makes it that organisation's current certificate record. It sets `SERIAL` to the serial in the API's format and `STORED` to the database's. The role accepts any key type, so Vault only signs CSRs with it: `issue/default-role` fails with `role key type "any" not allowed for issuing certificates`.
 
    ```bash
-   docker exec -e VAULT_TOKEN=$VAULT_TOKEN vault vault write -field=certificate \
-     pki-int/issue/default-role common_name=revoke-test.local ttl=2h > revoke-test.pem
-   HEX=$(openssl x509 -in revoke-test.pem -noout -serial | cut -d= -f2 | tr A-F a-f)
-   STORED=$(echo $HEX | sed 's/^0*//')
-   SERIAL=$(echo $HEX | sed 's/../&:/g; s/:$//')
-   psql -h localhost -p 5433 -U keycloak_db_user keycloak_db -c \
-     "UPDATE mn.organisation_certificate SET serial_number='$STORED', expires_at=now() + interval '2 hours'
-      WHERE organisation_id=(SELECT id FROM mn.organisation WHERE organisation_key='ENV')"
+   pg() { docker exec -i "$(docker ps -qf publish=5433)" psql -U keycloak_db_user -d keycloak_db "$@"; }
+   issue_for() {
+     local ttl=${3:-2h}
+     openssl req -new -newkey rsa:2048 -nodes -keyout $2.key -subj "/CN=$2" -out $2.csr 2>/dev/null &&
+       docker exec -i -e VAULT_TOKEN=$VAULT_TOKEN vault vault write -field=certificate \
+         pki-int/sign/default-role csr=- ttl=$ttl < $2.csr > $2.pem || return
+     rm -f $2.key $2.csr
+     HEX=$(openssl x509 -in $2.pem -noout -serial | cut -d= -f2 | tr A-F a-f)
+     STORED=$(echo $HEX | sed 's/^0*//')
+     SERIAL=$(echo $HEX | sed 's/../&:/g; s/:$//')
+     pg -c "INSERT INTO mn.organisation_certificate (organisation_id, serial_number, type, issued_at, expires_at)
+       SELECT id, '$STORED', 'MANUAL', now(), now() + interval '$ttl' FROM mn.organisation WHERE organisation_key = '$1'
+       ON CONFLICT (organisation_id) DO UPDATE SET serial_number = EXCLUDED.serial_number, type = EXCLUDED.type,
+         issued_at = EXCLUDED.issued_at, expires_at = EXCLUDED.expires_at,
+         revoked_at = NULL, revoked_by = NULL, revocation_reason = NULL, revocation_message = NULL"
+   }
+   issue_for ENV revoke-test.local
    ```
+
+   Expected: `INSERT 0 1`. `INSERT 0 0` means that no organisation has that key, so check that the data in `db/samples` was loaded.
+   - **Existing record:** the migration that created `organisation_certificate` gave every organisation that existed then, the samples included, an empty `MANUAL` record. `issue_for` replaces it, or a record written by a bootstrap ([Bootstrap Onboarding](BOOTSTRAP_ONBOARDING.md)).
+   - **No record:** an organisation without one gets a new record.
+   - **Repeat runs:** any revocation on the record is cleared, so the test can be repeated after a revocation.
 
 2. Revoke it:
 
    ```bash
    revoke() { "$CURL" -sSk --cert client.crt --key client.key -H "Authorization: Bearer $TOKEN" \
-     -H "Content-Type: application/json" -d "$1" -w '\n%{http_code}\n' \
-     https://localhost:8090/api/v1/certificate/revoke; }
+     -H "Content-Type: application/json" -d "$1" -D - \
+     https://localhost:8090/api/v1/certificate/revoke; echo; }
    revoke "{\"serialNumber\":\"$SERIAL\",\"reason\":\"KEY_COMPROMISE\",\"comment\":\"manual test\"}"
    ```
 
-   Expected: `200` with `revokedAt`, the record's four revocation columns set, a `REVOKED` row in `mn.certificate_events`, and a `certificate_revocation_audit ... outcome=REVOKED` line in the application console.
+   Expected:
+   - `200` with `revokedAt`;
+   - the record's four revocation columns are set (`pg -c "SELECT revoked_at, revoked_by, revocation_reason, revocation_message FROM mn.organisation_certificate WHERE serial_number = '$STORED'"`);
+   - a `REVOKED` row in `mn.certificate_events`;
+   - a `certificate_revocation_audit ... outcome=REVOKED` line in the application console.
 
 3. Check OCSP:
 
    ```bash
-   openssl ocsp -issuer ca.pem -cert revoke-test.pem -nonce -reqout req.der
+   openssl ocsp -issuer ca.pem -cert revoke-test.local.pem -nonce -reqout req.der
    ocsp && verify
    ```
 
    Expected: `Cert Status: revoked`, `Revocation Time` equal to `revokedAt`, and `Revocation Reason: keyCompromise (0x1)`.
 
-4. Refusals:
+4. Refusals. Run them in this order: the Vault row stops Vault, and the last row uses up the minute's rate limit.
 
    | Request | Expected |
    |---|---|
    | the same request again | `409` with the original `revokedAt` and `revokedBy` |
-   | a serial of another organisation's record | `403` |
+   | another organisation's certificate: `issue_for BCC other-org.local`, then revoke `$SERIAL` | `403` |
    | `"serialNumber":"00:11:22"`, held by no record | `404` |
    | `"serialNumber":"zz"` or `"reason":"LOST"` | `400` naming the field |
    | a token without the role | `403` |
-   | Vault stopped (`docker stop vault`), on an active certificate | `503`, record unchanged |
+   | an expired certificate: `issue_for ENV expired.local 1m`, then revoke `$SERIAL` after that minute | `409`, record unchanged |
+   | Vault stopped: `issue_for ENV vault-down.local`, `docker stop vault`, then revoke `$SERIAL` | `503`, record unchanged; the same request gets `200` once Vault is started and unsealed again |
+   | more than 10 valid requests within a minute, e.g. with `00:11:22` | `429` with `Retry-After`; earlier requests in that minute count too |
 
    Every one of them writes an audit line with the matching `outcome`.
 
