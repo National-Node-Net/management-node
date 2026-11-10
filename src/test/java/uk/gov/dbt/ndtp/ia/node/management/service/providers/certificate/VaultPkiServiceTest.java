@@ -51,7 +51,8 @@ class VaultPkiServiceTest {
 
     @BeforeEach
     void setUp() {
-        vaultPkiService = new VaultPkiService(vaultTemplate, PKI_MOUNT, DEFAULT_ROLE, DEFAULT_TTL);
+        vaultPkiService = new VaultPkiService(
+                vaultTemplate, PKI_MOUNT, DEFAULT_ROLE, DEFAULT_TTL, RevocationTestProperties.fast());
     }
 
     @Test

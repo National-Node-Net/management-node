@@ -51,6 +51,19 @@ public class OrganisationCertificate {
     @Column(name = "expires_at")
     private Timestamp expiresAt;
 
+    /** Vault's revocation time; null while the certificate is active. */
     @Column(name = "revoked_at")
     private Timestamp revokedAt;
+
+    /** Keycloak user id of the administrator who revoked the certificate. */
+    @Column(name = "revoked_by", length = 255)
+    private String revokedBy;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "revocation_reason", length = 50)
+    private RevocationReason revocationReason;
+
+    /** Free-text comment given with the revocation. */
+    @Column(name = "revocation_message")
+    private String revocationMessage;
 }

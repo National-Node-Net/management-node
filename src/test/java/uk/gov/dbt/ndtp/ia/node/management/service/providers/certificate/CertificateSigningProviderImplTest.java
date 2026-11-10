@@ -34,6 +34,7 @@ import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.OrganisationCert
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.SignCertResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.CertificateEventType;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.CertificateType;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.RevocationReason;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.organisation.OrganisationRepository;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.CertificateEventService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.OrganisationCertificateService;
@@ -374,5 +375,43 @@ class CertificateSigningProviderImplTest {
         verify(certificateService, atLeastOnce()).save(captor.capture());
         assertThat(captor.getAllValues().get(captor.getAllValues().size() - 1).getType())
                 .isEqualTo(CertificateType.BOOTSTRAP);
+    }
+
+    /** Renewing a revoked certificate would hand whoever holds it a valid one. */
+    @Test
+    void signAndRecord_revokedCertificate_throwsExceptionWithoutSigning() {
+        OrganisationCertificateDTO cert = buildCert(CertificateType.AUTOMATED, true, true);
+        cert.setRevokedAt(Timestamp.from(Instant.parse("2026-10-12T13:15:02Z")));
+        when(certificateService.findByClientId("client-1")).thenReturn(Optional.of(cert));
+
+        assertThatThrownBy(() -> provider.signAndRecord("CSR", "client-1"))
+                .isInstanceOf(CertificateSigningException.class)
+                .hasMessageContaining("revoked");
+
+        verifyNoInteractions(vaultPkiService, eventService);
+        verify(certificateService, never()).save(any());
+    }
+
+    /** A bootstrap is how an organisation recovers from a revocation: the record holds the new certificate. */
+    @Test
+    void issueBootstrapPackage_revokedRecord_clearsTheRevocation() {
+        OrganisationCertificateDTO cert = buildCert(CertificateType.AUTOMATED, true, true);
+        cert.setRevokedAt(Timestamp.from(Instant.parse("2026-10-12T13:15:02Z")));
+        cert.setRevokedBy("admin-a");
+        cert.setRevocationReason(RevocationReason.KEY_COMPROMISE);
+        cert.setRevocationMessage("exposed");
+        setupBootstrapMocks(cert);
+
+        provider.issueBootstrapPackage(10L, BOOTSTRAP_CSR, "test-client");
+
+        ArgumentCaptor<OrganisationCertificateDTO> captor = ArgumentCaptor.forClass(OrganisationCertificateDTO.class);
+        verify(certificateService, atLeastOnce()).save(captor.capture());
+        OrganisationCertificateDTO saved =
+                captor.getAllValues().get(captor.getAllValues().size() - 1);
+        assertThat(saved.getSerialNumber()).isEqualTo("abc123");
+        assertThat(saved.getRevokedAt()).isNull();
+        assertThat(saved.getRevokedBy()).isNull();
+        assertThat(saved.getRevocationReason()).isNull();
+        assertThat(saved.getRevocationMessage()).isNull();
     }
 }

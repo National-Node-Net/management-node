@@ -27,6 +27,7 @@ import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.Certifi
 import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.organisation.OrganisationRepository;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.CertificateEventService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.OrganisationCertificateService;
+import uk.gov.dbt.ndtp.ia.node.management.utils.cryptography.CertificateSerials;
 import uk.gov.dbt.ndtp.ia.node.management.utils.cryptography.PemUtil;
 
 /**
@@ -63,6 +64,13 @@ public class CertificateSigningProviderImpl implements CertificateSigningProvide
     @Transactional
     public SignCertResponseDTO signAndRecord(String csrPem, String clientId) {
         OrganisationCertificateDTO cert = lookupCertificate(clientId);
+
+        // Renewing would hand whoever holds the revoked certificate a valid one. Recovery is a new bootstrap,
+        // which only the onboarding service may request.
+        if (cert.getRevokedAt() != null) {
+            log.warn("Refusing to renew the revoked certificate {} of client {}", cert.getSerialNumber(), clientId);
+            throw new CertificateSigningException("Certificate has been revoked; a new bootstrap is required");
+        }
 
         if (!Boolean.TRUE.equals(cert.getCertificateAutomationEnabled())) {
             log.warn("Certificate automation not enabled for client {}", clientId);
@@ -107,6 +115,15 @@ public class CertificateSigningProviderImpl implements CertificateSigningProvide
         cert.setRequestedAt(Timestamp.from(Instant.now()));
         updateCertificateRecord(cert, signResponse, CertificateType.BOOTSTRAP);
         cert.setIsRenewable(true);
+        // The record now holds the new certificate; the revoked one stays revoked in Vault, and its REVOKED event
+        // stays in certificate_events.
+        if (cert.getRevokedAt() != null) {
+            log.info(
+                    "Bootstrap for organisation {} replaces revoked certificate record, revoked at {}",
+                    organisationId,
+                    cert.getRevokedAt());
+            cert.clearRevocation();
+        }
         OrganisationCertificateDTO saved = certificateService.save(cert);
         eventService.recordEvent(saved.getId(), CertificateType.BOOTSTRAP, CertificateEventType.ISSUED, performedBy);
 
@@ -142,7 +159,7 @@ public class CertificateSigningProviderImpl implements CertificateSigningProvide
             OrganisationCertificateDTO cert, SignCertResponseDTO response, CertificateType type) {
         X509Certificate x509 = PemUtil.parseCertificate(response.getCertificate());
         cert.setSubjectDn(x509.getSubjectX500Principal().getName());
-        cert.setSerialNumber(x509.getSerialNumber().toString(16));
+        cert.setSerialNumber(CertificateSerials.toStored(x509.getSerialNumber()));
         cert.setIssuedAt(Timestamp.from(x509.getNotBefore().toInstant()));
         cert.setExpiresAt(
                 Timestamp.from(Instant.ofEpochSecond(response.getExpiration().longValue())));

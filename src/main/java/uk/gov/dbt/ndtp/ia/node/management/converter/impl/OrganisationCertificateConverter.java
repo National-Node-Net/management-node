@@ -51,6 +51,9 @@ public class OrganisationCertificateConverter
                 .issuedAt(entity.getIssuedAt())
                 .expiresAt(entity.getExpiresAt())
                 .revokedAt(entity.getRevokedAt())
+                .revokedBy(entity.getRevokedBy())
+                .revocationReason(entity.getRevocationReason())
+                .revocationMessage(entity.getRevocationMessage())
                 .build();
     }
 
@@ -71,6 +74,9 @@ public class OrganisationCertificateConverter
         entity.setIssuedAt(dto.getIssuedAt());
         entity.setExpiresAt(dto.getExpiresAt());
         entity.setRevokedAt(dto.getRevokedAt());
+        entity.setRevokedBy(dto.getRevokedBy());
+        entity.setRevocationReason(dto.getRevocationReason());
+        entity.setRevocationMessage(dto.getRevocationMessage());
 
         if (dto.getOrganisationId() != null) {
             Organisation organisation =

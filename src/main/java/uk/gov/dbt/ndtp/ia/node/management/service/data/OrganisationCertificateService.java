@@ -6,10 +6,12 @@
 
 package uk.gov.dbt.ndtp.ia.node.management.service.data;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.OrganisationCertificateDTO;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.RevocationReason;
 
 /**
  * Service interface for managing OrganisationCertificate entities.
@@ -47,4 +49,38 @@ public interface OrganisationCertificateService {
      * @return the saved certificate DTO
      */
     OrganisationCertificateDTO save(OrganisationCertificateDTO certificate);
+
+    /**
+     * Find the certificate record holding a serial number.
+     *
+     * @param serialNumber the serial as {@code serial_number} stores it (see {@code CertificateSerials#toStored})
+     * @return the certificate DTO if found
+     */
+    Optional<OrganisationCertificateDTO> findBySerialNumber(String serialNumber);
+
+    /**
+     * Find the reason recorded for a revoked serial number.
+     *
+     * @param serialNumber the serial as {@code serial_number} stores it
+     * @return the reason, or empty when the serial is unknown, not revoked or was revoked without a reason
+     */
+    Optional<RevocationReason> findRevocationReason(String serialNumber);
+
+    /**
+     * Records the revocation of a certificate, and a {@code REVOKED} event, in one transaction. The record is only
+     * changed while it still holds the certificate's serial and is not revoked yet.
+     *
+     * @param certificate the certificate record, as read before the revocation
+     * @param revokedAt   the revocation time Vault returned
+     * @param revokedBy   the subject of the administrator who revoked it
+     * @param reason      the reason given
+     * @param message     the comment given, or null
+     * @return true if the revocation was recorded; false if the record was revoked or re-issued in the meantime
+     */
+    boolean recordRevocation(
+            OrganisationCertificateDTO certificate,
+            Instant revokedAt,
+            String revokedBy,
+            RevocationReason reason,
+            String message);
 }
