@@ -16,7 +16,7 @@ services:
 
     volumes:
       - vault-data:/vault/file
-      - ./vault/config:/vault/config:ro
+      - ./config:/vault/config:ro
 
     command: vault server -config=/vault/config/vault.hcl
 

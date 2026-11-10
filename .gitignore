@@ -54,6 +54,7 @@ cert-backup-*/
 *.tfstate
 *.tfstate.backup
 *.hcl
+!docker/vault/policies/*.hcl
 
 ### application local file
 **src/main/resources/application-local.yml

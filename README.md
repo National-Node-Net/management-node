@@ -460,6 +460,7 @@ If you prefer to set up the realm manually (updated for Keycloak 26.x):
    spring:
      cloud:
        vault:
+         authentication: token # the default is approle; see Vault Setup
          token: not_setup # replace with Vault root token if using certificate endpoints
      security:
        oauth2:
@@ -578,8 +579,11 @@ You can then access vault using the Web UI and the root token at [http://localho
    spring:
      cloud:
        vault:
+         authentication: token
          token: <your_vault_root_token>
    ```
+
+   A root token bypasses every Vault policy. To run with the same permissions as on a shared environment, use AppRole instead (step 14).
 
 ### Setting up the Vault PKI Secrets Engine
 
@@ -640,7 +644,37 @@ docker exec -e VAULT_TOKEN=$VAULT_TOKEN vault vault write pki-int/roles/default-
 - `key_type=any` allows both RSA and EC keys.
 - `allowed_other_sans` whitelists the bootstrap OID so the bootstrap flow can embed it in signed certificates. This matches the default `application.bootstrap.oid` value, so if you override `BOOTSTRAP_OID`, update this Vault role to match.
 
-13. Verify the PKI engine is working by reading back the CA certificate:
+13. Turn on auto-tidy, which removes certificates and revocation records 72 hours after the certificates expire:
+
+```sh
+docker exec -e VAULT_TOKEN=$VAULT_TOKEN vault vault write pki-int/config/auto-tidy \
+  enabled=true \
+  interval_duration=12h \
+  safety_buffer=72h \
+  tidy_cert_store=true \
+  tidy_revoked_certs=true \
+  tidy_revoked_cert_issuer_associations=true
+```
+
+14. Optional: give the Management Node its own AppRole login, limited to the `mgmt-node-pki` policy. Shared environments use this login, so it shows permission problems that a root token hides. What the policy allows is described in [Vault Access](docs/VAULT_ACCESS.md).
+
+```sh
+docker exec -i -e VAULT_TOKEN=$VAULT_TOKEN vault vault policy write mgmt-node-pki - < docker/vault/policies/mgmt-node-pki.hcl
+docker exec -e VAULT_TOKEN=$VAULT_TOKEN vault vault auth enable approle
+docker exec -e VAULT_TOKEN=$VAULT_TOKEN vault vault write auth/approle/role/management-node \
+  token_policies=mgmt-node-pki \
+  token_no_default_policy=true \
+  token_type=service \
+  token_ttl=15m \
+  token_max_ttl=4h \
+  secret_id_num_uses=0
+export VAULT_ROLE_ID=$(docker exec -e VAULT_TOKEN=$VAULT_TOKEN vault vault read -field=role_id auth/approle/role/management-node/role-id)
+export VAULT_SECRET_ID=$(docker exec -e VAULT_TOKEN=$VAULT_TOKEN vault vault write -f -field=secret_id auth/approle/role/management-node/secret-id)
+```
+
+Then remove `authentication: token` and `token` from `application-local.yml`, and start the application from the same shell.
+
+15. Verify the PKI engine is working by reading back the CA certificate:
 
 ```sh
 docker exec -e VAULT_TOKEN=$VAULT_TOKEN vault vault read pki-int/cert/ca
@@ -648,17 +682,18 @@ docker exec -e VAULT_TOKEN=$VAULT_TOKEN vault vault read pki-int/cert/ca
 
 You should see the root CA certificate in PEM format.
 
-14. Test that the PKI engine can sign a certificate:
+16. Test that the PKI engine can sign a certificate. `default-role` accepts any key type, so Vault can only sign a CSR with it; `issue/default-role` fails with `role key type "any" not allowed for issuing certificates`.
 
 ```sh
-docker exec -e VAULT_TOKEN=$VAULT_TOKEN vault vault write -format=json pki-int/issue/default-role \
-  common_name="test.example.com" \
-  ttl=1h | jq -r '.data.certificate'
+openssl req -new -newkey rsa:2048 -nodes -keyout test.key -subj "/CN=test.example.com" -out test.csr
+docker exec -i -e VAULT_TOKEN=$VAULT_TOKEN vault vault write -field=certificate \
+  pki-int/sign/default-role csr=- ttl=1h < test.csr
+rm test.key test.csr
 ```
 
 You should see a signed PEM certificate. This confirms the Vault PKI engine is working.
 
-14. To verify the full integration with the Management Node, restart the app (with the real Vault token in `application-local.yml`) and test the certificate endpoints:
+17. To verify the full integration with the Management Node, restart the app (with the root token in `application-local.yml`, or with `VAULT_ROLE_ID` and `VAULT_SECRET_ID` from step 14) and test the certificate endpoints:
 
 ```bash
 # Get a token
@@ -679,7 +714,7 @@ If this returns 200 with a JSON response containing the key pair, the Management
 
 > **Note:** This setup imports the development root CA directly at the `pki-int` mount point. For production, you would typically create a separate root CA and then generate an intermediate CA signed by it. Both configurations work with the Management Node; the only difference is whether `pki-int/cert/ca_chain` returns a chain or is empty.
 
-15. The OCSP certificate status endpoint (`POST /api/v1/certificate/ocsp`) needs no extra Vault setup. The Management Node issues its own OCSP signer certificate through the role from step 12 when it starts; see [OCSP Certificate Status API](docs/OCSP.md#ocsp-signer).
+18. The OCSP certificate status endpoint (`POST /api/v1/certificate/ocsp`) needs no extra Vault setup. The Management Node issues its own OCSP signer certificate through the role from step 12 when it starts; see [OCSP Certificate Status API](docs/OCSP.md#ocsp-signer).
 
 ## Building and Running with Maven
 
