@@ -45,6 +45,7 @@ Sample JWT payload (use this structure when testing locally):
         "sign_certificate",
         "access_public_certificates",
         "request_bootstrap_certificate",
+        "management-node-access",
         "BrownfieldLandAvailability",
         "product_subscribe",
         "product_view",
@@ -83,6 +84,7 @@ versioning the API does not change which rule decides (see
 | `POST /api/v1/product/subscribe` | `product_subscribe` | `policies.product.subscribe` (exact) | `product` | `subscribe` |
 | `GET /api/v1/product/{productId}` | `product_view` | `policies.product.view` (exact) | `product` | `view` |
 | `GET /api/v1/network/map` | `product_discovery` | **not annotated** | n/a | n/a |
+| `POST /api/v1/certificate/ocsp` | `management-node-access` | not annotated | n/a | n/a |
 
 Notes the table cannot carry:
 
@@ -123,6 +125,9 @@ Notes the table cannot carry:
   well as the caller's, so the product named in the body is loaded and sent to the PDP; see
   [Policy Enforcement](POLICY_ENFORCEMENT.md#loading-the-entity-a-decision-is-about).
 
+- **`management-node-access`** is for consumer and producer node (federator) service accounts that
+  check the revocation status of peer certificates; see [OCSP Certificate Status API](OCSP.md).
+
 ## How this maps to Keycloak
 
 - In Keycloak, roles are typically assigned to a client (here conceptually the `management-node` client) and appear in tokens under `resource_access["management-node"].roles`.
@@ -140,9 +145,11 @@ Notes the table cannot carry:
   - `product_discovery`
   - `product_subscribe`
   - `product_view`
+  - `management-node-access`
 - Assign configuration roles to the appropriate Producer or Consumer Federator clients or service accounts.
 - Assign certificate roles (`create_keys`, `sign_certificate`, `access_public_certificates`) to federator service accounts that manage their own certificates.
 - Assign `request_bootstrap_certificate` only to the website/onboarding backend service account.
+- Assign `management-node-access` to every consumer/producer node service account that checks peer certificate status.
 
 ## Requesting tokens (example)
 
@@ -177,4 +184,5 @@ curl -k 'https://localhost:8090/api/v1/configuration/producer' \
   - Product Subscription API requires role: `product_subscribe` (plus policy, which also sets the subscription terms).
   - Product View API requires role: `product_view` (plus policy, which decides whether this product exists for the caller and what is shown of it; see [Policy Enforcement](POLICY_ENFORCEMENT.md)).
   - Network Map API requires role: `product_discovery`. **No policy**: it returns the whole topology, and exposes relationships rather than product content.
+  - OCSP Certificate Status API requires role: `management-node-access`.
 - Swagger/OpenAPI: Use Swagger UI at `/swagger-ui.html` to explore and test with a valid token.

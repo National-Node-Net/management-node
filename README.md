@@ -10,7 +10,7 @@
 
 ## Overview
 
-The Management Node is a Spring Boot application that provides REST APIs for federator configuration management and certificate lifecycle operations (key generation, CSR signing, and bootstrap onboarding). It implements secure communication using Mutual TLS (mTLS) and zero-trust authentication via Keycloak.
+The Management Node is a Spring Boot application that provides REST APIs for federator configuration management and certificate lifecycle operations (key generation, CSR signing, bootstrap onboarding, and OCSP certificate status). It implements secure communication using Mutual TLS (mTLS) and zero-trust authentication via Keycloak.
 
 ---
 
@@ -442,6 +442,7 @@ If you prefer to set up the realm manually (updated for Keycloak 26.x):
    | `product_discovery` | `POST /api/v1/product/discover` |
    | `product_subscribe` | `POST /api/v1/product/subscribe` |
    | `product_view` | `GET /api/v1/product/{productId}` |
+   | `management-node-access` | `POST /api/v1/certificate/ocsp` (see [OCSP Certificate Status API](docs/OCSP.md)) |
 
    Holding the role is not always sufficient: the configuration and product endpoints are additionally
    governed by policy. For the full mapping, including each endpoint's policy resource and action, see
@@ -451,10 +452,10 @@ If you prefer to set up the realm manually (updated for Keycloak 26.x):
    - Go to **Clients** → **management-node** → **Service accounts roles** tab
    - Click **Assign role**
    - Filter by **Filter by clients** and select **management-node**
-   - Check the roles needed for this client (the nine in the table above)
+   - Check the roles needed for this client (the ten in the table above)
    - Click **Assign**
 
-   > **Note:** For local development, assign all nine roles if you will be testing all endpoints with the single `management-node` client credentials. In production, roles should be split across separate clients (e.g. `request_bootstrap_certificate` only for the website/onboarding service).
+   > **Note:** For local development, assign all ten roles if you will be testing all endpoints with the single `management-node` client credentials. In production, roles should be split across separate clients (e.g. `request_bootstrap_certificate` only for the website/onboarding service).
 
 7. Create `src/main/resources/application-local.yml` with all local development overrides:
    ```yaml
@@ -679,6 +680,8 @@ curl -k https://localhost:8090/api/v1/certificate/keyPair \
 If this returns 200 with a JSON response containing the key pair, the Management Node is fully connected to Vault's PKI engine.
 
 > **Note:** This setup imports the development root CA directly at the `pki-int` mount point. For production, you would typically create a separate root CA and then generate an intermediate CA signed by it. Both configurations work with the Management Node; the only difference is whether `pki-int/cert/ca_chain` returns a chain or is empty.
+
+15. The OCSP certificate status endpoint (`POST /api/v1/certificate/ocsp`) needs no extra Vault setup. The Management Node issues its own OCSP signer certificate through the role from step 12 when it starts; see [OCSP Certificate Status API](docs/OCSP.md#ocsp-signer).
 
 ## Building and Running with Maven
 
@@ -983,6 +986,7 @@ as `resource_access["management-node"].roles` and is enforced as the authority
 | `product_discovery` | `POST /api/v1/product/discover` | yes |
 | `product_subscribe` | `POST /api/v1/product/subscribe` | yes |
 | `product_view` | `GET /api/v1/product/{productId}` | yes |
+| `management-node-access` | `POST /api/v1/certificate/ocsp` (see [OCSP](docs/OCSP.md)) | no |
 
 Where the last column says yes, the role is necessary but not sufficient: a request carrying it can
 still be refused `403` by policy. The policy resource and action behind each of those endpoints are
