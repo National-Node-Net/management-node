@@ -8,7 +8,7 @@
 
 ## Overview
 
-The Management Node is a Spring Boot application that provides REST APIs for federator configuration management and certificate lifecycle operations (key generation, CSR signing, bootstrap onboarding, and OCSP certificate status). It implements secure communication using Mutual TLS (mTLS) and zero-trust authentication via Keycloak.
+The Management Node is a Spring Boot application that provides REST APIs for federator configuration management and certificate lifecycle operations (key generation, CSR signing, bootstrap onboarding, certificate revocation and OCSP certificate status). It implements secure communication using Mutual TLS (mTLS) and zero-trust authentication via Keycloak.
 
 ---
 
@@ -441,6 +441,7 @@ If you prefer to set up the realm manually (updated for Keycloak 26.x):
    | `product_subscribe` | `POST /api/v1/product/subscribe` |
    | `product_view` | `GET /api/v1/product/{productId}` |
    | `management-node-access` | `POST /api/v1/certificate/ocsp` (see [OCSP Certificate Status API](docs/OCSP.md)) |
+   | `organisation_administrator` | `POST /api/v1/certificate/revoke` (assigned by hand to organisation administrators; see [Certificate Revocation API](docs/CERTIFICATE_REVOCATION.md)) |
 
    Holding the role is not always sufficient: the configuration and product endpoints are additionally
    governed by policy. For the full mapping, including each endpoint's policy resource and action, see
@@ -985,6 +986,7 @@ as `resource_access["management-node"].roles` and is enforced as the authority
 | `product_subscribe` | `POST /api/v1/product/subscribe` | yes |
 | `product_view` | `GET /api/v1/product/{productId}` | yes |
 | `management-node-access` | `POST /api/v1/certificate/ocsp` (see [OCSP](docs/OCSP.md)) | no |
+| `organisation_administrator` | `POST /api/v1/certificate/revoke` (see [Certificate Revocation](docs/CERTIFICATE_REVOCATION.md)) | no |
 
 Where the last column says yes, the role is necessary but not sufficient: a request carrying it can
 still be refused `403` by policy. The policy resource and action behind each of those endpoints are

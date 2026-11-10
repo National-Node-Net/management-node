@@ -46,6 +46,7 @@ import uk.gov.dbt.ndtp.ia.node.management.config.OcspProperties;
 import uk.gov.dbt.ndtp.ia.node.management.exception.CertificateStatusUnavailableException;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.CertificateStatusDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.OcspResponseDTO;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.RevocationReason;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -112,7 +113,7 @@ class OcspResponderServiceImplTest {
     }
 
     @Test
-    void respond_revokedCertificate_shouldReturnRevocationTimeWithoutReason() throws Exception {
+    void respond_revokedCertificateWithoutRecordedReason_shouldReturnRevocationTimeWithoutReason() throws Exception {
         Instant revokedAt = Instant.parse("2026-10-22T08:30:00Z");
         when(statusProvider.getStatus(SERIAL, CA)).thenReturn(CertificateStatusDTO.revoked(revokedAt));
 
@@ -121,6 +122,36 @@ class OcspResponderServiceImplTest {
         RevokedStatus status = assertInstanceOf(
                 RevokedStatus.class, basic(result).getResponses()[0].getCertStatus());
         assertEquals(revokedAt, status.getRevocationTime().toInstant());
+        assertFalse(status.hasRevocationReason());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"KEY_COMPROMISE, 1", "AFFILIATION_CHANGED, 3", "SUPERSEDED, 4", "CESSATION_OF_OPERATION, 5"})
+    void respond_revokedCertificateWithReason_shouldCarryTheCrlReason(RevocationReason reason, int crlReason)
+            throws Exception {
+        Instant revokedAt = Instant.parse("2026-10-22T08:30:00Z");
+        when(statusProvider.getStatus(SERIAL, CA)).thenReturn(CertificateStatusDTO.revoked(revokedAt, reason));
+
+        OcspResponseDTO result = service.respond(request(null, certId(CA, SERIAL)), REQUESTER_IP);
+
+        RevokedStatus status = assertInstanceOf(
+                RevokedStatus.class, basic(result).getResponses()[0].getCertStatus());
+        assertEquals(revokedAt, status.getRevocationTime().toInstant());
+        assertTrue(status.hasRevocationReason());
+        assertEquals(crlReason, status.getRevocationReason());
+    }
+
+    /** RFC 5280: the reason is left out rather than sent as unspecified. */
+    @Test
+    void respond_revokedCertificateWithUnspecifiedReason_shouldLeaveTheReasonOut() throws Exception {
+        when(statusProvider.getStatus(SERIAL, CA))
+                .thenReturn(CertificateStatusDTO.revoked(
+                        Instant.parse("2026-10-22T08:30:00Z"), RevocationReason.UNSPECIFIED));
+
+        OcspResponseDTO result = service.respond(request(null, certId(CA, SERIAL)), REQUESTER_IP);
+
+        RevokedStatus status = assertInstanceOf(
+                RevokedStatus.class, basic(result).getResponses()[0].getCertStatus());
         assertFalse(status.hasRevocationReason());
     }
 

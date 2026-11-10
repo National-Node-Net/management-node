@@ -84,6 +84,15 @@ application:
       common-name: ${OCSP_SIGNER_COMMON_NAME:ocsp-signer.management-node} # CN of the signer certificate, issued with application.vault.default-role
       ttl: ${OCSP_SIGNER_TTL:PT24H} # lifetime of the signer certificate; renewed after 70% of it, at least 4 x refresh-interval
       refresh-interval: PT5M # how often the signer is checked for renewal
+  revocation:
+    # POST /api/v1/certificate/revoke. Reference: docs/CERTIFICATE_REVOCATION.md
+    rate-limit:
+      max-requests: ${REVOCATION_RATE_LIMIT_MAX_REQUESTS:10} # revocation requests per administrator and window, per instance
+      window: ${REVOCATION_RATE_LIMIT_WINDOW:PT1M}
+    vault-retry:
+      max-attempts: ${REVOCATION_VAULT_RETRY_MAX_ATTEMPTS:3} # attempts in total when Vault is unreachable or answers 5xx/429
+      initial-backoff: PT0.2S # doubled before each further retry
+      max-backoff: PT2S
   client:
     key-store: keystore.jks # path to MTLS client keystore
     key-store-password: ${CERTPASSWORD:} # MTLS client keystore password

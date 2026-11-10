@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
 import org.bouncycastle.asn1.ocsp.RevokedInfo;
+import org.bouncycastle.asn1.x509.CRLReason;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.cert.X509CertificateHolder;
@@ -46,6 +47,7 @@ import uk.gov.dbt.ndtp.ia.node.management.config.OcspProperties;
 import uk.gov.dbt.ndtp.ia.node.management.exception.CertificateStatusUnavailableException;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.CertificateStatusDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.OcspResponseDTO;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.RevocationReason;
 
 /**
  * Implementation of {@link OcspResponderService}. Parses a DER-encoded OCSP request, looks up the status of every
@@ -212,9 +214,22 @@ public class OcspResponderServiceImpl implements OcspResponderService {
         return switch (status.getStatus()) {
             case GOOD -> CertificateStatus.GOOD;
             case REVOKED ->
-                new RevokedStatus(new RevokedInfo(new ASN1GeneralizedTime(Date.from(status.getRevokedAt())), null));
+                new RevokedStatus(new RevokedInfo(
+                        new ASN1GeneralizedTime(Date.from(status.getRevokedAt())),
+                        crlReason(status.getRevocationReason())));
             case UNKNOWN -> new UnknownStatus();
         };
+    }
+
+    /**
+     * The {@code revocationReason} of a revoked response. {@code UNSPECIFIED} is left out, as RFC 5280 asks:
+     * an absent reason already means unspecified.
+     */
+    private static CRLReason crlReason(RevocationReason reason) {
+        if (reason == null || reason == RevocationReason.UNSPECIFIED) {
+            return null;
+        }
+        return CRLReason.lookup(reason.crlReasonCode());
     }
 
     private static String statusName(CertificateStatusDTO status) {

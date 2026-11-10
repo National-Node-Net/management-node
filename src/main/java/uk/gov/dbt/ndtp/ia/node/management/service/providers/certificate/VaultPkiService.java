@@ -6,6 +6,7 @@
 
 package uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate;
 
+import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -26,34 +27,52 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.vault.VaultException;
+import org.springframework.vault.authentication.VaultLoginException;
 import org.springframework.vault.core.VaultTemplate;
 import org.springframework.vault.support.VaultResponse;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestClientException;
+import uk.gov.dbt.ndtp.ia.node.management.config.RevocationProperties;
+import uk.gov.dbt.ndtp.ia.node.management.exception.PkiCertificateExpiredException;
+import uk.gov.dbt.ndtp.ia.node.management.exception.PkiCertificateNotFoundException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.PkiException;
+import uk.gov.dbt.ndtp.ia.node.management.exception.PkiPermissionDeniedException;
+import uk.gov.dbt.ndtp.ia.node.management.exception.PkiRejectedException;
+import uk.gov.dbt.ndtp.ia.node.management.exception.PkiUnavailableException;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.CertificateInfoDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.CreateCsrRequestDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.CreateCsrResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.CreateKeyResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.IntermediateCertResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.SignCertResponseDTO;
+import uk.gov.dbt.ndtp.ia.node.management.utils.cryptography.CertificateSerials;
 import uk.gov.dbt.ndtp.ia.node.management.utils.cryptography.PemUtil;
 
 /**
  * Service for managing PKI operations using HashiCorp Vault.
- * Provides functionality for creating key pairs, CSRs, signing CSRs, and retrieving intermediate certificates.
+ * Provides functionality for creating key pairs, CSRs, signing CSRs, revoking certificates and retrieving
+ * intermediate certificates.
  */
 @Service
 @Slf4j
-public class VaultPkiService {
+public class VaultPkiService implements PkiBackend {
 
     private final VaultTemplate vault;
     private final String defaultRole;
     private final String defaultTtl;
+    private final RetryTemplate revokeRetry;
 
     // Vault paths
     private final String pathSign;
     private final String pathCertCa;
     private final String pathCertCaChain;
+    private final String pathRevoke;
 
     // Vault response keys
     private static final String KEY_CERTIFICATE = "certificate";
@@ -61,24 +80,41 @@ public class VaultPkiService {
     private static final String KEY_ISSUING_CA = "issuing_ca";
     private static final String KEY_SERIAL_NUMBER = "serial_number";
     private static final String KEY_EXPIRATION = "expiration";
+    private static final String KEY_REVOCATION_TIME = "revocation_time";
 
     // Request parameter keys
     private static final String PARAM_CSR = "csr";
     private static final String PARAM_TTL = "ttl";
     private static final String PARAM_FORMAT = "format";
     private static final String PARAM_OTHER_SANS = "other_sans";
+    private static final String PARAM_SERIAL_NUMBER = "serial_number";
 
     public VaultPkiService(
             VaultTemplate vault,
             @Value("${application.vault.pki-mount:pki-int}") String pkiMount,
             @Value("${application.vault.default-role:default-role}") String defaultRole,
-            @Value("${application.vault.default-ttl:24h}") String defaultTtl) {
+            @Value("${application.vault.default-ttl:24h}") String defaultTtl,
+            RevocationProperties revocationProperties) {
         this.vault = vault;
         this.defaultRole = defaultRole;
         this.defaultTtl = defaultTtl;
+        this.revokeRetry = revokeRetry(revocationProperties.vaultRetry());
         this.pathSign = pkiMount + "/sign/";
         this.pathCertCa = pkiMount + "/cert/ca";
         this.pathCertCaChain = pkiMount + "/cert/ca_chain";
+        this.pathRevoke = pkiMount + "/revoke";
+    }
+
+    /** Retries only failures that may pass; a refusal is final, and a failed login must not be repeated. */
+    private static RetryTemplate revokeRetry(RevocationProperties.VaultRetry retry) {
+        return RetryTemplate.builder()
+                .maxAttempts(retry.maxAttempts())
+                .exponentialBackoff(
+                        retry.initialBackoff().toMillis(),
+                        2.0,
+                        retry.maxBackoff().toMillis())
+                .retryOn(PkiUnavailableException.class)
+                .build();
     }
 
     /**
@@ -304,6 +340,95 @@ public class VaultPkiService {
                 .caChain(caChainResp.getData().get(KEY_CA_CHAIN))
                 .info(info)
                 .build();
+    }
+
+    /**
+     * Revokes a certificate in Vault ({@code POST <pki-mount>/revoke}). Vault answers a repeated revocation with
+     * the original revocation time, so retrying is safe. Failures that may pass are retried with backoff, as
+     * configured in {@code application.revocation.vault-retry}; refusals are not.
+     *
+     * {@inheritDoc}
+     */
+    @Override
+    public Instant revokeCertificate(BigInteger serial) {
+        String vaultSerial = CertificateSerials.toVault(serial);
+        VaultResponse response = revokeRetry.execute(context -> {
+            if (context.getRetryCount() > 0) {
+                log.warn(
+                        "Retrying revocation of serial {} in Vault, attempt {}",
+                        vaultSerial,
+                        context.getRetryCount() + 1);
+            }
+            return writeRevocation(vaultSerial);
+        });
+
+        Map<String, Object> data =
+                Optional.ofNullable(response).map(VaultResponse::getData).orElse(Map.of());
+        long revocationTime = data.get(KEY_REVOCATION_TIME) instanceof Number n ? n.longValue() : 0L;
+        if (revocationTime <= 0) {
+            // Vault answers 200 with a warning for an expired certificate, and records nothing.
+            log.warn(
+                    "Vault recorded no revocation for serial {}; warnings: {}",
+                    vaultSerial,
+                    response == null ? List.of() : response.getWarnings());
+            throw new PkiCertificateExpiredException("Vault recorded no revocation; the certificate has expired");
+        }
+        Instant revokedAt = Instant.ofEpochSecond(revocationTime);
+        log.info("Certificate {} revoked in Vault at {}", vaultSerial, revokedAt);
+        return revokedAt;
+    }
+
+    /** One revocation attempt, with every Vault failure turned into a typed {@link PkiException}. */
+    private VaultResponse writeRevocation(String vaultSerial) {
+        Map<String, Object> body = Map.of(PARAM_SERIAL_NUMBER, vaultSerial);
+        try {
+            return vault.doWithSession(rest -> {
+                try {
+                    return rest.postForObject(pathRevoke, body, VaultResponse.class);
+                } catch (HttpStatusCodeException e) {
+                    throw revocationFailure(e, vaultSerial);
+                }
+            });
+        } catch (PkiException e) {
+            throw e;
+        } catch (VaultLoginException e) {
+            if (isTransient(e.getCause())) {
+                throw new PkiUnavailableException("Vault could not be reached to log in", e);
+            }
+            log.error("Vault refused the Management Node's login while revoking serial {}", vaultSerial, e);
+            throw new PkiPermissionDeniedException("Vault refused the Management Node's login", e);
+        } catch (VaultException | RestClientException e) {
+            log.warn("Vault could not be reached to revoke serial {}: {}", vaultSerial, e.getMessage());
+            throw new PkiUnavailableException("Vault could not be reached", e);
+        }
+    }
+
+    private static PkiException revocationFailure(HttpStatusCodeException e, String vaultSerial) {
+        int status = e.getStatusCode().value();
+        String vaultErrors = e.getResponseBodyAsString();
+        if (e.getStatusCode().is5xxServerError() || status == HttpStatus.TOO_MANY_REQUESTS.value()) {
+            log.warn("Vault answered {} to the revocation of serial {}: {}", status, vaultSerial, vaultErrors);
+            return new PkiUnavailableException("Vault answered " + status, e);
+        }
+        log.error("Vault refused the revocation of serial {} with {}: {}", vaultSerial, status, vaultErrors);
+        if (status == HttpStatus.FORBIDDEN.value()) {
+            return new PkiPermissionDeniedException("Vault refused the revocation: permission denied", e);
+        }
+        if (status == HttpStatus.BAD_REQUEST.value()
+                && vaultErrors.toLowerCase(Locale.ROOT).contains("not found")) {
+            return new PkiCertificateNotFoundException("Vault has no certificate with this serial number", e);
+        }
+        return new PkiRejectedException("Vault refused the revocation with status " + status, e);
+    }
+
+    /** Whether a failed login was caused by Vault being unreachable or failing, rather than refusing it. */
+    private static boolean isTransient(Throwable cause) {
+        for (Throwable t = cause; t != null; t = t.getCause()) {
+            if (t instanceof ResourceAccessException || t instanceof HttpServerErrorException) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
