@@ -3,9 +3,16 @@ spring:
     name: management-node
   cloud:
     vault:
-      uri: http://localhost:8200
-      token:  # access token to vault
-      authentication: token
+      uri: ${VAULT_ADDR:http://localhost:8200}
+      authentication: ${VAULT_AUTHENTICATION:approle} # token is for local development only
+      token:  # only used when authentication is token
+      app-role:
+        role-id: ${VAULT_ROLE_ID:}
+        secret-id: ${VAULT_SECRET_ID:}
+        app-role-path: approle
+      session:
+        lifecycle:
+          enabled: true # renews the token, and logs in again once it reaches its maximum TTL
   security:
     oauth2:
       resourceserver:
