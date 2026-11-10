@@ -6,9 +6,11 @@
 
 package uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.ocsp;
 
+import java.io.StringReader;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.security.spec.ECGenParameterSpec;
 import java.time.Duration;
@@ -31,8 +33,11 @@ import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.cert.ocsp.CertificateID;
 import org.bouncycastle.cert.ocsp.OCSPReqBuilder;
+import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
+import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequest;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
 import uk.gov.dbt.ndtp.ia.node.management.utils.cryptography.PemUtil;
 
@@ -81,7 +86,7 @@ final class OcspTestPki {
                 name,
                 keys,
                 name,
-                keys,
+                keys.getPublic(),
                 BigInteger.ONE,
                 NOW.minus(Duration.ofDays(1)),
                 NOW.plus(Duration.ofDays(365)),
@@ -106,7 +111,7 @@ final class OcspTestPki {
                 issuer.getSubject(),
                 issuerKeys,
                 new X500Name("CN=OCSP Signer"),
-                signerKeys,
+                signerKeys.getPublic(),
                 BigInteger.valueOf(1000),
                 notBefore,
                 notAfter,
@@ -114,12 +119,35 @@ final class OcspTestPki {
                 ocspSigningEku);
     }
 
+    /**
+     * Issues a certificate for the subject and public key of a PEM CSR, without the OCSP signing EKU, as Vault does
+     * with a role that does not grant it.
+     */
+    static X509CertificateHolder certificateFromCsr(
+            String csrPem, X509CertificateHolder issuer, KeyPair issuerKeys, Instant notBefore, Instant notAfter) {
+        try (PEMParser parser = new PEMParser(new StringReader(csrPem))) {
+            var csr = new JcaPKCS10CertificationRequest((PKCS10CertificationRequest) parser.readObject());
+            return build(
+                    issuer.getSubject(),
+                    issuerKeys,
+                    csr.getSubject(),
+                    csr.getPublicKey(),
+                    BigInteger.valueOf(2000),
+                    notBefore,
+                    notAfter,
+                    false,
+                    false);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     static X509CertificateHolder leafCertificate(BigInteger serial, X509CertificateHolder issuer, KeyPair issuerKeys) {
         return build(
                 issuer.getSubject(),
                 issuerKeys,
                 new X500Name("CN=node-" + serial),
-                LEAF_KEYS,
+                LEAF_KEYS.getPublic(),
                 serial,
                 NOW.minus(Duration.ofDays(1)),
                 NOW.plus(Duration.ofDays(30)),
@@ -208,7 +236,7 @@ final class OcspTestPki {
             X500Name issuer,
             KeyPair issuerKeys,
             X500Name subject,
-            KeyPair subjectKeys,
+            PublicKey subjectKey,
             BigInteger serial,
             Instant notBefore,
             Instant notAfter,
@@ -217,12 +245,10 @@ final class OcspTestPki {
         try {
             JcaX509ExtensionUtils extUtils = new JcaX509ExtensionUtils();
             X509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(
-                    issuer, serial, Date.from(notBefore), Date.from(notAfter), subject, subjectKeys.getPublic());
+                    issuer, serial, Date.from(notBefore), Date.from(notAfter), subject, subjectKey);
             builder.addExtension(Extension.basicConstraints, true, new BasicConstraints(ca));
             builder.addExtension(
-                    Extension.subjectKeyIdentifier,
-                    false,
-                    extUtils.createSubjectKeyIdentifier(subjectKeys.getPublic()));
+                    Extension.subjectKeyIdentifier, false, extUtils.createSubjectKeyIdentifier(subjectKey));
             builder.addExtension(
                     Extension.authorityKeyIdentifier,
                     false,

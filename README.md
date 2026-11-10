@@ -679,7 +679,7 @@ If this returns 200 with a JSON response containing the key pair, the Management
 
 > **Note:** This setup imports the development root CA directly at the `pki-int` mount point. For production, you would typically create a separate root CA and then generate an intermediate CA signed by it. Both configurations work with the Management Node; the only difference is whether `pki-int/cert/ca_chain` returns a chain or is empty.
 
-15. (Optional) To use the OCSP certificate status endpoint (`POST /api/v1/certificate/ocsp`), create the OCSP signer role, issue the delegated OCSP signer certificate and store it in Vault KV as described in [OCSP Certificate Status API](docs/OCSP.md#setting-up-the-ocsp-signer).
+15. The OCSP certificate status endpoint (`POST /api/v1/certificate/ocsp`) needs no extra Vault setup. The Management Node issues its own OCSP signer certificate through the role from step 12 when it starts; see [OCSP Certificate Status API](docs/OCSP.md#ocsp-signer).
 
 ## Building and Running with Maven
 

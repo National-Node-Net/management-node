@@ -81,7 +81,7 @@ class OcspResponderServiceImplTest {
                 maxEntries,
                 maxBytes,
                 "vault",
-                new OcspProperties.Signer("secret", "management-node/ocsp-signer", Duration.ofMinutes(5)));
+                new OcspProperties.Signer("ocsp-signer.management-node", Duration.ofHours(24), Duration.ofMinutes(5)));
     }
 
     private static BasicOCSPResp basic(OcspResponseDTO result) throws Exception {

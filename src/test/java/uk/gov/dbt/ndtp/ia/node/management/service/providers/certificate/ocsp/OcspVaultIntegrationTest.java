@@ -11,7 +11,6 @@ import static uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.o
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.math.BigInteger;
-import java.security.KeyPair;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
@@ -20,7 +19,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
-import org.bouncycastle.asn1.x509.KeyPurposeId;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.ocsp.BasicOCSPResp;
 import org.bouncycastle.cert.ocsp.CertificateID;
@@ -34,7 +33,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.vault.authentication.TokenAuthentication;
 import org.springframework.vault.client.VaultEndpoint;
-import org.springframework.vault.core.VaultKeyValueOperationsSupport.KeyValueBackend;
 import org.springframework.vault.core.VaultTemplate;
 import org.springframework.vault.support.VaultResponse;
 import org.testcontainers.junit.jupiter.Container;
@@ -55,8 +53,7 @@ class OcspVaultIntegrationTest {
 
     private static final String TOKEN = "ocsp-it-root-token";
     private static final String PKI_MOUNT = "pki-int";
-    private static final String KV_MOUNT = "secret";
-    private static final String KV_PATH = "management-node/ocsp-signer";
+    private static final String SIGNER_COMMON_NAME = "ocsp-signer.federation.test";
 
     @Container
     private static final VaultContainer<?> VAULT = new VaultContainer<>(DockerImageName.parse("hashicorp/vault:1.16"))
@@ -66,9 +63,7 @@ class OcspVaultIntegrationTest {
                     "secrets tune -max-lease-ttl=87600h pki-int",
                     "write -field=serial_number pki-int/root/generate/internal common_name=federation-test-ca"
                             + " ttl=87600h",
-                    "write pki-int/roles/default-role allow_any_name=true max_ttl=72h",
-                    "write pki-int/roles/ocsp-signer allow_any_name=true server_flag=false client_flag=false"
-                            + " ext_key_usage=OCSPSigning key_usage=DigitalSignature max_ttl=24h");
+                    "write pki-int/roles/default-role allow_any_name=true key_type=any max_ttl=72h");
 
     private static VaultTemplate vault;
     private static VaultPkiService pkiService;
@@ -87,27 +82,17 @@ class OcspVaultIntegrationTest {
                 PemUtil.parseCertificate(pkiService.getIntermediateCertificate().getCertificate())
                         .getEncoded());
 
-        // Delegated OCSP signer: key generated locally, certificate issued by Vault, both stored in KV v2
-        KeyPair signerKeys = rsaKeyPair();
-        String signerCert = pkiService
-                .signCsr(
-                        csrPem("CN=ocsp-signer.federation.test", signerKeys),
-                        Optional.of("ocsp-signer"),
-                        Optional.of("1h"))
-                .getCertificate();
-        vault.opsForKeyValue(KV_MOUNT, KeyValueBackend.KV_2)
-                .put(KV_PATH, Map.of("private_key", privateKeyPem(signerKeys), "certificate", signerCert));
-
+        // OCSP signer: key generated in memory, certificate issued by Vault with the default role
         SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
         properties = new OcspProperties(
                 Duration.ofMinutes(5),
                 10,
                 16384,
                 "vault",
-                new OcspProperties.Signer(KV_MOUNT, KV_PATH, Duration.ofMinutes(5)));
-        signerService = new OcspSignerServiceImpl(vault, pkiService, properties, meterRegistry);
+                new OcspProperties.Signer(SIGNER_COMMON_NAME, Duration.ofHours(1), Duration.ofMinutes(5)));
+        signerService = new OcspSignerServiceImpl(pkiService, properties, meterRegistry);
         signerService.refresh();
-        assertTrue(signerService.currentSigner().isPresent(), "OCSP signer should load from Vault");
+        assertTrue(signerService.currentSigner().isPresent(), "OCSP signer should be issued by Vault");
 
         responder = new OcspResponderServiceImpl(
                 new VaultCertificateStatusProvider(vault, PKI_MOUNT, meterRegistry),
@@ -174,7 +159,7 @@ class OcspVaultIntegrationTest {
         X509CertificateHolder signer = basic.getCerts()[0];
         assertTrue(basic.isSignatureValid(new JcaContentVerifierProviderBuilder().build(signer)));
         assertTrue(signer.isSignatureValid(new JcaContentVerifierProviderBuilder().build(ca)));
-        assertTrue(toX509(signer).getExtendedKeyUsage().contains(KeyPurposeId.id_kp_OCSPSigning.getId()));
+        assertEquals(new X500Name("CN=" + SIGNER_COMMON_NAME), signer.getSubject());
     }
 
     @Test

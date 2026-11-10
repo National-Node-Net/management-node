@@ -21,7 +21,7 @@ Run every command from the repository root. On Windows, use Git Bash. Check the 
 - A federator client exists, for example `FEDERATOR_ENV`. The role `management-node-access` is assigned to the service account of that client. Federator clients are the consumer and producer nodes that call the OCSP endpoint in a real deployment. You can create the client in either of two ways:
   - **OpenTofu** (`docker/keycloak/tofu`): `terraform.tfvars` already maps the role to `FEDERATOR_ENV`, `FEDERATOR_BCC` and `FEDERATOR_HEG`. These clients authenticate with their mTLS certificate (`client-x509`) and have no secret.
   - **Manually**: follow "Testing further with a federator client" under [Testing API Endpoints](../README.md#testing-api-endpoints) in the README, and in step 5 also assign `management-node-access`. Such a client authenticates with a client secret.
-- A KV v2 mount `secret/` exists in Vault. A Vault server not in dev mode has no such mount by default. Check with `vault secrets list` and, if it is missing, create it with `vault secrets enable -path=secret kv-v2`.
+- The Vault role `default-role` accepts EC keys (`key_type=any`, as in the README). The Management Node issues its OCSP signer through this role.
 - `client.crt` and `client.key` are in the repository root.
 
 Session variables:
@@ -44,34 +44,9 @@ Notes on `curl`:
 
 ## Preparation
 
-Do these steps once. They store the OCSP signer in Vault, issue a test certificate and get a token.
+Do these steps once. They issue a test certificate, start the application and get a token. The OCSP signer needs no preparation: the application issues it through `default-role` when it starts.
 
-1. Create a Vault role for the signer. `key_type=any` is required for EC keys:
-
-   ```bash
-   docker exec -e VAULT_TOKEN=$VAULT_TOKEN vault vault write pki-int/roles/ocsp-signer \
-     allow_any_name=true server_flag=false client_flag=false \
-     ext_key_usage=OCSPSigning key_usage=DigitalSignature key_type=any max_ttl=72h
-   ```
-
-2. Generate the signer key and CSR, then have Vault sign the CSR. The CSR is passed through stdin, so no `docker cp` is needed:
-
-   ```bash
-   openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out ocsp-signer.key
-   openssl req -new -key ocsp-signer.key -subj "/CN=ocsp-signer.management-node" -out ocsp-signer.csr
-   docker exec -i -e VAULT_TOKEN=$VAULT_TOKEN vault vault write -field=certificate \
-     pki-int/sign/ocsp-signer csr=- ttl=24h < ocsp-signer.csr > ocsp-signer.pem
-   ```
-
-3. Store the key and certificate in KV v2. The key must only live in Vault, so delete the local files afterwards:
-
-   ```bash
-   docker exec -i -e VAULT_TOKEN=$VAULT_TOKEN vault vault kv put -mount=secret management-node/ocsp-signer \
-     private_key=- certificate="$(cat ocsp-signer.pem)" < ocsp-signer.key
-   rm ocsp-signer.key ocsp-signer.csr ocsp-signer.pem
-   ```
-
-4. Fetch the CA and issue a test certificate. The test certificate is the one that should come back as `good`:
+1. Fetch the CA and issue a test certificate. The test certificate is the one that should come back as `good`:
 
    ```bash
    docker exec -e VAULT_TOKEN=$VAULT_TOKEN vault vault read -field=certificate pki-int/cert/ca > ca.pem
@@ -79,15 +54,15 @@ Do these steps once. They store the OCSP signer in Vault, issue a test certifica
      pki-int/issue/default-role common_name=ocsp-test.local ttl=2h > ocsp-test.pem
    ```
 
-5. Start the application:
+2. Start the application:
 
    ```bash
    ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
    ```
 
-   The log should contain `Loaded OCSP signer CN=ocsp-signer.management-node ... valid until ...`. The signer is loaded at startup and every 5 minutes after that. If you stored it while the application was already running, restart the application or wait for the next reload.
+   The log should contain `Signing CSR with role: default-role` followed by `Issued OCSP signer CN=ocsp-signer.management-node ... valid until ...`. If it has `Failed to issue OCSP signer` instead, Vault was not reachable or `default-role` refused the CSR. The application tries again every 5 minutes.
 
-6. Get a token as the federator client. Every caller uses the token endpoint of realm `mng-node`, because that realm is the issuer the Management Node trusts (`spring.security.oauth2.resourceserver.jwt.issuer-uri`). Only the client and the way it authenticates differ.
+3. Get a token as the federator client. Every caller uses the token endpoint of realm `mng-node`, because that realm is the issuer the Management Node trusts (`spring.security.oauth2.resourceserver.jwt.issuer-uri`). Only the client and the way it authenticates differ.
 
    For a client created with OpenTofu, which authenticates with its mTLS certificate:
 
@@ -118,14 +93,19 @@ Do these steps once. They store the OCSP signer in Vault, issue a test certifica
 
    The OCSP endpoint is under `/api/v1/certificate/**`, which `CertificateValidationInterceptor` skips. The federator therefore does not need an `organisation_certificate` row to check certificate status.
 
-7. Define two helper functions:
+4. Define two helper functions:
    - `ocsp [request file] [response file]` sends a request. The defaults are `req.der` and `resp.der`.
-   - `verify` checks the signature, the nonce and the statuses.
+   - `verify` saves the signer certificate from the response, checks that the `pki-int` CA issued it, then checks the signature, the nonce and the statuses.
 
    ```bash
    ocsp() { "$CURL" -sSk --cert client.crt --key client.key -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/ocsp-request" --data-binary @${1:-req.der} -o ${2:-resp.der} -D - https://localhost:8090/api/v1/certificate/ocsp; }
-   verify() { openssl ocsp -reqin req.der -respin resp.der -issuer ca.pem -CAfile ca.pem -resp_text; }
+   verify() {
+     openssl ocsp -respin resp.der -resp_text -noverify | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' > signer.pem
+     openssl verify -CAfile ca.pem signer.pem && openssl ocsp -reqin req.der -respin resp.der -issuer ca.pem -VAfile signer.pem -resp_text
+   }
    ```
+
+   The signer certificate has no `id-kp-OCSPSigning` EKU, so `-CAfile ca.pem` alone would fail with `missing ocspsigning usage`. `-VAfile` trusts the signer certificate explicitly instead.
 
 ---
 
@@ -156,11 +136,12 @@ ocsp && verify
 
 Check in the output:
 
+- `signer.pem: OK` means the `pki-int` CA issued the signer certificate.
 - `Response verify OK` with no `Nonce Verify error` means the signature is valid and the nonce was echoed.
 - `Responder Id` equals the signer's `Subject Key Identifier`, so the responder ID is `byKey`.
 - `Next Update` is `This Update` + 5 minutes, and `Cache-Control: max-age` counts down to it.
-- `Signature Algorithm` is `ecdsa-with-SHA256` for an EC key.
-- The signer certificate with EKU `OCSP Signing` is included in the response.
+- `Signature Algorithm` is `ecdsa-with-SHA256`, because the signer key is EC P-256.
+- The signer certificate `CN=ocsp-signer.management-node` is included in the response.
 
 Pass only `-reqin` when verifying. If you add `-cert` or `-serial`, OpenSSL builds a new request with a different nonce and reports `Nonce Verify error`.
 
@@ -296,18 +277,17 @@ The run fails if p99 latency exceeds `P99_MS` (default 100 ms), or if any reques
 Run all OCSP tests with one command. With Docker running, the integration test also starts its own Vault through Testcontainers:
 
 ```bash
-./mvnw test -Dtest='Ocsp*,VaultCertificateStatusProviderTest,PemUtilTest'
+./mvnw test -Dtest='Ocsp*,VaultCertificateStatusProviderTest'
 ```
 
 | Class | Covers |
 |---|---|
 | `OcspResponderServiceImplTest` | request parsing, certificate statuses, nonce, `tryLater` and `malformedRequest` |
-| `OcspSignerServiceImplTest` | signer validation (EKU, issuer, validity, key match), reload, warning at 70% of lifetime |
+| `OcspSignerServiceImplTest` | signer issuance through the default role, validation (issuer, validity, key), renewal at 70% of lifetime |
 | `VaultCertificateStatusProviderTest` | reading `pki-int/cert/:serial`, serial format, missing certificate → `unknown` |
 | `OcspControllerTest` | response headers, `Content-Type`, `Cache-Control` |
 | `OcspControllerSecurityTest` | `@PreAuthorize` with the `management-node-access` role |
-| `OcspPropertiesTest` | `validity` must be > 0 and ≤ `PT10M` |
-| `PemUtilTest` | `parsePkcs8PrivateKey` for RSA and EC keys |
+| `OcspPropertiesTest` | `validity` must be > 0 and ≤ `PT10M`; signer `ttl` at least four times `refresh-interval` |
 | `OcspVaultIntegrationTest` | the full flow against a real Vault; skipped without Docker |
 
 ---
@@ -320,9 +300,10 @@ Run all OCSP tests with one command. With Docker running, the integration test a
 | `401` | the token is empty or expired | get a new token; `echo ${TOKEN:0:20}` should start with `eyJ` |
 | `403` with a JSON body | the token lacks `management-node-access` | assign the role to the federator client's service account in Keycloak, then get a new token |
 | Keycloak returns `invalid_client` or `unauthorized_client` | the client's authentication type does not match the request | send `client_secret` only to a client with client authentication by secret; a `client-x509` client needs a certificate whose subject DN matches its `x509.subjectdn` |
-| `tryLater` in A–C | no signer loaded, or Vault is sealed | look for `Failed to load OCSP signer` in the log; check the KV secret `secret/management-node/ocsp-signer` and `vault status` |
+| `tryLater` in A–C | no signer issued, or Vault is sealed | look for `Failed to issue OCSP signer` in the log; check `vault status` and that `default-role` accepts EC keys (`key_type=any`) and the signer's common name |
 | `Nonce Verify error` | `verify` was run with `-cert` or `-serial` | verify with `-reqin req.der` only |
-| `Response Verify Failure` | `ca.pem` is not the `pki-int` CA | fetch it again with `vault read -field=certificate pki-int/cert/ca` |
+| `Response Verify Failure` with `missing ocspsigning usage` | the response was verified with `-CAfile` only | verify with `-VAfile signer.pem`, as `verify` does |
+| `signer.pem` verification fails | `ca.pem` is not the `pki-int` CA | fetch it again with `vault read -field=certificate pki-int/cert/ca` |
 | `curl: (35)` or `(56)` | the server rejected the client certificate during mTLS | check that `client.crt` is signed by a CA in `truststore.jks` |
 | `-subj` becomes `C:/Program Files/Git/CN=...` | Git Bash path conversion | `export MSYS_NO_PATHCONV=1` |
 | `unknown` for a certificate issued by Vault | the certificate was issued by a different CA or PKI mount | compare `Issuer Key Hash` in the response with the subject key identifier of the `pki-int` CA |
@@ -332,7 +313,7 @@ Run all OCSP tests with one command. With Docker running, the integration test a
 ## Clean up
 
 ```bash
-rm -f req.der resp.der big.der bad.der garbage.bin ocsp-test.pem ca.pem client-test.p12 load-test/req.der
+rm -f req.der resp.der big.der bad.der garbage.bin ocsp-test.pem ca.pem signer.pem client-test.p12 load-test/req.der
 ```
 
-The signer in `secret/management-node/ocsp-signer` can stay in Vault for later test runs. Its certificate expires after 24 hours. After that, repeat steps 2–3 of [Preparation](#preparation).
+The signer lives only in the application's memory, so nothing about it needs cleaning up in Vault.

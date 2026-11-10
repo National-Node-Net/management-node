@@ -81,9 +81,9 @@ application:
     max-request-bytes: 16384 # larger request bodies give malformedRequest
     status-backend: vault # certificate status source
     signer:
-      kv-mount: ${OCSP_SIGNER_KV_MOUNT:secret} # Vault KV v2 mount holding the OCSP signer
-      kv-path: ${OCSP_SIGNER_KV_PATH:management-node/ocsp-signer} # secret with private_key (PKCS#8 PEM) and certificate (PEM)
-      refresh-interval: PT5M # how often the signer is reloaded from Vault
+      common-name: ${OCSP_SIGNER_COMMON_NAME:ocsp-signer.management-node} # CN of the signer certificate, issued with application.vault.default-role
+      ttl: ${OCSP_SIGNER_TTL:PT24H} # lifetime of the signer certificate; renewed after 70% of it, at least 4 x refresh-interval
+      refresh-interval: PT5M # how often the signer is checked for renewal
   client:
     key-store: keystore.jks # path to MTLS client keystore
     key-store-password: ${CERTPASSWORD:} # MTLS client keystore password

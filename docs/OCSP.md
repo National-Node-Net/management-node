@@ -14,7 +14,7 @@ The endpoint handles a request in four steps:
 
 1. It receives a DER-encoded OCSP request.
 2. It looks up each requested certificate in the Vault PKI engine (`GET <pki-mount>/cert/:serial`). Results are not cached, so a revocation in Vault is visible on the very next request.
-3. It returns a DER-encoded OCSP response signed by a **delegated OCSP signer certificate**. The federation CA issues that certificate with the `id-kp-OCSPSigning` EKU, and it is included in every response.
+3. It returns a DER-encoded OCSP response signed by an **OCSP signer certificate**. The Management Node generates the signer key itself and has the federation CA issue the certificate through the default PKI role (`application.vault.default-role`). The certificate is included in every response. It does not carry the `id-kp-OCSPSigning` EKU yet; see [Limitations](#limitations).
 4. It echoes the request nonce. Responses are valid for 5 minutes by default (configurable, never more than 10 minutes). This bounds how long a revoked certificate can stay in use.
 
 For a step-by-step manual check against a local Keycloak and Vault, see the [OCSP Local Testing Guide](OCSP_LOCAL_TESTING.md).
@@ -23,14 +23,16 @@ For a step-by-step manual check against a local Keycloak and Vault, see the [OCS
 sequenceDiagram
     participant Node as Consumer/Producer node
     participant MN as Management Node
-    participant Vault as Vault PKI / KV
+    participant Vault as Vault PKI
+    MN->>Vault: At startup and before expiry: sign signer CSR with default-role
+    Vault-->>MN: OCSP signer certificate
     Node->>MN: POST /api/v1/certificate/ocsp (DER OCSPRequest, mTLS + JWT)
     MN->>MN: Parse request, match issuer key/name hash with CA
     MN->>Vault: GET pki-int/cert/<serial> (per certificate ID)
     Vault-->>MN: certificate, revocation_time
     MN->>MN: Build BasicOCSPResponse, echo nonce, sign with OCSP signer key
     MN-->>Node: 200 application/ocsp-response (DER)
-    Node->>Node: Verify signature via included signer cert chained to federation CA
+    Node->>Node: Verify signature with included signer cert, issued by federation CA
 ```
 
 ---
@@ -57,7 +59,7 @@ The `GET /ocsp/{base64}` form is not supported.
 | Serial not found in Vault, or issuer name/key hash does not match the federation CA | `successful` | yes | `unknown` |
 | Body is empty, larger than `max-request-bytes`, not a valid DER OCSP request, or contains no / too many certificate IDs | `malformedRequest` | no | — |
 | Vault cannot be reached (for any certificate ID in the request) | `tryLater` | no | — (never `good`) |
-| No valid OCSP signer loaded | `tryLater` | no | — |
+| No valid OCSP signer issued (see [OCSP signer](#ocsp-signer)) | `tryLater` | no | — |
 | Unexpected error | `internalError` | no | — |
 
 OCSP error statuses are returned with HTTP `200`, as RFC 6960 requires. Authentication and authorization failures are returned as HTTP `401` / `403` with the standard JSON `ErrorResponse`, before the OCSP layer runs.
@@ -69,8 +71,8 @@ A request may contain several certificate IDs. **Every entry is answered** in on
 ### Response contents
 
 - `responderID` uses `byKey`, the SHA-1 hash of the signer public key.
-- The signature algorithm matches the signer key: `SHA256withRSA` or `SHA256withECDSA`.
-- `certs` contains the OCSP signer certificate. Nodes verify the response signature with it, and verify the signer certificate against the federation CA and its `id-kp-OCSPSigning` EKU.
+- The signer key is EC P-256, so responses are signed with `SHA256withECDSA`.
+- `certs` contains the OCSP signer certificate. Nodes verify the response signature with it, and verify that the federation CA issued it. The certificate has no `id-kp-OCSPSigning` EKU, so a client that applies the RFC 6960 delegated-responder check has to trust it explicitly; see [Verifying with OpenSSL](#verifying-with-openssl).
 - `producedAt` and `thisUpdate` are the current time (whole seconds). `nextUpdate` is `thisUpdate + application.ocsp.validity`.
 - The nonce extension (`id-pkix-ocsp-nonce`) is copied from the request when present.
 - Certificate IDs hashed with SHA-1 (OpenSSL default) or SHA-256 are supported.
@@ -94,7 +96,7 @@ The role is defined in the realm import (`docker/keycloak/management-node.json`)
 | `controller/v1/OcspController` | HTTP endpoint, role check, `Content-Type` and `Cache-Control` headers |
 | `service/providers/certificate/ocsp/OcspResponderService` (`OcspResponderServiceImpl`) | parses the request, matches the issuer, builds and signs the response, logs and metrics |
 | `service/providers/certificate/ocsp/CertificateStatusProvider` (`VaultCertificateStatusProvider`) | status lookup per serial number in Vault PKI |
-| `service/providers/certificate/ocsp/OcspSignerService` (`OcspSignerServiceImpl`) | loads, validates and periodically reloads the delegated signer from Vault KV v2 |
+| `service/providers/certificate/ocsp/OcspSignerService` (`OcspSignerServiceImpl`) | generates the signer key, has Vault issue its certificate with the default role, validates it and renews it before it expires |
 | `model/dto/certificate/OcspResponseDTO`, `CertificateStatusDTO` | encoded OCSP response with its status and `nextUpdate`; status of a single certificate |
 | `utils/http/CacheControlUtil` | `Cache-Control` header derived from the response's `nextUpdate` |
 | `config/OcspProperties`, `config/OcspConfig` | `application.ocsp.*` properties (validity limit enforced at startup) and scheduling |
@@ -107,77 +109,34 @@ The role is defined in the realm import (`docker/keycloak/management-node.json`)
 application:
   vault:
     pki-mount: pki-int                   # PKI mount whose CA the responder answers for
+    default-role: default-role           # PKI role that also issues the OCSP signer certificate
   ocsp:
     validity: PT5M                       # nextUpdate - thisUpdate; must be > 0 and <= PT10M (startup fails otherwise)
     max-request-entries: 10              # certificate IDs per request
     max-request-bytes: 16384             # maximum request body size
     status-backend: vault                # CertificateStatusProvider implementation
     signer:
-      kv-mount: secret                   # Vault KV v2 mount
-      kv-path: management-node/ocsp-signer
-      refresh-interval: PT5M             # how often the signer is reloaded from Vault
+      common-name: ocsp-signer.management-node  # CN of the signer certificate
+      ttl: PT24H                         # signer certificate lifetime; at least 4 x refresh-interval
+      refresh-interval: PT5M             # how often the signer is checked for renewal
 ```
 
 The status lookup sits behind the `CertificateStatusProvider` interface. The Vault implementation (`VaultCertificateStatusProvider`) is active when `application.ocsp.status-backend` is `vault`, which is the default.
 
 ---
 
-## Setting up the OCSP signer
+## OCSP signer
 
-Issuance and renewal of the OCSP signer certificate are not automated yet; a separate ticket covers that. Until then, set up the signer manually:
+The OCSP signer needs no manual setup. The Management Node:
 
-1. Generate the signer key on the Management Node side.
-2. Have Vault issue the signer certificate from a CSR.
-3. Store the key and certificate in Vault KV v2.
+1. generates an EC P-256 key in memory;
+2. builds a CSR with the subject `CN=<application.ocsp.signer.common-name>`;
+3. has Vault sign it through `<pki-mount>/sign/<application.vault.default-role>` with a TTL of `application.ocsp.signer.ttl`;
+4. checks that the certificate carries the generated key, was issued and signed by the CA of `application.vault.pki-mount`, and is currently valid.
 
-The Management Node loads the signer when it starts and reloads it every `refresh-interval`. To rotate the signer, overwrite the secret; no restart is needed. If a reload fails, the previous signer is kept while it is still valid.
+This happens when the application is ready. After that, the signer is checked every `refresh-interval` and a new one is issued once the current certificate has passed 70% of its lifetime. If issuing fails, the previous signer is kept while it is still valid. Until the first signer is issued, for example while Vault is unreachable at startup, OCSP requests are answered with `tryLater`.
 
-On every load the Management Node checks that the signer:
-
-- carries the `id-kp-OCSPSigning` EKU;
-- is issued and signed by the CA of `application.vault.pki-mount`;
-- is currently valid;
-- has a private key that matches the certificate.
-
-A signer that fails any check is rejected and logged. A warning is logged once the signer has passed 70% of its lifetime.
-
-1. Create a Vault role for OCSP signer certificates:
-
-   ```sh
-   docker exec -e VAULT_TOKEN=$VAULT_TOKEN vault vault write pki-int/roles/ocsp-signer \
-     allow_any_name=true \
-     server_flag=false \
-     client_flag=false \
-     ext_key_usage=OCSPSigning \
-     key_usage=DigitalSignature \
-     key_type=any \
-     max_ttl=72h
-   ```
-
-   `key_type=any` is required for EC signer keys; the Vault default only accepts RSA.
-
-2. Generate the signer key (PKCS#8) and CSR, and have Vault sign it with a short lifetime:
-
-   ```sh
-   openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out ocsp-signer.key   # or: -algorithm RSA -pkeyopt rsa_keygen_bits:2048
-   openssl req -new -key ocsp-signer.key -subj "/CN=ocsp-signer.management-node" -out ocsp-signer.csr
-   docker cp ocsp-signer.csr vault:/tmp/ocsp-signer.csr
-   docker exec -e VAULT_TOKEN=$VAULT_TOKEN vault vault write -field=certificate pki-int/sign/ocsp-signer \
-     csr=@/tmp/ocsp-signer.csr ttl=24h > ocsp-signer.pem
-   ```
-
-3. Store the key and certificate in Vault KV v2 at `application.ocsp.signer.kv-mount`/`kv-path`:
-
-   ```sh
-   docker cp ocsp-signer.key vault:/tmp/ocsp-signer.key
-   docker cp ocsp-signer.pem vault:/tmp/ocsp-signer.pem
-   docker exec -e VAULT_TOKEN=$VAULT_TOKEN vault vault kv put -mount=secret management-node/ocsp-signer \
-     private_key=@/tmp/ocsp-signer.key certificate=@/tmp/ocsp-signer.pem
-   docker exec vault rm /tmp/ocsp-signer.key /tmp/ocsp-signer.pem /tmp/ocsp-signer.csr
-   shred -u ocsp-signer.key   # the key must only live in Vault
-   ```
-
-   The Management Node's Vault token needs `read` on `secret/data/management-node/ocsp-signer`, in addition to its PKI permissions.
+The signer key is never written anywhere, so each Management Node instance has its own signer, and a restart issues a new one. The default role must accept the signer's common name and EC keys (`key_type=any`), and the Management Node's Vault token already needs `update` on `<pki-mount>/sign/<default-role>` for CSR signing.
 
 ---
 
@@ -196,11 +155,17 @@ curl -k --cert client.crt --key client.key \
   --data-binary @req.der -o resp.der \
   https://localhost:8090/api/v1/certificate/ocsp
 
-# 3. Verify the signature against the federation CA, check the nonce and print the statuses
-openssl ocsp -reqin req.der -respin resp.der -issuer ca.pem -CAfile ca.pem -resp_text
+# 3. Save the signer certificate included in the response and check that the federation CA issued it
+openssl ocsp -respin resp.der -resp_text -noverify | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' > signer.pem
+openssl verify -CAfile ca.pem signer.pem
+
+# 4. Verify the signature with the signer certificate, check the nonce and print the statuses
+openssl ocsp -reqin req.der -respin resp.der -issuer ca.pem -VAfile signer.pem -resp_text
 ```
 
-Expected output includes `Response verify OK`, one `Cert Status: good|revoked|unknown` per certificate, and an `OCSP Nonce` matching the request.
+Expected output includes `signer.pem: OK` in step 3, and `Response verify OK`, one `Cert Status: good|revoked|unknown` per certificate and an `OCSP Nonce` matching the request in step 4.
+
+`-CAfile ca.pem` alone gives `Response Verify Failure` with `missing ocspsigning usage`, because the signer certificate has no `id-kp-OCSPSigning` EKU. `-VAfile` trusts the signer certificate explicitly, which skips that check.
 
 When verifying, pass only `-reqin`. If you also pass `-cert`/`-serial`, OpenSSL builds a new request with a fresh nonce and reports `Nonce Verify error`.
 
@@ -237,7 +202,7 @@ Metrics are exposed through Micrometer at `/actuator/metrics` on the management 
 - `/api/v1/certificate/**` is **excluded from the CertificateValidationInterceptor**, so the OCSP endpoint does not require the caller to have an `organisation_certificate` record. A node must be able to check a peer's status regardless of the state of its own certificate record.
 - The responder **never answers `good` when the status is not known**: a Vault failure for any certificate ID turns the whole response into `tryLater`, and certificates not issued by the federation CA are `unknown`.
 - Status results are **never cached** on the Management Node. Clients may cache a successful response until its `nextUpdate`, which is at most 10 minutes away.
-- The **signer private key** lives only in Vault KV v2 and in memory. It is never written to disk or logged. The Management Node's Vault token needs `read` on the signer secret; restrict that policy to this path.
+- The **signer private key** is generated by the Management Node and lives only in memory. It is never written to disk, to Vault or to the log.
 - Error responses (`malformedRequest`, `tryLater`, `internalError`) are unsigned, as RFC 6960 allows, and carry `Cache-Control: no-store`.
 - The request body size and the number of certificate IDs per request are bounded (`max-request-bytes`, `max-request-entries`), which limits the Vault calls a single request can trigger.
 
@@ -248,4 +213,4 @@ Metrics are exposed through Micrometer at `/actuator/metrics` on the management 
 - **Revocation reason:** Vault PKI does not record a reason when a certificate is revoked. `revoked` responses therefore carry Vault's revocation time without the optional `revocationReason`.
 - **Transport:** the endpoint is served on the existing HTTPS connector with mTLS and JWT, like the other Management Node APIs. A plain-HTTP listener, which would let nodes check status even when their own certificate is broken, is not implemented yet. Response integrity does not depend on transport, because every successful response is signed.
 - **AIA:** do not set this endpoint as `ocsp_servers` in `pki-int/config/urls`. TLS libraries call an AIA OCSP URL automatically and cannot send a JWT, so their requests would be rejected. Depending on the client's configuration, that either fails the handshake or silently skips the revocation check. Vault embeds the URL in every certificate it issues, so it cannot be changed for certificates already issued. Nodes call the endpoint directly with their token. An AIA URL must point at a responder that needs no authentication.
-- **Signer lifecycle:** issuing and renewing the OCSP signer certificate (renewal at 70% of its lifetime) is manual for now; see [Setting up the OCSP signer](#setting-up-the-ocsp-signer).
+- **Signer certificate:** the signer certificate is issued through the default PKI role, so it has the same key usages as node certificates (`serverAuth`, `clientAuth`) and no `id-kp-OCSPSigning` EKU. Clients that apply the RFC 6960 delegated-responder check (OpenSSL with `-CAfile`, the Java PKIX revocation checker) reject the responses unless they trust the signer certificate explicitly. A dedicated Vault role for the signer is left for later.

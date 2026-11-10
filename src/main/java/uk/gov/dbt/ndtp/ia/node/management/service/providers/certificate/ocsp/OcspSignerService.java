@@ -21,7 +21,8 @@ public interface OcspSignerService {
     Optional<OcspSigner> currentSigner();
 
     /**
-     * Reloads the signer from its source. Failures are logged and leave the previous signer in place.
+     * Issues a new signer when none is loaded or the current one is due for renewal. Failures are logged and leave
+     * the previous signer in place.
      */
     void refresh();
 }

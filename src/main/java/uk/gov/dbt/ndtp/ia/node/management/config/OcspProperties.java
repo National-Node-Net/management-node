@@ -18,7 +18,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  * @param maxRequestEntries maximum number of certificate IDs answered in a single request
  * @param maxRequestBytes   maximum accepted size of a DER-encoded OCSP request
  * @param statusBackend     certificate status backend ({@code vault})
- * @param signer            location of the delegated OCSP signer key and certificate
+ * @param signer            OCSP signer certificate settings
  */
 @ConfigurationProperties("application.ocsp")
 public record OcspProperties(
@@ -45,14 +45,30 @@ public record OcspProperties(
     }
 
     /**
-     * Vault KV v2 location of the OCSP signer.
+     * OCSP signer issued by the Management Node through the default Vault PKI role.
      *
-     * @param kvMount         KV v2 mount
-     * @param kvPath          secret path holding {@code private_key} (PKCS#8 PEM) and {@code certificate} (PEM)
-     * @param refreshInterval how often the signer is reloaded from Vault
+     * @param commonName      common name of the signer certificate
+     * @param ttl             lifetime requested for the signer certificate; at least four times
+     *                        {@code refreshInterval}, so the renewal window (the last 30% of the lifetime) is
+     *                        longer than the time between checks
+     * @param refreshInterval how often the service checks whether the signer is due for renewal
      */
     public record Signer(
-            @DefaultValue("secret") String kvMount,
-            @DefaultValue("management-node/ocsp-signer") String kvPath,
-            @DefaultValue("PT5M") Duration refreshInterval) {}
+            @DefaultValue("ocsp-signer.management-node") String commonName,
+            @DefaultValue("PT24H") Duration ttl,
+            @DefaultValue("PT5M") Duration refreshInterval) {
+
+        public Signer {
+            if (commonName == null || commonName.isBlank()) {
+                throw new IllegalArgumentException("application.ocsp.signer.common-name must not be blank");
+            }
+            if (refreshInterval == null || refreshInterval.isNegative() || refreshInterval.isZero()) {
+                throw new IllegalArgumentException("application.ocsp.signer.refresh-interval must be greater than 0");
+            }
+            if (ttl == null || ttl.compareTo(refreshInterval.multipliedBy(4)) < 0) {
+                throw new IllegalArgumentException("application.ocsp.signer.ttl must be at least four times"
+                        + " application.ocsp.signer.refresh-interval, was " + ttl);
+            }
+        }
+    }
 }

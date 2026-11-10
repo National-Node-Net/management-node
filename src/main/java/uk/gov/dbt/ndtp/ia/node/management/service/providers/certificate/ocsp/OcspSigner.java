@@ -17,7 +17,7 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
  * Delegated OCSP signer: the signing key, its certificate and the CA that issued it.
  *
  * @param privateKey         the OCSP signing key
- * @param certificate        the OCSP signer certificate (carries {@code id-kp-OCSPSigning})
+ * @param certificate        the OCSP signer certificate
  * @param issuer             the CA certificate that issued the signer and whose certificates are answered for
  * @param signatureAlgorithm JCA signature algorithm matching the key, e.g. {@code SHA256withRSA}
  */

@@ -49,26 +49,4 @@ class PemUtilTest {
         assertArrayEquals(priv.getEncoded(), parsedPriv.getEncoded());
         assertArrayEquals(pub.getEncoded(), parsedPub.getEncoded());
     }
-
-    @Test
-    void parsePkcs8PrivateKey_withEcAlgorithm_shouldSucceed() throws Exception {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");
-        kpg.initialize(256);
-        PrivateKey priv = kpg.generateKeyPair().getPrivate();
-
-        PrivateKey parsed = PemUtil.parsePkcs8PrivateKey(PemUtil.toPem("PRIVATE KEY", priv.getEncoded()), "EC");
-
-        assertEquals("EC", parsed.getAlgorithm());
-        assertArrayEquals(priv.getEncoded(), parsed.getEncoded());
-    }
-
-    @Test
-    void parsePkcs8PrivateKey_withMismatchedAlgorithm_shouldThrowPkiException() throws Exception {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");
-        kpg.initialize(256);
-        String ecPem =
-                PemUtil.toPem("PRIVATE KEY", kpg.generateKeyPair().getPrivate().getEncoded());
-
-        assertThrows(PkiException.class, () -> PemUtil.parsePkcs8PrivateKey(ecPem, "RSA"));
-    }
 }

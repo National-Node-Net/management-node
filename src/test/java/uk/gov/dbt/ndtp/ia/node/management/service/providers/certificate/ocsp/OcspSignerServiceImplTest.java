@@ -7,47 +7,45 @@
 package uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.ocsp;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.ocsp.OcspTestPki.*;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import java.security.KeyPair;
+import java.nio.charset.StandardCharsets;
+import java.security.Signature;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.util.Map;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.springframework.vault.VaultException;
-import org.springframework.vault.core.VaultKeyValueOperations;
-import org.springframework.vault.core.VaultKeyValueOperationsSupport.KeyValueBackend;
-import org.springframework.vault.core.VaultTemplate;
-import org.springframework.vault.support.VaultResponse;
 import uk.gov.dbt.ndtp.ia.node.management.config.OcspProperties;
 import uk.gov.dbt.ndtp.ia.node.management.exception.PkiException;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.IntermediateCertResponseDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.SignCertResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.VaultPkiService;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class OcspSignerServiceImplTest {
 
-    private static final String KV_MOUNT = "secret";
-    private static final String KV_PATH = "management-node/ocsp-signer";
-
-    @Mock
-    private VaultTemplate vaultTemplate;
-
-    @Mock
-    private VaultKeyValueOperations keyValueOperations;
+    private static final String COMMON_NAME = "ocsp-signer.management-node";
+    private static final Duration LIFETIME = Duration.ofHours(1);
 
     @Mock
     private VaultPkiService pkiService;
@@ -65,55 +63,58 @@ class OcspSignerServiceImplTest {
                 10,
                 16384,
                 "vault",
-                new OcspProperties.Signer(KV_MOUNT, KV_PATH, Duration.ofMinutes(5)));
-        when(vaultTemplate.opsForKeyValue(KV_MOUNT, KeyValueBackend.KV_2)).thenReturn(keyValueOperations);
+                new OcspProperties.Signer(COMMON_NAME, Duration.ofHours(24), Duration.ofMinutes(5)));
         when(pkiService.getIntermediateCertificate())
                 .thenReturn(IntermediateCertResponseDTO.builder()
                         .certificate(toPem(CA))
                         .build());
-        service = new OcspSignerServiceImpl(vaultTemplate, pkiService, properties, meterRegistry, clock);
+        vaultIssues(csr -> certificateFromCsr(
+                csr, CA, CA_KEYS, clock.instant(), clock.instant().plus(LIFETIME)));
+        service = new OcspSignerServiceImpl(pkiService, properties, meterRegistry, clock);
     }
 
-    private void storeSigner(KeyPair keys, X509CertificateHolder certificate) {
-        VaultResponse response = new VaultResponse();
-        response.setData(Map.of("private_key", privateKeyPem(keys), "certificate", toPem(certificate)));
-        when(keyValueOperations.get(KV_PATH)).thenReturn(response);
+    /** Makes the mocked Vault answer every CSR with the certificate built by {@code issuer}. */
+    private void vaultIssues(Function<String, X509CertificateHolder> issuer) {
+        doAnswer(invocation -> new SignCertResponseDTO(
+                        toPem(issuer.apply(invocation.getArgument(0))), List.of(), toPem(CA), "20:00", 0))
+                .when(pkiService)
+                .signCsr(anyString(), any(), any());
     }
 
     @Test
-    void refresh_validRsaSigner_shouldBeAvailable() {
-        X509CertificateHolder certificate = signerCertificate(SIGNER_RSA_KEYS);
-        storeSigner(SIGNER_RSA_KEYS, certificate);
-
+    void refresh_shouldIssueEcSignerWithTheDefaultRole() throws Exception {
         service.refresh();
+
+        ArgumentCaptor<String> csr = ArgumentCaptor.forClass(String.class);
+        verify(pkiService).signCsr(csr.capture(), eq(Optional.empty()), eq(Optional.of("86400s")));
+        assertTrue(csr.getValue().contains("BEGIN CERTIFICATE REQUEST"));
 
         OcspSigner signer = service.currentSigner().orElseThrow();
-        assertEquals(certificate, signer.certificate());
+        assertEquals(new X500Name("CN=" + COMMON_NAME), signer.certificate().getSubject());
         assertEquals(CA, signer.issuer());
-        assertEquals("SHA256withRSA", signer.signatureAlgorithm());
+        assertEquals("SHA256withECDSA", signer.signatureAlgorithm());
+        assertEquals("EC", signer.privateKey().getAlgorithm());
+
+        byte[] data = "check".getBytes(StandardCharsets.UTF_8);
+        Signature signature = Signature.getInstance(signer.signatureAlgorithm());
+        signature.initSign(signer.privateKey());
+        signature.update(data);
+        byte[] signed = signature.sign();
+        signature.initVerify(toX509(signer.certificate()).getPublicKey());
+        signature.update(data);
+        assertTrue(signature.verify(signed), "the private key must match the issued certificate");
     }
 
     @Test
-    void refresh_validEcSigner_shouldUseEcdsa() {
-        storeSigner(SIGNER_EC_KEYS, signerCertificate(SIGNER_EC_KEYS));
-
-        service.refresh();
-
-        assertEquals("SHA256withECDSA", service.currentSigner().orElseThrow().signatureAlgorithm());
-    }
-
-    @Test
-    void onApplicationReady_shouldLoadSigner() {
-        storeSigner(SIGNER_RSA_KEYS, signerCertificate(SIGNER_RSA_KEYS));
-
+    void onApplicationReady_shouldIssueSigner() {
         service.onApplicationReady();
 
         assertTrue(service.currentSigner().isPresent());
     }
 
     @Test
-    void refresh_secretMissing_shouldLeaveNoSigner() {
-        when(keyValueOperations.get(KV_PATH)).thenReturn(null);
+    void refresh_vaultFails_shouldLeaveNoSigner() {
+        doThrow(new PkiException("Vault sealed")).when(pkiService).signCsr(anyString(), any(), any());
 
         service.refresh();
 
@@ -121,81 +122,78 @@ class OcspSignerServiceImplTest {
     }
 
     @Test
-    void load_secretMissingFields_shouldThrow() {
-        VaultResponse response = new VaultResponse();
-        response.setData(Map.of("certificate", toPem(signerCertificate(SIGNER_RSA_KEYS))));
-        when(keyValueOperations.get(KV_PATH)).thenReturn(response);
+    void issue_notIssuedByCa_shouldThrow() {
+        vaultIssues(csr -> certificateFromCsr(csr, OTHER_CA, OTHER_CA_KEYS, NOW, NOW.plus(LIFETIME)));
 
-        PkiException e = assertThrows(PkiException.class, () -> service.load());
-        assertTrue(e.getMessage().contains("private_key"));
+        PkiException e = assertThrows(PkiException.class, () -> service.issue());
+        assertTrue(e.getMessage().contains("not issued by the CA"));
     }
 
     @Test
-    void load_withoutOcspSigningEku_shouldThrow() {
-        storeSigner(
-                SIGNER_RSA_KEYS,
-                signerCertificate(SIGNER_RSA_KEYS, CA, CA_KEYS, NOW.minusSeconds(60), NOW.plusSeconds(3600), false));
+    void issue_issuerNameMatchesButSignatureDoesNot_shouldThrow() {
+        vaultIssues(csr -> certificateFromCsr(csr, CA, OTHER_CA_KEYS, NOW, NOW.plus(LIFETIME)));
 
-        PkiException e = assertThrows(PkiException.class, () -> service.load());
-        assertTrue(e.getMessage().contains("id-kp-OCSPSigning"));
+        assertThrows(PkiException.class, () -> service.issue());
     }
 
     @Test
-    void load_notIssuedByCa_shouldThrow() {
-        storeSigner(
-                SIGNER_RSA_KEYS,
-                signerCertificate(
-                        SIGNER_RSA_KEYS, OTHER_CA, OTHER_CA_KEYS, NOW.minusSeconds(60), NOW.plusSeconds(3600), true));
+    void issue_expiredCertificate_shouldThrow() {
+        vaultIssues(csr -> certificateFromCsr(csr, CA, CA_KEYS, NOW.minusSeconds(7200), NOW.minusSeconds(60)));
 
-        assertThrows(PkiException.class, () -> service.load());
+        assertThrows(PkiException.class, () -> service.issue());
     }
 
     @Test
-    void load_issuerNameMatchesButSignatureDoesNot_shouldThrow() {
-        storeSigner(
-                SIGNER_RSA_KEYS,
-                signerCertificate(
-                        SIGNER_RSA_KEYS, CA, OTHER_CA_KEYS, NOW.minusSeconds(60), NOW.plusSeconds(3600), true));
+    void issue_certificateForAnotherKey_shouldThrow() {
+        vaultIssues(csr -> signerCertificate(SIGNER_RSA_KEYS));
 
-        assertThrows(PkiException.class, () -> service.load());
+        PkiException e = assertThrows(PkiException.class, () -> service.issue());
+        assertTrue(e.getMessage().contains("generated key"));
     }
 
     @Test
-    void load_expiredCertificate_shouldThrow() {
-        storeSigner(
-                SIGNER_RSA_KEYS,
-                signerCertificate(SIGNER_RSA_KEYS, CA, CA_KEYS, NOW.minusSeconds(7200), NOW.minusSeconds(60), true));
+    void refresh_signerNotDueForRenewal_shouldKeepIt() {
+        service.refresh();
+        OcspSigner first = service.currentSigner().orElseThrow();
 
-        assertThrows(PkiException.class, () -> service.load());
-    }
-
-    @Test
-    void load_keyNotMatchingCertificate_shouldThrow() {
-        VaultResponse response = new VaultResponse();
-        response.setData(Map.of(
-                "private_key", privateKeyPem(LEAF_KEYS),
-                "certificate", toPem(signerCertificate(SIGNER_RSA_KEYS))));
-        when(keyValueOperations.get(KV_PATH)).thenReturn(response);
-
-        PkiException e = assertThrows(PkiException.class, () -> service.load());
-        assertTrue(e.getMessage().contains("does not match"));
-    }
-
-    @Test
-    void refresh_failure_shouldKeepPreviousValidSigner() {
-        X509CertificateHolder certificate = signerCertificate(SIGNER_RSA_KEYS);
-        storeSigner(SIGNER_RSA_KEYS, certificate);
+        clock.set(NOW.plus(Duration.ofMinutes(41)));
         service.refresh();
 
-        when(keyValueOperations.get(KV_PATH)).thenThrow(new VaultException("Vault sealed"));
+        verify(pkiService, times(1)).signCsr(anyString(), any(), any());
+        assertSame(first, service.currentSigner().orElseThrow());
+    }
+
+    @Test
+    void refresh_signerPastRenewalThreshold_shouldIssueNewSigner() {
+        service.refresh();
+        OcspSigner first = service.currentSigner().orElseThrow();
+
+        // 70% of the one-hour lifetime has elapsed after 42 minutes
+        clock.set(NOW.plus(Duration.ofMinutes(43)));
         service.refresh();
 
-        assertEquals(certificate, service.currentSigner().orElseThrow().certificate());
+        verify(pkiService, times(2)).signCsr(anyString(), any(), any());
+        OcspSigner renewed = service.currentSigner().orElseThrow();
+        assertNotEquals(first.privateKey(), renewed.privateKey());
+        assertEquals(
+                NOW.plus(Duration.ofMinutes(43)),
+                renewed.certificate().getNotBefore().toInstant());
+    }
+
+    @Test
+    void refresh_renewalFails_shouldKeepPreviousValidSigner() {
+        service.refresh();
+        OcspSigner first = service.currentSigner().orElseThrow();
+
+        clock.set(NOW.plus(Duration.ofMinutes(43)));
+        doThrow(new PkiException("Vault sealed")).when(pkiService).signCsr(anyString(), any(), any());
+        service.refresh();
+
+        assertSame(first, service.currentSigner().orElseThrow());
     }
 
     @Test
     void currentSigner_afterCertificateExpired_shouldBeEmpty() {
-        storeSigner(SIGNER_RSA_KEYS, signerCertificate(SIGNER_RSA_KEYS));
         service.refresh();
 
         clock.set(NOW.plus(Duration.ofHours(2)));
@@ -204,31 +202,14 @@ class OcspSignerServiceImplTest {
     }
 
     @Test
-    void refresh_signerPastRenewalThreshold_shouldStillLoad() {
-        storeSigner(SIGNER_RSA_KEYS, signerCertificate(SIGNER_RSA_KEYS));
-        // Signer is valid NOW-1h .. NOW+1h; 80% of its lifetime has elapsed at NOW+36m
-        clock.set(NOW.plus(Duration.ofMinutes(36)));
-
-        service.refresh();
-
-        assertTrue(service.currentSigner().isPresent());
-    }
-
-    @Test
     void expiryGauge_shouldReportSecondsUntilExpiry() {
         assertEquals(
                 -1.0, meterRegistry.get("ocsp.signer.expiry.seconds").gauge().value());
 
-        storeSigner(SIGNER_RSA_KEYS, signerCertificate(SIGNER_RSA_KEYS));
         service.refresh();
 
         assertEquals(
                 3600.0, meterRegistry.get("ocsp.signer.expiry.seconds").gauge().value());
-    }
-
-    @Test
-    void signatureAlgorithmFor_unsupportedKey_shouldThrow() {
-        assertThrows(PkiException.class, () -> OcspSignerServiceImpl.signatureAlgorithmFor("DSA"));
     }
 
     private static final class MutableClock extends Clock {

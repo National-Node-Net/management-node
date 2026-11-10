@@ -8,71 +8,63 @@ package uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.ocsp;
 
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
-import java.nio.charset.StandardCharsets;
-import java.security.PrivateKey;
-import java.security.Signature;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+import java.security.spec.ECGenParameterSpec;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.extern.slf4j.Slf4j;
-import org.bouncycastle.asn1.x509.KeyPurposeId;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.vault.core.VaultKeyValueOperationsSupport.KeyValueBackend;
-import org.springframework.vault.core.VaultTemplate;
-import org.springframework.vault.support.VaultResponse;
 import uk.gov.dbt.ndtp.ia.node.management.config.OcspProperties;
 import uk.gov.dbt.ndtp.ia.node.management.exception.PkiException;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.VaultPkiService;
 import uk.gov.dbt.ndtp.ia.node.management.utils.cryptography.PemUtil;
 
 /**
- * Implementation of {@link OcspSignerService} that loads the delegated OCSP signer from Vault KV v2 and the issuing
- * CA from Vault PKI.
+ * Implementation of {@link OcspSignerService} that issues its own OCSP signer through the default Vault PKI role.
  *
- * <p>The signer is loaded when the application is ready and reloaded every
- * {@code application.ocsp.signer.refresh-interval}, so a renewed signer written to Vault is picked up without a
- * restart. If a reload fails, the previous signer is kept while it is still valid. Without a valid signer
- * the responder answers {@code tryLater}.
+ * <p>The signer key is an EC P-256 key generated in memory; it is never written anywhere. Its certificate is
+ * issued by signing a CSR with {@link VaultPkiService#signCsr} using {@code application.vault.default-role}.
+ * The signer is issued when the application is ready, and every {@code application.ocsp.signer.refresh-interval}
+ * the service checks whether a new one is needed: when none is loaded, or once the current certificate has passed
+ * 70% of its lifetime. If issuing fails, the previous signer is kept while it is still valid. Without a valid
+ * signer the responder answers {@code tryLater}.
  */
 @Service
 @Slf4j
 public class OcspSignerServiceImpl implements OcspSignerService {
 
-    static final String KEY_PRIVATE_KEY = "private_key";
-    static final String KEY_CERTIFICATE = "certificate";
-    private static final double RENEWAL_THRESHOLD = 0.7;
-    private static final byte[] KEY_CHECK_CHALLENGE = "ocsp-signer-key-check".getBytes(StandardCharsets.UTF_8);
+    static final String KEY_ALGORITHM = "EC";
+    static final String CURVE = "secp256r1";
+    static final String SIGNATURE_ALGORITHM = "SHA256withECDSA";
+    static final double RENEWAL_THRESHOLD = 0.7;
 
-    private final VaultTemplate vault;
     private final VaultPkiService pkiService;
     private final OcspProperties.Signer properties;
     private final Clock clock;
     private final AtomicReference<OcspSigner> current = new AtomicReference<>();
 
     @Autowired
-    public OcspSignerServiceImpl(
-            VaultTemplate vault, VaultPkiService pkiService, OcspProperties properties, MeterRegistry meterRegistry) {
-        this(vault, pkiService, properties, meterRegistry, Clock.systemUTC());
+    public OcspSignerServiceImpl(VaultPkiService pkiService, OcspProperties properties, MeterRegistry meterRegistry) {
+        this(pkiService, properties, meterRegistry, Clock.systemUTC());
     }
 
     OcspSignerServiceImpl(
-            VaultTemplate vault,
-            VaultPkiService pkiService,
-            OcspProperties properties,
-            MeterRegistry meterRegistry,
-            Clock clock) {
-        this.vault = vault;
+            VaultPkiService pkiService, OcspProperties properties, MeterRegistry meterRegistry, Clock clock) {
         this.pkiService = pkiService;
         this.properties = properties.signer();
         this.clock = clock;
@@ -93,98 +85,100 @@ public class OcspSignerServiceImpl implements OcspSignerService {
     }
 
     /**
-     * Reloads the signer from Vault. Failures are logged and leave the previous signer in place.
+     * Issues a new signer when none is loaded or the current one is due for renewal. Failures are logged and leave
+     * the previous signer in place.
      */
     @Scheduled(
             initialDelayString = "${application.ocsp.signer.refresh-interval:PT5M}",
             fixedDelayString = "${application.ocsp.signer.refresh-interval:PT5M}")
     @Override
     public void refresh() {
+        OcspSigner existing = current.get();
+        if (existing != null && !isDueForRenewal(existing)) {
+            return;
+        }
         try {
-            OcspSigner signer = load();
+            OcspSigner signer = issue();
             current.set(signer);
             log.info(
-                    "Loaded OCSP signer {} (serial {}), valid until {}",
+                    "Issued OCSP signer {} (serial {}), valid until {}",
                     signer.certificate().getSubject(),
                     signer.certificate().getSerialNumber().toString(16),
                     signer.certificate().getNotAfter().toInstant());
-            warnIfDueForRenewal(signer);
         } catch (Exception e) {
             Optional<OcspSigner> previous = currentSigner();
             if (previous.isPresent()) {
                 log.error(
-                        "Failed to reload OCSP signer from {}/{}; keeping previous signer valid until {}",
-                        properties.kvMount(),
-                        properties.kvPath(),
+                        "Failed to renew OCSP signer; keeping previous signer valid until {}",
                         previous.get().certificate().getNotAfter().toInstant(),
                         e);
             } else {
-                log.error(
-                        "Failed to load OCSP signer from {}/{}; OCSP requests will be answered with tryLater",
-                        properties.kvMount(),
-                        properties.kvPath(),
-                        e);
+                log.error("Failed to issue OCSP signer; OCSP requests will be answered with tryLater", e);
             }
         }
     }
 
     /**
-     * Loads and validates the signer key and certificate from Vault.
+     * Generates a signer key, has Vault issue its certificate with the default role and validates the result.
      *
      * @return the validated signer
-     * @throws PkiException if the secret is missing or the signer is not valid
+     * @throws PkiException if the certificate cannot be issued or is not valid
      */
-    OcspSigner load() {
-        VaultResponse resp =
-                vault.opsForKeyValue(properties.kvMount(), KeyValueBackend.KV_2).get(properties.kvPath());
-        Map<String, Object> data =
-                Optional.ofNullable(resp).map(VaultResponse::getData).orElse(Map.of());
-        if (!(data.get(KEY_PRIVATE_KEY) instanceof String keyPem)
-                || !(data.get(KEY_CERTIFICATE) instanceof String certPem)) {
-            throw new PkiException("OCSP signer secret must contain '" + KEY_PRIVATE_KEY + "' and '" + KEY_CERTIFICATE
-                    + "' at " + properties.kvMount() + "/" + properties.kvPath());
-        }
+    OcspSigner issue() {
+        KeyPair keys = generateKeyPair();
+        String certificatePem = pkiService
+                .signCsr(
+                        csr(keys),
+                        Optional.empty(),
+                        Optional.of(properties.ttl().toSeconds() + "s"))
+                .getCertificate();
 
-        X509Certificate certificate = PemUtil.parseCertificate(certPem);
-        String keyAlgorithm = certificate.getPublicKey().getAlgorithm();
-        PrivateKey privateKey = PemUtil.parsePkcs8PrivateKey(keyPem, keyAlgorithm);
+        X509Certificate certificate = PemUtil.parseCertificate(certificatePem);
         X509Certificate ca =
                 PemUtil.parseCertificate(pkiService.getIntermediateCertificate().getCertificate());
-        String signatureAlgorithm = signatureAlgorithmFor(keyAlgorithm);
-
-        validate(certificate, privateKey, ca, signatureAlgorithm);
+        validate(certificate, keys.getPublic(), ca);
         try {
             return new OcspSigner(
-                    privateKey,
+                    keys.getPrivate(),
                     new JcaX509CertificateHolder(certificate),
                     new JcaX509CertificateHolder(ca),
-                    signatureAlgorithm);
+                    SIGNATURE_ALGORITHM);
         } catch (Exception e) {
             throw new PkiException("Failed to encode OCSP signer certificates", e);
         }
     }
 
-    private void validate(X509Certificate certificate, PrivateKey privateKey, X509Certificate ca, String algorithm) {
+    private static KeyPair generateKeyPair() {
         try {
-            List<String> eku = certificate.getExtendedKeyUsage();
-            if (eku == null || !eku.contains(KeyPurposeId.id_kp_OCSPSigning.getId())) {
-                throw new PkiException("OCSP signer certificate does not carry the id-kp-OCSPSigning EKU");
+            KeyPairGenerator generator = KeyPairGenerator.getInstance(KEY_ALGORITHM);
+            generator.initialize(new ECGenParameterSpec(CURVE));
+            return generator.generateKeyPair();
+        } catch (Exception e) {
+            throw new PkiException("Failed to generate OCSP signer key", e);
+        }
+    }
+
+    private String csr(KeyPair keys) {
+        try {
+            var csr = new JcaPKCS10CertificationRequestBuilder(
+                            new X500Name("CN=" + properties.commonName()), keys.getPublic())
+                    .build(new JcaContentSignerBuilder(SIGNATURE_ALGORITHM).build(keys.getPrivate()));
+            return PemUtil.toPem("CERTIFICATE REQUEST", csr.getEncoded());
+        } catch (Exception e) {
+            throw new PkiException("Failed to build OCSP signer CSR", e);
+        }
+    }
+
+    private void validate(X509Certificate certificate, PublicKey publicKey, X509Certificate ca) {
+        try {
+            if (!certificate.getPublicKey().equals(publicKey)) {
+                throw new PkiException("OCSP signer certificate does not carry the generated key");
             }
             if (!certificate.getIssuerX500Principal().equals(ca.getSubjectX500Principal())) {
                 throw new PkiException("OCSP signer certificate was not issued by the CA");
             }
             certificate.verify(ca.getPublicKey());
             certificate.checkValidity(Date.from(clock.instant()));
-
-            Signature signature = Signature.getInstance(algorithm);
-            signature.initSign(privateKey);
-            signature.update(KEY_CHECK_CHALLENGE);
-            byte[] signed = signature.sign();
-            signature.initVerify(certificate.getPublicKey());
-            signature.update(KEY_CHECK_CHALLENGE);
-            if (!signature.verify(signed)) {
-                throw new PkiException("OCSP signer private key does not match its certificate");
-            }
         } catch (PkiException e) {
             throw e;
         } catch (Exception e) {
@@ -192,16 +186,12 @@ public class OcspSignerServiceImpl implements OcspSignerService {
         }
     }
 
-    private void warnIfDueForRenewal(OcspSigner signer) {
+    private boolean isDueForRenewal(OcspSigner signer) {
         Instant notBefore = signer.certificate().getNotBefore().toInstant();
         Instant notAfter = signer.certificate().getNotAfter().toInstant();
         Duration lifetime = Duration.between(notBefore, notAfter);
         Duration elapsed = Duration.between(notBefore, clock.instant());
-        if (elapsed.toMillis() >= lifetime.toMillis() * RENEWAL_THRESHOLD) {
-            log.warn(
-                    "OCSP signer certificate has passed {}% of its lifetime and expires at {}; renew it",
-                    Math.round(RENEWAL_THRESHOLD * 100), notAfter);
-        }
+        return elapsed.toMillis() >= lifetime.toMillis() * RENEWAL_THRESHOLD;
     }
 
     private double secondsUntilExpiry() {
@@ -212,13 +202,5 @@ public class OcspSignerServiceImpl implements OcspSignerService {
         return Duration.between(
                         clock.instant(), signer.certificate().getNotAfter().toInstant())
                 .toSeconds();
-    }
-
-    static String signatureAlgorithmFor(String keyAlgorithm) {
-        return switch (keyAlgorithm) {
-            case "RSA" -> "SHA256withRSA";
-            case "EC" -> "SHA256withECDSA";
-            default -> throw new PkiException("Unsupported OCSP signer key algorithm: " + keyAlgorithm);
-        };
     }
 }

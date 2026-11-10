@@ -16,8 +16,9 @@ import org.springframework.boot.context.properties.source.MapConfigurationProper
 
 class OcspPropertiesTest {
 
+    private static final Duration REFRESH = Duration.ofMinutes(5);
     private static final OcspProperties.Signer SIGNER =
-            new OcspProperties.Signer("secret", "management-node/ocsp-signer", Duration.ofMinutes(5));
+            new OcspProperties.Signer("ocsp-signer.management-node", Duration.ofHours(24), REFRESH);
 
     private static OcspProperties withValidity(Duration validity) {
         return new OcspProperties(validity, 10, 16384, "vault", SIGNER);
@@ -32,8 +33,8 @@ class OcspPropertiesTest {
         assertEquals(10, properties.maxRequestEntries());
         assertEquals(16384, properties.maxRequestBytes());
         assertEquals("vault", properties.statusBackend());
-        assertEquals("secret", properties.signer().kvMount());
-        assertEquals("management-node/ocsp-signer", properties.signer().kvPath());
+        assertEquals("ocsp-signer.management-node", properties.signer().commonName());
+        assertEquals(Duration.ofHours(24), properties.signer().ttl());
         assertEquals(Duration.ofMinutes(5), properties.signer().refreshInterval());
     }
 
@@ -66,5 +67,28 @@ class OcspPropertiesTest {
         assertThrows(
                 IllegalArgumentException.class,
                 () -> new OcspProperties(Duration.ofMinutes(5), 10, 0, "vault", SIGNER));
+    }
+
+    @Test
+    void signerTtl_atFourRefreshIntervals_shouldBeAccepted() {
+        assertEquals(
+                Duration.ofMinutes(20),
+                new OcspProperties.Signer("ocsp-signer", Duration.ofMinutes(20), REFRESH).ttl());
+    }
+
+    @Test
+    void signerTtl_shorterThanFourRefreshIntervalsOrMissing_shouldBeRejected() {
+        Duration tooShort = Duration.ofMinutes(19);
+        assertThrows(IllegalArgumentException.class, () -> new OcspProperties.Signer("ocsp-signer", tooShort, REFRESH));
+        assertThrows(IllegalArgumentException.class, () -> new OcspProperties.Signer("ocsp-signer", null, REFRESH));
+    }
+
+    @Test
+    void signer_blankCommonNameOrNonPositiveRefresh_shouldBeRejected() {
+        Duration ttl = Duration.ofHours(24);
+        assertThrows(IllegalArgumentException.class, () -> new OcspProperties.Signer(" ", ttl, REFRESH));
+        assertThrows(
+                IllegalArgumentException.class, () -> new OcspProperties.Signer("ocsp-signer", ttl, Duration.ZERO));
+        assertThrows(IllegalArgumentException.class, () -> new OcspProperties.Signer("ocsp-signer", ttl, null));
     }
 }
