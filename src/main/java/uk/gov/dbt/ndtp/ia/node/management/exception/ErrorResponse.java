@@ -42,6 +42,13 @@ public class ErrorResponse {
      */
     private String errorId;
 
+    /**
+     * A stable, machine-readable error code, e.g. {@code CERTIFICATE_REVOKED}; omitted from the JSON for errors
+     * that have none
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String code;
+
     public ErrorResponse(int status, String message, String errorId) {
         this(status, message, List.of(), errorId);
     }

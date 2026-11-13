@@ -7,17 +7,80 @@
 package uk.gov.dbt.ndtp.ia.node.management.config;
 
 import java.time.Duration;
+import java.util.List;
+import javax.security.auth.x500.X500Principal;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 /**
- * Configuration of the certificate revocation API ({@code application.revocation.*}).
+ * Configuration of certificate revocation ({@code application.revocation.*}): the revocation API, the check of
+ * client certificates on every request, and the certificate status cache.
  *
- * @param rateLimit  how many revocation requests one administrator may send
- * @param vaultRetry how a revocation that Vault could not take is retried
+ * @param rateLimit   how many revocation requests one administrator may send
+ * @param vaultRetry  how a revocation that Vault could not take is retried
+ * @param enforcement the revocation check on requests that present a client certificate
+ * @param cache       the certificate status cache
  */
 @ConfigurationProperties("application.revocation")
-public record RevocationProperties(@DefaultValue RateLimit rateLimit, @DefaultValue VaultRetry vaultRetry) {
+public record RevocationProperties(
+        @DefaultValue RateLimit rateLimit,
+        @DefaultValue VaultRetry vaultRetry,
+        @DefaultValue Enforcement enforcement,
+        @DefaultValue Cache cache) {
+
+    /**
+     * The revocation check on requests that present a client certificate.
+     *
+     * @param enabled       whether requests are checked at all; when false the filter is not registered
+     * @param failClosed    whether a request is refused when the status cannot be determined; false lets it through
+     * @param excludedPaths path patterns, within the application, that are never checked
+     * @param exemptIssuers issuer distinguished names outside the federation CA whose certificates are let through
+     *                      without a check, for example a development root CA
+     */
+    public record Enforcement(
+            @DefaultValue("true") boolean enabled,
+            @DefaultValue("true") boolean failClosed,
+            @DefaultValue({"/api/v1/certificate/ocsp", "/actuator/health"}) List<String> excludedPaths,
+            @DefaultValue List<String> exemptIssuers) {
+
+        public Enforcement {
+            excludedPaths = excludedPaths == null ? List.of() : List.copyOf(excludedPaths);
+            exemptIssuers = exemptIssuers == null ? List.of() : List.copyOf(exemptIssuers);
+            for (String issuer : exemptIssuers) {
+                try {
+                    new X500Principal(issuer);
+                } catch (IllegalArgumentException e) {
+                    throw new IllegalArgumentException(
+                            "application.revocation.enforcement.exempt-issuers holds an invalid distinguished name: "
+                                    + issuer,
+                            e);
+                }
+            }
+        }
+    }
+
+    /**
+     * The certificate status cache.
+     *
+     * @param ttl how long a status is reused before the certificate authority is asked again; positive and at most
+     *            {@link #MAX_TTL}
+     */
+    public record Cache(@DefaultValue("PT5M") Duration ttl) {
+
+        /**
+         * Upper bound on the time a status is reused, which bounds how long a certificate revoked directly in the
+         * certificate authority stays accepted.
+         */
+        public static final Duration MAX_TTL = Duration.ofMinutes(10);
+
+        public Cache {
+            if (ttl == null || ttl.isNegative() || ttl.isZero() || ttl.compareTo(MAX_TTL) > 0) {
+                throw new IllegalArgumentException(
+                        "application.revocation.cache.ttl must be greater than 0 and at most " + MAX_TTL + ", was "
+                                + ttl);
+            }
+        }
+    }
 
     /**
      * Revocation requests allowed per administrator ({@code sub} claim) and window, counted per Management Node

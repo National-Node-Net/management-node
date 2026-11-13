@@ -29,7 +29,8 @@ import uk.gov.dbt.ndtp.ia.node.management.utils.cryptography.PemUtil;
 
 /**
  * Certificate status backed by the Vault PKI engine ({@code GET <pki-mount>/cert/:serial}).
- * Results are never cached, so a revocation in Vault is visible on the next request.
+ * This class caches nothing: every call reads Vault. Callers go through {@code CertificateStatusService}, which
+ * caches the answer.
  *
  * <p>Vault does not record why a certificate was revoked. For a revoked certificate the reason comes from
  * {@code organisation_certificate}, where the revocation API records it; the revocation time always comes from

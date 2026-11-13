@@ -42,9 +42,22 @@ public final class RequestRejectionSupport {
     public static void writeError(
             HttpServletResponse response, ObjectMapper objectMapper, int status, String message, String errorId)
             throws IOException {
+        writeError(response, objectMapper, status, null, message, errorId);
+    }
+
+    /** Writes an error that carries a machine-readable {@code code}, e.g. {@code CERTIFICATE_REVOKED}. */
+    public static void writeError(
+            HttpServletResponse response,
+            ObjectMapper objectMapper,
+            int status,
+            String code,
+            String message,
+            String errorId)
+            throws IOException {
         response.setStatus(status);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         ErrorResponse errorResponse = new ErrorResponse(status, message, errorId);
+        errorResponse.setCode(code);
         objectMapper.writeValue(response.getWriter(), errorResponse);
     }
 }
