@@ -201,7 +201,7 @@ Expected:
 
 - `Cert Status: revoked`, with a `Revocation Time` that matches `revocation_time` in Vault.
 - No `Reason`, because Vault does not record a revocation reason. A certificate revoked through `POST /api/v1/certificate/revoke` instead carries the reason given there, e.g. `Revocation Reason: keyCompromise (0x1)`; see [Certificate Revocation API](CERTIFICATE_REVOCATION.md#manual-test).
-- The status changes on the very next request, because status lookups are not cached.
+- The status changes once the cached status of the certificate expires, at most `application.revocation.cache.ttl` (5 minutes by default) after the revocation, because this revocation bypassed the Management Node. Start the application with `REVOCATION_CACHE_TTL=5s` to see it sooner. A certificate revoked through `POST /api/v1/certificate/revoke` changes on the very next request.
 
 ### G. Missing token
 

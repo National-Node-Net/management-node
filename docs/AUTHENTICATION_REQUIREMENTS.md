@@ -195,4 +195,5 @@ curl -k 'https://localhost:8090/api/v1/configuration/producer' \
   - Network Map API requires role: `product_discovery`. **No policy**: it returns the whole topology, and exposes relationships rather than product content.
   - OCSP Certificate Status API requires role: `management-node-access`.
   - Certificate Revocation API requires role: `revoke_certificate`, and only revokes certificates of the organisation in the token's `organisation` claim.
+- Client certificate: a request that presents a revoked client certificate is refused `401` (`CERTIFICATE_REVOKED`) on every API before its token is looked at; see [Certificate Revocation Enforcement](REVOCATION_ENFORCEMENT.md).
 - Swagger/OpenAPI: Use Swagger UI at `/swagger-ui.html` to explore and test with a valid token.

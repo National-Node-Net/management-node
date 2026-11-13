@@ -17,8 +17,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
+import uk.gov.dbt.ndtp.ia.node.management.web.certificate.CertificateRevocationFilter;
 import uk.gov.dbt.ndtp.ia.node.management.web.security.ClientIdMdcFilter;
 import uk.gov.dbt.ndtp.ia.node.management.web.security.KeycloakJwtAuthenticationConverter;
 
@@ -31,6 +34,9 @@ class SecurityConfigTest {
     @Mock
     private ClientIdMdcFilter clientIdMdcFilter;
 
+    @Mock
+    private ObjectProvider<CertificateRevocationFilter> certificateRevocationFilter;
+
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     private HttpSecurity httpSecurity;
 
@@ -38,7 +44,8 @@ class SecurityConfigTest {
 
     @BeforeEach
     void setUp() {
-        securityConfig = new SecurityConfig(keycloakJwtAuthenticationConverter, clientIdMdcFilter);
+        securityConfig =
+                new SecurityConfig(keycloakJwtAuthenticationConverter, clientIdMdcFilter, certificateRevocationFilter);
     }
 
     @Test
@@ -58,5 +65,36 @@ class SecurityConfigTest {
         // Assert
         assertNotNull(result);
         assertEquals(mockFilterChain, result);
+    }
+
+    @Test
+    void securityFilterChain_withoutRevocationFilter_shouldNotAddOne() throws Exception {
+        doReturn(httpSecurity).when(httpSecurity).csrf(any());
+        doReturn(httpSecurity).when(httpSecurity).authorizeHttpRequests(any());
+        doReturn(httpSecurity).when(httpSecurity).oauth2ResourceServer(any());
+        doReturn(httpSecurity).when(httpSecurity).sessionManagement(any());
+        doReturn(httpSecurity).when(httpSecurity).addFilterAfter(any(), any());
+        doReturn(mock(SecurityFilterChain.class)).when(httpSecurity).build();
+
+        securityConfig.securityFilterChain(httpSecurity);
+
+        verify(httpSecurity, never()).addFilterBefore(any(), any());
+    }
+
+    @Test
+    void securityFilterChain_withRevocationFilter_shouldPlaceItBeforeBearerTokenAuthentication() throws Exception {
+        CertificateRevocationFilter revocationFilter = mock(CertificateRevocationFilter.class);
+        when(certificateRevocationFilter.getIfAvailable()).thenReturn(revocationFilter);
+        doReturn(httpSecurity).when(httpSecurity).csrf(any());
+        doReturn(httpSecurity).when(httpSecurity).authorizeHttpRequests(any());
+        doReturn(httpSecurity).when(httpSecurity).oauth2ResourceServer(any());
+        doReturn(httpSecurity).when(httpSecurity).sessionManagement(any());
+        doReturn(httpSecurity).when(httpSecurity).addFilterAfter(any(), any());
+        doReturn(httpSecurity).when(httpSecurity).addFilterBefore(any(), any());
+        doReturn(mock(SecurityFilterChain.class)).when(httpSecurity).build();
+
+        securityConfig.securityFilterChain(httpSecurity);
+
+        verify(httpSecurity).addFilterBefore(revocationFilter, BearerTokenAuthenticationFilter.class);
     }
 }
