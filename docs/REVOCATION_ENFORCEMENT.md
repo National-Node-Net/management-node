@@ -13,7 +13,7 @@ Every request that presents a client certificate is checked for revocation befor
 - The check is a Spring Security filter, `CertificateRevocationFilter`, placed before the bearer token is looked at. A revoked certificate is refused without a token introspection call to Keycloak.
 - The status comes from `CertificateStatusService`, which reads Vault (`GET <pki-mount>/cert/:serial`) and caches the answer by issuer and serial. The cache serves this check only: the [OCSP API](OCSP.md) reads Vault on every request, so an OCSP answer is never older than its `thisUpdate`.
 - A revocation through [`POST /api/v1/certificate/revoke`](CERTIFICATE_REVOCATION.md) evicts the cache entry, so it is enforced on the certificate's next request.
-- The check is controlled by a feature flag, on by default.
+- The check is controlled by a feature flag, on by default, and runs only when clients authenticate with mTLS. See [When enforcement is active](#when-enforcement-is-active).
 
 ```mermaid
 sequenceDiagram
@@ -39,12 +39,58 @@ sequenceDiagram
 
 ---
 
+## When enforcement is active
+
+Revocation is checked only when both hold:
+
+- the feature flag `application.revocation.enforcement.enabled` is `true` (the default), and
+- clients authenticate with mTLS at Tomcat: `server.ssl.enabled` is `true` and `server.ssl.client-auth` is `need` or `want`.
+
+Without mTLS no client presents a certificate, so there is nothing to check.
+
+| `server.ssl.enabled` | `server.ssl.client-auth` | Feature flag | Revocation check | Mode |
+|---|---|---|---|---|
+| `true` | `need` | `true` | every request (all present a certificate) | `MTLS_REQUIRED` |
+| `true` | `want` | `true` | only requests that present a certificate | `MTLS_OPTIONAL` |
+| `true` | `none` or not set | any | not applied (HTTPS only) | `MTLS_DISABLED` |
+| `false` | any | any | not applied (plain HTTP, local development only) | `SSL_DISABLED` |
+| any | any | `false` | not applied (feature flag off) | `DISABLED_BY_FLAG` |
+
+When more than one reason applies, the mode names the first of feature flag, SSL and mTLS.
+
+In every inactive mode `CertificateRevocationFilter` is not registered: no request is checked, and nothing in the request path calls Vault or the status cache. The OCSP API and the revocation API work as usual.
+
+Both settings are read at startup. One line states the mode, at `INFO` when active and at `WARN` when not:
+
+```
+INFO  Certificate revocation enforcement is ACTIVE: mTLS required (server.ssl.client-auth=need): every request presents a client certificate and is checked
+WARN  Certificate revocation enforcement is DISABLED: mTLS disabled (server.ssl.client-auth is none or not set): HTTPS without client certificates, for local development only. Requests are not checked for revoked client certificates
+```
+
+The mode is also on `/actuator/info` (management port), so it can be confirmed per environment:
+
+```json
+{
+  "revocationEnforcement": {
+    "active": false,
+    "mode": "MTLS_DISABLED",
+    "reason": "mTLS disabled (server.ssl.client-auth is none or not set): HTTPS without client certificates, for local development only"
+  }
+}
+```
+
+HTTPS without mTLS, and plain HTTP, are meant for local development only, as the comments in `application.yml` say.
+
+---
+
 ## Which requests are checked
+
+These rows apply while enforcement is active.
 
 | Request | Checked |
 |---|---|
 | Presents a client certificate, any controller | yes |
-| No client certificate: an operator with only a Keycloak token, or mTLS switched off (`server.ssl.enabled=false`) | no; the existing authentication rules apply |
+| No client certificate: an operator with only a Keycloak token, or `client-auth: want` without a certificate | no, and no status is looked up; the existing authentication rules apply |
 | Path under `excluded-paths` | no, and no status is looked up |
 | Certificate issued by an authority listed in `exempt-issuers` | no |
 | Actuator on the management port (no TLS, so no certificate) | no |
@@ -212,7 +258,10 @@ A rise of `revocation.enforcement.rejections{status=unavailable}` means Vault is
 | `service/providers/certificate/status/FederationCaService` (`FederationCaServiceImpl`) | the CA of the PKI mount, and whether it issued a presented certificate |
 | `service/providers/certificate/ocsp/CertificateStatusProvider` | the uncached lookup in Vault, behind the status service; the OCSP responder calls it directly |
 | `config/CertificateStatusCacheConfig` | cache lifetime for Caffeine and Redis, Redis serialisation and key prefix, cache error handling |
-| `config/RevocationEnforcementConfig` | the feature flag; `config/SecurityConfig` places the filter in the chain |
+| `config/RevocationEnforcementConfig` | registers the filter for the feature flag and mTLS, and logs the mode at startup; `config/SecurityConfig` places the filter in the chain |
+| `config/RevocationEnforcementMode` | the mode from the feature flag and `server.ssl.*`, and the reason when inactive |
+| `config/ConditionalOnMtlsEnabled`, `config/MtlsEnabledCondition` | the condition that `server.ssl.client-auth` is `need` or `want` with SSL on |
+| `config/RevocationEnforcementStatus` | the `revocationEnforcement` entry of `/actuator/info` |
 | `config/RevocationProperties` | `application.revocation.*`, validated at startup |
 
 ---
@@ -229,7 +278,12 @@ With the application, Keycloak and an unsealed Vault running as in the [OCSP Loc
 | Revoke that certificate through `POST /api/v1/certificate/revoke`, then call again | `401`, `CERTIFICATE_REVOKED`, at once |
 | Call `/api/v1/certificate/ocsp` with the revoked certificate | not refused by the filter |
 | Stop Vault and call with a certificate not seen before | `503`, `CERTIFICATE_STATUS_UNAVAILABLE`; after Vault is back, the same request passes |
-| Start with `REVOCATION_ENFORCEMENT_ENABLED=false` | `WARN` at startup; the revoked certificate is not refused by the filter |
+| Start with `REVOCATION_ENFORCEMENT_ENABLED=false` | `WARN` at startup naming the feature flag; the revoked certificate is not refused by the filter |
+| `curl http://localhost:8081/actuator/info` with the defaults | `revocationEnforcement.active=true`, mode `MTLS_REQUIRED` |
+| Start with `SERVER_SSL_CLIENT_AUTH=want`, call with the revoked certificate | `401`, `CERTIFICATE_REVOKED` |
+| The same, call without a client certificate | reaches the token check; `revocation.status.lookups` and `cache.gets{cache=certificate-status}` do not change |
+| Start with `SERVER_SSL_CLIENT_AUTH=none` | `WARN` at startup: `DISABLED: mTLS disabled ...`; `/actuator/info` mode `MTLS_DISABLED`; requests reach the token check without a status lookup; revoke and OCSP APIs work |
+| Start with `SERVER_SSL_ENABLED=false` | `WARN` at startup: `DISABLED: SSL disabled ...` |
 | Start with `REVOCATION_CACHE_TTL=11m` | startup fails: `application.revocation.cache.ttl must be greater than 0 and at most PT10M` |
 | Start with `CACHE_TYPE=redis` and a local Redis (`REDIS_SSL_ENABLED=false`) | keys `dsi:cert-status:*` appear in `redis-cli`, and the key of a certificate disappears when it is revoked |
 
@@ -237,7 +291,8 @@ With the application, Keycloak and an unsealed Vault running as in the [OCSP Loc
 
 ## Limitations
 
-- **Gateway-terminated mTLS.** A client certificate forwarded in a header is not read. Where mTLS ends at an ingress, this filter checks nothing.
+- **Gateway-terminated mTLS.** Only mTLS terminated by Tomcat is supported: the mode is read from `server.ssl.*` and a client certificate forwarded in a header is not read. Where mTLS ends at an ingress, Tomcat runs without `client-auth`, so enforcement is inactive. A dedicated setting for that deployment model is planned.
+- **No startup guard for production.** Running without mTLS only logs a `WARN`; the application still starts.
 - **Revocations outside the API** are enforced when the cache entry expires; see [Exposure window](#exposure-window). No reconciliation job evicts them earlier.
 - **Caffeine with several instances** does not share evictions. Use Redis.
 - **The flag is read at startup.** It cannot be toggled at runtime.
