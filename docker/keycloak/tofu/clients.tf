@@ -90,10 +90,10 @@ resource "keycloak_role" "management_node_access" {
 }
 
 # Assigned by hand to the administrators of an organisation; no client gets it from terraform.tfvars.
-resource "keycloak_role" "node_admin" {
+resource "keycloak_role" "revoke_certificate" {
   realm_id    = keycloak_realm.management-node.id
   client_id   = keycloak_openid_client.management_node.id
-  name        = "node_admin"
+  name        = "revoke_certificate"
   description = "Allows revoking the certificates of the organisation in the token's organisation claim"
 }
 
@@ -119,7 +119,7 @@ module "federator_client" {
     keycloak_role.product_view,
     keycloak_role.product_subscribe,
     keycloak_role.management_node_access,
-    keycloak_role.node_admin,
+    keycloak_role.revoke_certificate,
   ]
 
   # The organisation the client acts for. Policy resolves the calling organisation's attributes

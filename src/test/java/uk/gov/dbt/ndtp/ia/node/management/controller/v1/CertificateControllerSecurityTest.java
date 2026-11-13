@@ -179,7 +179,7 @@ class CertificateControllerSecurityTest {
     }
 
     @Test
-    @WithMockUser(authorities = "ROLE_management-node:node_admin")
+    @WithMockUser(authorities = "ROLE_management-node:revoke_certificate")
     void revokeCertificate_withCorrectRole_shouldSucceed() {
         when(revocationProvider.revoke(REVOKE_REQUEST, TEST_PRINCIPAL))
                 .thenReturn(RevokeCertificateResponseDTO.builder()
@@ -205,7 +205,7 @@ class CertificateControllerSecurityTest {
 
     /** A realm role of the same name does not count: the role is a client role on management-node. */
     @Test
-    @WithMockUser(authorities = "ROLE_node_admin")
+    @WithMockUser(authorities = "ROLE_revoke_certificate")
     void revokeCertificate_withRealmRoleOfTheSameName_shouldThrowAccessDenied() {
         assertThrows(
                 AuthorizationDeniedException.class, () -> controller.revokeCertificate(REVOKE_REQUEST, TEST_PRINCIPAL));

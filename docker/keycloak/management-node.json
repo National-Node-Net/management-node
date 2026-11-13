@@ -369,7 +369,7 @@
                 },
                 {
                     "id": "a1b2c3d4-6666-4000-a000-000000000006",
-                    "name": "node_admin",
+                    "name": "revoke_certificate",
                     "description": "Revoke the certificates of the organisation in the token's organisation claim",
                     "composite": false,
                     "clientRole": true,
