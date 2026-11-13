@@ -56,7 +56,7 @@ class CertificateRevocationAuditFilterTest {
                 .setAuthentication(new TestingAuthenticationToken(
                         new EnhancedPrincipal("admin-a", "FEDERATOR_ENV", "ENV"),
                         null,
-                        List.of(new SimpleGrantedAuthority("ROLE_management-node:organisation_administrator"))));
+                        List.of(new SimpleGrantedAuthority("ROLE_management-node:node_admin"))));
     }
 
     @AfterEach
