@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
@@ -49,6 +51,9 @@ import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.Certifi
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.RevocationReason;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.OrganisationCertificateService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.OrganisationService;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.status.CertificateIssuer;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.status.CertificateStatusService;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.status.FederationCaService;
 
 /** The acceptance criteria of the revocation API, at the level where they are decided. */
 @ExtendWith(MockitoExtension.class)
@@ -61,6 +66,7 @@ class CertificateRevocationProviderImplTest {
     private static final long ORG_B = 2L;
     private static final Instant REVOKED_AT = Instant.parse("2026-10-12T13:15:02Z");
     private static final EnhancedPrincipal ADMIN_OF_A = new EnhancedPrincipal("admin-a", "FEDERATOR_ENV", "ENV");
+    private static final CertificateIssuer FEDERATION_CA = new CertificateIssuer("abd01de5", null);
 
     @Mock
     private PkiBackend pkiBackend;
@@ -74,13 +80,19 @@ class CertificateRevocationProviderImplTest {
     @Mock
     private RevocationRateLimiter rateLimiter;
 
+    @Mock
+    private CertificateStatusService statusService;
+
+    @Mock
+    private FederationCaService federationCa;
+
     private CertificateRevocationProviderImpl provider;
     private ListAppender<ILoggingEvent> logs;
 
     @BeforeEach
     void setUp() {
-        provider =
-                new CertificateRevocationProviderImpl(pkiBackend, certificateService, organisationService, rateLimiter);
+        provider = new CertificateRevocationProviderImpl(
+                pkiBackend, certificateService, organisationService, rateLimiter, statusService, federationCa);
         logs = new ListAppender<>();
         logs.start();
         logger().addAppender(logs);
@@ -358,6 +370,66 @@ class CertificateRevocationProviderImplTest {
                 CertificateRevocationRejectedException.class, () -> provider.revoke(request(VAULT_SERIAL), ADMIN_OF_A));
 
         verifyNoInteractions(certificateService, organisationService, pkiBackend);
+    }
+
+    @Test
+    void revoke_success_shouldEvictTheCachedStatusAfterVaultAndAgainAfterTheRecord() {
+        certificateExists(certificateOf(ORG_A));
+        callerActsFor("ENV", ORG_A);
+        when(federationCa.current()).thenReturn(FEDERATION_CA);
+        when(pkiBackend.revokeCertificate(SERIAL)).thenReturn(REVOKED_AT);
+        when(certificateService.recordRevocation(any(), any(), any(), any(), any()))
+                .thenReturn(true);
+
+        provider.revoke(request(VAULT_SERIAL), ADMIN_OF_A);
+
+        InOrder order = inOrder(pkiBackend, statusService, certificateService);
+        order.verify(pkiBackend).revokeCertificate(SERIAL);
+        order.verify(statusService).evict(FEDERATION_CA, SERIAL);
+        order.verify(certificateService).recordRevocation(any(), any(), any(), any(), any());
+        order.verify(statusService).evict(FEDERATION_CA, SERIAL);
+    }
+
+    @Test
+    void revoke_databaseFailsAfterVault_shouldStillHaveEvictedTheCachedStatus() {
+        certificateExists(certificateOf(ORG_A));
+        callerActsFor("ENV", ORG_A);
+        when(federationCa.current()).thenReturn(FEDERATION_CA);
+        when(pkiBackend.revokeCertificate(SERIAL)).thenReturn(REVOKED_AT);
+        when(certificateService.recordRevocation(any(), any(), any(), any(), any()))
+                .thenThrow(new DataAccessResourceFailureException("database down"));
+
+        assertThrows(
+                DataAccessResourceFailureException.class, () -> provider.revoke(request(VAULT_SERIAL), ADMIN_OF_A));
+
+        verify(statusService).evict(FEDERATION_CA, SERIAL);
+    }
+
+    @Test
+    void revoke_refusedOrFailedBeforeVaultRevoked_shouldNotTouchTheCache() {
+        certificateExists(certificateOf(ORG_A));
+        callerActsFor("ENV", ORG_A);
+        when(pkiBackend.revokeCertificate(SERIAL)).thenThrow(new PkiUnavailableException("down", null));
+
+        assertThrows(PkiUnavailableException.class, () -> provider.revoke(request(VAULT_SERIAL), ADMIN_OF_A));
+
+        verifyNoInteractions(statusService, federationCa);
+    }
+
+    @Test
+    void revoke_evictionFails_shouldStillRecordAndReportTheRevocation() {
+        certificateExists(certificateOf(ORG_A));
+        callerActsFor("ENV", ORG_A);
+        when(federationCa.current()).thenThrow(new IllegalStateException("cache is down"));
+        when(pkiBackend.revokeCertificate(SERIAL)).thenReturn(REVOKED_AT);
+        when(certificateService.recordRevocation(any(), any(), any(), any(), any()))
+                .thenReturn(true);
+
+        RevokeCertificateResponseDTO response = provider.revoke(request(VAULT_SERIAL), ADMIN_OF_A);
+
+        assertEquals(RevokeCertificateResponseDTO.STATUS_REVOKED, response.getStatus());
+        assertThat(logs.list)
+                .anySatisfy(event -> assertThat(event.getFormattedMessage()).contains("could not be evicted"));
     }
 
     @Test

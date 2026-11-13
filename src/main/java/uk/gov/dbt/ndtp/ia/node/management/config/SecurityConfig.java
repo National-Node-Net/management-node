@@ -6,6 +6,7 @@
 
 package uk.gov.dbt.ndtp.ia.node.management.config;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -15,6 +16,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
+import uk.gov.dbt.ndtp.ia.node.management.web.certificate.CertificateRevocationFilter;
 import uk.gov.dbt.ndtp.ia.node.management.web.security.ClientIdMdcFilter;
 import uk.gov.dbt.ndtp.ia.node.management.web.security.KeycloakJwtAuthenticationConverter;
 
@@ -25,12 +27,15 @@ public class SecurityConfig {
 
     private final KeycloakJwtAuthenticationConverter keycloakJwtAuthenticationConverter;
     private final ClientIdMdcFilter clientIdMdcFilter;
+    private final ObjectProvider<CertificateRevocationFilter> certificateRevocationFilter;
 
     public SecurityConfig(
             KeycloakJwtAuthenticationConverter keycloakJwtAuthenticationConverter,
-            ClientIdMdcFilter clientIdMdcFilter) {
+            ClientIdMdcFilter clientIdMdcFilter,
+            ObjectProvider<CertificateRevocationFilter> certificateRevocationFilter) {
         this.keycloakJwtAuthenticationConverter = keycloakJwtAuthenticationConverter;
         this.clientIdMdcFilter = clientIdMdcFilter;
+        this.certificateRevocationFilter = certificateRevocationFilter;
     }
 
     @Bean
@@ -47,6 +52,14 @@ public class SecurityConfig {
                 // Add ClientIdMdcFilter after the BearerTokenAuthenticationFilter
                 // This ensures the Authentication object is already set in the SecurityContext
                 .addFilterAfter(clientIdMdcFilter, BearerTokenAuthenticationFilter.class);
+
+        // Present only while application.revocation.enforcement.enabled is true. Before the token is looked at,
+        // so a revoked certificate is refused without a token introspection call to Keycloak, and also on the
+        // paths that need no token.
+        CertificateRevocationFilter revocationFilter = certificateRevocationFilter.getIfAvailable();
+        if (revocationFilter != null) {
+            http.addFilterBefore(revocationFilter, BearerTokenAuthenticationFilter.class);
+        }
 
         return http.build();
     }

@@ -11,6 +11,7 @@
 An organisation administrator revokes one of their organisation's certificates when a consumer or producer is compromised or decommissioned. From then on:
 
 - Vault reports the certificate as revoked, and the Management Node [OCSP API](OCSP.md) answers `revoked` with Vault's revocation time and the reason given here. Nodes enforce it within the OCSP response validity, at most 10 minutes.
+- Every Management Node API refuses requests that present the certificate, from its next request on: `401` with code `CERTIFICATE_REVOKED`. The revocation evicts the certificate from the status cache, so this does not wait for the cache to expire. See [Certificate Revocation Enforcement](REVOCATION_ENFORCEMENT.md).
 - The organisation's `organisation_certificate` record says who revoked it, when and why. `CertificateValidationInterceptor` refuses that organisation's calls to `/api/v1/configuration/**`, and the configuration APIs leave the organisation out.
 - `POST /api/v1/certificate/csr/sign` refuses to renew it. A new certificate needs a new bootstrap (`POST /api/v1/certificate/bootstrap`), which clears the revocation from the record. The revoked certificate stays revoked in Vault.
 
@@ -102,8 +103,9 @@ For a caller without the role, the body is validated before the role is checked,
 4. The certificate's organisation must be the caller's, otherwise `403`.
 5. The record must not be revoked yet, otherwise `409`.
 6. Revocation in Vault: `POST <pki-mount>/revoke` with `serial_number`.
-7. Database, in one transaction: `revoked_at`, `revoked_by`, `revocation_reason`, `revocation_message`, and a `REVOKED` event in `certificate_events`. The update only applies while the record still holds the serial and is not revoked, so a concurrent request cannot overwrite it; the loser gets `409`.
-8. Audit log line and response.
+7. The certificate's entry in the status cache is evicted, here and again after step 8, so the revocation is enforced on the next request even if step 8 fails. A failed eviction is logged and does not fail the request.
+8. Database, in one transaction: `revoked_at`, `revoked_by`, `revocation_reason`, `revocation_message`, and a `REVOKED` event in `certificate_events`. The update only applies while the record still holds the serial and is not revoked, so a concurrent request cannot overwrite it; the loser gets `409`.
+9. Audit log line and response.
 
 Only certificates held in `organisation_certificate` can be revoked. CA, intermediate and OCSP signer certificates are never held there, so their serials get `404`.
 
@@ -272,5 +274,5 @@ Locally the Management Node usually logs in to Vault with an administrator token
 
 - **Current certificate only.** `organisation_certificate` holds one certificate per organisation. After a renewal the previous certificate is still valid until it expires, but its serial is no longer in the record, so this API answers `404` for it.
 - **Reason after re-issue.** A bootstrap clears the revocation from the record. Vault still reports the old certificate as revoked, but OCSP then answers without a reason.
-- **Revocations outside this API.** A certificate revoked directly in Vault is revoked for OCSP, but its record is not updated. No reconciliation job does that yet.
+- **Revocations outside this API.** A certificate revoked directly in Vault is revoked for OCSP and refused by the Management Node only once its cached status expires, at most `application.revocation.cache.ttl` later, and its record is not updated. No reconciliation job does that yet.
 - **Rate limit per instance**, see [Configuration](#configuration).

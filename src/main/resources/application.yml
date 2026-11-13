@@ -53,6 +53,24 @@ spring:
         delivery.timeout.ms: ${KAFKA_DELIVERY_TIMEOUT_MS:120000} # how long a send is retried before it is reported as failed
     consumer:
       group-id: management-node-group
+  autoconfigure:
+    exclude:
+      # Redis is set up by CertificateStatusCacheConfig, and only when it is the cache (CACHE_TYPE=redis)
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+  cache:
+    type: ${CACHE_TYPE:caffeine} # caffeine (one instance) | redis (several instances)
+    cache-names: certificate-status
+    redis:
+      enable-statistics: true
+  data:
+    redis: # only used when CACHE_TYPE=redis
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:true}
+      repositories:
+        enabled: false
 
 # Server configuration
 server:
@@ -93,6 +111,16 @@ application:
       max-attempts: ${REVOCATION_VAULT_RETRY_MAX_ATTEMPTS:3} # attempts in total when Vault is unreachable or answers 5xx/429
       initial-backoff: PT0.2S # doubled before each further retry
       max-backoff: PT2S
+    # Revocation check on every request with a client certificate. Reference: docs/REVOCATION_ENFORCEMENT.md
+    enforcement:
+      enabled: ${REVOCATION_ENFORCEMENT_ENABLED:true} # false leaves the filter unregistered; a WARN is logged at startup
+      fail-closed: true # status not available (Vault unreachable, nothing cached) answers 503; false lets the request through
+      excluded-paths: # never checked
+        - /api/v1/certificate/ocsp # a node must be able to ask for its own status
+        - /actuator/health
+      exempt-issuers: [] # issuer DNs outside the federation CA whose certificates are let through unchecked
+    cache:
+      ttl: ${REVOCATION_CACHE_TTL:PT5M} # how long a certificate status is reused; must be > 0 and <= PT10M
   client:
     key-store: keystore.jks # path to MTLS client keystore
     key-store-password: ${CERTPASSWORD:} # MTLS client keystore password

@@ -925,6 +925,7 @@ This setup implements a zero-trust security model with:
 - JWT-based authentication and authorization via Keycloak
 - HTTPS for all endpoints
 - Client certificate authentication
+- Revocation enforcement: a request presenting a revoked client certificate is refused by every API. The check is on by default (`REVOCATION_ENFORCEMENT_ENABLED`), caches certificate statuses in memory or in Redis (`CACHE_TYPE`, `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`, `REDIS_SSL_ENABLED`) for `REVOCATION_CACHE_TTL` (at most 10 minutes), and refuses client certificates that the Vault PKI mount did not issue unless their issuer is exempt. A local `client.crt` signed by the development root CA is therefore refused until its issuer is listed in `application.revocation.enforcement.exempt-issuers`. See [Certificate Revocation Enforcement](docs/REVOCATION_ENFORCEMENT.md).
 
 For production deployments, consider:
 - Using properly signed certificates from a trusted CA
