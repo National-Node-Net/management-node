@@ -38,7 +38,7 @@ sequenceDiagram
 | Method / path | `POST /api/v1/certificate/revoke` |
 | Request | `Content-Type: application/json` |
 | Authentication | mTLS + JWT bearer token, like every Management Node API |
-| Authorization | client role `organisation_administrator` on `management-node`, i.e. `hasAuthority('ROLE_management-node:organisation_administrator')` |
+| Authorization | client role `node_admin` on `management-node`, i.e. `hasAuthority('ROLE_management-node:node_admin')` |
 | Organisation | the token's `organisation` claim, matched against `organisation.organisation_key`. Never taken from the request. |
 
 ### Request
@@ -81,7 +81,7 @@ Errors use the standard `ErrorResponse` (`status`, `message`, `errorId`).
 |---|---|---|
 | `400` | `serialNumber` missing or not in the format above, `reason` missing or unknown, `comment` too long, or a body that is not JSON. The message names the field. | nothing |
 | `401` | token missing, expired or invalid | nothing |
-| `403` | caller lacks `organisation_administrator`, the token has no known organisation, or the certificate belongs to another organisation | nothing |
+| `403` | caller lacks `node_admin`, the token has no known organisation, or the certificate belongs to another organisation | nothing |
 | `404` | no `organisation_certificate` record holds the serial. Vault is not called. | nothing |
 | `409` | the certificate is already revoked: the body also carries the original `revokedAt` and `revokedBy` | nothing |
 | `409` | the certificate has expired: Vault records no revocation for an expired certificate, which every client rejects anyway | nothing |
@@ -181,12 +181,12 @@ The rate limit is counted in memory by each instance, so with several instances 
 
 ## Roles
 
-`organisation_administrator` is a client role on `management-node`, defined in `docker/keycloak/management-node.json` and `docker/keycloak/tofu/clients.tf`. No client gets it from configuration: assign it by hand.
+`node_admin` is a client role on `management-node`, defined in `docker/keycloak/management-node.json` and `docker/keycloak/tofu/clients.tf`. No client gets it from configuration: assign it by hand.
 
 The token must also carry the organisation's key in its `organisation` claim. The federator clients created by `docker/keycloak/tofu` get it from a hardcoded claim mapper, so for a local test, give the role to such a client's service account:
 
 1. Keycloak admin console → realm `mng-node` → **Clients** → `FEDERATOR_ENV` → **Service accounts roles**.
-2. **Assign role** → filter by clients → `management-node` `organisation_administrator`.
+2. **Assign role** → filter by clients → `management-node` `node_admin`.
 
 That client's tokens then carry `organisation=ENV` and the role, and can revoke certificates of organisation `ENV` only. Request a new token after assigning the role.
 

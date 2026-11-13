@@ -217,13 +217,13 @@ public class CertificateController {
      * @return the revocation recorded
      */
     @PostMapping("/revoke")
-    @PreAuthorize("hasAuthority('ROLE_management-node:organisation_administrator')")
+    @PreAuthorize("hasAuthority('ROLE_management-node:node_admin')")
     @Operation(
             summary = "Revoke a certificate",
             description =
                     "Revokes a certificate of the caller's organisation in Vault and records who revoked it, when and"
                             + " why. The OCSP endpoint reports it as revoked from then on. Requires the"
-                            + " ROLE_management-node:organisation_administrator authority.",
+                            + " ROLE_management-node:node_admin authority.",
             security = {@SecurityRequirement(name = "bearerAuth")})
     @ApiResponse(
             responseCode = "200",
