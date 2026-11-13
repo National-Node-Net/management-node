@@ -253,6 +253,15 @@ class CertificateRevocationFilterTest {
         verifyNoInteractions(statusService, federationCa);
     }
 
+    /** The check itself, reached without shouldNotFilter, must not fail on a request without a certificate. */
+    @Test
+    void filterBodyWithoutClientCertificate_shouldLetTheRequestThrough() throws Exception {
+        filter().doFilterInternal(request(CONFIGURATION_PATH, null), response, chain);
+
+        assertPassed();
+        verifyNoInteractions(statusService, federationCa);
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"/api/v1/certificate/ocsp", "/actuator/health", "/actuator/health/liveness"})
     void excludedPath_shouldNotBeCheckedEvenWithARevokedCertificate(String path) throws Exception {

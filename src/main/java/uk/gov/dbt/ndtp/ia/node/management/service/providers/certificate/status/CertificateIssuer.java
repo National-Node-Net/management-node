@@ -14,21 +14,26 @@ import org.bouncycastle.cert.X509CertificateHolder;
 /**
  * A certificate authority whose certificates have a status, with the hash that names it in the status cache.
  *
- * @param keyHash     lowercase hex SHA-1 of the authority's public key, the {@code issuerKeyHash} of an OCSP
- *                    request hashed with SHA-1. Always SHA-1, whatever hash a caller used, so one certificate has
- *                    one cache entry.
+ * @param keyHash     lowercase hex SHA-256 of the authority's public key. Computed from the authority's own
+ *                    certificate, never taken from a request, so one certificate has one cache entry whichever hash
+ *                    an OCSP request used.
  * @param certificate the authority's certificate
  */
 public record CertificateIssuer(String keyHash, X509CertificateHolder certificate) {
+
+    private static final String KEY_HASH_ALGORITHM = "SHA-256";
 
     public static CertificateIssuer of(X509CertificateHolder certificate) {
         try {
             byte[] key =
                     certificate.getSubjectPublicKeyInfo().getPublicKeyData().getBytes();
             return new CertificateIssuer(
-                    HexFormat.of().formatHex(MessageDigest.getInstance("SHA-1").digest(key)), certificate);
+                    HexFormat.of()
+                            .formatHex(MessageDigest.getInstance(KEY_HASH_ALGORITHM)
+                                    .digest(key)),
+                    certificate);
         } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-1 is not available", e);
+            throw new IllegalStateException(KEY_HASH_ALGORITHM + " is not available", e);
         }
     }
 }
