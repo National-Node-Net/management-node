@@ -7,6 +7,8 @@
 package uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.ocsp;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.ocsp.OcspTestPki.*;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -40,8 +42,14 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.vault.VaultContainer;
 import uk.gov.dbt.ndtp.ia.node.management.config.OcspProperties;
+import uk.gov.dbt.ndtp.ia.node.management.exception.PkiCertificateExpiredException;
+import uk.gov.dbt.ndtp.ia.node.management.exception.PkiCertificateNotFoundException;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.OcspResponseDTO;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.RevocationReason;
+import uk.gov.dbt.ndtp.ia.node.management.service.data.OrganisationCertificateService;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.RevocationTestProperties;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.VaultPkiService;
+import uk.gov.dbt.ndtp.ia.node.management.utils.cryptography.CertificateSerials;
 import uk.gov.dbt.ndtp.ia.node.management.utils.cryptography.PemUtil;
 
 /**
@@ -67,6 +75,7 @@ class OcspVaultIntegrationTest {
 
     private static VaultTemplate vault;
     private static VaultPkiService pkiService;
+    private static OrganisationCertificateService certificateService;
     private static OcspProperties properties;
     private static OcspSignerService signerService;
     private static OcspResponderService responder;
@@ -77,7 +86,9 @@ class OcspVaultIntegrationTest {
         VaultEndpoint endpoint = VaultEndpoint.create(VAULT.getHost(), VAULT.getFirstMappedPort());
         endpoint.setScheme("http");
         vault = new VaultTemplate(endpoint, new TokenAuthentication(TOKEN));
-        pkiService = new VaultPkiService(vault, PKI_MOUNT, "default-role", "24h");
+        pkiService = new VaultPkiService(vault, PKI_MOUNT, "default-role", "24h", RevocationTestProperties.fast());
+        // The revocation reason comes from the database; no reason is recorded unless a test says so.
+        certificateService = mock(OrganisationCertificateService.class);
         ca = new X509CertificateHolder(
                 PemUtil.parseCertificate(pkiService.getIntermediateCertificate().getCertificate())
                         .getEncoded());
@@ -95,22 +106,27 @@ class OcspVaultIntegrationTest {
         assertTrue(signerService.currentSigner().isPresent(), "OCSP signer should be issued by Vault");
 
         responder = new OcspResponderServiceImpl(
-                new VaultCertificateStatusProvider(vault, PKI_MOUNT, meterRegistry),
+                new VaultCertificateStatusProvider(vault, certificateService, PKI_MOUNT, meterRegistry),
                 signerService,
                 properties,
                 meterRegistry);
     }
 
     private static BigInteger issueLeaf(String commonName) {
-        String serial = pkiService
-                .signCsr(csrPem("CN=" + commonName, LEAF_KEYS), Optional.empty(), Optional.of("1h"))
-                .getSerialNumber();
-        return new BigInteger(serial.replace(":", ""), 16);
+        return issueLeaf(commonName, "1h");
     }
 
+    private static BigInteger issueLeaf(String commonName, String ttl) {
+        String serial = pkiService
+                .signCsr(csrPem("CN=" + commonName, LEAF_KEYS), Optional.empty(), Optional.of(ttl))
+                .getSerialNumber();
+        return CertificateSerials.parse(serial);
+    }
+
+    /** Revokes directly in Vault, as an administrator would, bypassing the Management Node. */
     private static Instant revoke(BigInteger serial) {
-        VaultResponse response = vault.write(
-                PKI_MOUNT + "/revoke", Map.of("serial_number", VaultCertificateStatusProvider.toVaultSerial(serial)));
+        VaultResponse response =
+                vault.write(PKI_MOUNT + "/revoke", Map.of("serial_number", CertificateSerials.toVault(serial)));
         return Instant.ofEpochSecond(((Number) response.getData().get("revocation_time")).longValue());
     }
 
@@ -201,7 +217,8 @@ class OcspVaultIntegrationTest {
         closed.setScheme("http");
         VaultTemplate unreachable = new VaultTemplate(closed, new TokenAuthentication(TOKEN));
         OcspResponderService unavailableResponder = new OcspResponderServiceImpl(
-                new VaultCertificateStatusProvider(unreachable, PKI_MOUNT, new SimpleMeterRegistry()),
+                new VaultCertificateStatusProvider(
+                        unreachable, certificateService, PKI_MOUNT, new SimpleMeterRegistry()),
                 signerService,
                 properties,
                 new SimpleMeterRegistry());
@@ -210,5 +227,54 @@ class OcspVaultIntegrationTest {
                 request(null, certId(ca, issueLeaf("unreachable.federation.test"))), "127.0.0.1");
 
         assertEquals(OCSPRespBuilder.TRY_LATER, new OCSPResp(result.getEncoded()).getStatus());
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // Revocation through VaultPkiService, as the revocation API does it
+    // ---------------------------------------------------------------------------------------
+
+    /** Acceptance criterion "OCSP reflects revocation": same revocation time and reason as the API reported. */
+    @Test
+    void revokeCertificate_shouldBeReportedByOcspWithTheSameTimeAndTheRecordedReason() throws Exception {
+        BigInteger serial = issueLeaf("api-revoked.federation.test");
+        when(certificateService.findRevocationReason(CertificateSerials.toStored(serial)))
+                .thenReturn(Optional.of(RevocationReason.KEY_COMPROMISE));
+
+        Instant revokedAt = pkiService.revokeCertificate(serial);
+
+        RevokedStatus status = assertInstanceOf(
+                RevokedStatus.class, query(null, serial).getResponses()[0].getCertStatus());
+        assertEquals(revokedAt, status.getRevocationTime().toInstant());
+        assertTrue(status.hasRevocationReason());
+        assertEquals(RevocationReason.KEY_COMPROMISE.crlReasonCode(), status.getRevocationReason());
+    }
+
+    /** A retry after a failure must not move the revocation time. */
+    @Test
+    void revokeCertificate_repeated_shouldReturnTheOriginalTime() throws Exception {
+        BigInteger serial = issueLeaf("api-repeated.federation.test");
+
+        Instant first = pkiService.revokeCertificate(serial);
+        Thread.sleep(1100);
+        Instant second = pkiService.revokeCertificate(serial);
+
+        assertEquals(first, second);
+    }
+
+    @Test
+    void revokeCertificate_unknownSerial_shouldThrowNotFound() {
+        BigInteger serial = new BigInteger(128, new SecureRandom());
+
+        assertThrows(PkiCertificateNotFoundException.class, () -> pkiService.revokeCertificate(serial));
+    }
+
+    @Test
+    void revokeCertificate_expiredCertificate_shouldThrowExpiredAndRecordNothing() throws Exception {
+        BigInteger serial = issueLeaf("api-expired.federation.test", "2s");
+        Thread.sleep(4000);
+
+        assertThrows(PkiCertificateExpiredException.class, () -> pkiService.revokeCertificate(serial));
+        VaultResponse cert = vault.read(PKI_MOUNT + "/cert/" + CertificateSerials.toVault(serial));
+        assertEquals(0L, ((Number) cert.getData().get("revocation_time")).longValue());
     }
 }

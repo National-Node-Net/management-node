@@ -123,7 +123,7 @@ Run the scenarios in order:
 | C | Several certificates in one request | 200 / `max-age≈300` | one signature; `good` + `unknown` in request order |
 | D | More than 10 entries | 200 / `no-store` | `malformedRequest`, unsigned |
 | E | Body that is not DER | 200 / `no-store` | `malformedRequest`, unsigned |
-| F | Revocation in Vault | 200 / `max-age≈300` | `revoked` with Vault's time, no `Reason` |
+| F | Revocation in Vault | 200 / `max-age≈300` | `revoked` with Vault's time, no `Reason` (a revocation through the API carries one) |
 | G | Missing token | 401 | JSON `ErrorResponse`; the OCSP layer does not run |
 | H | Vault unavailable | 200 / `no-store` | `tryLater`, never `good` |
 
@@ -200,7 +200,7 @@ ocsp && verify
 Expected:
 
 - `Cert Status: revoked`, with a `Revocation Time` that matches `revocation_time` in Vault.
-- No `Reason`, because Vault does not record a revocation reason.
+- No `Reason`, because Vault does not record a revocation reason. A certificate revoked through `POST /api/v1/certificate/revoke` instead carries the reason given there, e.g. `Revocation Reason: keyCompromise (0x1)`; see [Certificate Revocation API](CERTIFICATE_REVOCATION.md#manual-test).
 - The status changes on the very next request, because status lookups are not cached.
 
 ### G. Missing token

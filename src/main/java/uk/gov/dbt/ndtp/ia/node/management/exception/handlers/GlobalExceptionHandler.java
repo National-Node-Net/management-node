@@ -40,10 +40,15 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.AccessRejectedException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.AuthenticationProcessingException;
+import uk.gov.dbt.ndtp.ia.node.management.exception.CertificateAlreadyRevokedException;
+import uk.gov.dbt.ndtp.ia.node.management.exception.CertificateAlreadyRevokedResponse;
+import uk.gov.dbt.ndtp.ia.node.management.exception.CertificateRevocationRejectedException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.CertificateSigningException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.ErrorResponse;
 import uk.gov.dbt.ndtp.ia.node.management.exception.InvalidSearchCriteriaException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.PkiException;
+import uk.gov.dbt.ndtp.ia.node.management.exception.PkiRejectedException;
+import uk.gov.dbt.ndtp.ia.node.management.exception.PkiUnavailableException;
 import uk.gov.dbt.ndtp.ia.node.management.exception.SubscriptionRejectedException;
 
 /**
@@ -190,6 +195,98 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         log.warn("Certificate signing rejected, error_id={}, path={}", errorId, request.getDescription(false), ex);
 
         return respond(HttpStatus.FORBIDDEN, ex.getMessage(), errorId);
+    }
+
+    /**
+     * A revocation that cannot be carried out for a reason the caller can act on. The status follows the reason:
+     * an unknown serial is a 404, an expired certificate a conflict, too many requests a 429 with
+     * {@code Retry-After}.
+     *
+     * @param ex the rejection, carrying the reason and the message for the caller
+     * @param request the current request
+     * @return the status matching the reason, with that message and an error id
+     */
+    @ExceptionHandler(CertificateRevocationRejectedException.class)
+    public ResponseEntity<ErrorResponse> handleCertificateRevocationRejectedException(
+            CertificateRevocationRejectedException ex, WebRequest request) {
+
+        String errorId = generateErrorId();
+        HttpStatus status =
+                switch (ex.getReason()) {
+                    case CERTIFICATE_NOT_FOUND -> HttpStatus.NOT_FOUND;
+                    case CERTIFICATE_EXPIRED -> HttpStatus.CONFLICT;
+                    case RATE_LIMITED -> HttpStatus.TOO_MANY_REQUESTS;
+                };
+        log.warn(
+                "Certificate revocation rejected reason={}, status={}, error_id={}, path={}",
+                ex.getReason(),
+                status.value(),
+                errorId,
+                request.getDescription(false));
+
+        ResponseEntity.BodyBuilder response = ResponseEntity.status(status);
+        if (ex.getRetryAfter() != null) {
+            long seconds = Math.max(1, (ex.getRetryAfter().toMillis() + 999) / 1000);
+            response.header(HttpHeaders.RETRY_AFTER, Long.toString(seconds));
+        }
+        return response.body(new ErrorResponse(status.value(), ex.getMessage(), errorId));
+    }
+
+    /**
+     * A revocation of a certificate that is already revoked. Answered with the original revocation, which is left
+     * unchanged.
+     *
+     * @param ex the rejection, carrying the original revocation time and administrator
+     * @param request the current request
+     * @return a 409 with the original {@code revokedAt} and {@code revokedBy}
+     */
+    @ExceptionHandler(CertificateAlreadyRevokedException.class)
+    public ResponseEntity<ErrorResponse> handleCertificateAlreadyRevokedException(
+            CertificateAlreadyRevokedException ex, WebRequest request) {
+
+        String errorId = generateErrorId();
+        log.warn("Certificate already revoked, error_id={}, path={}", errorId, request.getDescription(false));
+
+        return new ResponseEntity<>(
+                new CertificateAlreadyRevokedResponse(
+                        HttpStatus.CONFLICT.value(), ex.getMessage(), errorId, ex.getRevokedAt(), ex.getRevokedBy()),
+                HttpStatus.CONFLICT);
+    }
+
+    /**
+     * Vault refused a request it could process: a serial it does not know, or a permission the Management Node
+     * lacks. Vault's own message stays in the log.
+     *
+     * @param ex the refusal
+     * @param request the current request
+     * @return a 502
+     */
+    @ExceptionHandler(PkiRejectedException.class)
+    public ResponseEntity<ErrorResponse> handlePkiRejectedException(PkiRejectedException ex, WebRequest request) {
+
+        String errorId = generateErrorId();
+        log.error("PKI backend rejected the request, error_id={}, path={}", errorId, request.getDescription(false), ex);
+
+        return respond(HttpStatus.BAD_GATEWAY, "The certificate authority rejected the request", errorId);
+    }
+
+    /**
+     * Vault could not be reached, even after retries. Nothing was changed.
+     *
+     * @param ex the failure
+     * @param request the current request
+     * @return a 503
+     */
+    @ExceptionHandler(PkiUnavailableException.class)
+    public ResponseEntity<ErrorResponse> handlePkiUnavailableException(PkiUnavailableException ex, WebRequest request) {
+
+        String errorId = generateErrorId();
+        log.error("PKI backend unavailable, error_id={}, path={}", errorId, request.getDescription(false), ex);
+
+        return respond(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "The certificate authority is unavailable; nothing was changed, try again later",
+                errorId);
     }
 
     @ExceptionHandler(PkiException.class)

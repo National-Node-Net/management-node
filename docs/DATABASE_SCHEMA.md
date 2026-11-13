@@ -114,7 +114,10 @@ erDiagram
     TIMESTAMP requested_at
     TIMESTAMP issued_at
     TIMESTAMP expires_at
-    TIMESTAMP revoked_at
+    TIMESTAMPTZ revoked_at
+    VARCHAR revoked_by
+    VARCHAR revocation_reason
+    TEXT revocation_message
   }
   CERTIFICATE_EVENTS {
     BIGSERIAL id PK
@@ -316,21 +319,27 @@ Columns:
 - `id` BIGSERIAL, primary key
 - `organisation_id` BIGINT, not null, unique, foreign key → `organisation(id)`
 - `subject_dn` VARCHAR(500), nullable: X.500 distinguished name of the certificate subject
-- `serial_number` VARCHAR(150), nullable: certificate serial number
+- `serial_number` VARCHAR(150), nullable: serial number of the current certificate, as lowercase hex without separators or leading zeros (e.g. `39dd2e90`)
 - `is_renewable` BOOLEAN, not null, default FALSE: whether automatic renewal is enabled
 - `renewal_ttl` BIGINT, nullable: renewal time-to-live value
 - `type` VARCHAR(50), not null: certificate type (e.g., `MANUAL`, `BOOTSTRAP`, `AUTOMATED`)
 - `requested_at` TIMESTAMP, nullable: when the certificate was requested
 - `issued_at` TIMESTAMP, nullable: when the certificate was issued
 - `expires_at` TIMESTAMP, nullable: certificate expiry time
-- `revoked_at` TIMESTAMP, nullable: when the certificate was revoked (if applicable)
+- `revoked_at` TIMESTAMP WITH TIME ZONE, nullable: revocation time returned by Vault (`revocation_time`); NULL while the certificate is active
+- `revoked_by` VARCHAR(255), nullable: Keycloak user id (`sub` claim) of the administrator who revoked the certificate
+- `revocation_reason` VARCHAR(50), nullable: reason given for the revocation (`UNSPECIFIED`, `KEY_COMPROMISE`, `AFFILIATION_CHANGED`, `SUPERSEDED`, `CESSATION_OF_OPERATION`); returned in OCSP responses
+- `revocation_message` TEXT, nullable: free-text comment given for the revocation
 
 Constraints:
 - UNIQUE on `organisation_id`: one certificate record per organisation
 - Index on `organisation_id`
+- Index on `serial_number` (`idx_organisation_certificate__serial_number`)
 
 Usage:
 - Records the lifecycle state of each organisation's certificate. The `type` field tracks whether the certificate was manually provisioned, issued via the bootstrap flow, or issued via automated renewal.
+- The four revocation columns are set by `POST /api/v1/certificate/revoke` (see [Certificate Revocation API](CERTIFICATE_REVOCATION.md)) and cleared when a bootstrap issues a new certificate into the record. The record holds only the current certificate, so a certificate replaced by a renewal can no longer be found by its serial.
+- Rollback of the migration that added them: `src/main/resources/db/rollback/V20261109120000__add_certificate_revocation.rollback.sql`, run by hand.
 
 ---
 

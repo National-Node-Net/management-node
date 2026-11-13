@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
@@ -25,9 +26,13 @@ import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.CreateCsrRequest
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.CreateCsrResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.CreateKeyResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.IntermediateCertResponseDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.RevokeCertificateRequestDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.RevokeCertificateResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.SignCertRequestDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.SignCertResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.jwt.EnhancedPrincipal;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.RevocationReason;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.CertificateRevocationProvider;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.CertificateSigningProvider;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.VaultPkiService;
 
@@ -50,8 +55,10 @@ class CertificateControllerSecurityTest {
     static class Config {
         @Bean
         CertificateController certificateController(
-                VaultPkiService pkiService, CertificateSigningProvider signingProvider) {
-            return new CertificateController(pkiService, signingProvider);
+                VaultPkiService pkiService,
+                CertificateSigningProvider signingProvider,
+                CertificateRevocationProvider revocationProvider) {
+            return new CertificateController(pkiService, signingProvider, revocationProvider);
         }
     }
 
@@ -61,6 +68,9 @@ class CertificateControllerSecurityTest {
     @MockitoBean
     private CertificateSigningProvider signingProvider;
 
+    @MockitoBean
+    private CertificateRevocationProvider revocationProvider;
+
     @Autowired
     private CertificateController controller;
 
@@ -69,6 +79,10 @@ class CertificateControllerSecurityTest {
     private static final SignCertRequestDTO SIGN_REQUEST =
             SignCertRequestDTO.builder().csr("CSR").build();
     private static final CreateCsrRequestDTO CSR_REQUEST = new CreateCsrRequestDTO();
+    private static final RevokeCertificateRequestDTO REVOKE_REQUEST = RevokeCertificateRequestDTO.builder()
+            .serialNumber("39:dd:2e")
+            .reason(RevocationReason.KEY_COMPROMISE)
+            .build();
 
     @Test
     @WithMockUser(authorities = "ROLE_management-node:create_keys")
@@ -162,5 +176,47 @@ class CertificateControllerSecurityTest {
     @WithMockUser
     void getIntermediateCertificate_withNoRoles_shouldThrowAccessDenied() {
         assertThrows(AuthorizationDeniedException.class, () -> controller.getIntermediateCertificate());
+    }
+
+    @Test
+    @WithMockUser(authorities = "ROLE_management-node:revoke_certificate")
+    void revokeCertificate_withCorrectRole_shouldSucceed() {
+        when(revocationProvider.revoke(REVOKE_REQUEST, TEST_PRINCIPAL))
+                .thenReturn(RevokeCertificateResponseDTO.builder()
+                        .status(RevokeCertificateResponseDTO.STATUS_REVOKED)
+                        .build());
+
+        assertDoesNotThrow(() -> controller.revokeCertificate(REVOKE_REQUEST, TEST_PRINCIPAL));
+    }
+
+    /** Every other certificate role, including the one that issues bootstrap certificates, is refused. */
+    @Test
+    @WithMockUser(
+            authorities = {
+                "ROLE_management-node:sign_certificate",
+                "ROLE_management-node:request_bootstrap_certificate",
+                "ROLE_management-node:management-node-access"
+            })
+    void revokeCertificate_withWrongRoles_shouldThrowAccessDeniedAndNotRevoke() {
+        assertThrows(
+                AuthorizationDeniedException.class, () -> controller.revokeCertificate(REVOKE_REQUEST, TEST_PRINCIPAL));
+        verifyNoInteractions(revocationProvider);
+    }
+
+    /** A realm role of the same name does not count: the role is a client role on management-node. */
+    @Test
+    @WithMockUser(authorities = "ROLE_revoke_certificate")
+    void revokeCertificate_withRealmRoleOfTheSameName_shouldThrowAccessDenied() {
+        assertThrows(
+                AuthorizationDeniedException.class, () -> controller.revokeCertificate(REVOKE_REQUEST, TEST_PRINCIPAL));
+        verifyNoInteractions(revocationProvider);
+    }
+
+    @Test
+    @WithMockUser
+    void revokeCertificate_withNoRoles_shouldThrowAccessDenied() {
+        assertThrows(
+                AuthorizationDeniedException.class, () -> controller.revokeCertificate(REVOKE_REQUEST, TEST_PRINCIPAL));
+        verifyNoInteractions(revocationProvider);
     }
 }

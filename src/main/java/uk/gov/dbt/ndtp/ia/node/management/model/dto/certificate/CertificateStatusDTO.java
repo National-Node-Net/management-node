@@ -14,6 +14,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.RevocationReason;
 
 /**
  * Revocation status of a single certificate, as reported by a certificate status provider for the OCSP responder.
@@ -37,14 +38,22 @@ public class CertificateStatusDTO {
     private Status status;
     private Instant revokedAt;
 
+    /** Why the certificate was revoked; null when no reason is known. */
+    private RevocationReason revocationReason;
+
     public static CertificateStatusDTO good() {
         return CertificateStatusDTO.builder().status(Status.GOOD).build();
     }
 
     public static CertificateStatusDTO revoked(Instant revokedAt) {
+        return revoked(revokedAt, null);
+    }
+
+    public static CertificateStatusDTO revoked(Instant revokedAt, RevocationReason revocationReason) {
         return CertificateStatusDTO.builder()
                 .status(Status.REVOKED)
                 .revokedAt(revokedAt)
+                .revocationReason(revocationReason)
                 .build();
     }
 

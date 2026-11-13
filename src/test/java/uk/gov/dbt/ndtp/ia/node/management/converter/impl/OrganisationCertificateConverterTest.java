@@ -19,6 +19,7 @@ import org.mockito.MockitoAnnotations;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.OrganisationCertificateDTO;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.CertificateType;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.OrganisationCertificate;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.RevocationReason;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.organisation.Organisation;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.organisation.OrganisationRepository;
 
@@ -132,6 +133,31 @@ class OrganisationCertificateConverterTest {
         assertThat(entity.getIssuedAt()).isEqualTo(now);
         assertThat(entity.getExpiresAt()).isEqualTo(now);
         assertThat(entity.getRevokedAt()).isNull();
+    }
+
+    /** Both directions carry the revocation, or saving a record would silently erase it. */
+    @Test
+    void revocationFields_shouldSurviveARoundTrip() {
+        Timestamp revokedAt = Timestamp.from(Instant.parse("2026-10-12T13:15:02Z"));
+        OrganisationCertificate entity = new OrganisationCertificate();
+        entity.setId(1L);
+        entity.setType(CertificateType.AUTOMATED);
+        entity.setRevokedAt(revokedAt);
+        entity.setRevokedBy("admin-a");
+        entity.setRevocationReason(RevocationReason.KEY_COMPROMISE);
+        entity.setRevocationMessage("Private key exposed");
+
+        OrganisationCertificateDTO dto = converter.toDto(entity);
+        OrganisationCertificate back = converter.toEntity(dto);
+
+        assertThat(dto.getRevokedAt()).isEqualTo(revokedAt);
+        assertThat(dto.getRevokedBy()).isEqualTo("admin-a");
+        assertThat(dto.getRevocationReason()).isEqualTo(RevocationReason.KEY_COMPROMISE);
+        assertThat(dto.getRevocationMessage()).isEqualTo("Private key exposed");
+        assertThat(back.getRevokedAt()).isEqualTo(revokedAt);
+        assertThat(back.getRevokedBy()).isEqualTo("admin-a");
+        assertThat(back.getRevocationReason()).isEqualTo(RevocationReason.KEY_COMPROMISE);
+        assertThat(back.getRevocationMessage()).isEqualTo("Private key exposed");
     }
 
     @Test
