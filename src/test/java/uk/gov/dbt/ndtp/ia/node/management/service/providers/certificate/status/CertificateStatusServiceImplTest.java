@@ -7,11 +7,13 @@
 package uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.status;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 import static uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.ocsp.OcspTestPki.CA;
 import static uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.ocsp.OcspTestPki.NOW;
+import static uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.ocsp.OcspTestPki.OTHER_CA;
 import static uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.ocsp.OcspTestPki.certId;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -19,6 +21,8 @@ import java.math.BigInteger;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.ocsp.CertificateID;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,10 +61,16 @@ class CertificateStatusServiceImplTest {
     }
 
     @Test
-    void issuerKeyHash_shouldBeTheSha1IssuerKeyHashOfAnOcspRequest() {
-        CertificateID certId = certId(CA, SERIAL);
+    void issuerKeyHash_shouldBeTheSha256OfTheIssuersPublicKey() {
+        // An OCSP CertID hashed with SHA-256 carries the same digest of the same key, computed by Bouncy Castle.
+        CertificateID certId = certId(CA, SERIAL, new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256));
 
         assertEquals(Hex.toHexString(certId.toASN1Primitive().getIssuerKeyHash().getOctets()), ISSUER.keyHash());
+    }
+
+    @Test
+    void issuerKeyHash_shouldDifferBetweenAuthorities() {
+        assertNotEquals(ISSUER.keyHash(), CertificateIssuer.of(OTHER_CA).keyHash());
     }
 
     @Test

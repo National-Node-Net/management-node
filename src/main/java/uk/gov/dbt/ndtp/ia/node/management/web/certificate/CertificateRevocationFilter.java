@@ -115,6 +115,11 @@ public class CertificateRevocationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         X509Certificate certificate = clientCertificate(request);
+        // shouldNotFilter already lets such requests through; this keeps the method safe on its own.
+        if (certificate == null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         if (exemptIssuers.contains(certificate.getIssuerX500Principal())) {
             log.debug("Client certificate issued by exempt authority {}; not checked", issuerName(certificate));
             filterChain.doFilter(request, response);

@@ -92,7 +92,7 @@ openssl x509 -in client.crt -noout -issuer -nameopt RFC2253
 | | |
 |---|---|
 | Cache name | `certificate-status` |
-| Key | `<issuerKeyHash>:<serial>`: lowercase hex SHA-1 of the issuer's public key, and the serial in lowercase hex without separators or leading zeros |
+| Key | `<issuerKeyHash>:<serial>`: lowercase hex SHA-256 of the issuer's public key, and the serial in lowercase hex without separators or leading zeros |
 | Value | `{status, revokedAt, revocationReason, checkedAt}` |
 | Lifetime | `application.revocation.cache.ttl`, 5 minutes by default, at most 10. The application does not start with a longer or non-positive value. |
 | Cached | `GOOD`, `REVOKED` and `UNKNOWN` |
