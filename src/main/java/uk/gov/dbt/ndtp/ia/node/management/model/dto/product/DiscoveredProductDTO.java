@@ -27,7 +27,7 @@ import lombok.Builder;
  *       organisation's own {@code attributes} are among the things absent: a block can be returned
  *       without them;
  *   <li>{@code GET /api/v1/product/{productId}} returns the <b>whole</b> model below, including
- *       the {@code longDescription} a search leaves out.
+ *       the {@code longDescription} and {@code keyUseCases} a search leaves out.
  * </ul>
  *
  * <p>What a particular caller receives is then decided by policy, which can only narrow further: a
@@ -44,6 +44,8 @@ import lombok.Builder;
  * @param description the short description, which a search result shows
  * @param longDescription the full description, for the product's details page. Only the view
  *     carries it; absent when the owner has not provided one
+ * @param keyUseCases what the product can be used for, in display order. Only the view carries
+ *     it; absent when the owner has not provided any
  * @param format the format the product's data is published in (JSON, XML, CSV, RDF...); an open set
  * @param isOwnProduct whether the calling organisation offers the product. Like
  *     {@code subscriptionStatus}, carried by both endpoints and not subject to masking, since it
@@ -65,6 +67,7 @@ public record DiscoveredProductDTO(
         String displayName,
         String description,
         String longDescription,
+        List<String> keyUseCases,
         String topic,
         String type,
         String source,

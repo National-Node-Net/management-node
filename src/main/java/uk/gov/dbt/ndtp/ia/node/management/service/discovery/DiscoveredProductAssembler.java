@@ -100,6 +100,7 @@ public class DiscoveredProductAssembler {
                         .displayName(row.text(ProductField.DISPLAY_NAME))
                         .description(row.text(ProductField.DESCRIPTION))
                         .longDescription(row.text(ProductField.LONG_DESCRIPTION))
+                        .keyUseCases(row.texts(ProductField.KEY_USE_CASES))
                         .topic(row.text(ProductField.TOPIC))
                         .type(row.text(ProductField.TYPE))
                         .source(row.text(ProductField.SOURCE))
@@ -320,6 +321,12 @@ public class DiscoveredProductAssembler {
         String text(ProductField field) {
             Object value = value(field);
             return value == null ? null : value.toString();
+        }
+
+        /** A text array column, which {@link ProductDiscoveryRepository#findPage} reads as a list. */
+        @SuppressWarnings("unchecked")
+        List<String> texts(ProductField field) {
+            return (List<String>) value(field);
         }
 
         private Long id(String column) {

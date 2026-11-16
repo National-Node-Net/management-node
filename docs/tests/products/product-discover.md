@@ -329,6 +329,7 @@ These are the levers. Everything in section 8 is a permutation of them.
 | `displayName` | yes | yes | **yes** | yes |
 | `description` | yes | **no** | **yes** | yes |
 | `longDescription` | yes | **no** | **yes** | **no** - the view only |
+| `keyUseCases` | no | no | no | **no** - the view only |
 | `topic` | yes | yes | no | no |
 | `type` | yes | yes | no | yes |
 | `source` | yes | yes | no | no |

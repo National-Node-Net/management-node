@@ -92,7 +92,7 @@ class ProductSearchQueryBuilderTest {
         assertThat(query.pageSql())
                 .isEqualTo("SELECT " + IDS
                         + ", p.name AS name, p.display_name AS display_name, p.description AS description,"
-                        + " p.long_description AS long_description,"
+                        + " p.long_description AS long_description, p.key_use_cases AS key_use_cases,"
                         + " p.topic AS topic, pt.name AS type, p.source AS source, p.format AS format,"
                         + " o.organisation_key AS organisation_key, o.name AS organisation_name,"
                         + " pr.name AS producer_name, pr.description AS producer_description,"
@@ -456,7 +456,14 @@ class ProductSearchQueryBuilderTest {
                         + " pt.name AS type, p.format AS format,"
                         + " o.organisation_key AS organisation_key, o.name AS organisation_name");
         assertThat(query.pageSql())
-                .doesNotContain("p.source", "pr.name", "pr.description", "pr.active", "p.topic", "p.long_description");
+                .doesNotContain(
+                        "p.source",
+                        "pr.name",
+                        "pr.description",
+                        "pr.active",
+                        "p.topic",
+                        "p.long_description",
+                        "p.key_use_cases");
     }
 
     @Test
@@ -470,6 +477,7 @@ class ProductSearchQueryBuilderTest {
                         "p.name AS name",
                         "p.description AS description",
                         "p.long_description AS long_description",
+                        "p.key_use_cases AS key_use_cases",
                         "pt.name AS type",
                         "p.source AS source",
                         "o.organisation_key AS organisation_key",

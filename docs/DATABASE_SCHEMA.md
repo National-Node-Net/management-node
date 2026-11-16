@@ -82,6 +82,7 @@ erDiagram
     VARCHAR topic
     TEXT description
     TEXT long_description
+    TEXT[] key_use_cases
     BIGINT producer_id FK
     BIGINT product_type_id FK
     VARCHAR source
@@ -261,6 +262,7 @@ Columns:
 - `topic` VARCHAR(150), not null: logical topic or channel for the product
 - `description` TEXT, nullable: the short description a search result shows. Together with `name`, `display_name`, `long_description` and the owning organisation's `name`, this is what discovery's free-text search matches against (`topic` and `source` are identifiers, not prose, and are deliberately not text-searched). Backfilled by data owners; existing rows have none
 - `long_description` TEXT, nullable: the full description the product's details page shows, returned as `longDescription` by `GET /api/v1/product/{productId}` only (a search result carries the short `description`). Text-searched by discovery all the same. Backfilled by data owners; existing rows have none
+- `key_use_cases` TEXT[], nullable: the product's key use cases in display order, returned as `keyUseCases` by `GET /api/v1/product/{productId}` only. Not searched, filtered or sorted. No API writes it
 - `producer_id` BIGINT, not null, foreign key → `producer(id)`
 - `product_type_id` BIGINT, nullable, foreign key → `product_type(id)`: categorization of the product
 - `source` VARCHAR(500), nullable: optional source identifier/URI for the product

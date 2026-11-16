@@ -55,7 +55,7 @@ catalogue (§4) rather than repeating them; read §2–§4 there once, then work
 | | `POST /api/v1/product/discover` | `GET /api/v1/product/{productId}` |
 |---|---|---|
 | how many products | a page of them | exactly one, by id |
-| how much of each | a **summary** (`id`, `name`, `displayName`, `description`, `type`, `format`, `isOwnProduct`, and the owning `organisation`'s `key` and `name`) | the **whole** object model, including the `longDescription` a summary leaves out |
+| how much of each | a **summary** (`id`, `name`, `displayName`, `description`, `type`, `format`, `isOwnProduct`, and the owning `organisation`'s `key` and `name`) | the **whole** object model, including the `longDescription` and `keyUseCases` a summary leaves out |
 
 Everything else is shared, and shared **from one definition** rather than two that happen to agree:
 `docker/opa/policies/lib/product_access.rego` holds the caller gates, the refusal reasons, the row
@@ -131,6 +131,7 @@ the PDP at all.
   "displayName": "Flood Risk Map Zones",
   "description": "Flood risk zones for England and Wales …",
   "longDescription": "Zones are modelled from river and coastal flood maps …",
+  "keyUseCases": ["Insurance: …", "Planning: …"],
   "topic": "topic.FloodRiskMapZones",
   "type": "topic",
   "source": "kafka://…",
@@ -191,8 +192,9 @@ Rules that hold for every `200`:
   [discover §4](product-discover.md#isownproduct).
 - **`description`** is the short description a search result shows; **`longDescription`** is the
   full one, for the details page, and only the view returns it. Neither is masked.
-- **`displayName`**, **`format`** and **`longDescription`** are absent when the product's owner has
-  not provided them.
+- **`keyUseCases`** is a list of strings in display order, returned by the view only.
+- **`displayName`**, **`format`**, **`longDescription`** and **`keyUseCases`** are absent when the
+  product's owner has not provided them.
 - The response carries **no `policy` block**. Discovery's response has one (it is how a UI builds a
   filter panel); view returns the bare product.
 
@@ -1107,6 +1109,23 @@ view_body "$ENV_TOKEN" "$none" | jq 'has("longDescription")'
 - **Then** the discover result has no `longDescription` key,
 - **And** every organisation's view carries both `description` and `longDescription`.
 - **And** a product without a long description has no `longDescription` key, rather than a `null`.
+
+### V21: Key use cases are returned by the view only, in order
+
+**Test data.** RiverLevelTelemetry, whose use cases are set by
+`db/samples/V20261113121000__add_sample_product_key_use_cases.sql`. BrownfieldLandAvailability,
+which has none.
+
+```bash
+id=$(discover "$ENV_TOKEN" '{"text":"RiverLevelTelemetry"}' | jq -r '.products[0].id')
+discover "$ENV_TOKEN" '{"text":"RiverLevelTelemetry"}' | jq '.products[0] | has("keyUseCases")'
+# false
+view_body "$ENV_TOKEN" "$id" | jq -c '[.keyUseCases[] | split(":")[0]]'
+# ["Flood warning","Water resource planning","Infrastructure design"]
+none=$(discover "$ENV_TOKEN" '{"text":"BrownfieldLandAvailability"}' | jq -r '.products[0].id')
+view_body "$ENV_TOKEN" "$none" | jq 'has("keyUseCases")'
+# false
+```
 
 **Why.** The two descriptions serve two pages. A search does not select the column at all, so a
 results page cannot show the long text by mistake.
