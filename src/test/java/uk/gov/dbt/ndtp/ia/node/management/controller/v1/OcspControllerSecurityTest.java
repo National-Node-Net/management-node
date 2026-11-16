@@ -26,7 +26,7 @@ import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.ocsp.Ocs
 
 /**
  * Security tests for OcspController.
- * Verifies that the {@code management-node-access} role is required, using a minimal Spring context with
+ * Verifies that the {@code check_certificate_status} role is required, using a minimal Spring context with
  * method security enabled.
  */
 @SpringJUnitConfig(OcspControllerSecurityTest.Config.class)
@@ -50,7 +50,7 @@ class OcspControllerSecurityTest {
     private static final byte[] BODY = {0x30, 0x00};
 
     @Test
-    @WithMockUser(authorities = "ROLE_management-node:management-node-access")
+    @WithMockUser(authorities = "ROLE_management-node:check_certificate_status")
     void ocsp_withCorrectRole_shouldSucceed() {
         when(responderService.respond(any(), any())).thenReturn(new OcspResponseDTO(new byte[] {0x30}, 1, null));
 
@@ -65,7 +65,7 @@ class OcspControllerSecurityTest {
     }
 
     @Test
-    @WithMockUser(authorities = "ROLE_management-node-access")
+    @WithMockUser(authorities = "ROLE_check_certificate_status")
     void ocsp_withRealmRoleOfSameName_shouldThrowAccessDenied() {
         assertThrows(AuthorizationDeniedException.class, () -> controller.ocsp(BODY, new MockHttpServletRequest()));
     }

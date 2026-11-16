@@ -360,7 +360,7 @@
                 },
                 {
                     "id": "a1b2c3d4-5555-4000-a000-000000000005",
-                    "name": "management-node-access",
+                    "name": "check_certificate_status",
                     "description": "Check certificate revocation status via the OCSP endpoint",
                     "composite": false,
                     "clientRole": true,
@@ -543,7 +543,7 @@
                     "create_keys",
                     "sign_certificate",
                     "access_public_certificates",
-                    "management-node-access"
+                    "check_certificate_status"
                 ]
             },
             "notBefore": 0,

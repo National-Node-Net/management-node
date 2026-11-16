@@ -51,7 +51,7 @@ public class OcspController {
      * @return the DER-encoded OCSP response
      */
     @PostMapping("/ocsp")
-    @PreAuthorize("hasAuthority('ROLE_management-node:management-node-access')")
+    @PreAuthorize("hasAuthority('ROLE_management-node:check_certificate_status')")
     @Operation(
             summary = "Check certificate status (OCSP)",
             description =

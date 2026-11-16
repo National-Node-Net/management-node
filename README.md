@@ -440,7 +440,7 @@ If you prefer to set up the realm manually (updated for Keycloak 26.x):
    | `product_discovery` | `POST /api/v1/product/discover` |
    | `product_subscribe` | `POST /api/v1/product/subscribe` |
    | `product_view` | `GET /api/v1/product/{productId}` |
-   | `management-node-access` | `POST /api/v1/certificate/ocsp` (see [OCSP Certificate Status API](docs/OCSP.md)) |
+   | `check_certificate_status` | `POST /api/v1/certificate/ocsp` (see [OCSP Certificate Status API](docs/OCSP.md)) |
 
    Holding the role is not always sufficient: the configuration and product endpoints are additionally
    governed by policy. For the full mapping, including each endpoint's policy resource and action, see
@@ -984,7 +984,7 @@ as `resource_access["management-node"].roles` and is enforced as the authority
 | `product_discovery` | `POST /api/v1/product/discover` | yes |
 | `product_subscribe` | `POST /api/v1/product/subscribe` | yes |
 | `product_view` | `GET /api/v1/product/{productId}` | yes |
-| `management-node-access` | `POST /api/v1/certificate/ocsp` (see [OCSP](docs/OCSP.md)) | no |
+| `check_certificate_status` | `POST /api/v1/certificate/ocsp` (see [OCSP](docs/OCSP.md)) | no |
 
 Where the last column says yes, the role is necessary but not sufficient: a request carrying it can
 still be refused `403` by policy. The policy resource and action behind each of those endpoints are

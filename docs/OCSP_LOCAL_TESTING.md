@@ -17,10 +17,10 @@ This guide checks `POST /api/v1/certificate/ocsp` end to end on a local machine.
 Run every command from the repository root. On Windows, use Git Bash. Check the following before you start:
 
 - Keycloak and Vault containers are running and Vault is unsealed (`vault operator unseal`).
-- The `management-node` client in realm `mng-node` defines the client role `management-node-access`. If the realm was imported before this role was added to `docker/keycloak/management-node.json`, add the role manually in the admin console. Re-importing does not update a running Keycloak.
-- A federator client exists, for example `FEDERATOR_ENV`. The role `management-node-access` is assigned to the service account of that client. Federator clients are the consumer and producer nodes that call the OCSP endpoint in a real deployment. You can create the client in either of two ways:
+- The `management-node` client in realm `mng-node` defines the client role `check_certificate_status`. If the realm was imported before this role was added to `docker/keycloak/management-node.json`, add the role manually in the admin console. Re-importing does not update a running Keycloak.
+- A federator client exists, for example `FEDERATOR_ENV`. The role `check_certificate_status` is assigned to the service account of that client. Federator clients are the consumer and producer nodes that call the OCSP endpoint in a real deployment. You can create the client in either of two ways:
   - **OpenTofu** (`docker/keycloak/tofu`): `terraform.tfvars` already maps the role to `FEDERATOR_ENV`, `FEDERATOR_BCC` and `FEDERATOR_HEG`. These clients authenticate with their mTLS certificate (`client-x509`) and have no secret.
-  - **Manually**: follow "Testing further with a federator client" under [Testing API Endpoints](../README.md#testing-api-endpoints) in the README, and in step 5 also assign `management-node-access`. Such a client authenticates with a client secret.
+  - **Manually**: follow "Testing further with a federator client" under [Testing API Endpoints](../README.md#testing-api-endpoints) in the README, and in step 5 also assign `check_certificate_status`. Such a client authenticates with a client secret.
 - The Vault role `default-role` accepts EC keys (`key_type=any`, as in the README). The Management Node issues its OCSP signer through this role.
 - `client.crt` and `client.key` are in the repository root.
 
@@ -84,10 +84,10 @@ Do these steps once. They issue a test certificate, start the application and ge
    Check that the token belongs to the federator and carries the role:
 
    ```bash
-   echo $TOKEN | cut -d. -f2 | base64 -d 2>/dev/null | grep -oE '"azp":"[^"]*"|management-node-access'
+   echo $TOKEN | cut -d. -f2 | base64 -d 2>/dev/null | grep -oE '"azp":"[^"]*"|check_certificate_status'
    ```
 
-   The output should be `"azp":"FEDERATOR_ENV"` and `management-node-access`. Without `jq`, extract the token with `sed -E 's/.*"access_token":"([^"]+)".*/\1/'` instead. The token expires after the client's access token lifespan, so get a new one whenever you see `401`.
+   The output should be `"azp":"FEDERATOR_ENV"` and `check_certificate_status`. Without `jq`, extract the token with `sed -E 's/.*"access_token":"([^"]+)".*/\1/'` instead. The token expires after the client's access token lifespan, so get a new one whenever you see `401`.
 
    For a quick check you can also request the token as the `management-node` client with its secret, as in the README's local setup. That client stands in for every caller locally and is not how nodes call the endpoint in a real deployment.
 
@@ -210,7 +210,7 @@ Expected:
   --data-binary @req.der -D - https://localhost:8090/api/v1/certificate/ocsp
 ```
 
-Expected: HTTP `401` with a JSON body. For comparison, a token without the `management-node-access` role gets `403`.
+Expected: HTTP `401` with a JSON body. For comparison, a token without the `check_certificate_status` role gets `403`.
 
 ### H. Vault unavailable
 
@@ -286,7 +286,7 @@ Run all OCSP tests with one command. With Docker running, the integration test a
 | `OcspSignerServiceImplTest` | signer issuance through the default role, validation (issuer, validity, key), renewal at 70% of lifetime |
 | `VaultCertificateStatusProviderTest` | reading `pki-int/cert/:serial`, serial format, missing certificate → `unknown` |
 | `OcspControllerTest` | response headers, `Content-Type`, `Cache-Control` |
-| `OcspControllerSecurityTest` | `@PreAuthorize` with the `management-node-access` role |
+| `OcspControllerSecurityTest` | `@PreAuthorize` with the `check_certificate_status` role |
 | `OcspPropertiesTest` | `validity` must be > 0 and ≤ `PT10M`; signer `ttl` at least four times `refresh-interval` |
 | `OcspVaultIntegrationTest` | the full flow against a real Vault; skipped without Docker |
 
@@ -298,7 +298,7 @@ Run all OCSP tests with one command. With Docker running, the integration test a
 |---|---|---|
 | `curl` prints nothing and `resp.der` is not created | a client certificate file is missing and `-s` hides the error | use `-sS`, check `echo $?` and the file paths; run from the repository root |
 | `401` | the token is empty or expired | get a new token; `echo ${TOKEN:0:20}` should start with `eyJ` |
-| `403` with a JSON body | the token lacks `management-node-access` | assign the role to the federator client's service account in Keycloak, then get a new token |
+| `403` with a JSON body | the token lacks `check_certificate_status` | assign the role to the federator client's service account in Keycloak, then get a new token |
 | Keycloak returns `invalid_client` or `unauthorized_client` | the client's authentication type does not match the request | send `client_secret` only to a client with client authentication by secret; a `client-x509` client needs a certificate whose subject DN matches its `x509.subjectdn` |
 | `tryLater` in A–C | no signer issued, or Vault is sealed | look for `Failed to issue OCSP signer` in the log; check `vault status` and that `default-role` accepts EC keys (`key_type=any`) and the signer's common name |
 | `Nonce Verify error` | `verify` was run with `-cert` or `-serial` | verify with `-reqin req.der` only |

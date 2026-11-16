@@ -45,7 +45,7 @@ sequenceDiagram
 | Request | `Content-Type: application/ocsp-request`, body = DER-encoded `OCSPRequest` |
 | Response | HTTP `200`, `Content-Type: application/ocsp-response`, body = DER-encoded `OCSPResponse` |
 | Authentication | mTLS + JWT bearer token (same as all other Management Node APIs) |
-| Authorization | client role `management-node-access`, i.e. `@PreAuthorize("hasAuthority('ROLE_management-node:management-node-access')")` |
+| Authorization | client role `check_certificate_status`, i.e. `@PreAuthorize("hasAuthority('ROLE_management-node:check_certificate_status')")` |
 | Caching | successful responses: `Cache-Control: max-age=<seconds until nextUpdate>, must-revalidate, no-transform, public`; error responses: `Cache-Control: no-store` |
 
 The `GET /ocsp/{base64}` form is not supported.
@@ -83,7 +83,7 @@ A request may contain several certificate IDs. **Every entry is answered** in on
 
 | Role | Client | Assigned to | Grants |
 |------|--------|-------------|--------|
-| `management-node-access` | `management-node` | every consumer/producer node service account that checks peer certificates | `POST /api/v1/certificate/ocsp` |
+| `check_certificate_status` | `management-node` | every consumer/producer node service account that checks peer certificates | `POST /api/v1/certificate/ocsp` |
 
 The role is defined in the realm import (`docker/keycloak/management-node.json`) and in OpenTofu (`docker/keycloak/tofu/clients.tf`), and mapped to the federator clients in `docker/keycloak/tofu/terraform.tfvars`. See [Authentication Requirements](AUTHENTICATION_REQUIREMENTS.md).
 
@@ -148,7 +148,7 @@ The signer key is never written anywhere, so each Management Node instance has i
 # 1. Build a request (several -cert/-serial options may be combined) with a nonce
 openssl ocsp -issuer ca.pem -cert node.pem -nonce -reqout req.der
 
-# 2. Send it over mTLS with a token that has the management-node-access role
+# 2. Send it over mTLS with a token that has the check_certificate_status role
 curl -k --cert client.crt --key client.key \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/ocsp-request" \
@@ -198,7 +198,7 @@ Metrics are exposed through Micrometer at `/actuator/metrics` on the management 
 
 ## Security Considerations
 
-- Only callers with the `management-node-access` role can query certificate status. Authentication (mTLS + JWT) and authorization (`@PreAuthorize`) run before any OCSP processing.
+- Only callers with the `check_certificate_status` role can query certificate status. Authentication (mTLS + JWT) and authorization (`@PreAuthorize`) run before any OCSP processing.
 - `/api/v1/certificate/**` is **excluded from the CertificateValidationInterceptor**, so the OCSP endpoint does not require the caller to have an `organisation_certificate` record. A node must be able to check a peer's status regardless of the state of its own certificate record.
 - The responder **never answers `good` when the status is not known**: a Vault failure for any certificate ID turns the whole response into `tryLater`, and certificates not issued by the federation CA are `unknown`.
 - Status results are **never cached** on the Management Node. Clients may cache a successful response until its `nextUpdate`, which is at most 10 minutes away.
