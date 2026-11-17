@@ -47,7 +47,6 @@ import uk.gov.dbt.ndtp.ia.node.management.exception.CertificateStatusUnavailable
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.CertificateStatusDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.OcspResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.RevocationReason;
-import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.status.CertificateStatusServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -74,11 +73,7 @@ class OcspResponderServiceImplTest {
 
     private OcspResponderServiceImpl newService(OcspProperties properties) {
         return new OcspResponderServiceImpl(
-                new CertificateStatusServiceImpl(statusProvider, meterRegistry, Clock.fixed(NOW, ZoneOffset.UTC)),
-                signerService,
-                properties,
-                meterRegistry,
-                Clock.fixed(NOW, ZoneOffset.UTC));
+                statusProvider, signerService, properties, meterRegistry, Clock.fixed(NOW, ZoneOffset.UTC));
     }
 
     private static OcspProperties properties(Duration validity, int maxEntries, int maxBytes) {

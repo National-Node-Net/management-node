@@ -48,12 +48,10 @@ import uk.gov.dbt.ndtp.ia.node.management.exception.CertificateStatusUnavailable
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.CertificateStatusDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.OcspResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.RevocationReason;
-import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.status.CertificateIssuer;
-import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.status.CertificateStatusService;
 
 /**
  * Implementation of {@link OcspResponderService}. Parses a DER-encoded OCSP request, looks up the status of every
- * requested certificate with the {@link CertificateStatusService} and returns a DER-encoded response signed by the
+ * requested certificate with the {@link CertificateStatusProvider} and returns a DER-encoded response signed by the
  * delegated OCSP signer from {@link OcspSignerService}.
  */
 @Service
@@ -62,7 +60,7 @@ public class OcspResponderServiceImpl implements OcspResponderService {
 
     private static final String NONE = "-";
 
-    private final CertificateStatusService statusService;
+    private final CertificateStatusProvider statusProvider;
     private final OcspSignerService signerService;
     private final OcspProperties properties;
     private final MeterRegistry meterRegistry;
@@ -71,20 +69,20 @@ public class OcspResponderServiceImpl implements OcspResponderService {
 
     @Autowired
     public OcspResponderServiceImpl(
-            CertificateStatusService statusService,
+            CertificateStatusProvider statusProvider,
             OcspSignerService signerService,
             OcspProperties properties,
             MeterRegistry meterRegistry) {
-        this(statusService, signerService, properties, meterRegistry, Clock.systemUTC());
+        this(statusProvider, signerService, properties, meterRegistry, Clock.systemUTC());
     }
 
     OcspResponderServiceImpl(
-            CertificateStatusService statusService,
+            CertificateStatusProvider statusProvider,
             OcspSignerService signerService,
             OcspProperties properties,
             MeterRegistry meterRegistry,
             Clock clock) {
-        this.statusService = statusService;
+        this.statusProvider = statusProvider;
         this.signerService = signerService;
         this.properties = properties;
         this.meterRegistry = meterRegistry;
@@ -196,7 +194,7 @@ public class OcspResponderServiceImpl implements OcspResponderService {
         if (!matchesIssuer(certId, issuer)) {
             return CertificateStatusDTO.unknown();
         }
-        return statusService.getStatus(CertificateIssuer.of(issuer), certId.getSerialNumber());
+        return statusProvider.getStatus(certId.getSerialNumber(), issuer);
     }
 
     /**

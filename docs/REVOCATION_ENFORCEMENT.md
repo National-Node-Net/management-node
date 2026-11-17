@@ -11,7 +11,7 @@
 Every request that presents a client certificate is checked for revocation before it reaches authentication or a controller. A revoked consumer, producer or Federator cannot use any Management Node API.
 
 - The check is a Spring Security filter, `CertificateRevocationFilter`, placed before the bearer token is looked at. A revoked certificate is refused without a token introspection call to Keycloak.
-- The status comes from `CertificateStatusService`, which reads Vault (`GET <pki-mount>/cert/:serial`) and caches the answer by issuer and serial. The [OCSP API](OCSP.md) uses the same service and the same cache.
+- The status comes from `CertificateStatusService`, which reads Vault (`GET <pki-mount>/cert/:serial`) and caches the answer by issuer and serial. The cache serves this check only: the [OCSP API](OCSP.md) reads Vault on every request, so an OCSP answer is never older than its `thisUpdate`.
 - A revocation through [`POST /api/v1/certificate/revoke`](CERTIFICATE_REVOCATION.md) evicts the cache entry, so it is enforced on the certificate's next request.
 - The check is controlled by a feature flag, on by default.
 
@@ -113,10 +113,10 @@ If Redis cannot be read or written, the status is looked up in Vault as if nothi
 | Revocation | Enforced on the Management Node | Visible in OCSP |
 |---|---|---|
 | Through the revocation API, Redis or a single instance | on the next request | on the next request |
-| Through the revocation API, Caffeine with several instances | at once on the instance that took the request; on the others when their entry expires, at most the TTL later | the same |
-| Directly in Vault, bypassing the API | when the entry expires, at most the TTL later | the same |
+| Through the revocation API, Caffeine with several instances | at once on the instance that took the request; on the others when their entry expires, at most the TTL later | on the next request |
+| Directly in Vault, bypassing the API | when the entry expires, at most the TTL later | on the next request |
 
-Nodes may cache an OCSP response until its `nextUpdate` (`application.ocsp.validity`). In the last two rows a revoked certificate can therefore stay accepted by nodes for the cache TTL plus the OCSP validity: 10 minutes with both defaults. **Run several instances with Redis, and revoke through the API.** When a certificate has to be revoked directly in Vault, revoke it through the API as well if it has an `organisation_certificate` record, or expect up to the TTL before it is refused.
+Nodes may cache an OCSP response until its `nextUpdate` (`application.ocsp.validity`), so they enforce any revocation within that validity, at most 10 minutes; the status cache never adds to it. **Run several instances with Redis, and revoke through the API.** When a certificate has to be revoked directly in Vault, revoke it through the API as well if it has an `organisation_certificate` record, or expect up to the TTL before it is refused.
 
 ---
 
@@ -128,7 +128,7 @@ When `false`:
 
 - the filter is not registered, so no request is checked and no status is looked up for one;
 - a `WARN` is logged at startup: `Certificate revocation enforcement is DISABLED ...`;
-- the OCSP API and the revocation API work as before, and the status cache stays in use for OCSP.
+- the OCSP API and the revocation API work as before.
 
 A revoked certificate is then accepted by every API except `/api/v1/configuration/**`, where `CertificateValidationInterceptor` still refuses an organisation whose current certificate record is revoked. Disabling the flag outside a test environment is a security decision.
 
@@ -194,7 +194,7 @@ Metrics at `/actuator/metrics` on the management port:
 | Metric | Tags | Meaning |
 |---|---|---|
 | `revocation.enforcement.rejections` | `status` (`revoked`, `unknown`, `unavailable`) | requests refused by the filter |
-| `revocation.status.lookups` | `result` (`good`, `revoked`, `unknown`, `unavailable`) | lookups that reached Vault, that is cache misses, for the filter and OCSP together |
+| `revocation.status.lookups` | `result` (`good`, `revoked`, `unknown`, `unavailable`) | lookups the filter sent to Vault, that is cache misses; OCSP lookups are counted by `ocsp.cert.status` and `ocsp.requests` |
 | `cache.gets` | `cache=certificate-status`, `result` (`hit`, `miss`) | cache hit rate |
 | `cache.evictions`, `cache.puts` | `cache=certificate-status` | evictions and stored entries |
 | `ocsp.vault.errors` | — | failed status lookups against Vault |
@@ -210,7 +210,7 @@ A rise of `revocation.enforcement.rejections{status=unavailable}` means Vault is
 | `web/certificate/CertificateRevocationFilter` | the check on a request, the refusal, the log line and the rejection metric |
 | `service/providers/certificate/status/CertificateStatusService` (`CertificateStatusServiceImpl`) | cached status lookup and eviction |
 | `service/providers/certificate/status/FederationCaService` (`FederationCaServiceImpl`) | the CA of the PKI mount, and whether it issued a presented certificate |
-| `service/providers/certificate/ocsp/CertificateStatusProvider` | the uncached lookup in Vault, behind the status service |
+| `service/providers/certificate/ocsp/CertificateStatusProvider` | the uncached lookup in Vault, behind the status service; the OCSP responder calls it directly |
 | `config/CertificateStatusCacheConfig` | cache lifetime for Caffeine and Redis, Redis serialisation and key prefix, cache error handling |
 | `config/RevocationEnforcementConfig` | the feature flag; `config/SecurityConfig` places the filter in the chain |
 | `config/RevocationProperties` | `application.revocation.*`, validated at startup |

@@ -11,8 +11,9 @@ import uk.gov.dbt.ndtp.ia.node.management.exception.CertificateStatusUnavailable
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.CertificateStatusDTO;
 
 /**
- * The single source of certificate revocation status in the Management Node, used by the revocation check on
- * requests and by the OCSP responder. Statuses are cached by issuer and serial for
+ * Cached certificate revocation status for the revocation check on requests. The OCSP responder does not use it:
+ * it asks {@code CertificateStatusProvider} directly, so its answers are never older than they claim. Statuses are
+ * cached by issuer and serial for
  * {@code application.revocation.cache.ttl}; a failed lookup is never cached.
  */
 public interface CertificateStatusService {

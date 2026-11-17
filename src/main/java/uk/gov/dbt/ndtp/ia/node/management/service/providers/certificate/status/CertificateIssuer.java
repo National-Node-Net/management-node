@@ -14,9 +14,8 @@ import org.bouncycastle.cert.X509CertificateHolder;
 /**
  * A certificate authority whose certificates have a status, with the hash that names it in the status cache.
  *
- * @param keyHash     lowercase hex SHA-256 of the authority's public key. Computed from the authority's own
- *                    certificate, never taken from a request, so one certificate has one cache entry whichever hash
- *                    an OCSP request used.
+ * @param keyHash     lowercase hex SHA-256 of the authority's public key, computed from the authority's own
+ *                    certificate
  * @param certificate the authority's certificate
  */
 public record CertificateIssuer(String keyHash, X509CertificateHolder certificate) {

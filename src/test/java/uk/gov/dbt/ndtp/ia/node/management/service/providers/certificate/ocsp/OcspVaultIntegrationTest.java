@@ -49,7 +49,6 @@ import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.Revocat
 import uk.gov.dbt.ndtp.ia.node.management.service.data.OrganisationCertificateService;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.RevocationTestProperties;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.VaultPkiService;
-import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.status.CertificateStatusServiceImpl;
 import uk.gov.dbt.ndtp.ia.node.management.utils.cryptography.CertificateSerials;
 import uk.gov.dbt.ndtp.ia.node.management.utils.cryptography.PemUtil;
 
@@ -107,9 +106,7 @@ class OcspVaultIntegrationTest {
         assertTrue(signerService.currentSigner().isPresent(), "OCSP signer should be issued by Vault");
 
         responder = new OcspResponderServiceImpl(
-                new CertificateStatusServiceImpl(
-                        new VaultCertificateStatusProvider(vault, certificateService, PKI_MOUNT, meterRegistry),
-                        meterRegistry),
+                new VaultCertificateStatusProvider(vault, certificateService, PKI_MOUNT, meterRegistry),
                 signerService,
                 properties,
                 meterRegistry);
@@ -220,10 +217,8 @@ class OcspVaultIntegrationTest {
         closed.setScheme("http");
         VaultTemplate unreachable = new VaultTemplate(closed, new TokenAuthentication(TOKEN));
         OcspResponderService unavailableResponder = new OcspResponderServiceImpl(
-                new CertificateStatusServiceImpl(
-                        new VaultCertificateStatusProvider(
-                                unreachable, certificateService, PKI_MOUNT, new SimpleMeterRegistry()),
-                        new SimpleMeterRegistry()),
+                new VaultCertificateStatusProvider(
+                        unreachable, certificateService, PKI_MOUNT, new SimpleMeterRegistry()),
                 signerService,
                 properties,
                 new SimpleMeterRegistry());
