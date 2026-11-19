@@ -150,6 +150,18 @@ application:
       - user-agent
     log-input: ${OPA_LOG_INPUT:false} # diagnostic only - carries the token's claims
     log-output: ${OPA_LOG_OUTPUT:false} # diagnostic only - one entry per decision
+  organisation-details:
+    # Mock organisation descriptions and logos, local and dev only, until the Organisation Service exists
+    mock: ${ORGANISATION_DETAILS_MOCK:false}
+    organisations: # by organisation key; BCC has no logo on purpose
+      ENV:
+        description: The Environment Agency protects and improves the environment in England, managing flood risk, water resources and pollution.
+        logo-url: https://example.org/logos/env.svg
+      HEG:
+        description: Homes England is the government's housing and regeneration agency, accelerating the delivery of new homes.
+        logo-url: https://example.org/logos/heg.svg
+      BCC:
+        description: Bristol City Council runs local services for the city of Bristol, from schools and housing to transport and air quality.
 # Actuator Configuration
 management:
   server:
