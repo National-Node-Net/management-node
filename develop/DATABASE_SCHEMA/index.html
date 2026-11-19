@@ -15,7 +15,7 @@
         <link rel="canonical" href="https://docs.ndtp.co.uk/develop/DATABASE_SCHEMA/">
       
       
-        <link rel="prev" href="../BOOTSTRAP_ONBOARDING/">
+        <link rel="prev" href="../CERTIFICATE_REVOCATION/">
       
       
         <link rel="next" href="../DISCOVERY_TEST_SCENARIOS/">
@@ -311,6 +311,33 @@
     
   
     Bootstrap Onboarding Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CERTIFICATE_REVOCATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Certificate Revocation API
   
 
     
@@ -917,10 +944,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_17" >
         
           
-          <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_17" id="__nav_17_label" tabindex="0">
             
   
   
@@ -938,8 +965,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_16">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_17_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_17">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -978,7 +1005,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16_1" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_17_1" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -1000,14 +1027,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_16_1" id="__nav_16_1_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_17_1" id="__nav_17_1_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_16_1_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_16_1">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_17_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_17_1">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1513,7 +1540,10 @@
     TIMESTAMP requested_at
     TIMESTAMP issued_at
     TIMESTAMP expires_at
-    TIMESTAMP revoked_at
+    TIMESTAMPTZ revoked_at
+    VARCHAR revoked_by
+    VARCHAR revocation_reason
+    TEXT revocation_message
   }
   CERTIFICATE_EVENTS {
     BIGSERIAL id PK
@@ -1681,19 +1711,25 @@
 - <code>id</code> BIGSERIAL, primary key
 - <code>organisation_id</code> BIGINT, not null, unique, foreign key → <code>organisation(id)</code>
 - <code>subject_dn</code> VARCHAR(500), nullable: X.500 distinguished name of the certificate subject
-- <code>serial_number</code> VARCHAR(150), nullable: certificate serial number
+- <code>serial_number</code> VARCHAR(150), nullable: serial number of the current certificate, as lowercase hex without separators or leading zeros (e.g. <code>39dd2e90</code>)
 - <code>is_renewable</code> BOOLEAN, not null, default FALSE: whether automatic renewal is enabled
 - <code>renewal_ttl</code> BIGINT, nullable: renewal time-to-live value
 - <code>type</code> VARCHAR(50), not null: certificate type (e.g., <code>MANUAL</code>, <code>BOOTSTRAP</code>, <code>AUTOMATED</code>)
 - <code>requested_at</code> TIMESTAMP, nullable: when the certificate was requested
 - <code>issued_at</code> TIMESTAMP, nullable: when the certificate was issued
 - <code>expires_at</code> TIMESTAMP, nullable: certificate expiry time
-- <code>revoked_at</code> TIMESTAMP, nullable: when the certificate was revoked (if applicable)</p>
+- <code>revoked_at</code> TIMESTAMP WITH TIME ZONE, nullable: revocation time returned by Vault (<code>revocation_time</code>); NULL while the certificate is active
+- <code>revoked_by</code> VARCHAR(255), nullable: Keycloak user id (<code>sub</code> claim) of the administrator who revoked the certificate
+- <code>revocation_reason</code> VARCHAR(50), nullable: reason given for the revocation (<code>UNSPECIFIED</code>, <code>KEY_COMPROMISE</code>, <code>AFFILIATION_CHANGED</code>, <code>SUPERSEDED</code>, <code>CESSATION_OF_OPERATION</code>); returned in OCSP responses
+- <code>revocation_message</code> TEXT, nullable: free-text comment given for the revocation</p>
 <p>Constraints:
 - UNIQUE on <code>organisation_id</code>: one certificate record per organisation
-- Index on <code>organisation_id</code></p>
+- Index on <code>organisation_id</code>
+- Index on <code>serial_number</code> (<code>idx_organisation_certificate__serial_number</code>)</p>
 <p>Usage:
-- Records the lifecycle state of each organisation's certificate. The <code>type</code> field tracks whether the certificate was manually provisioned, issued via the bootstrap flow, or issued via automated renewal.</p>
+- Records the lifecycle state of each organisation's certificate. The <code>type</code> field tracks whether the certificate was manually provisioned, issued via the bootstrap flow, or issued via automated renewal.
+- The four revocation columns are set by <code>POST /api/v1/certificate/revoke</code> (see <a href="../CERTIFICATE_REVOCATION/">Certificate Revocation API</a>) and cleared when a bootstrap issues a new certificate into the record. The record holds only the current certificate, so a certificate replaced by a renewal can no longer be found by its serial.
+- Rollback of the migration that added them: <code>src/main/resources/db/rollback/V20261109120000__add_certificate_revocation.rollback.sql</code>, run by hand.</p>
 <hr />
 <h3 id="certificate_events">certificate_events</h3>
 <p>Audit trail of certificate lifecycle events for each organisation certificate.</p>
@@ -1832,7 +1868,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 16, 2026 09:28:40 UTC">November 16, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 19, 2026 09:41:56 UTC">November 19, 2026</span>
   </span>
 
     

@@ -330,6 +330,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../CERTIFICATE_REVOCATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Certificate Revocation API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../DATABASE_SCHEMA/" class="md-nav__link">
         
   
@@ -906,10 +933,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_17" >
         
           
-          <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_17" id="__nav_17_label" tabindex="0">
             
   
   
@@ -927,8 +954,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_16">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_17_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_17">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -967,7 +994,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16_1" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_17_1" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -989,14 +1016,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_16_1" id="__nav_16_1_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_17_1" id="__nav_17_1_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_16_1_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_16_1">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_17_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_17_1">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1516,7 +1543,7 @@
 <td>F</td>
 <td>Revocation in Vault</td>
 <td>200 / <code>max-age≈300</code></td>
-<td><code>revoked</code> with Vault's time, no <code>Reason</code></td>
+<td><code>revoked</code> with Vault's time, no <code>Reason</code> (a revocation through the API carries one)</td>
 </tr>
 <tr>
 <td>G</td>
@@ -1580,7 +1607,7 @@
 <p>Expected:</p>
 <ul>
 <li><code>Cert Status: revoked</code>, with a <code>Revocation Time</code> that matches <code>revocation_time</code> in Vault.</li>
-<li>No <code>Reason</code>, because Vault does not record a revocation reason.</li>
+<li>No <code>Reason</code>, because Vault does not record a revocation reason. A certificate revoked through <code>POST /api/v1/certificate/revoke</code> instead carries the reason given there, e.g. <code>Revocation Reason: keyCompromise (0x1)</code>; see <a href="../CERTIFICATE_REVOCATION/#manual-test">Certificate Revocation API</a>.</li>
 <li>The status changes on the very next request, because status lookups are not cached.</li>
 </ul>
 <h3 id="g-missing-token">G. Missing token</h3>
@@ -1784,7 +1811,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 19, 2026 08:44:00 UTC">November 19, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 19, 2026 09:41:56 UTC">November 19, 2026</span>
   </span>
 
     

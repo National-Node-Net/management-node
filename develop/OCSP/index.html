@@ -330,6 +330,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../CERTIFICATE_REVOCATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Certificate Revocation API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../DATABASE_SCHEMA/" class="md-nav__link">
         
   
@@ -873,10 +900,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_17" >
         
           
-          <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_17" id="__nav_17_label" tabindex="0">
             
   
   
@@ -894,8 +921,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_16">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_17_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_17">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -934,7 +961,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16_1" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_17_1" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -956,14 +983,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_16_1" id="__nav_16_1_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_17_1" id="__nav_17_1_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_16_1_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_16_1">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_17_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_17_1">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1402,7 +1429,7 @@
 <td>Certificate revoked in Vault</td>
 <td><code>successful</code></td>
 <td>yes</td>
-<td><code>revoked</code> with Vault's <code>revocation_time</code> (see <a href="#limitations">Limitations</a>)</td>
+<td><code>revoked</code> with Vault's <code>revocation_time</code>, and the reason when it was revoked through the <a href="../CERTIFICATE_REVOCATION/">revocation API</a> (see <a href="#limitations">Limitations</a>)</td>
 </tr>
 <tr>
 <td>Serial not found in Vault, or issuer name/key hash does not match the federation CA</td>
@@ -1620,7 +1647,7 @@
 <hr />
 <h2 id="limitations">Limitations</h2>
 <ul>
-<li><strong>Revocation reason:</strong> Vault PKI does not record a reason when a certificate is revoked. <code>revoked</code> responses therefore carry Vault's revocation time without the optional <code>revocationReason</code>.</li>
+<li><strong>Revocation reason:</strong> Vault PKI does not record a reason when a certificate is revoked. The <a href="../CERTIFICATE_REVOCATION/">revocation API</a> records it in <code>organisation_certificate</code>, and <code>revoked</code> responses carry it as <code>revocationReason</code>, with Vault's revocation time. <code>UNSPECIFIED</code> is left out, as RFC 5280 asks, since an absent reason means unspecified. A certificate revoked directly in Vault, or whose record has since been re-issued by a bootstrap, has no reason. Failing to read the reason never fails the response: the certificate is still answered <code>revoked</code>, without one.</li>
 <li><strong>Transport:</strong> the endpoint is served on the existing HTTPS connector with mTLS and JWT, like the other Management Node APIs. A plain-HTTP listener, which would let nodes check status even when their own certificate is broken, is not implemented yet. Response integrity does not depend on transport, because every successful response is signed.</li>
 <li><strong>AIA:</strong> certificates carry no OCSP URL while this endpoint requires authentication, so <code>ocsp_servers</code> in <code>pki-int/config/urls</code> stays empty. TLS libraries call an AIA OCSP URL automatically and cannot send a JWT, so their requests would be rejected. Depending on the client's configuration, that either fails the handshake or silently skips the revocation check. Vault embeds the URL in every certificate it issues, so it cannot be removed from certificates already issued. Federators get status through the shared revocation library, which calls this endpoint with its own configured URL, token and circuit breaker, so nothing depends on the AIA field. Vault's built-in responder is not an alternative, because nodes must never call Vault directly. Revisit this only if a standard client needs it.</li>
 <li><strong>Tidied certificates:</strong> auto-tidy removes certificates 72 hours after they expire. An OCSP request for such a serial returns <code>unknown</code>, even if the certificate had been revoked.</li>
@@ -1646,7 +1673,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 19, 2026 08:44:00 UTC">November 19, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 19, 2026 09:41:56 UTC">November 19, 2026</span>
   </span>
 
     
