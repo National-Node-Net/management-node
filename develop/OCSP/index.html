@@ -780,6 +780,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../VAULT_ACCESS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vault Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../entity-dto-converter-pattern/" class="md-nav__link">
         
   
@@ -846,10 +873,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_15" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16" >
         
           
-          <label class="md-nav__link" for="__nav_15" id="__nav_15_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="0">
             
   
   
@@ -867,8 +894,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_15_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_15">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -907,7 +934,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_15_1" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16_1" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -929,14 +956,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_15_1" id="__nav_15_1_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_16_1" id="__nav_16_1_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_15_1_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_15_1">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_16_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16_1">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1509,7 +1536,7 @@
 <li>checks that the certificate carries the generated key, was issued and signed by the CA of <code>application.vault.pki-mount</code>, and is currently valid.</li>
 </ol>
 <p>This happens when the application is ready. After that, the signer is checked every <code>refresh-interval</code> and a new one is issued once the current certificate has passed 70% of its lifetime. If issuing fails, the previous signer is kept while it is still valid. Until the first signer is issued, for example while Vault is unreachable at startup, OCSP requests are answered with <code>tryLater</code>.</p>
-<p>The signer key is never written anywhere, so each Management Node instance has its own signer, and a restart issues a new one. The default role must accept the signer's common name and EC keys (<code>key_type=any</code>), and the Management Node's Vault token already needs <code>update</code> on <code>&lt;pki-mount&gt;/sign/&lt;default-role&gt;</code> for CSR signing.</p>
+<p>The signer key is never written anywhere, so each Management Node instance has its own signer, and a restart issues a new one. The default role must accept the signer's common name and EC keys (<code>key_type=any</code>), and the <code>mgmt-node-pki</code> policy already allows <code>&lt;pki-mount&gt;/sign/&lt;default-role&gt;</code> for CSR signing; see <a href="../VAULT_ACCESS/">Vault Access</a>.</p>
 <hr />
 <h2 id="verifying-with-openssl">Verifying with OpenSSL</h2>
 <p><code>openssl ocsp</code> cannot present a client certificate or a bearer token itself. Build the request with OpenSSL, send it with <code>curl</code>, then let OpenSSL verify the response:</p>
@@ -1524,14 +1551,15 @@
 </span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">  </span>https://localhost:8090/api/v1/certificate/ocsp
 </span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>
 </span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="c1"># 3. Save the signer certificate included in the response and check that the federation CA issued it</span>
-</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>openssl<span class="w"> </span>ocsp<span class="w"> </span>-respin<span class="w"> </span>resp.der<span class="w"> </span>-resp_text<span class="w"> </span>-noverify<span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span>-n<span class="w"> </span><span class="s1">'/BEGIN CERTIFICATE/,/END CERTIFICATE/p'</span><span class="w"> </span>&gt;<span class="w"> </span>signer.pem
-</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>openssl<span class="w"> </span>verify<span class="w"> </span>-CAfile<span class="w"> </span>ca.pem<span class="w"> </span>signer.pem
-</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>
-</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="c1"># 4. Verify the signature with the signer certificate, check the nonce and print the statuses</span>
-</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>openssl<span class="w"> </span>ocsp<span class="w"> </span>-reqin<span class="w"> </span>req.der<span class="w"> </span>-respin<span class="w"> </span>resp.der<span class="w"> </span>-issuer<span class="w"> </span>ca.pem<span class="w"> </span>-VAfile<span class="w"> </span>signer.pem<span class="w"> </span>-resp_text
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="c1"># ca-chain.pem comes from pki-int/cert/ca_chain: the intermediate alone cannot be verified up to a trusted root</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>openssl<span class="w"> </span>ocsp<span class="w"> </span>-respin<span class="w"> </span>resp.der<span class="w"> </span>-resp_text<span class="w"> </span>-noverify<span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span>-n<span class="w"> </span><span class="s1">'/BEGIN CERTIFICATE/,/END CERTIFICATE/p'</span><span class="w"> </span>&gt;<span class="w"> </span>signer.pem
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>openssl<span class="w"> </span>verify<span class="w"> </span>-CAfile<span class="w"> </span>ca-chain.pem<span class="w"> </span>signer.pem
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="c1"># 4. Verify the signature with the signer certificate, check the nonce and print the statuses</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>openssl<span class="w"> </span>ocsp<span class="w"> </span>-reqin<span class="w"> </span>req.der<span class="w"> </span>-respin<span class="w"> </span>resp.der<span class="w"> </span>-issuer<span class="w"> </span>ca.pem<span class="w"> </span>-VAfile<span class="w"> </span>signer.pem<span class="w"> </span>-resp_text
 </span></code></pre></div>
 <p>Expected output includes <code>signer.pem: OK</code> in step 3, and <code>Response verify OK</code>, one <code>Cert Status: good|revoked|unknown</code> per certificate and an <code>OCSP Nonce</code> matching the request in step 4.</p>
-<p><code>-CAfile ca.pem</code> alone gives <code>Response Verify Failure</code> with <code>missing ocspsigning usage</code>, because the signer certificate has no <code>id-kp-OCSPSigning</code> EKU. <code>-VAfile</code> trusts the signer certificate explicitly, which skips that check.</p>
+<p>Verifying with <code>-CAfile ca-chain.pem</code> instead of <code>-VAfile</code> gives <code>Response Verify Failure</code> with <code>missing ocspsigning usage</code>, because the signer certificate has no <code>id-kp-OCSPSigning</code> EKU. <code>-VAfile</code> trusts the signer certificate explicitly, which skips that check.</p>
 <p>When verifying, pass only <code>-reqin</code>. If you also pass <code>-cert</code>/<code>-serial</code>, OpenSSL builds a new request with a fresh nonce and reports <code>Nonce Verify error</code>.</p>
 <hr />
 <h2 id="observability">Observability</h2>
@@ -1594,7 +1622,8 @@
 <ul>
 <li><strong>Revocation reason:</strong> Vault PKI does not record a reason when a certificate is revoked. <code>revoked</code> responses therefore carry Vault's revocation time without the optional <code>revocationReason</code>.</li>
 <li><strong>Transport:</strong> the endpoint is served on the existing HTTPS connector with mTLS and JWT, like the other Management Node APIs. A plain-HTTP listener, which would let nodes check status even when their own certificate is broken, is not implemented yet. Response integrity does not depend on transport, because every successful response is signed.</li>
-<li><strong>AIA:</strong> do not set this endpoint as <code>ocsp_servers</code> in <code>pki-int/config/urls</code>. TLS libraries call an AIA OCSP URL automatically and cannot send a JWT, so their requests would be rejected. Depending on the client's configuration, that either fails the handshake or silently skips the revocation check. Vault embeds the URL in every certificate it issues, so it cannot be changed for certificates already issued. Nodes call the endpoint directly with their token. An AIA URL must point at a responder that needs no authentication.</li>
+<li><strong>AIA:</strong> certificates carry no OCSP URL while this endpoint requires authentication, so <code>ocsp_servers</code> in <code>pki-int/config/urls</code> stays empty. TLS libraries call an AIA OCSP URL automatically and cannot send a JWT, so their requests would be rejected. Depending on the client's configuration, that either fails the handshake or silently skips the revocation check. Vault embeds the URL in every certificate it issues, so it cannot be removed from certificates already issued. Federators get status through the shared revocation library, which calls this endpoint with its own configured URL, token and circuit breaker, so nothing depends on the AIA field. Vault's built-in responder is not an alternative, because nodes must never call Vault directly. Revisit this only if a standard client needs it.</li>
+<li><strong>Tidied certificates:</strong> auto-tidy removes certificates 72 hours after they expire. An OCSP request for such a serial returns <code>unknown</code>, even if the certificate had been revoked.</li>
 <li><strong>Signer certificate:</strong> the signer certificate is issued through the default PKI role, so it has the same key usages as node certificates (<code>serverAuth</code>, <code>clientAuth</code>) and no <code>id-kp-OCSPSigning</code> EKU. Clients that apply the RFC 6960 delegated-responder check (OpenSSL with <code>-CAfile</code>, the Java PKIX revocation checker) reject the responses unless they trust the signer certificate explicitly. A dedicated Vault role for the signer is left for later.</li>
 </ul>
 
@@ -1617,7 +1646,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 19, 2026 08:16:34 UTC">November 19, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 19, 2026 08:44:00 UTC">November 19, 2026</span>
   </span>
 
     

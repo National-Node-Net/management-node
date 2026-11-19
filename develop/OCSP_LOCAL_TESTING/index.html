@@ -813,6 +813,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../VAULT_ACCESS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vault Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../entity-dto-converter-pattern/" class="md-nav__link">
         
   
@@ -879,10 +906,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_15" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16" >
         
           
-          <label class="md-nav__link" for="__nav_15" id="__nav_15_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="0">
             
   
   
@@ -900,8 +927,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_15_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_15">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -940,7 +967,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_15_1" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16_1" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -962,14 +989,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_15_1" id="__nav_15_1_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_16_1" id="__nav_16_1_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_15_1_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_15_1">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_16_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16_1">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1371,12 +1398,12 @@
 <li>A federator client exists, for example <code>FEDERATOR_ENV</code>. The role <code>check_certificate_status</code> is assigned to the service account of that client. Federator clients are the consumer and producer nodes that call the OCSP endpoint in a real deployment. You can create the client in either of two ways:</li>
 <li><strong>OpenTofu</strong> (<code>docker/keycloak/tofu</code>): <code>terraform.tfvars</code> already maps the role to <code>FEDERATOR_ENV</code>, <code>FEDERATOR_BCC</code> and <code>FEDERATOR_HEG</code>. These clients authenticate with their mTLS certificate (<code>client-x509</code>) and have no secret.</li>
 <li><strong>Manually</strong>: follow "Testing further with a federator client" under <a href="../README.md#testing-api-endpoints">Testing API Endpoints</a> in the README, and in step 5 also assign <code>check_certificate_status</code>. Such a client authenticates with a client secret.</li>
-<li>The Vault role <code>default-role</code> accepts EC keys (<code>key_type=any</code>, as in the README). The Management Node issues its OCSP signer through this role.</li>
+<li>Vault is set up as in <a href="../README.md#vault-setup-optional-required-for-certificate-manager">Vault Setup</a>. The role <code>default-role</code> accepts EC keys (<code>key_type=any</code>); the Management Node issues its OCSP signer through it.</li>
 <li><code>client.crt</code> and <code>client.key</code> are in the repository root.</li>
 </ul>
 <p>Session variables:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">MSYS_NO_PATHCONV</span><span class="o">=</span><span class="m">1</span><span class="w">                          </span><span class="c1"># Git Bash only: stops "/CN=..." being rewritten as a Windows path</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">VAULT_TOKEN</span><span class="o">=</span>&lt;vault<span class="w"> </span>token&gt;
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">VAULT_TOKEN</span><span class="o">=</span>&lt;vault<span class="w"> </span>administrator<span class="w"> </span>token&gt;<span class="w">     </span><span class="c1"># the commands below need more than the Management Node's token allows</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">FEDERATOR_CLIENT_ID</span><span class="o">=</span>FEDERATOR_ENV
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="nb">export</span><span class="w"> </span><span class="nv">FEDERATOR_CLIENT_SECRET</span><span class="o">=</span>&lt;client<span class="w"> </span>secret&gt;<span class="w">      </span><span class="c1"># only for a client created manually with client authentication</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">CURL</span><span class="o">=</span>curl<span class="w">                                   </span><span class="c1"># or the path to a curl build that uses OpenSSL</span>
@@ -1394,9 +1421,13 @@
 <li>Fetch the CA and issue a test certificate. The test certificate is the one that should come back as <code>good</code>:</li>
 </ol>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-e<span class="w"> </span><span class="nv">VAULT_TOKEN</span><span class="o">=</span><span class="nv">$VAULT_TOKEN</span><span class="w"> </span>vault<span class="w"> </span>vault<span class="w"> </span><span class="nb">read</span><span class="w"> </span>-field<span class="o">=</span>certificate<span class="w"> </span>pki-int/cert/ca<span class="w"> </span>&gt;<span class="w"> </span>ca.pem
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-e<span class="w"> </span><span class="nv">VAULT_TOKEN</span><span class="o">=</span><span class="nv">$VAULT_TOKEN</span><span class="w"> </span>vault<span class="w"> </span>vault<span class="w"> </span>write<span class="w"> </span>-field<span class="o">=</span>certificate<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span>pki-int/issue/default-role<span class="w"> </span><span class="nv">common_name</span><span class="o">=</span>ocsp-test.local<span class="w"> </span><span class="nv">ttl</span><span class="o">=</span>2h<span class="w"> </span>&gt;<span class="w"> </span>ocsp-test.pem
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-e<span class="w"> </span><span class="nv">VAULT_TOKEN</span><span class="o">=</span><span class="nv">$VAULT_TOKEN</span><span class="w"> </span>vault<span class="w"> </span>vault<span class="w"> </span><span class="nb">read</span><span class="w"> </span>-field<span class="o">=</span>ca_chain<span class="w"> </span>pki-int/cert/ca_chain<span class="w"> </span>&gt;<span class="w"> </span>ca-chain.pem
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>openssl<span class="w"> </span>req<span class="w"> </span>-new<span class="w"> </span>-newkey<span class="w"> </span>rsa:2048<span class="w"> </span>-nodes<span class="w"> </span>-keyout<span class="w"> </span>ocsp-test.key<span class="w"> </span>-subj<span class="w"> </span><span class="s2">"/CN=ocsp-test.local"</span><span class="w"> </span>-out<span class="w"> </span>ocsp-test.csr
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-i<span class="w"> </span>-e<span class="w"> </span><span class="nv">VAULT_TOKEN</span><span class="o">=</span><span class="nv">$VAULT_TOKEN</span><span class="w"> </span>vault<span class="w"> </span>vault<span class="w"> </span>write<span class="w"> </span>-field<span class="o">=</span>certificate<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">  </span>pki-int/sign/default-role<span class="w"> </span><span class="nv">csr</span><span class="o">=</span>-<span class="w"> </span><span class="nv">ttl</span><span class="o">=</span>2h<span class="w"> </span>&lt;<span class="w"> </span>ocsp-test.csr<span class="w"> </span>&gt;<span class="w"> </span>ocsp-test.pem
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>rm<span class="w"> </span>ocsp-test.key<span class="w"> </span>ocsp-test.csr
 </span></code></pre></div>
+<p><code>default-role</code> accepts any key type, so Vault can only sign with it. <code>issue/default-role</code> fails with <code>role key type "any" not allowed for issuing certificates</code>.</p>
 <ol>
 <li>Start the application:</li>
 </ol>
@@ -1431,7 +1462,7 @@
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>ocsp<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="s2">"</span><span class="nv">$CURL</span><span class="s2">"</span><span class="w"> </span>-sSk<span class="w"> </span>--cert<span class="w"> </span>client.crt<span class="w"> </span>--key<span class="w"> </span>client.key<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$TOKEN</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/ocsp-request"</span><span class="w"> </span>--data-binary<span class="w"> </span>@<span class="si">${</span><span class="nv">1</span><span class="k">:-</span><span class="nv">req</span><span class="p">.der</span><span class="si">}</span><span class="w"> </span>-o<span class="w"> </span><span class="si">${</span><span class="nv">2</span><span class="k">:-</span><span class="nv">resp</span><span class="p">.der</span><span class="si">}</span><span class="w"> </span>-D<span class="w"> </span>-<span class="w"> </span>https://localhost:8090/api/v1/certificate/ocsp<span class="p">;</span><span class="w"> </span><span class="o">}</span>
 </span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>verify<span class="o">()</span><span class="w"> </span><span class="o">{</span>
 </span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span>openssl<span class="w"> </span>ocsp<span class="w"> </span>-respin<span class="w"> </span>resp.der<span class="w"> </span>-resp_text<span class="w"> </span>-noverify<span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span>-n<span class="w"> </span><span class="s1">'/BEGIN CERTIFICATE/,/END CERTIFICATE/p'</span><span class="w"> </span>&gt;<span class="w"> </span>signer.pem
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span>openssl<span class="w"> </span>verify<span class="w"> </span>-CAfile<span class="w"> </span>ca.pem<span class="w"> </span>signer.pem<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>openssl<span class="w"> </span>ocsp<span class="w"> </span>-reqin<span class="w"> </span>req.der<span class="w"> </span>-respin<span class="w"> </span>resp.der<span class="w"> </span>-issuer<span class="w"> </span>ca.pem<span class="w"> </span>-VAfile<span class="w"> </span>signer.pem<span class="w"> </span>-resp_text
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span>openssl<span class="w"> </span>verify<span class="w"> </span>-CAfile<span class="w"> </span>ca-chain.pem<span class="w"> </span>signer.pem<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>openssl<span class="w"> </span>ocsp<span class="w"> </span>-reqin<span class="w"> </span>req.der<span class="w"> </span>-respin<span class="w"> </span>resp.der<span class="w"> </span>-issuer<span class="w"> </span>ca.pem<span class="w"> </span>-VAfile<span class="w"> </span>signer.pem<span class="w"> </span>-resp_text
 </span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="o">}</span>
 </span></code></pre></div>
 <p>The signer certificate has no <code>id-kp-OCSPSigning</code> EKU, so <code>-CAfile ca.pem</code> alone would fail with <code>missing ocspsigning usage</code>. <code>-VAfile</code> trusts the signer certificate explicitly instead.</p>
@@ -1491,7 +1522,7 @@
 <td>G</td>
 <td>Missing token</td>
 <td>401</td>
-<td>JSON <code>ErrorResponse</code>; the OCSP layer does not run</td>
+<td>empty body; the OCSP layer does not run</td>
 </tr>
 <tr>
 <td>H</td>
@@ -1534,7 +1565,7 @@
 </span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>ocsp<span class="w"> </span>big.der<span class="w"> </span>bad.der
 </span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>openssl<span class="w"> </span>ocsp<span class="w"> </span>-respin<span class="w"> </span>bad.der<span class="w"> </span>-resp_text<span class="w"> </span>-noverify
 </span></code></pre></div>
-<p>Expected: <code>OCSP Response Status: malformedRequest (0x1)</code> and <code>Cache-Control: no-store</code>.</p>
+<p>Expected: <code>Responder Error: malformedrequest (1)</code> and <code>Cache-Control: no-store</code>.</p>
 <h3 id="e-garbage-body">E. Garbage body</h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">"garbage"</span><span class="w"> </span>&gt;<span class="w"> </span>garbage.bin
 </span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>ocsp<span class="w"> </span>garbage.bin<span class="w"> </span>bad.der
@@ -1556,17 +1587,17 @@
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="s2">"</span><span class="nv">$CURL</span><span class="s2">"</span><span class="w"> </span>-sSk<span class="w"> </span>--cert<span class="w"> </span>client.crt<span class="w"> </span>--key<span class="w"> </span>client.key<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/ocsp-request"</span><span class="w"> </span><span class="se">\</span>
 </span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span>--data-binary<span class="w"> </span>@req.der<span class="w"> </span>-D<span class="w"> </span>-<span class="w"> </span>https://localhost:8090/api/v1/certificate/ocsp
 </span></code></pre></div>
-<p>Expected: HTTP <code>401</code> with a JSON body. For comparison, a token without the <code>check_certificate_status</code> role gets <code>403</code>.</p>
+<p>Expected: HTTP <code>401</code> with <code>WWW-Authenticate: Bearer</code> and an empty body. For comparison, a token without the <code>check_certificate_status</code> role gets <code>403</code>.</p>
 <h3 id="h-vault-unavailable">H. Vault unavailable</h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>docker<span class="w"> </span>stop<span class="w"> </span>vault
 </span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>ocsp<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>openssl<span class="w"> </span>ocsp<span class="w"> </span>-respin<span class="w"> </span>resp.der<span class="w"> </span>-resp_text<span class="w"> </span>-noverify
 </span></code></pre></div>
-<p>Expected: <code>OCSP Response Status: tryLater (0x3)</code> and <code>Cache-Control: no-store</code>.</p>
+<p>Expected: <code>Responder Error: trylater (3)</code> and <code>Cache-Control: no-store</code>.</p>
 <p>Then bring Vault back:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>docker<span class="w"> </span>start<span class="w"> </span>vault
 </span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>vault<span class="w"> </span>vault<span class="w"> </span>operator<span class="w"> </span>unseal<span class="w"> </span>&lt;unseal<span class="w"> </span>key&gt;
 </span></code></pre></div>
-<p>The signer is kept in memory, so once Vault is unsealed, responses go back to <code>successful</code> without restarting the application.</p>
+<p>The signer is kept in memory, so once Vault is unsealed, responses go back to <code>successful</code> without restarting the application. If Vault was unavailable when the application started, there is no signer in memory, so responses stay <code>tryLater</code> until the next reload, up to 5 minutes after Vault is back.</p>
 <hr />
 <h2 id="metrics-and-logs">Metrics and logs</h2>
 <p>After scenarios A–H, every OCSP metric should have a non-zero value. Metrics are served on the management port 8081 over plain HTTP, without mTLS:</p>
@@ -1689,7 +1720,12 @@
 <tr>
 <td><code>tryLater</code> in A–C</td>
 <td>no signer issued, or Vault is sealed</td>
-<td>look for <code>Failed to issue OCSP signer</code> in the log; check <code>vault status</code> and that <code>default-role</code> accepts EC keys (<code>key_type=any</code>) and the signer's common name</td>
+<td>look for <code>Failed to issue OCSP signer</code> in the log; check <code>vault status</code> and that the AppRole can sign with <code>default-role</code></td>
+</tr>
+<tr>
+<td><code>Cannot login using AppRole: permission denied</code> in the log</td>
+<td>5 failed logins locked the AppRole</td>
+<td>wait 15 minutes or lift the lock, as described in <a href="../VAULT_ACCESS/#authentication">Vault Access</a></td>
 </tr>
 <tr>
 <td><code>Nonce Verify error</code></td>
@@ -1703,8 +1739,8 @@
 </tr>
 <tr>
 <td><code>signer.pem</code> verification fails</td>
-<td><code>ca.pem</code> is not the <code>pki-int</code> CA</td>
-<td>fetch it again with <code>vault read -field=certificate pki-int/cert/ca</code></td>
+<td><code>ca-chain.pem</code> is not the <code>pki-int</code> chain</td>
+<td>fetch it again with <code>vault read -field=ca_chain pki-int/cert/ca_chain</code></td>
 </tr>
 <tr>
 <td><code>curl: (35)</code> or <code>(56)</code></td>
@@ -1725,7 +1761,7 @@
 </table>
 <hr />
 <h2 id="clean-up">Clean up</h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>rm<span class="w"> </span>-f<span class="w"> </span>req.der<span class="w"> </span>resp.der<span class="w"> </span>big.der<span class="w"> </span>bad.der<span class="w"> </span>garbage.bin<span class="w"> </span>ocsp-test.pem<span class="w"> </span>ca.pem<span class="w"> </span>signer.pem<span class="w"> </span>client-test.p12<span class="w"> </span>load-test/req.der
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>rm<span class="w"> </span>-f<span class="w"> </span>req.der<span class="w"> </span>resp.der<span class="w"> </span>big.der<span class="w"> </span>bad.der<span class="w"> </span>garbage.bin<span class="w"> </span>ocsp-test.pem<span class="w"> </span>ca.pem<span class="w"> </span>ca-chain.pem<span class="w"> </span>signer.pem<span class="w"> </span>client-test.p12<span class="w"> </span>load-test/req.der
 </span></code></pre></div>
 <p>The signer lives only in the application's memory, so nothing about it needs cleaning up in Vault.</p>
 
@@ -1748,7 +1784,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 19, 2026 08:16:34 UTC">November 19, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 19, 2026 08:44:00 UTC">November 19, 2026</span>
   </span>
 
     
