@@ -24,14 +24,16 @@ import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.RevokeCertificat
 import uk.gov.dbt.ndtp.ia.node.management.model.jwt.EnhancedPrincipal;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.OrganisationCertificateService;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.OrganisationService;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.status.CertificateStatusService;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.status.FederationCaService;
 import uk.gov.dbt.ndtp.ia.node.management.utils.cryptography.CertificateSerials;
 
 /**
  * Implementation of {@link CertificateRevocationProvider}.
  *
  * <p>Runs the checks in the order the API promises - rate limit, certificate exists, it belongs to the caller's
- * organisation, it is not revoked yet - so that a refused request never reaches Vault. Then revokes in Vault and
- * records the revocation in the database.
+ * organisation, it is not revoked yet - so that a refused request never reaches Vault. Then revokes in Vault,
+ * drops the certificate's cached status and records the revocation in the database.
  *
  * <p>Not transactional: the Vault call must not hold a database transaction open, and the database update is a
  * transaction of its own ({@link OrganisationCertificateService#recordRevocation}). If that update fails after
@@ -47,16 +49,22 @@ public class CertificateRevocationProviderImpl implements CertificateRevocationP
     private final OrganisationCertificateService certificateService;
     private final OrganisationService organisationService;
     private final RevocationRateLimiter rateLimiter;
+    private final CertificateStatusService statusService;
+    private final FederationCaService federationCa;
 
     public CertificateRevocationProviderImpl(
             PkiBackend pkiBackend,
             OrganisationCertificateService certificateService,
             OrganisationService organisationService,
-            RevocationRateLimiter rateLimiter) {
+            RevocationRateLimiter rateLimiter,
+            CertificateStatusService statusService,
+            FederationCaService federationCa) {
         this.pkiBackend = pkiBackend;
         this.certificateService = certificateService;
         this.organisationService = organisationService;
         this.rateLimiter = rateLimiter;
+        this.statusService = statusService;
+        this.federationCa = federationCa;
     }
 
     @Override
@@ -88,9 +96,13 @@ public class CertificateRevocationProviderImpl implements CertificateRevocationP
                     Reason.CERTIFICATE_EXPIRED,
                     "Certificate has expired, so it cannot be revoked; nothing was changed");
         }
+        // Right after Vault, so the certificate is refused from now on even if recording it fails.
+        evictCachedStatus(serial, vaultSerial);
 
         String comment = blankToNull(request.getComment());
         record(certificate, vaultSerial, storedSerial, revokedAt, caller.subject(), request, comment);
+        // Again once the reason is recorded: a status cached in between would be revoked, but without the reason.
+        evictCachedStatus(serial, vaultSerial);
 
         log.info(
                 "Certificate {} of organisation {} revoked at {} by {}, reason {}",
@@ -166,6 +178,22 @@ public class CertificateRevocationProviderImpl implements CertificateRevocationP
         }
         logReconciliationRequired(certificate, vaultSerial, revokedAt, revokedBy, "the record changed meanwhile");
         throw new IllegalStateException("Certificate record changed while it was being revoked");
+    }
+
+    /**
+     * Drops the certificate's cached status, so the revocation takes effect on the next request instead of when
+     * the entry expires. A failure cannot undo the revocation in Vault, so it is logged and the request goes on:
+     * the certificate is then refused once the cached status expires.
+     */
+    private void evictCachedStatus(BigInteger serial, String vaultSerial) {
+        try {
+            statusService.evict(federationCa.current(), serial);
+        } catch (RuntimeException e) {
+            log.error(
+                    "Cached status of revoked certificate {} could not be evicted; it stays in use until it expires",
+                    vaultSerial,
+                    e);
+        }
     }
 
     private static void logReconciliationRequired(

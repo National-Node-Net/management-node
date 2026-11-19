@@ -45,22 +45,22 @@ import uk.gov.dbt.ndtp.ia.node.management.utils.cryptography.PemUtil;
  * Test PKI for OCSP tests: a CA, delegated OCSP signers and leaf certificates built with Bouncy Castle.
  * Key pairs are generated once per JVM because RSA key generation is slow.
  */
-final class OcspTestPki {
+public final class OcspTestPki {
 
-    static final Instant NOW = Instant.parse("2026-10-23T10:00:00Z");
+    public static final Instant NOW = Instant.parse("2026-10-23T10:00:00Z");
 
-    static final KeyPair CA_KEYS = rsaKeyPair();
-    static final KeyPair OTHER_CA_KEYS = rsaKeyPair();
-    static final KeyPair SIGNER_RSA_KEYS = rsaKeyPair();
-    static final KeyPair SIGNER_EC_KEYS = ecKeyPair();
-    static final KeyPair LEAF_KEYS = rsaKeyPair();
+    public static final KeyPair CA_KEYS = rsaKeyPair();
+    public static final KeyPair OTHER_CA_KEYS = rsaKeyPair();
+    public static final KeyPair SIGNER_RSA_KEYS = rsaKeyPair();
+    public static final KeyPair SIGNER_EC_KEYS = ecKeyPair();
+    public static final KeyPair LEAF_KEYS = rsaKeyPair();
 
-    static final X509CertificateHolder CA = caCertificate("CN=Federation Test CA", CA_KEYS);
-    static final X509CertificateHolder OTHER_CA = caCertificate("CN=Other Test CA", OTHER_CA_KEYS);
+    public static final X509CertificateHolder CA = caCertificate("CN=Federation Test CA", CA_KEYS);
+    public static final X509CertificateHolder OTHER_CA = caCertificate("CN=Other Test CA", OTHER_CA_KEYS);
 
     private OcspTestPki() {}
 
-    static KeyPair rsaKeyPair() {
+    public static KeyPair rsaKeyPair() {
         try {
             KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
             kpg.initialize(2048);
@@ -70,7 +70,7 @@ final class OcspTestPki {
         }
     }
 
-    static KeyPair ecKeyPair() {
+    public static KeyPair ecKeyPair() {
         try {
             KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");
             kpg.initialize(new ECGenParameterSpec("secp256r1"));
@@ -80,7 +80,7 @@ final class OcspTestPki {
         }
     }
 
-    static X509CertificateHolder caCertificate(String subject, KeyPair keys) {
+    public static X509CertificateHolder caCertificate(String subject, KeyPair keys) {
         X500Name name = new X500Name(subject);
         return build(
                 name,
@@ -95,12 +95,12 @@ final class OcspTestPki {
     }
 
     /** OCSP signer issued by {@link #CA}, valid one hour either side of {@link #NOW}. */
-    static X509CertificateHolder signerCertificate(KeyPair signerKeys) {
+    public static X509CertificateHolder signerCertificate(KeyPair signerKeys) {
         return signerCertificate(
                 signerKeys, CA, CA_KEYS, NOW.minus(Duration.ofHours(1)), NOW.plus(Duration.ofHours(1)), true);
     }
 
-    static X509CertificateHolder signerCertificate(
+    public static X509CertificateHolder signerCertificate(
             KeyPair signerKeys,
             X509CertificateHolder issuer,
             KeyPair issuerKeys,
@@ -123,7 +123,7 @@ final class OcspTestPki {
      * Issues a certificate for the subject and public key of a PEM CSR, without the OCSP signing EKU, as Vault does
      * with a role that does not grant it.
      */
-    static X509CertificateHolder certificateFromCsr(
+    public static X509CertificateHolder certificateFromCsr(
             String csrPem, X509CertificateHolder issuer, KeyPair issuerKeys, Instant notBefore, Instant notAfter) {
         try (PEMParser parser = new PEMParser(new StringReader(csrPem))) {
             var csr = new JcaPKCS10CertificationRequest((PKCS10CertificationRequest) parser.readObject());
@@ -142,7 +142,8 @@ final class OcspTestPki {
         }
     }
 
-    static X509CertificateHolder leafCertificate(BigInteger serial, X509CertificateHolder issuer, KeyPair issuerKeys) {
+    public static X509CertificateHolder leafCertificate(
+            BigInteger serial, X509CertificateHolder issuer, KeyPair issuerKeys) {
         return build(
                 issuer.getSubject(),
                 issuerKeys,
@@ -155,19 +156,20 @@ final class OcspTestPki {
                 false);
     }
 
-    static OcspSigner rsaSigner() {
+    public static OcspSigner rsaSigner() {
         return new OcspSigner(SIGNER_RSA_KEYS.getPrivate(), signerCertificate(SIGNER_RSA_KEYS), CA, "SHA256withRSA");
     }
 
-    static OcspSigner ecSigner() {
+    public static OcspSigner ecSigner() {
         return new OcspSigner(SIGNER_EC_KEYS.getPrivate(), signerCertificate(SIGNER_EC_KEYS), CA, "SHA256withECDSA");
     }
 
-    static CertificateID certId(X509CertificateHolder issuer, BigInteger serial) {
+    public static CertificateID certId(X509CertificateHolder issuer, BigInteger serial) {
         return certId(issuer, serial, CertificateID.HASH_SHA1);
     }
 
-    static CertificateID certId(X509CertificateHolder issuer, BigInteger serial, AlgorithmIdentifier hashAlgorithm) {
+    public static CertificateID certId(
+            X509CertificateHolder issuer, BigInteger serial, AlgorithmIdentifier hashAlgorithm) {
         try {
             return new CertificateID(
                     new JcaDigestCalculatorProviderBuilder().build().get(hashAlgorithm), issuer, serial);
@@ -177,7 +179,7 @@ final class OcspTestPki {
     }
 
     /** Builds a DER-encoded OCSP request for the given certificate IDs, with an optional nonce. */
-    static byte[] request(byte[] nonce, CertificateID... ids) {
+    public static byte[] request(byte[] nonce, CertificateID... ids) {
         try {
             OCSPReqBuilder builder = new OCSPReqBuilder();
             for (CertificateID id : ids) {
@@ -192,7 +194,7 @@ final class OcspTestPki {
         }
     }
 
-    static Extension nonceExtension(byte[] nonce) {
+    public static Extension nonceExtension(byte[] nonce) {
         try {
             return new Extension(
                     OCSPObjectIdentifiers.id_pkix_ocsp_nonce, false, new DEROctetString(new DEROctetString(nonce)));
@@ -201,7 +203,7 @@ final class OcspTestPki {
         }
     }
 
-    static X509Certificate toX509(X509CertificateHolder holder) {
+    public static X509Certificate toX509(X509CertificateHolder holder) {
         try {
             return new JcaX509CertificateConverter().getCertificate(holder);
         } catch (Exception e) {
@@ -209,7 +211,7 @@ final class OcspTestPki {
         }
     }
 
-    static String toPem(X509CertificateHolder holder) {
+    public static String toPem(X509CertificateHolder holder) {
         try {
             return PemUtil.toPem("CERTIFICATE", holder.getEncoded());
         } catch (Exception e) {
@@ -217,12 +219,12 @@ final class OcspTestPki {
         }
     }
 
-    static String privateKeyPem(KeyPair keys) {
+    public static String privateKeyPem(KeyPair keys) {
         return PemUtil.toPem("PRIVATE KEY", keys.getPrivate().getEncoded());
     }
 
     /** Builds a PEM CSR for the given subject, signed with SHA256withRSA or SHA256withECDSA. */
-    static String csrPem(String subject, KeyPair keys) {
+    public static String csrPem(String subject, KeyPair keys) {
         try {
             var csr = new JcaPKCS10CertificationRequestBuilder(new X500Name(subject), keys.getPublic())
                     .build(new JcaContentSignerBuilder(signatureAlgorithm(keys)).build(keys.getPrivate()));

@@ -41,6 +41,9 @@ public class CertificateStatusDTO {
     /** Why the certificate was revoked; null when no reason is known. */
     private RevocationReason revocationReason;
 
+    /** When the status was looked up at its source; null on a status that did not come through the status cache. */
+    private Instant checkedAt;
+
     public static CertificateStatusDTO good() {
         return CertificateStatusDTO.builder().status(Status.GOOD).build();
     }
