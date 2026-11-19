@@ -13,6 +13,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.CertificateType;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.RevocationReason;
 
 /**
  * DTO for OrganisationCertificate entity.
@@ -47,4 +48,18 @@ public class OrganisationCertificateDTO {
     private Timestamp expiresAt;
 
     private Timestamp revokedAt;
+
+    private String revokedBy;
+
+    private RevocationReason revocationReason;
+
+    private String revocationMessage;
+
+    /** Clears the revocation, for a record that now holds a newly issued certificate. */
+    public void clearRevocation() {
+        this.revokedAt = null;
+        this.revokedBy = null;
+        this.revocationReason = null;
+        this.revocationMessage = null;
+    }
 }

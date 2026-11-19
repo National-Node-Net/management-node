@@ -16,18 +16,20 @@ import java.math.BigInteger;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.vault.VaultException;
 import org.springframework.vault.core.VaultTemplate;
 import org.springframework.vault.support.VaultResponse;
 import uk.gov.dbt.ndtp.ia.node.management.exception.CertificateStatusUnavailableException;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.CertificateStatusDTO;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.RevocationReason;
+import uk.gov.dbt.ndtp.ia.node.management.service.data.OrganisationCertificateService;
 
 @ExtendWith(MockitoExtension.class)
 class VaultCertificateStatusProviderTest {
@@ -38,13 +40,16 @@ class VaultCertificateStatusProviderTest {
     @Mock
     private VaultTemplate vaultTemplate;
 
+    @Mock
+    private OrganisationCertificateService certificateService;
+
     private SimpleMeterRegistry meterRegistry;
     private VaultCertificateStatusProvider provider;
 
     @BeforeEach
     void setUp() {
         meterRegistry = new SimpleMeterRegistry();
-        provider = new VaultCertificateStatusProvider(vaultTemplate, "pki-int", meterRegistry);
+        provider = new VaultCertificateStatusProvider(vaultTemplate, certificateService, "pki-int", meterRegistry);
     }
 
     private static VaultResponse response(String certificatePem, Object revocationTime) {
@@ -139,16 +144,35 @@ class VaultCertificateStatusProviderTest {
         verify(vaultTemplate, times(2)).read(PATH);
     }
 
-    @ParameterizedTest
-    @CsvSource({
-        "1, 01",
-        "ff, ff",
-        "0102, 01:02",
-        "80, 80",
-        "3a5f9c, 3a:5f:9c",
-        "7fffffffffffffff01, 7f:ff:ff:ff:ff:ff:ff:ff:01"
-    })
-    void toVaultSerial_shouldFormatAsColonSeparatedHex(String hex, String expected) {
-        assertEquals(expected, VaultCertificateStatusProvider.toVaultSerial(new BigInteger(hex, 16)));
+    @Test
+    void getStatus_revokedThroughTheApi_shouldCarryTheRecordedReason() {
+        when(vaultTemplate.read(PATH)).thenReturn(response(leafPem(), 1_761_210_000L));
+        when(certificateService.findRevocationReason("3a5f9c"))
+                .thenReturn(Optional.of(RevocationReason.CESSATION_OF_OPERATION));
+
+        assertEquals(
+                CertificateStatusDTO.revoked(
+                        Instant.ofEpochSecond(1_761_210_000L), RevocationReason.CESSATION_OF_OPERATION),
+                provider.getStatus(SERIAL, CA));
+    }
+
+    /** The reason is optional in OCSP, so a database failure must not turn a known revocation into tryLater. */
+    @Test
+    void getStatus_reasonLookupFails_shouldStillReturnRevokedWithoutReason() {
+        when(vaultTemplate.read(PATH)).thenReturn(response(leafPem(), 1_761_210_000L));
+        when(certificateService.findRevocationReason("3a5f9c"))
+                .thenThrow(new DataAccessResourceFailureException("database down"));
+
+        assertEquals(
+                CertificateStatusDTO.revoked(Instant.ofEpochSecond(1_761_210_000L)), provider.getStatus(SERIAL, CA));
+    }
+
+    @Test
+    void getStatus_good_shouldNotLookUpAReason() {
+        when(vaultTemplate.read(PATH)).thenReturn(response(leafPem(), 0));
+
+        provider.getStatus(SERIAL, CA);
+
+        verifyNoInteractions(certificateService);
     }
 }

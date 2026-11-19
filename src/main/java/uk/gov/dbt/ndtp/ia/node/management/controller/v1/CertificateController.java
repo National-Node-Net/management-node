@@ -27,9 +27,12 @@ import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.CreateCsrRespons
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.CreateKeyRequestDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.CreateKeyResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.IntermediateCertResponseDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.RevokeCertificateRequestDTO;
+import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.RevokeCertificateResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.SignCertRequestDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.SignCertResponseDTO;
 import uk.gov.dbt.ndtp.ia.node.management.model.jwt.EnhancedPrincipal;
+import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.CertificateRevocationProvider;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.CertificateSigningProvider;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.VaultPkiService;
 
@@ -45,10 +48,15 @@ public class CertificateController {
 
     private final VaultPkiService pkiService;
     private final CertificateSigningProvider signingProvider;
+    private final CertificateRevocationProvider revocationProvider;
 
-    public CertificateController(VaultPkiService pkiService, CertificateSigningProvider signingProvider) {
+    public CertificateController(
+            VaultPkiService pkiService,
+            CertificateSigningProvider signingProvider,
+            CertificateRevocationProvider revocationProvider) {
         this.pkiService = pkiService;
         this.signingProvider = signingProvider;
+        this.revocationProvider = revocationProvider;
     }
 
     /**
@@ -198,5 +206,47 @@ public class CertificateController {
                 .contentType(MediaType.parseMediaType("application/zip"))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"bootstrap_bundle.zip\"")
                 .body(zip);
+    }
+
+    /**
+     * Revokes one of the caller's organisation's certificates, in Vault and in the organisation's certificate
+     * record. The organisation comes from the token's {@code organisation} claim, never from the request.
+     *
+     * @param request the serial number, reason and optional comment
+     * @param principal the authenticated administrator
+     * @return the revocation recorded
+     */
+    @PostMapping("/revoke")
+    @PreAuthorize("hasAuthority('ROLE_management-node:revoke_certificate')")
+    @Operation(
+            summary = "Revoke a certificate",
+            description =
+                    "Revokes a certificate of the caller's organisation in Vault and records who revoked it, when and"
+                            + " why. The OCSP endpoint reports it as revoked from then on. Requires the"
+                            + " ROLE_management-node:revoke_certificate authority.",
+            security = {@SecurityRequirement(name = "bearerAuth")})
+    @ApiResponse(
+            responseCode = "200",
+            description = "Certificate revoked",
+            content =
+                    @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = RevokeCertificateResponseDTO.class)))
+    @ApiResponse(responseCode = "400", description = "Missing or invalid serialNumber, reason or comment")
+    @ApiResponse(responseCode = "401", description = "Missing, expired or invalid token")
+    @ApiResponse(
+            responseCode = "403",
+            description = "Caller lacks the role, or the certificate belongs to another organisation")
+    @ApiResponse(responseCode = "404", description = "No organisation certificate has this serial number")
+    @ApiResponse(
+            responseCode = "409",
+            description = "Certificate already revoked (the body carries revokedAt and revokedBy), or expired")
+    @ApiResponse(responseCode = "429", description = "Too many revocation requests; see Retry-After")
+    @ApiResponse(responseCode = "502", description = "Vault rejected the revocation")
+    @ApiResponse(responseCode = "503", description = "Vault is unreachable; nothing was changed")
+    public RevokeCertificateResponseDTO revokeCertificate(
+            @Valid @RequestBody RevokeCertificateRequestDTO request,
+            @Parameter(hidden = true) @AuthenticationPrincipal EnhancedPrincipal principal) {
+        return revocationProvider.revoke(request, principal);
     }
 }

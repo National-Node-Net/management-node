@@ -55,7 +55,7 @@ The `GET /ocsp/{base64}` form is not supported.
 | Situation | OCSP response status | Signed | Certificate status |
 |---|---|---|---|
 | Certificate issued by the federation CA, not revoked | `successful` | yes | `good` |
-| Certificate revoked in Vault | `successful` | yes | `revoked` with Vault's `revocation_time` (see [Limitations](#limitations)) |
+| Certificate revoked in Vault | `successful` | yes | `revoked` with Vault's `revocation_time`, and the reason when it was revoked through the [revocation API](CERTIFICATE_REVOCATION.md) (see [Limitations](#limitations)) |
 | Serial not found in Vault, or issuer name/key hash does not match the federation CA | `successful` | yes | `unknown` |
 | Body is empty, larger than `max-request-bytes`, not a valid DER OCSP request, or contains no / too many certificate IDs | `malformedRequest` | no | — |
 | Vault cannot be reached (for any certificate ID in the request) | `tryLater` | no | — (never `good`) |
@@ -211,7 +211,7 @@ Metrics are exposed through Micrometer at `/actuator/metrics` on the management 
 
 ## Limitations
 
-- **Revocation reason:** Vault PKI does not record a reason when a certificate is revoked. `revoked` responses therefore carry Vault's revocation time without the optional `revocationReason`.
+- **Revocation reason:** Vault PKI does not record a reason when a certificate is revoked. The [revocation API](CERTIFICATE_REVOCATION.md) records it in `organisation_certificate`, and `revoked` responses carry it as `revocationReason`, with Vault's revocation time. `UNSPECIFIED` is left out, as RFC 5280 asks, since an absent reason means unspecified. A certificate revoked directly in Vault, or whose record has since been re-issued by a bootstrap, has no reason. Failing to read the reason never fails the response: the certificate is still answered `revoked`, without one.
 - **Transport:** the endpoint is served on the existing HTTPS connector with mTLS and JWT, like the other Management Node APIs. A plain-HTTP listener, which would let nodes check status even when their own certificate is broken, is not implemented yet. Response integrity does not depend on transport, because every successful response is signed.
 - **AIA:** certificates carry no OCSP URL while this endpoint requires authentication, so `ocsp_servers` in `pki-int/config/urls` stays empty. TLS libraries call an AIA OCSP URL automatically and cannot send a JWT, so their requests would be rejected. Depending on the client's configuration, that either fails the handshake or silently skips the revocation check. Vault embeds the URL in every certificate it issues, so it cannot be removed from certificates already issued. Federators get status through the shared revocation library, which calls this endpoint with its own configured URL, token and circuit breaker, so nothing depends on the AIA field. Vault's built-in responder is not an alternative, because nodes must never call Vault directly. Revisit this only if a standard client needs it.
 - **Tidied certificates:** auto-tidy removes certificates 72 hours after they expire. An OCSP request for such a serial returns `unknown`, even if the certificate had been revoked.

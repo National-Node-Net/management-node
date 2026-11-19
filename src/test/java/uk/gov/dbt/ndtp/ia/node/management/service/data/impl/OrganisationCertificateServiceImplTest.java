@@ -9,6 +9,8 @@ package uk.gov.dbt.ndtp.ia.node.management.service.data.impl;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -18,10 +20,13 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import uk.gov.dbt.ndtp.ia.node.management.converter.impl.OrganisationCertificateConverter;
 import uk.gov.dbt.ndtp.ia.node.management.model.dto.certificate.OrganisationCertificateDTO;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.CertificateEventType;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.CertificateType;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.OrganisationCertificate;
+import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.certificate.RevocationReason;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.entity.organisation.Organisation;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.certificate.OrganisationCertificateRepository;
+import uk.gov.dbt.ndtp.ia.node.management.service.data.CertificateEventService;
 
 class OrganisationCertificateServiceImplTest {
 
@@ -31,12 +36,15 @@ class OrganisationCertificateServiceImplTest {
     @Mock
     private OrganisationCertificateConverter converter;
 
+    @Mock
+    private CertificateEventService eventService;
+
     private OrganisationCertificateServiceImpl service;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        service = new OrganisationCertificateServiceImpl(repository, converter);
+        service = new OrganisationCertificateServiceImpl(repository, converter, eventService);
     }
 
     @Test
@@ -150,5 +158,72 @@ class OrganisationCertificateServiceImplTest {
 
         assertThat(result.getSerialNumber()).isEqualTo("abc");
         verify(repository).save(entity);
+    }
+
+    @Test
+    void findBySerialNumber_whenFound_returnsDto() {
+        OrganisationCertificate entity = new OrganisationCertificate();
+        entity.setId(1L);
+        OrganisationCertificateDTO dto =
+                OrganisationCertificateDTO.builder().id(1L).build();
+
+        when(repository.findBySerialNumber("39dd2e")).thenReturn(Optional.of(entity));
+        when(converter.toDto(entity)).thenReturn(dto);
+
+        assertThat(service.findBySerialNumber("39dd2e")).contains(dto);
+    }
+
+    @Test
+    void findBySerialNumber_withBlankSerial_returnsEmptyWithoutQuerying() {
+        assertThat(service.findBySerialNumber(" ")).isEmpty();
+        assertThat(service.findBySerialNumber(null)).isEmpty();
+        verifyNoInteractions(repository);
+    }
+
+    @Test
+    void findRevocationReason_delegatesToRepository() {
+        when(repository.findRevocationReasonBySerialNumber("39dd2e"))
+                .thenReturn(Optional.of(RevocationReason.KEY_COMPROMISE));
+
+        assertThat(service.findRevocationReason("39dd2e")).contains(RevocationReason.KEY_COMPROMISE);
+        assertThat(service.findRevocationReason(null)).isEmpty();
+    }
+
+    @Test
+    void recordRevocation_whenRecordUpdated_recordsRevokedEvent() {
+        Instant revokedAt = Instant.parse("2026-10-12T13:15:02Z");
+        when(repository.markRevoked(
+                        7L,
+                        "39dd2e",
+                        Timestamp.from(revokedAt),
+                        "admin-sub",
+                        RevocationReason.KEY_COMPROMISE,
+                        "exposed"))
+                .thenReturn(1);
+
+        boolean recorded = service.recordRevocation(
+                revokedCertificate(), revokedAt, "admin-sub", RevocationReason.KEY_COMPROMISE, "exposed");
+
+        assertThat(recorded).isTrue();
+        verify(eventService).recordEvent(7L, CertificateType.AUTOMATED, CertificateEventType.REVOKED, "admin-sub");
+    }
+
+    @Test
+    void recordRevocation_whenRecordChangedMeanwhile_recordsNoEvent() {
+        when(repository.markRevoked(any(), any(), any(), any(), any(), any())).thenReturn(0);
+
+        boolean recorded = service.recordRevocation(
+                revokedCertificate(), Instant.now(), "admin-sub", RevocationReason.SUPERSEDED, null);
+
+        assertThat(recorded).isFalse();
+        verifyNoInteractions(eventService);
+    }
+
+    private static OrganisationCertificateDTO revokedCertificate() {
+        return OrganisationCertificateDTO.builder()
+                .id(7L)
+                .serialNumber("39dd2e")
+                .type(CertificateType.AUTOMATED)
+                .build();
     }
 }
