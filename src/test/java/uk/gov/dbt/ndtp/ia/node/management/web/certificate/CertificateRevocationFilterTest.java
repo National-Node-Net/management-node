@@ -245,8 +245,9 @@ class CertificateRevocationFilterTest {
         assertRefused(401, "CERTIFICATE_REVOKED", "REVOKED");
     }
 
+    /** client-auth: want, or an operator with only a token: existing authentication applies, no status lookup. */
     @Test
-    void requestWithoutClientCertificate_shouldNotBeChecked() throws Exception {
+    void requestWithoutClientCertificate_shouldNotBeCheckedOrLookedUp() throws Exception {
         filter().doFilter(request(CONFIGURATION_PATH, null), response, chain);
 
         assertPassed();

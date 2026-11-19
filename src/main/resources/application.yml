@@ -93,8 +93,8 @@ server:
     trust-store: truststore.jks #path to ssl truststore
     trust-store-password: ${CERTPASSWORD:defaultpassword} #truststore password
     trust-store-type: PKCS12
-    client-auth: need
-    enabled: true # disable for local development Only
+    client-auth: need # need: every request is checked for revocation; want: only those with a client certificate; none: no revocation check (local development only)
+    enabled: true # disable for local development Only; false also turns the revocation check off
 application:
   vault:
     pki-mount: pki-int # mount point for intermediate CA
@@ -123,7 +123,7 @@ application:
       max-backoff: PT2S
     # Revocation check on every request with a client certificate. Reference: docs/REVOCATION_ENFORCEMENT.md
     enforcement:
-      enabled: ${REVOCATION_ENFORCEMENT_ENABLED:true} # false leaves the filter unregistered; a WARN is logged at startup
+      enabled: ${REVOCATION_ENFORCEMENT_ENABLED:true} # active only with mTLS too (server.ssl.client-auth need/want); otherwise the filter is unregistered and a WARN states why
       fail-closed: true # status not available (Vault unreachable, nothing cached) answers 503; false lets the request through
       excluded-paths: # never checked
         - /api/v1/certificate/ocsp # a node must be able to ask for its own status

@@ -14,14 +14,18 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.status.CertificateStatusService;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.status.FederationCaService;
 import uk.gov.dbt.ndtp.ia.node.management.web.certificate.CertificateRevocationFilter;
 
 /**
- * The feature flag of the revocation check on requests, {@code application.revocation.enforcement.enabled}, on by
- * default. Off, the {@link CertificateRevocationFilter} does not exist, so no request is checked and no status is
- * looked up for one; the OCSP and revocation APIs are not affected. The flag is read at startup only.
+ * Registers the revocation check on requests only when it can apply: the feature flag
+ * {@code application.revocation.enforcement.enabled} is on (the default) and clients authenticate with mTLS
+ * ({@code server.ssl.enabled} true, {@code server.ssl.client-auth} {@code need} or {@code want}). Otherwise the
+ * {@link CertificateRevocationFilter} does not exist, so no request is checked and no status is looked up for one;
+ * the OCSP and revocation APIs are not affected. Both are read at startup only, and one log line states the
+ * resulting {@link RevocationEnforcementMode}.
  */
 @Configuration(proxyBeanMethods = false)
 @Slf4j
@@ -33,6 +37,7 @@ public class RevocationEnforcementConfig {
 
     @Configuration(proxyBeanMethods = false)
     @ConditionalOnProperty(name = ENABLED_PROPERTY, havingValue = "true", matchIfMissing = true)
+    @ConditionalOnMtlsEnabled
     static class Enabled {
 
         @Bean
@@ -70,20 +75,22 @@ public class RevocationEnforcementConfig {
         }
     }
 
+    /** Always present: states the mode in one startup log line and on {@code /actuator/info}. */
     @Configuration(proxyBeanMethods = false)
-    @ConditionalOnProperty(name = ENABLED_PROPERTY, havingValue = "false")
-    static class Disabled {
+    static class Status {
 
         @Bean
-        DisabledNotice revocationEnforcementDisabledNotice() {
-            log.warn(
-                    "Certificate revocation enforcement is DISABLED ({}=false): requests are not checked, and a"
-                            + " revoked client certificate is accepted by every API",
-                    ENABLED_PROPERTY);
-            return new DisabledNotice();
+        RevocationEnforcementStatus revocationEnforcementStatus(Environment environment) {
+            RevocationEnforcementMode mode = RevocationEnforcementMode.resolve(environment);
+            if (mode.isActive()) {
+                log.info("Certificate revocation enforcement is ACTIVE: {}", mode.reason());
+            } else {
+                log.warn(
+                        "Certificate revocation enforcement is DISABLED: {}. Requests are not checked for revoked"
+                                + " client certificates",
+                        mode.reason());
+            }
+            return new RevocationEnforcementStatus(mode);
         }
     }
-
-    /** Marks an application context that runs without the revocation check. */
-    static final class DisabledNotice {}
 }
