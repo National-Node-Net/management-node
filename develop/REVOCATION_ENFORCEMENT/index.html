@@ -671,6 +671,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#when-enforcement-is-active" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When enforcement is active
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#which-requests-are-checked" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1178,6 +1189,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#when-enforcement-is-active" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When enforcement is active
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#which-requests-are-checked" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1349,7 +1371,7 @@
 <li>The check is a Spring Security filter, <code>CertificateRevocationFilter</code>, placed before the bearer token is looked at. A revoked certificate is refused without a token introspection call to Keycloak.</li>
 <li>The status comes from <code>CertificateStatusService</code>, which reads Vault (<code>GET &lt;pki-mount&gt;/cert/:serial</code>) and caches the answer by issuer and serial. The cache serves this check only: the <a href="../OCSP/">OCSP API</a> reads Vault on every request, so an OCSP answer is never older than its <code>thisUpdate</code>.</li>
 <li>A revocation through <a href="../CERTIFICATE_REVOCATION/"><code>POST /api/v1/certificate/revoke</code></a> evicts the cache entry, so it is enforced on the certificate's next request.</li>
-<li>The check is controlled by a feature flag, on by default.</li>
+<li>The check is controlled by a feature flag, on by default, and runs only when clients authenticate with mTLS. See <a href="#when-enforcement-is-active">When enforcement is active</a>.</li>
 </ul>
 <pre class="mermaid"><code>sequenceDiagram
     participant Client as Consumer / Producer / Federator
@@ -1371,7 +1393,80 @@
     Status--&gt;&gt;Filter: GOOD / REVOKED / UNKNOWN, or no status
     Filter--&gt;&gt;Client: continue to JWT and controller, or 401 / 503</code></pre>
 <hr />
+<h2 id="when-enforcement-is-active">When enforcement is active</h2>
+<p>Revocation is checked only when both hold:</p>
+<ul>
+<li>the feature flag <code>application.revocation.enforcement.enabled</code> is <code>true</code> (the default), and</li>
+<li>clients authenticate with mTLS at Tomcat: <code>server.ssl.enabled</code> is <code>true</code> and <code>server.ssl.client-auth</code> is <code>need</code> or <code>want</code>.</li>
+</ul>
+<p>Without mTLS no client presents a certificate, so there is nothing to check.</p>
+<table>
+<thead>
+<tr>
+<th><code>server.ssl.enabled</code></th>
+<th><code>server.ssl.client-auth</code></th>
+<th>Feature flag</th>
+<th>Revocation check</th>
+<th>Mode</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>true</code></td>
+<td><code>need</code></td>
+<td><code>true</code></td>
+<td>every request (all present a certificate)</td>
+<td><code>MTLS_REQUIRED</code></td>
+</tr>
+<tr>
+<td><code>true</code></td>
+<td><code>want</code></td>
+<td><code>true</code></td>
+<td>only requests that present a certificate</td>
+<td><code>MTLS_OPTIONAL</code></td>
+</tr>
+<tr>
+<td><code>true</code></td>
+<td><code>none</code> or not set</td>
+<td>any</td>
+<td>not applied (HTTPS only)</td>
+<td><code>MTLS_DISABLED</code></td>
+</tr>
+<tr>
+<td><code>false</code></td>
+<td>any</td>
+<td>any</td>
+<td>not applied (plain HTTP, local development only)</td>
+<td><code>SSL_DISABLED</code></td>
+</tr>
+<tr>
+<td>any</td>
+<td>any</td>
+<td><code>false</code></td>
+<td>not applied (feature flag off)</td>
+<td><code>DISABLED_BY_FLAG</code></td>
+</tr>
+</tbody>
+</table>
+<p>When more than one reason applies, the mode names the first of feature flag, SSL and mTLS.</p>
+<p>In every inactive mode <code>CertificateRevocationFilter</code> is not registered: no request is checked, and nothing in the request path calls Vault or the status cache. The OCSP API and the revocation API work as usual.</p>
+<p>Both settings are read at startup. One line states the mode, at <code>INFO</code> when active and at <code>WARN</code> when not:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>INFO  Certificate revocation enforcement is ACTIVE: mTLS required (server.ssl.client-auth=need): every request presents a client certificate and is checked
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>WARN  Certificate revocation enforcement is DISABLED: mTLS disabled (server.ssl.client-auth is none or not set): HTTPS without client certificates, for local development only. Requests are not checked for revoked client certificates
+</span></code></pre></div>
+<p>The mode is also on <code>/actuator/info</code> (management port), so it can be confirmed per environment:</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">"revocationEnforcement"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">"active"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="nt">"mode"</span><span class="p">:</span><span class="w"> </span><span class="s2">"MTLS_DISABLED"</span><span class="p">,</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="nt">"reason"</span><span class="p">:</span><span class="w"> </span><span class="s2">"mTLS disabled (server.ssl.client-auth is none or not set): HTTPS without client certificates, for local development only"</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>HTTPS without mTLS, and plain HTTP, are meant for local development only, as the comments in <code>application.yml</code> say.</p>
+<hr />
 <h2 id="which-requests-are-checked">Which requests are checked</h2>
+<p>These rows apply while enforcement is active.</p>
 <table>
 <thead>
 <tr>
@@ -1385,8 +1480,8 @@
 <td>yes</td>
 </tr>
 <tr>
-<td>No client certificate: an operator with only a Keycloak token, or mTLS switched off (<code>server.ssl.enabled=false</code>)</td>
-<td>no; the existing authentication rules apply</td>
+<td>No client certificate: an operator with only a Keycloak token, or <code>client-auth: want</code> without a certificate</td>
+<td>no, and no status is looked up; the existing authentication rules apply</td>
 </tr>
 <tr>
 <td>Path under <code>excluded-paths</code></td>
@@ -1433,17 +1528,17 @@
 </tbody>
 </table>
 <p>The body is the standard <code>ErrorResponse</code> with an additional <code>code</code>:</p>
-<div class="language-json highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="mi">401</span><span class="p">,</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Client certificate has been revoked"</span><span class="p">,</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">"errorId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"9b8b0bd1-ccdf-40bf-aaba-925da01322ff"</span><span class="p">,</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="nt">"code"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CERTIFICATE_REVOKED"</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">}</span>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="mi">401</span><span class="p">,</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Client certificate has been revoked"</span><span class="p">,</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span><span class="nt">"errorId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"9b8b0bd1-ccdf-40bf-aaba-925da01322ff"</span><span class="p">,</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">  </span><span class="nt">"code"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CERTIFICATE_REVOKED"</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="p">}</span>
 </span></code></pre></div>
 <h3 id="certificates-of-other-authorities">Certificates of other authorities</h3>
 <p>Only the CA of <code>application.vault.pki-mount</code> has a status in Vault. A certificate is treated as the federation's when its issuer name is that CA's subject and its signature verifies with that CA's key. Any other certificate is <code>UNKNOWN</code> and refused, even though the truststore accepted it in the TLS handshake.</p>
 <p>If clients legitimately present certificates of another authority, for example a development root CA or the CA of a website backend, list its distinguished name in <code>exempt-issuers</code>. Such certificates are let through without a check, and a <code>WARN</code> at startup names the exempt issuers. The federation CA cannot be exempted this way to any effect: an entry only matches certificates with that issuer name.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>openssl<span class="w"> </span>x509<span class="w"> </span>-in<span class="w"> </span>client.crt<span class="w"> </span>-noout<span class="w"> </span>-issuer<span class="w"> </span>-nameopt<span class="w"> </span>RFC2253
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>openssl<span class="w"> </span>x509<span class="w"> </span>-in<span class="w"> </span>client.crt<span class="w"> </span>-noout<span class="w"> </span>-issuer<span class="w"> </span>-nameopt<span class="w"> </span>RFC2253
 </span></code></pre></div>
 <hr />
 <h2 id="caching">Caching</h2>
@@ -1549,28 +1644,28 @@
 <p><code>fail-closed: false</code> is a weaker switch for an outage of Vault: requests whose status cannot be determined are let through, with a <code>WARN</code> per request and one at startup. Revoked and unknown certificates are still refused whenever their status is known.</p>
 <hr />
 <h2 id="configuration">Configuration</h2>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">spring</span><span class="p">:</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">cache</span><span class="p">:</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${CACHE_TYPE:caffeine}</span><span class="w">          </span><span class="c1"># caffeine | redis</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="nt">cache-names</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">certificate-status</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">  </span><span class="nt">data</span><span class="p">:</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="nt">redis</span><span class="p">:</span><span class="w">                                 </span><span class="c1"># only used when CACHE_TYPE=redis</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">      </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${REDIS_HOST:localhost}</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">      </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${REDIS_PORT:6379}</span>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">      </span><span class="nt">password</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${REDIS_PASSWORD:}</span>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">      </span><span class="nt">ssl</span><span class="p">:</span>
-</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">        </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${REDIS_SSL_ENABLED:true}</span>
-</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="nt">application</span><span class="p">:</span>
-</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">  </span><span class="nt">revocation</span><span class="p">:</span>
-</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">    </span><span class="nt">enforcement</span><span class="p">:</span>
-</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">      </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${REVOCATION_ENFORCEMENT_ENABLED:true}</span>
-</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">      </span><span class="nt">fail-closed</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">      </span><span class="nt">excluded-paths</span><span class="p">:</span>
-</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/api/v1/certificate/ocsp</span>
-</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/actuator/health</span>
-</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">      </span><span class="nt">exempt-issuers</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span><span class="w">                   </span><span class="c1"># e.g. - "CN=Dev Root CA,O=Example,C=GB"</span>
-</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="w">    </span><span class="nt">cache</span><span class="p">:</span>
-</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="w">      </span><span class="nt">ttl</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${REVOCATION_CACHE_TTL:PT5M}</span><span class="w">    </span><span class="c1"># &gt; 0 and &lt;= PT10M, checked at startup</span>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nt">spring</span><span class="p">:</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">cache</span><span class="p">:</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${CACHE_TYPE:caffeine}</span><span class="w">          </span><span class="c1"># caffeine | redis</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="nt">cache-names</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">certificate-status</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span><span class="nt">data</span><span class="p">:</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="nt">redis</span><span class="p">:</span><span class="w">                                 </span><span class="c1"># only used when CACHE_TYPE=redis</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">      </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${REDIS_HOST:localhost}</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">      </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${REDIS_PORT:6379}</span>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">      </span><span class="nt">password</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${REDIS_PASSWORD:}</span>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">      </span><span class="nt">ssl</span><span class="p">:</span>
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">        </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${REDIS_SSL_ENABLED:true}</span>
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="nt">application</span><span class="p">:</span>
+</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">  </span><span class="nt">revocation</span><span class="p">:</span>
+</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="w">    </span><span class="nt">enforcement</span><span class="p">:</span>
+</span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="w">      </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${REVOCATION_ENFORCEMENT_ENABLED:true}</span>
+</span><span id="__span-4-16"><a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="w">      </span><span class="nt">fail-closed</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</span><span id="__span-4-17"><a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="w">      </span><span class="nt">excluded-paths</span><span class="p">:</span>
+</span><span id="__span-4-18"><a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/api/v1/certificate/ocsp</span>
+</span><span id="__span-4-19"><a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/actuator/health</span>
+</span><span id="__span-4-20"><a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a><span class="w">      </span><span class="nt">exempt-issuers</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span><span class="w">                   </span><span class="c1"># e.g. - "CN=Dev Root CA,O=Example,C=GB"</span>
+</span><span id="__span-4-21"><a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="w">    </span><span class="nt">cache</span><span class="p">:</span>
+</span><span id="__span-4-22"><a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a><span class="w">      </span><span class="nt">ttl</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${REVOCATION_CACHE_TTL:PT5M}</span><span class="w">    </span><span class="c1"># &gt; 0 and &lt;= PT10M, checked at startup</span>
 </span></code></pre></div>
 <table>
 <thead>
@@ -1623,7 +1718,7 @@
 <hr />
 <h2 id="observability">Observability</h2>
 <p>Every refusal writes one <code>WARN</code> line. Values taken from the request are quoted and escaped:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>certificate_revocation_enforcement serial=39dd2e90b7 issuer="CN=federation-ca" status=REVOKED path="/api/v1/configuration/producer" clientIp=10.0.0.12 timestamp=2026-11-12T09:30:00Z errorId=9b8b0bd1-...
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>certificate_revocation_enforcement serial=39dd2e90b7 issuer="CN=federation-ca" status=REVOKED path="/api/v1/configuration/producer" clientIp=10.0.0.12 timestamp=2026-11-12T09:30:00Z errorId=9b8b0bd1-...
 </span></code></pre></div>
 <p><code>status</code> is <code>REVOKED</code>, <code>UNKNOWN</code> or <code>UNAVAILABLE</code>. <code>errorId</code> is the one returned to the client.</p>
 <p>Metrics at <code>/actuator/metrics</code> on the management port:</p>
@@ -1696,7 +1791,19 @@
 </tr>
 <tr>
 <td><code>config/RevocationEnforcementConfig</code></td>
-<td>the feature flag; <code>config/SecurityConfig</code> places the filter in the chain</td>
+<td>registers the filter for the feature flag and mTLS, and logs the mode at startup; <code>config/SecurityConfig</code> places the filter in the chain</td>
+</tr>
+<tr>
+<td><code>config/RevocationEnforcementMode</code></td>
+<td>the mode from the feature flag and <code>server.ssl.*</code>, and the reason when inactive</td>
+</tr>
+<tr>
+<td><code>config/ConditionalOnMtlsEnabled</code>, <code>config/MtlsEnabledCondition</code></td>
+<td>the condition that <code>server.ssl.client-auth</code> is <code>need</code> or <code>want</code> with SSL on</td>
+</tr>
+<tr>
+<td><code>config/RevocationEnforcementStatus</code></td>
+<td>the <code>revocationEnforcement</code> entry of <code>/actuator/info</code></td>
 </tr>
 <tr>
 <td><code>config/RevocationProperties</code></td>
@@ -1741,7 +1848,27 @@
 </tr>
 <tr>
 <td>Start with <code>REVOCATION_ENFORCEMENT_ENABLED=false</code></td>
-<td><code>WARN</code> at startup; the revoked certificate is not refused by the filter</td>
+<td><code>WARN</code> at startup naming the feature flag; the revoked certificate is not refused by the filter</td>
+</tr>
+<tr>
+<td><code>curl http://localhost:8081/actuator/info</code> with the defaults</td>
+<td><code>revocationEnforcement.active=true</code>, mode <code>MTLS_REQUIRED</code></td>
+</tr>
+<tr>
+<td>Start with <code>SERVER_SSL_CLIENT_AUTH=want</code>, call with the revoked certificate</td>
+<td><code>401</code>, <code>CERTIFICATE_REVOKED</code></td>
+</tr>
+<tr>
+<td>The same, call without a client certificate</td>
+<td>reaches the token check; <code>revocation.status.lookups</code> and <code>cache.gets{cache=certificate-status}</code> do not change</td>
+</tr>
+<tr>
+<td>Start with <code>SERVER_SSL_CLIENT_AUTH=none</code></td>
+<td><code>WARN</code> at startup: <code>DISABLED: mTLS disabled ...</code>; <code>/actuator/info</code> mode <code>MTLS_DISABLED</code>; requests reach the token check without a status lookup; revoke and OCSP APIs work</td>
+</tr>
+<tr>
+<td>Start with <code>SERVER_SSL_ENABLED=false</code></td>
+<td><code>WARN</code> at startup: <code>DISABLED: SSL disabled ...</code></td>
 </tr>
 <tr>
 <td>Start with <code>REVOCATION_CACHE_TTL=11m</code></td>
@@ -1756,7 +1883,8 @@
 <hr />
 <h2 id="limitations">Limitations</h2>
 <ul>
-<li><strong>Gateway-terminated mTLS.</strong> A client certificate forwarded in a header is not read. Where mTLS ends at an ingress, this filter checks nothing.</li>
+<li><strong>Gateway-terminated mTLS.</strong> Only mTLS terminated by Tomcat is supported: the mode is read from <code>server.ssl.*</code> and a client certificate forwarded in a header is not read. Where mTLS ends at an ingress, Tomcat runs without <code>client-auth</code>, so enforcement is inactive. A dedicated setting for that deployment model is planned.</li>
+<li><strong>No startup guard for production.</strong> Running without mTLS only logs a <code>WARN</code>; the application still starts.</li>
 <li><strong>Revocations outside the API</strong> are enforced when the cache entry expires; see <a href="#exposure-window">Exposure window</a>. No reconciliation job evicts them earlier.</li>
 <li><strong>Caffeine with several instances</strong> does not share evictions. Use Redis.</li>
 <li><strong>The flag is read at startup.</strong> It cannot be toggled at runtime.</li>
@@ -1781,7 +1909,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 19, 2026 10:54:54 UTC">November 19, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 19, 2026 12:43:29 UTC">November 19, 2026</span>
   </span>
 
     
