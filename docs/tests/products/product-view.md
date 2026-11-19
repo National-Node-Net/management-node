@@ -55,7 +55,7 @@ catalogue (§4) rather than repeating them; read §2–§4 there once, then work
 | | `POST /api/v1/product/discover` | `GET /api/v1/product/{productId}` |
 |---|---|---|
 | how many products | a page of them | exactly one, by id |
-| how much of each | a **summary** (`id`, `name`, `displayName`, `description`, `type`, `format`, `isOwnProduct`, and the owning `organisation`'s `key` and `name`) | the **whole** object model, including the `longDescription` and `keyUseCases` a summary leaves out |
+| how much of each | a **summary** (`id`, `name`, `displayName`, `description`, `type`, `format`, `isOwnProduct`, and the owning `organisation`'s `key` and `name`) | the **whole** object model, including the `longDescription`, `keyUseCases` and the organisation's `description` and `logoUrl` a summary leaves out |
 
 Everything else is shared, and shared **from one definition** rather than two that happen to agree:
 `docker/opa/policies/lib/product_access.rego` holds the caller gates, the refusal reasons, the row
@@ -141,6 +141,8 @@ the PDP at all.
   "organisation": {
     "key": "ENV",
     "name": "Environment Agency",
+    "description": "The Environment Agency protects and improves the environment in England …",
+    "logoUrl": "https://example.org/logos/env.svg",
     "attributes": { "jurisdictions": ["England", "Wales"], "authorised_classifications": ["OFFICIAL", "SECRET"] }
   },
   "producer": {
@@ -181,7 +183,8 @@ Rules that hold for every `200`:
 - **Producer connection details are never returned at all**: `host`, `port`, `tls` and
   `idp_client_id` are not members of the model, for any caller, at any clearance.
 - **A subscription's `destination` is never returned at all**, for the same reason.
-- A nested `consumers[].organisation` carries `key` and `name` only; it never carries `attributes`.
+- A nested `consumers[].organisation` carries `key` and `name` only; it never carries `attributes`,
+  `description` or `logoUrl`.
 - Attribute maps keep their JSON types: a multi-valued attribute is an array, a number stays a
   number.
 - **`subscriptionStatus`** is the calling organisation's own status, `SUBSCRIBED` or
@@ -195,6 +198,10 @@ Rules that hold for every `200`:
 - **`keyUseCases`** is a list of strings in display order, returned by the view only.
 - **`displayName`**, **`format`**, **`longDescription`** and **`keyUseCases`** are absent when the
   product's owner has not provided them.
+- **`organisation.description`** and **`organisation.logoUrl`** are returned by the view only, when the
+  `organisation` block is visible, and are absent when there are none. For now they are mock data,
+  on only where `ORGANISATION_DETAILS_MOCK=true` (local and dev); the Organisation Service will be
+  their source once built. `logoUrl` is a link to an image hosted elsewhere.
 - The response carries **no `policy` block**. Discovery's response has one (it is how a UI builds a
   filter panel); view returns the bare product.
 
@@ -1129,6 +1136,27 @@ view_body "$ENV_TOKEN" "$none" | jq 'has("keyUseCases")'
 
 **Why.** The two descriptions serve two pages. A search does not select the column at all, so a
 results page cannot show the long text by mistake.
+
+---
+
+### V22: The organisation's description and logo are returned by the view only
+
+**Preconditions.** Policy on, `ORGANISATION_DETAILS_MOCK=true`. The mock data is in
+`application.yml` under `application.organisation-details`: ENV and HEG have a description and a
+logo, BCC a description and **no** logo.
+
+```bash
+id=$(discover "$ENV_TOKEN" '{"text":"RiverLevelTelemetry"}' | jq -r '.products[0].id')
+discover "$ENV_TOKEN" '{"text":"RiverLevelTelemetry"}' | jq -c '.products[0].organisation'
+# {"key":"ENV","name":"Environment Agency (ENV)"}
+view_body "$ENV_TOKEN" "$id" | jq -c '.organisation | {key, description: .description[0:30], logoUrl}'
+# {"key":"ENV","description":"The Environment Agency protect","logoUrl":"https://example.org/logos/env.svg"}
+bcc=$(discover "$BCC_TOKEN" '{"text":"BristolAirQualitySensors"}' | jq -r '.products[0].id')
+view_body "$BCC_TOKEN" "$bcc" | jq -c '.organisation | {key, hasDescription: has("description"), hasLogo: has("logoUrl")}'
+# {"key":"BCC","hasDescription":true,"hasLogo":false}
+```
+
+With `ORGANISATION_DETAILS_MOCK` unset, neither key appears and the rest of the view is unchanged.
 
 ---
 

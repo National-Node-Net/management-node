@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -19,6 +20,8 @@ import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.configuration.P
 import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.configuration.ProductDiscoveryRepository.Grant;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.configuration.ProductDiscoveryRepository.SubscribingOrganisation;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeScopeCode;
+import uk.gov.dbt.ndtp.ia.node.management.service.organisation.OrganisationDetails;
+import uk.gov.dbt.ndtp.ia.node.management.service.organisation.OrganisationDetailsProvider;
 
 /**
  * Turns the rows of a search page into {@link DiscoveredProductDTO}s, loading the related blocks -
@@ -31,10 +34,15 @@ import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeScopeCode;
 @Component
 public class DiscoveredProductAssembler {
 
-    private final ProductDiscoveryRepository repository;
+    private static final OrganisationDetails NO_DETAILS = new OrganisationDetails(null, null);
 
-    public DiscoveredProductAssembler(ProductDiscoveryRepository repository) {
+    private final ProductDiscoveryRepository repository;
+    private final OrganisationDetailsProvider organisationDetails;
+
+    public DiscoveredProductAssembler(
+            ProductDiscoveryRepository repository, OrganisationDetailsProvider organisationDetails) {
         this.repository = repository;
+        this.organisationDetails = organisationDetails;
     }
 
     /**
@@ -92,6 +100,7 @@ public class DiscoveredProductAssembler {
         List<SubscribingOrganisation> subscribing =
                 subscribingOrganisations(idsShowing(page, ProductBlock.SUBSCRIBED_BY, PageRow::productId));
         Set<Long> subscribed = subscribedProductIds(callerOrganisation, page);
+        Map<String, OrganisationDetails> details = organisationDetails(page, projection);
 
         return page.stream()
                 .map(row -> DiscoveredProductDTO.builder()
@@ -115,6 +124,8 @@ public class DiscoveredProductAssembler {
                                         ? new DiscoveredProductDTO.Organisation(
                                                 row.text(ProductField.ORGANISATION_KEY),
                                                 row.text(ProductField.ORGANISATION_NAME),
+                                                detailsOf(details, row).description(),
+                                                detailsOf(details, row).logoUrl(),
                                                 attributesOf(
                                                         organisationAttributes,
                                                         row.organisationId(),
@@ -151,7 +162,8 @@ public class DiscoveredProductAssembler {
                 .filter(grant -> grant.productId() == productId)
                 .map(grant -> new DiscoveredProductDTO.Consumer(
                         grant.consumerName(),
-                        new DiscoveredProductDTO.Organisation(grant.organisationKey(), grant.organisationName(), null),
+                        new DiscoveredProductDTO.Organisation(
+                                grant.organisationKey(), grant.organisationName(), null, null, null),
                         consumerAttributes.getOrDefault(grant.consumerId(), Map.of()),
                         new DiscoveredProductDTO.Subscription(
                                 grant.grantedAt(),
@@ -235,6 +247,24 @@ public class DiscoveredProductAssembler {
             return DiscoveredProductDTO.SubscriptionStatus.SUBSCRIBED;
         }
         return DiscoveredProductDTO.SubscriptionStatus.NOT_SUBSCRIBED;
+    }
+
+    /** The owning organisations' description and logo; the view's only, and only where the block shows. */
+    private Map<String, OrganisationDetails> organisationDetails(List<PageRow> page, ProductProjection projection) {
+        if (projection != ProductProjection.FULL) {
+            return Map.of();
+        }
+        Set<String> keys = page.stream()
+                .filter(row -> row.shows(ProductBlock.ORGANISATION))
+                .map(row -> row.text(ProductField.ORGANISATION_KEY))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        return keys.isEmpty() ? Map.of() : organisationDetails.findByKeys(keys);
+    }
+
+    private static OrganisationDetails detailsOf(Map<String, OrganisationDetails> details, PageRow row) {
+        String key = row.text(ProductField.ORGANISATION_KEY);
+        return key == null ? NO_DETAILS : details.getOrDefault(key, NO_DETAILS);
     }
 
     /** The organisations subscribing to the products that show them; see {@link #grants}. */

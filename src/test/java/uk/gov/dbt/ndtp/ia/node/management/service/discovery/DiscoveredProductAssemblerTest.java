@@ -39,6 +39,8 @@ import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.configuration.P
 import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.configuration.ProductDiscoveryRepository.Grant;
 import uk.gov.dbt.ndtp.ia.node.management.persistency.repository.configuration.ProductDiscoveryRepository.SubscribingOrganisation;
 import uk.gov.dbt.ndtp.ia.node.management.service.data.PolicyAttributeScopeCode;
+import uk.gov.dbt.ndtp.ia.node.management.service.organisation.OrganisationDetails;
+import uk.gov.dbt.ndtp.ia.node.management.service.organisation.OrganisationDetailsProvider;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyDecision;
 import uk.gov.dbt.ndtp.ia.node.management.service.providers.policy.PolicyProvenance;
 
@@ -55,6 +57,9 @@ class DiscoveredProductAssemblerTest {
 
     @Mock
     private ProductDiscoveryRepository repository;
+
+    @Mock
+    private OrganisationDetailsProvider organisationDetails;
 
     @InjectMocks
     private DiscoveredProductAssembler assembler;
@@ -100,14 +105,14 @@ class DiscoveredProductAssemblerTest {
         assertThat(product.attributes()).containsExactly(Map.entry("identifiability", "anonymised"));
         assertThat(product.organisation())
                 .isEqualTo(new DiscoveredProductDTO.Organisation(
-                        "ENV", "Environment Agency", Map.of("jurisdictions", List.of("England"))));
+                        "ENV", "Environment Agency", null, null, Map.of("jurisdictions", List.of("England"))));
         assertThat(product.producer())
                 .isEqualTo(new DiscoveredProductDTO.Producer(
                         "Flood producer", "Publishes flood data", true, Map.of("tier", 3)));
         assertThat(product.consumers())
                 .containsExactly(new DiscoveredProductDTO.Consumer(
                         "Council consumer",
-                        new DiscoveredProductDTO.Organisation("BCC", "Borough Council", null),
+                        new DiscoveredProductDTO.Organisation("BCC", "Borough Council", null, null, null),
                         Map.of("operating_remit", "national"),
                         new DiscoveredProductDTO.Subscription(
                                 EARLIEST, new BigDecimal("30"), "cron", "0 0 * * *", Map.of("delivery", "batch"))));
@@ -397,6 +402,46 @@ class DiscoveredProductAssemblerTest {
                 .get(0);
 
         assertThat(product.isOwnProduct()).isNull();
+    }
+
+    @Test
+    void assemble_full_addsTheOrganisationsDescriptionAndLogo() {
+        when(organisationDetails.findByKeys(Set.of("ENV")))
+                .thenReturn(Map.of(
+                        "ENV", new OrganisationDetails("Protects the environment", "https://example.test/env.svg")));
+
+        DiscoveredProductDTO.Organisation organisation = assembler
+                .assemble(List.of(row(1L)), ProductSearchContract.open(), ProductProjection.FULL)
+                .get(0)
+                .organisation();
+
+        assertThat(organisation.description()).isEqualTo("Protects the environment");
+        assertThat(organisation.logoUrl()).isEqualTo("https://example.test/env.svg");
+    }
+
+    @Test
+    void assemble_summary_doesNotAskForOrganisationDetails() {
+        DiscoveredProductDTO.Organisation organisation = assembler
+                .assemble(List.of(summaryRow(1L)), ProductSearchContract.open(), ProductProjection.SUMMARY)
+                .get(0)
+                .organisation();
+
+        assertThat(organisation.description()).isNull();
+        assertThat(organisation.logoUrl()).isNull();
+        verifyNoInteractions(organisationDetails);
+    }
+
+    @Test
+    void assemble_organisationMasked_doesNotAskForOrganisationDetails() throws JsonProcessingException {
+        ProductSearchContract contract = enforcing("""
+                {"visible_fields": ["name"]}""");
+
+        DiscoveredProductDTO product = assembler
+                .assemble(List.of(row(1L)), contract, ProductProjection.FULL)
+                .get(0);
+
+        assertThat(product.organisation()).isNull();
+        verifyNoInteractions(organisationDetails);
     }
 
     private static Map<String, Object> row(long productId) {
