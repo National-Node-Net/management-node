@@ -1,0 +1,1843 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Management Node is is the control plane for the National Digital Twin Programme IA Node Net.">
+      
+      
+        <meta name="author" content="NDTP">
+      
+      
+        <link rel="canonical" href="https://docs.ndtp.co.uk/develop/REVOCATION_ENFORCEMENT/">
+      
+      
+        <link rel="prev" href="../POLICY_ENFORCEMENT/">
+      
+      
+        <link rel="next" href="../VAULT_ACCESS/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/android-chrome-512x512-1-150x150.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>Certificate Revocation Enforcement - Management-Node Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#certificate-revocation-enforcement" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Management-Node Documentation" class="md-header__button md-logo" aria-label="Management-Node Documentation" data-md-component="logo">
+      
+  <img src="../assets/light-page_header_logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Management-Node Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Certificate Revocation Enforcement
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Management-Node Documentation" class="md-nav__button md-logo" aria-label="Management-Node Documentation" data-md-component="logo">
+      
+  <img src="../assets/light-page_header_logo.png" alt="logo">
+
+    </a>
+    Management-Node Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    README
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AUTHENTICATION_REQUIREMENTS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication Requirements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../BOOTSTRAP_ONBOARDING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bootstrap Onboarding Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CERTIFICATE_REVOCATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Certificate Revocation API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DATABASE_SCHEMA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DISCOVERY_TEST_SCENARIOS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Discovery and View: Test Scenarios
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../JACOCO_COVERAGE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JaCoCo Code Coverage Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../KAFKA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kafka Events
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MOCKITO_USAGE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockito Testing Tool Usage Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MTLS_CONFIGURATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MTLS Configuration Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OCSP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OCSP Certificate Status API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OCSP_LOCAL_TESTING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OCSP Local Testing Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../POLICY_ENFORCEMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Policy Enforcement
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Certificate Revocation Enforcement
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Certificate Revocation Enforcement
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#which-requests-are-checked" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which requests are checked
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decisions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Decisions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#certificates-of-other-authorities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Certificates of other authorities
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#caching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Caching
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Caching">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#exposure-window" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exposure window
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#feature-flag" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature flag
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#observability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Observability
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#code-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Code Structure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#manual-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manual test
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limitations
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VAULT_ACCESS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vault Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../entity-dto-converter-pattern/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entity-DTO Converter Pattern
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../jobs-scheduler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Jobs Scheduler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18" >
+        
+          
+          <label class="md-nav__link" for="__nav_18" id="__nav_18_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tests
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_18_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_18">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tests
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../tests/products/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Products
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_18_1" id="__nav_18_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_18_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_18_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Products
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tests/products/product-discover-filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Discover Filter: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tests/products/product-discover/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Discover: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tests/products/product-view/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product View API: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tests/products/subscribe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Subscribe API: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#which-requests-are-checked" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which requests are checked
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decisions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Decisions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#certificates-of-other-authorities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Certificates of other authorities
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#caching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Caching
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Caching">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#exposure-window" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exposure window
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#feature-flag" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature flag
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#observability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Observability
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#code-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Code Structure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#manual-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manual test
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limitations
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="certificate-revocation-enforcement">Certificate Revocation Enforcement</h1>
+<p><strong>Repository:</strong> <code>management-node</code><br />
+<strong>Description:</strong> <code>Refusal of requests whose client certificate is revoked, on every Management Node API, with a certificate status cache and a feature flag</code><br />
+<strong>SPDX-License-Identifier:</strong> <code>Apache-2.0 AND OGL-UK-3.0</code></p>
+<hr />
+<h2 id="overview">Overview</h2>
+<p>Every request that presents a client certificate is checked for revocation before it reaches authentication or a controller. A revoked consumer, producer or Federator cannot use any Management Node API.</p>
+<ul>
+<li>The check is a Spring Security filter, <code>CertificateRevocationFilter</code>, placed before the bearer token is looked at. A revoked certificate is refused without a token introspection call to Keycloak.</li>
+<li>The status comes from <code>CertificateStatusService</code>, which reads Vault (<code>GET &lt;pki-mount&gt;/cert/:serial</code>) and caches the answer by issuer and serial. The cache serves this check only: the <a href="../OCSP/">OCSP API</a> reads Vault on every request, so an OCSP answer is never older than its <code>thisUpdate</code>.</li>
+<li>A revocation through <a href="../CERTIFICATE_REVOCATION/"><code>POST /api/v1/certificate/revoke</code></a> evicts the cache entry, so it is enforced on the certificate's next request.</li>
+<li>The check is controlled by a feature flag, on by default.</li>
+</ul>
+<pre class="mermaid"><code>sequenceDiagram
+    participant Client as Consumer / Producer / Federator
+    participant Filter as CertificateRevocationFilter
+    participant Status as CertificateStatusService
+    participant Cache as certificate-status cache
+    participant Vault as Vault PKI
+    Client-&gt;&gt;Filter: request over mTLS
+    Filter-&gt;&gt;Filter: no certificate, excluded path or exempt issuer? continue
+    Filter-&gt;&gt;Status: getStatus(issuer, serial)
+    Status-&gt;&gt;Cache: &lt;issuerKeyHash&gt;:&lt;serial&gt;
+    alt cached
+        Cache--&gt;&gt;Status: status
+    else not cached
+        Status-&gt;&gt;Vault: GET pki-int/cert/&lt;serial&gt;
+        Vault--&gt;&gt;Status: certificate, revocation_time
+        Status-&gt;&gt;Cache: store for the TTL
+    end
+    Status--&gt;&gt;Filter: GOOD / REVOKED / UNKNOWN, or no status
+    Filter--&gt;&gt;Client: continue to JWT and controller, or 401 / 503</code></pre>
+<hr />
+<h2 id="which-requests-are-checked">Which requests are checked</h2>
+<table>
+<thead>
+<tr>
+<th>Request</th>
+<th>Checked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Presents a client certificate, any controller</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>No client certificate: an operator with only a Keycloak token, or mTLS switched off (<code>server.ssl.enabled=false</code>)</td>
+<td>no; the existing authentication rules apply</td>
+</tr>
+<tr>
+<td>Path under <code>excluded-paths</code></td>
+<td>no, and no status is looked up</td>
+</tr>
+<tr>
+<td>Certificate issued by an authority listed in <code>exempt-issuers</code></td>
+<td>no</td>
+</tr>
+<tr>
+<td>Actuator on the management port (no TLS, so no certificate)</td>
+<td>no</td>
+</tr>
+</tbody>
+</table>
+<p>The client certificate is read from the servlet attribute <code>jakarta.servlet.request.X509Certificate</code>, which Tomcat sets when it terminates mTLS. A certificate forwarded in a header by a gateway is not read: if mTLS terminates in front of the Management Node, the filter sees no certificate and checks nothing.</p>
+<p>The default excluded paths are <code>/api/v1/certificate/ocsp</code>, so a node can ask for its own status when its certificate is broken or revoked, and <code>/actuator/health</code>. An excluded path covers the paths beneath it. The OCSP endpoint still requires a token with the <code>check_certificate_status</code> role.</p>
+<hr />
+<h2 id="decisions">Decisions</h2>
+<table>
+<thead>
+<tr>
+<th>Status</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GOOD</code></td>
+<td>the request continues to authentication and the controller</td>
+</tr>
+<tr>
+<td><code>REVOKED</code></td>
+<td><code>401</code>, code <code>CERTIFICATE_REVOKED</code></td>
+</tr>
+<tr>
+<td><code>UNKNOWN</code>: Vault does not know the serial, or the federation CA did not issue the certificate</td>
+<td><code>401</code>, code <code>CERTIFICATE_STATUS_UNKNOWN</code></td>
+</tr>
+<tr>
+<td>No status: Vault is unreachable and nothing is cached</td>
+<td><code>503</code>, code <code>CERTIFICATE_STATUS_UNAVAILABLE</code> (fail closed)</td>
+</tr>
+</tbody>
+</table>
+<p>The body is the standard <code>ErrorResponse</code> with an additional <code>code</code>:</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="mi">401</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Client certificate has been revoked"</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">"errorId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"9b8b0bd1-ccdf-40bf-aaba-925da01322ff"</span><span class="p">,</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="nt">"code"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CERTIFICATE_REVOKED"</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">}</span>
+</span></code></pre></div>
+<h3 id="certificates-of-other-authorities">Certificates of other authorities</h3>
+<p>Only the CA of <code>application.vault.pki-mount</code> has a status in Vault. A certificate is treated as the federation's when its issuer name is that CA's subject and its signature verifies with that CA's key. Any other certificate is <code>UNKNOWN</code> and refused, even though the truststore accepted it in the TLS handshake.</p>
+<p>If clients legitimately present certificates of another authority, for example a development root CA or the CA of a website backend, list its distinguished name in <code>exempt-issuers</code>. Such certificates are let through without a check, and a <code>WARN</code> at startup names the exempt issuers. The federation CA cannot be exempted this way to any effect: an entry only matches certificates with that issuer name.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>openssl<span class="w"> </span>x509<span class="w"> </span>-in<span class="w"> </span>client.crt<span class="w"> </span>-noout<span class="w"> </span>-issuer<span class="w"> </span>-nameopt<span class="w"> </span>RFC2253
+</span></code></pre></div>
+<hr />
+<h2 id="caching">Caching</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cache name</td>
+<td><code>certificate-status</code></td>
+</tr>
+<tr>
+<td>Key</td>
+<td><code>&lt;issuerKeyHash&gt;:&lt;serial&gt;</code>: lowercase hex SHA-256 of the issuer's public key, and the serial in lowercase hex without separators or leading zeros</td>
+</tr>
+<tr>
+<td>Value</td>
+<td><code>{status, revokedAt, revocationReason, checkedAt}</code></td>
+</tr>
+<tr>
+<td>Lifetime</td>
+<td><code>application.revocation.cache.ttl</code>, 5 minutes by default, at most 10. The application does not start with a longer or non-positive value.</td>
+</tr>
+<tr>
+<td>Cached</td>
+<td><code>GOOD</code>, <code>REVOKED</code> and <code>UNKNOWN</code></td>
+</tr>
+<tr>
+<td>Never cached</td>
+<td>a failed lookup: an exception leaves nothing in the cache, so Vault is asked again on the next request</td>
+</tr>
+<tr>
+<td>Evicted</td>
+<td>when the certificate is revoked through the revocation API, right after Vault revoked it and again after the reason is recorded</td>
+</tr>
+</tbody>
+</table>
+<p>The provider is chosen with <code>spring.cache.type</code> (<code>CACHE_TYPE</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Provider</th>
+<th>Use</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>caffeine</code> (default)</td>
+<td>one instance</td>
+<td>In the memory of the instance. Redis is not configured at all: no connection, no TLS context, no health indicator.</td>
+</tr>
+<tr>
+<td><code>redis</code></td>
+<td>several instances</td>
+<td>Shared, so an eviction on one instance reaches all. Values are JSON, keys start with <code>dsi:cert-status:</code>, TLS is on by default (<code>REDIS_SSL_ENABLED</code>).</td>
+</tr>
+</tbody>
+</table>
+<p>If Redis cannot be read or written, the status is looked up in Vault as if nothing were cached: requests get slower, not refused. A failed eviction is logged as <code>ERROR</code>, since the entry it leaves behind stays in use until it expires.</p>
+<h3 id="exposure-window">Exposure window</h3>
+<table>
+<thead>
+<tr>
+<th>Revocation</th>
+<th>Enforced on the Management Node</th>
+<th>Visible in OCSP</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Through the revocation API, Redis or a single instance</td>
+<td>on the next request</td>
+<td>on the next request</td>
+</tr>
+<tr>
+<td>Through the revocation API, Caffeine with several instances</td>
+<td>at once on the instance that took the request; on the others when their entry expires, at most the TTL later</td>
+<td>on the next request</td>
+</tr>
+<tr>
+<td>Directly in Vault, bypassing the API</td>
+<td>when the entry expires, at most the TTL later</td>
+<td>on the next request</td>
+</tr>
+</tbody>
+</table>
+<p>Nodes may cache an OCSP response until its <code>nextUpdate</code> (<code>application.ocsp.validity</code>), so they enforce any revocation within that validity, at most 10 minutes; the status cache never adds to it. <strong>Run several instances with Redis, and revoke through the API.</strong> When a certificate has to be revoked directly in Vault, revoke it through the API as well if it has an <code>organisation_certificate</code> record, or expect up to the TTL before it is refused.</p>
+<hr />
+<h2 id="feature-flag">Feature flag</h2>
+<p><code>application.revocation.enforcement.enabled</code> (<code>REVOCATION_ENFORCEMENT_ENABLED</code>), default <code>true</code>. It is read at startup; changing it needs a restart.</p>
+<p>When <code>false</code>:</p>
+<ul>
+<li>the filter is not registered, so no request is checked and no status is looked up for one;</li>
+<li>a <code>WARN</code> is logged at startup: <code>Certificate revocation enforcement is DISABLED ...</code>;</li>
+<li>the OCSP API and the revocation API work as before.</li>
+</ul>
+<p>A revoked certificate is then accepted by every API except <code>/api/v1/configuration/**</code>, where <code>CertificateValidationInterceptor</code> still refuses an organisation whose current certificate record is revoked. Disabling the flag outside a test environment is a security decision.</p>
+<p><code>fail-closed: false</code> is a weaker switch for an outage of Vault: requests whose status cannot be determined are let through, with a <code>WARN</code> per request and one at startup. Revoked and unknown certificates are still refused whenever their status is known.</p>
+<hr />
+<h2 id="configuration">Configuration</h2>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">spring</span><span class="p">:</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">cache</span><span class="p">:</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${CACHE_TYPE:caffeine}</span><span class="w">          </span><span class="c1"># caffeine | redis</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="nt">cache-names</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">certificate-status</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">  </span><span class="nt">data</span><span class="p">:</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="nt">redis</span><span class="p">:</span><span class="w">                                 </span><span class="c1"># only used when CACHE_TYPE=redis</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">      </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${REDIS_HOST:localhost}</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">      </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${REDIS_PORT:6379}</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">      </span><span class="nt">password</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${REDIS_PASSWORD:}</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">      </span><span class="nt">ssl</span><span class="p">:</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">        </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${REDIS_SSL_ENABLED:true}</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="nt">application</span><span class="p">:</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">  </span><span class="nt">revocation</span><span class="p">:</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">    </span><span class="nt">enforcement</span><span class="p">:</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">      </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${REVOCATION_ENFORCEMENT_ENABLED:true}</span>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">      </span><span class="nt">fail-closed</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">      </span><span class="nt">excluded-paths</span><span class="p">:</span>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/api/v1/certificate/ocsp</span>
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/actuator/health</span>
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">      </span><span class="nt">exempt-issuers</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span><span class="w">                   </span><span class="c1"># e.g. - "CN=Dev Root CA,O=Example,C=GB"</span>
+</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="w">    </span><span class="nt">cache</span><span class="p">:</span>
+</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="w">      </span><span class="nt">ttl</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${REVOCATION_CACHE_TTL:PT5M}</span><span class="w">    </span><span class="c1"># &gt; 0 and &lt;= PT10M, checked at startup</span>
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>application.revocation.enforcement.enabled</code></td>
+<td><code>true</code></td>
+<td>the feature flag</td>
+</tr>
+<tr>
+<td><code>application.revocation.enforcement.fail-closed</code></td>
+<td><code>true</code></td>
+<td>answer <code>503</code> when the status cannot be determined; <code>false</code> lets the request through</td>
+</tr>
+<tr>
+<td><code>application.revocation.enforcement.excluded-paths</code></td>
+<td><code>/api/v1/certificate/ocsp</code>, <code>/actuator/health</code></td>
+<td>path patterns within the application that are never checked</td>
+</tr>
+<tr>
+<td><code>application.revocation.enforcement.exempt-issuers</code></td>
+<td>empty</td>
+<td>issuer distinguished names whose certificates are not checked. From the environment: <code>APPLICATION_REVOCATION_ENFORCEMENT_EXEMPTISSUERS_0_</code>, <code>..._1_</code>, since a name contains commas.</td>
+</tr>
+<tr>
+<td><code>application.revocation.cache.ttl</code></td>
+<td><code>PT5M</code></td>
+<td>how long a status is reused; at most <code>PT10M</code></td>
+</tr>
+<tr>
+<td><code>spring.cache.type</code></td>
+<td><code>caffeine</code></td>
+<td><code>caffeine</code> or <code>redis</code></td>
+</tr>
+<tr>
+<td><code>spring.data.redis.*</code></td>
+<td></td>
+<td>Redis connection, read only with <code>spring.cache.type=redis</code></td>
+</tr>
+</tbody>
+</table>
+<p>Redis itself, its password in the secret store and its availability are provided by the environment.</p>
+<p>Status lookups use <code>&lt;pki-mount&gt;/cert/:serial</code> and <code>&lt;pki-mount&gt;/cert/ca</code>, which the OCSP API already reads, so the Management Node's Vault policy needs no change.</p>
+<hr />
+<h2 id="observability">Observability</h2>
+<p>Every refusal writes one <code>WARN</code> line. Values taken from the request are quoted and escaped:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>certificate_revocation_enforcement serial=39dd2e90b7 issuer="CN=federation-ca" status=REVOKED path="/api/v1/configuration/producer" clientIp=10.0.0.12 timestamp=2026-11-12T09:30:00Z errorId=9b8b0bd1-...
+</span></code></pre></div>
+<p><code>status</code> is <code>REVOKED</code>, <code>UNKNOWN</code> or <code>UNAVAILABLE</code>. <code>errorId</code> is the one returned to the client.</p>
+<p>Metrics at <code>/actuator/metrics</code> on the management port:</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Tags</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>revocation.enforcement.rejections</code></td>
+<td><code>status</code> (<code>revoked</code>, <code>unknown</code>, <code>unavailable</code>)</td>
+<td>requests refused by the filter</td>
+</tr>
+<tr>
+<td><code>revocation.status.lookups</code></td>
+<td><code>result</code> (<code>good</code>, <code>revoked</code>, <code>unknown</code>, <code>unavailable</code>)</td>
+<td>lookups the filter sent to Vault, that is cache misses; OCSP lookups are counted by <code>ocsp.cert.status</code> and <code>ocsp.requests</code></td>
+</tr>
+<tr>
+<td><code>cache.gets</code></td>
+<td><code>cache=certificate-status</code>, <code>result</code> (<code>hit</code>, <code>miss</code>)</td>
+<td>cache hit rate</td>
+</tr>
+<tr>
+<td><code>cache.evictions</code>, <code>cache.puts</code></td>
+<td><code>cache=certificate-status</code></td>
+<td>evictions and stored entries</td>
+</tr>
+<tr>
+<td><code>ocsp.vault.errors</code></td>
+<td>—</td>
+<td>failed status lookups against Vault</td>
+</tr>
+</tbody>
+</table>
+<p>A rise of <code>revocation.enforcement.rejections{status=unavailable}</code> means Vault is unreachable and requests with certificates not yet cached are being refused.</p>
+<hr />
+<h2 id="code-structure">Code Structure</h2>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>web/certificate/CertificateRevocationFilter</code></td>
+<td>the check on a request, the refusal, the log line and the rejection metric</td>
+</tr>
+<tr>
+<td><code>service/providers/certificate/status/CertificateStatusService</code> (<code>CertificateStatusServiceImpl</code>)</td>
+<td>cached status lookup and eviction</td>
+</tr>
+<tr>
+<td><code>service/providers/certificate/status/FederationCaService</code> (<code>FederationCaServiceImpl</code>)</td>
+<td>the CA of the PKI mount, and whether it issued a presented certificate</td>
+</tr>
+<tr>
+<td><code>service/providers/certificate/ocsp/CertificateStatusProvider</code></td>
+<td>the uncached lookup in Vault, behind the status service; the OCSP responder calls it directly</td>
+</tr>
+<tr>
+<td><code>config/CertificateStatusCacheConfig</code></td>
+<td>cache lifetime for Caffeine and Redis, Redis serialisation and key prefix, cache error handling</td>
+</tr>
+<tr>
+<td><code>config/RevocationEnforcementConfig</code></td>
+<td>the feature flag; <code>config/SecurityConfig</code> places the filter in the chain</td>
+</tr>
+<tr>
+<td><code>config/RevocationProperties</code></td>
+<td><code>application.revocation.*</code>, validated at startup</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="manual-test">Manual test</h2>
+<p>With the application, Keycloak and an unsealed Vault running as in the <a href="../OCSP_LOCAL_TESTING/">OCSP Local Testing Guide</a>. The usual local <code>client.crt</code> is issued by the development root CA, not by Vault, so it is refused as <code>UNKNOWN</code> until its issuer is exempt.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Expected</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Call any API with the development <code>client.crt</code></td>
+<td><code>401</code>, <code>CERTIFICATE_STATUS_UNKNOWN</code></td>
+</tr>
+<tr>
+<td>Add its issuer to <code>exempt-issuers</code> and restart</td>
+<td>the request reaches the token check as before</td>
+</tr>
+<tr>
+<td>Call with a certificate and key issued by <code>pki-int</code></td>
+<td>reaches the token check; <code>cache.gets{result=miss}</code> rises once, then <code>hit</code></td>
+</tr>
+<tr>
+<td>Revoke that certificate through <code>POST /api/v1/certificate/revoke</code>, then call again</td>
+<td><code>401</code>, <code>CERTIFICATE_REVOKED</code>, at once</td>
+</tr>
+<tr>
+<td>Call <code>/api/v1/certificate/ocsp</code> with the revoked certificate</td>
+<td>not refused by the filter</td>
+</tr>
+<tr>
+<td>Stop Vault and call with a certificate not seen before</td>
+<td><code>503</code>, <code>CERTIFICATE_STATUS_UNAVAILABLE</code>; after Vault is back, the same request passes</td>
+</tr>
+<tr>
+<td>Start with <code>REVOCATION_ENFORCEMENT_ENABLED=false</code></td>
+<td><code>WARN</code> at startup; the revoked certificate is not refused by the filter</td>
+</tr>
+<tr>
+<td>Start with <code>REVOCATION_CACHE_TTL=11m</code></td>
+<td>startup fails: <code>application.revocation.cache.ttl must be greater than 0 and at most PT10M</code></td>
+</tr>
+<tr>
+<td>Start with <code>CACHE_TYPE=redis</code> and a local Redis (<code>REDIS_SSL_ENABLED=false</code>)</td>
+<td>keys <code>dsi:cert-status:*</code> appear in <code>redis-cli</code>, and the key of a certificate disappears when it is revoked</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="limitations">Limitations</h2>
+<ul>
+<li><strong>Gateway-terminated mTLS.</strong> A client certificate forwarded in a header is not read. Where mTLS ends at an ingress, this filter checks nothing.</li>
+<li><strong>Revocations outside the API</strong> are enforced when the cache entry expires; see <a href="#exposure-window">Exposure window</a>. No reconciliation job evicts them earlier.</li>
+<li><strong>Caffeine with several instances</strong> does not share evictions. Use Redis.</li>
+<li><strong>The flag is read at startup.</strong> It cannot be toggled at runtime.</li>
+</ul>
+
+
+
+
+
+
+
+  
+    
+  
+  
+
+
+  <aside class="md-source-file">
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="Last update">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 19, 2026 10:54:54 UTC">November 19, 2026</span>
+  </span>
+
+    
+    
+    
+    
+  </aside>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      &copy;Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally attributed to the UK's Department for Business, Innovation, Science and Trade (BIST) as the governing entity.  
+
+    </div>
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.annotate", "content.code.copy", "content.code.select", "content.tooltips", "navigation.indexes", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "search.share", "navigation.instant", "navigation.instant.prefetch", "navigation.instant", "navigation.instant.progress", "navigation.path", "toc.follow"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

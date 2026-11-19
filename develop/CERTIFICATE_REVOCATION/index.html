@@ -802,6 +802,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../REVOCATION_ENFORCEMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Certificate Revocation Enforcement
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../VAULT_ACCESS/" class="md-nav__link">
         
   
@@ -895,10 +922,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_17" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18" >
         
           
-          <label class="md-nav__link" for="__nav_17" id="__nav_17_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_18" id="__nav_18_label" tabindex="0">
             
   
   
@@ -916,8 +943,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_17_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_17">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_18_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_18">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -956,7 +983,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_17_1" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18_1" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -978,14 +1005,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_17_1" id="__nav_17_1_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_18_1" id="__nav_18_1_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_17_1_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_17_1">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_18_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_18_1">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1342,6 +1369,7 @@
 <p>An organisation administrator revokes one of their organisation's certificates when a consumer or producer is compromised or decommissioned. From then on:</p>
 <ul>
 <li>Vault reports the certificate as revoked, and the Management Node <a href="../OCSP/">OCSP API</a> answers <code>revoked</code> with Vault's revocation time and the reason given here. Nodes enforce it within the OCSP response validity, at most 10 minutes.</li>
+<li>Every Management Node API refuses requests that present the certificate, from its next request on: <code>401</code> with code <code>CERTIFICATE_REVOKED</code>. The revocation evicts the certificate from the status cache, so this does not wait for the cache to expire. See <a href="../REVOCATION_ENFORCEMENT/">Certificate Revocation Enforcement</a>.</li>
 <li>The organisation's <code>organisation_certificate</code> record says who revoked it, when and why. <code>CertificateValidationInterceptor</code> refuses that organisation's calls to <code>/api/v1/configuration/**</code>, and the configuration APIs leave the organisation out.</li>
 <li><code>POST /api/v1/certificate/csr/sign</code> refuses to renew it. A new certificate needs a new bootstrap (<code>POST /api/v1/certificate/bootstrap</code>), which clears the revocation from the record. The revoked certificate stays revoked in Vault.</li>
 </ul>
@@ -1506,6 +1534,7 @@
 <li>The certificate's organisation must be the caller's, otherwise <code>403</code>.</li>
 <li>The record must not be revoked yet, otherwise <code>409</code>.</li>
 <li>Revocation in Vault: <code>POST &lt;pki-mount&gt;/revoke</code> with <code>serial_number</code>.</li>
+<li>The certificate's entry in the status cache is evicted, here and again after step 8, so the revocation is enforced on the next request even if step 8 fails. A failed eviction is logged and does not fail the request.</li>
 <li>Database, in one transaction: <code>revoked_at</code>, <code>revoked_by</code>, <code>revocation_reason</code>, <code>revocation_message</code>, and a <code>REVOKED</code> event in <code>certificate_events</code>. The update only applies while the record still holds the serial and is not revoked, so a concurrent request cannot overwrite it; the loser gets <code>409</code>.</li>
 <li>Audit log line and response.</li>
 </ol>
@@ -1713,7 +1742,7 @@
 <ul>
 <li><strong>Current certificate only.</strong> <code>organisation_certificate</code> holds one certificate per organisation. After a renewal the previous certificate is still valid until it expires, but its serial is no longer in the record, so this API answers <code>404</code> for it.</li>
 <li><strong>Reason after re-issue.</strong> A bootstrap clears the revocation from the record. Vault still reports the old certificate as revoked, but OCSP then answers without a reason.</li>
-<li><strong>Revocations outside this API.</strong> A certificate revoked directly in Vault is revoked for OCSP, but its record is not updated. No reconciliation job does that yet.</li>
+<li><strong>Revocations outside this API.</strong> A certificate revoked directly in Vault is revoked for OCSP and refused by the Management Node only once its cached status expires, at most <code>application.revocation.cache.ttl</code> later, and its record is not updated. No reconciliation job does that yet.</li>
 <li><strong>Rate limit per instance</strong>, see <a href="#configuration">Configuration</a>.</li>
 </ul>
 
@@ -1736,7 +1765,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 19, 2026 09:41:56 UTC">November 19, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 19, 2026 10:54:54 UTC">November 19, 2026</span>
   </span>
 
     
