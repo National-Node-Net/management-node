@@ -171,7 +171,8 @@ public final class FilterOptionTargets {
      *   <li>{@code name}, {@code displayName}, {@code description} and {@code longDescription}:
      *       prose, already searched by the free-text box ({@code textSearch});
      *   <li>{@code topic} and {@code source}: identifiers nobody browses by;
-     *   <li>{@code id} and the producer's members, which are not filterable here at all.
+     *   <li>{@code id}, {@code keyUseCases} and the producer's members, which are not filterable
+     *       here at all.
      * </ul>
      *
      * <p>This only narrows the panel. Discover itself still accepts a filter on any field the
@@ -181,7 +182,7 @@ public final class FilterOptionTargets {
         return switch (field) {
             case TYPE, FORMAT, ORGANISATION_KEY, ORGANISATION_NAME, SUBSCRIBED_BY, IS_OWN_PRODUCT -> true;
             case NAME, DISPLAY_NAME, DESCRIPTION, LONG_DESCRIPTION, TOPIC, SOURCE -> false;
-            case ID, PRODUCER_NAME, PRODUCER_DESCRIPTION, PRODUCER_ACTIVE -> false;
+            case ID, KEY_USE_CASES, PRODUCER_NAME, PRODUCER_DESCRIPTION, PRODUCER_ACTIVE -> false;
         };
     }
 
@@ -197,6 +198,7 @@ public final class FilterOptionTargets {
                     DISPLAY_NAME,
                     DESCRIPTION,
                     LONG_DESCRIPTION,
+                    KEY_USE_CASES,
                     TOPIC,
                     SOURCE,
                     ID,
@@ -213,6 +215,7 @@ public final class FilterOptionTargets {
                     DISPLAY_NAME,
                     DESCRIPTION,
                     LONG_DESCRIPTION,
+                    KEY_USE_CASES,
                     TOPIC,
                     SOURCE,
                     ID,

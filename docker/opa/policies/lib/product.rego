@@ -30,6 +30,7 @@ fields := {
 	"displayName",
 	"description",
 	"longDescription",
+	"keyUseCases",
 	"topic",
 	"type",
 	"source",

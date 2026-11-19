@@ -38,6 +38,8 @@ public enum ProductField {
     DESCRIPTION("description", "p.description", null, Use.FILTER_TEXT, Kind.TEXT),
     /** The full description, which only the view shows; free text searches it too. */
     LONG_DESCRIPTION("longDescription", "p.long_description", null, Use.FILTER_TEXT, Kind.TEXT),
+    /** What the product can be used for, in display order; a text array. */
+    KEY_USE_CASES("keyUseCases", "p.key_use_cases", null, Use.RETURN_ONLY, Kind.TEXT),
     TOPIC("topic", "p.topic", null, Use.FILTER_SORT, Kind.TEXT),
     TYPE("type", "pt.name", null, Use.FILTER_SORT, Kind.TEXT),
     SOURCE("source", "p.source", null, Use.FILTER_SORT, Kind.TEXT),

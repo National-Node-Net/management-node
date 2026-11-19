@@ -6,9 +6,13 @@
 package uk.gov.dbt.ndtp.ia.node.management.persistency.repository.configuration;
 
 import java.math.BigDecimal;
+import java.sql.Array;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -16,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.core.ColumnMapRowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -116,10 +121,21 @@ public class ProductDiscoveryRepository {
                 + " ORDER BY s.code DESC, d.name, d.namespace";
     }
 
-    /** One row per product of the page, keyed by the column aliases of {@link ProductSearchQuery}. */
+    /**
+     * One row per product of the page, keyed by the column aliases of {@link ProductSearchQuery}.
+     * An array column is read as a list.
+     */
     public List<Map<String, Object>> findPage(ProductSearchQuery query) {
-        return jdbc.queryForList(query.pageSql(), query.parameters());
+        return jdbc.query(query.pageSql(), query.parameters(), PAGE_ROW);
     }
+
+    private static final ColumnMapRowMapper PAGE_ROW = new ColumnMapRowMapper() {
+        @Override
+        protected Object getColumnValue(ResultSet rs, int index) throws SQLException {
+            Object value = super.getColumnValue(rs, index);
+            return value instanceof Array array ? Arrays.asList((Object[]) array.getArray()) : value;
+        }
+    };
 
     public long count(ProductSearchQuery query) {
         Long total = jdbc.queryForObject(query.countSql(), query.parameters(), Long.class);

@@ -38,7 +38,7 @@ bristol_coverage_node := {
 }
 
 every_field := [
-	"consumers", "description", "displayName", "format", "isOwnProduct", "longDescription", "name", "organisation", "organisation.key",
+	"consumers", "description", "displayName", "format", "isOwnProduct", "keyUseCases", "longDescription", "name", "organisation", "organisation.key",
 	"organisation.name", "policyAttributes", "producer", "producer.active", "producer.description",
 	"producer.name", "source", "subscribedBy", "topic", "type",
 ]
@@ -124,7 +124,7 @@ test_bcc_contract if {
 		"masked_filtered_attributes": [],
 		"mask_sensitive_attributes": true,
 		"visible_fields": [
-			"description", "displayName", "format", "isOwnProduct", "longDescription", "name", "organisation", "organisation.key", "organisation.name",
+			"description", "displayName", "format", "isOwnProduct", "keyUseCases", "longDescription", "name", "organisation", "organisation.key", "organisation.name",
 			"producer", "producer.active", "producer.description", "producer.name", "topic", "type",
 		],
 		"text_search_fields": ["description", "displayName", "longDescription", "name", "organisation.name"],
