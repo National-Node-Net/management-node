@@ -1,0 +1,1810 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Management Node is is the control plane for the National Digital Twin Programme IA Node Net.">
+      
+      
+        <meta name="author" content="NDTP">
+      
+      
+        <link rel="canonical" href="https://docs.ndtp.co.uk/develop/OCSP_LOCAL_TESTING/">
+      
+      
+        <link rel="prev" href="../OCSP/">
+      
+      
+        <link rel="next" href="../POLICY_ENFORCEMENT/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/android-chrome-512x512-1-150x150.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>OCSP Local Testing Guide - Management-Node Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#ocsp-local-testing-guide" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Management-Node Documentation" class="md-header__button md-logo" aria-label="Management-Node Documentation" data-md-component="logo">
+      
+  <img src="../assets/light-page_header_logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Management-Node Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              OCSP Local Testing Guide
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Management-Node Documentation" class="md-nav__button md-logo" aria-label="Management-Node Documentation" data-md-component="logo">
+      
+  <img src="../assets/light-page_header_logo.png" alt="logo">
+
+    </a>
+    Management-Node Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    README
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AUTHENTICATION_REQUIREMENTS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication Requirements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../BOOTSTRAP_ONBOARDING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bootstrap Onboarding Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DATABASE_SCHEMA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DISCOVERY_TEST_SCENARIOS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Discovery and View: Test Scenarios
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../JACOCO_COVERAGE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JaCoCo Code Coverage Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../KAFKA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kafka Events
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MOCKITO_USAGE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockito Testing Tool Usage Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MTLS_CONFIGURATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MTLS Configuration Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OCSP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OCSP Certificate Status API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OCSP Local Testing Guide
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OCSP Local Testing Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#preparation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Preparation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#test-scenarios" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test scenarios
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Test scenarios">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a-good" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A. good
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#b-unknown-certificate-not-known-to-vault" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        B. unknown: certificate not known to Vault
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#c-several-certificates-in-one-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        C. Several certificates in one request
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#d-too-many-entries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        D. Too many entries
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#e-garbage-body" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E. Garbage body
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#f-revoked-visible-immediately" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F. revoked, visible immediately
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#g-missing-token" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        G. Missing token
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#h-vault-unavailable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        H. Vault unavailable
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#metrics-and-logs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Metrics and logs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#load-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Load test
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#automated-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Automated tests
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#clean-up" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Clean up
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../POLICY_ENFORCEMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Policy Enforcement
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../entity-dto-converter-pattern/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entity-DTO Converter Pattern
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../jobs-scheduler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Jobs Scheduler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_15" >
+        
+          
+          <label class="md-nav__link" for="__nav_15" id="__nav_15_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tests
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_15_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_15">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tests
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_15_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../tests/products/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Products
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_15_1" id="__nav_15_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_15_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_15_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Products
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tests/products/product-discover-filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Discover Filter: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tests/products/product-discover/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Discover: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tests/products/product-view/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product View API: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tests/products/subscribe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Subscribe API: Test Requirement Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#preparation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Preparation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#test-scenarios" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test scenarios
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Test scenarios">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a-good" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A. good
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#b-unknown-certificate-not-known-to-vault" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        B. unknown: certificate not known to Vault
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#c-several-certificates-in-one-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        C. Several certificates in one request
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#d-too-many-entries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        D. Too many entries
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#e-garbage-body" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E. Garbage body
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#f-revoked-visible-immediately" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F. revoked, visible immediately
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#g-missing-token" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        G. Missing token
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#h-vault-unavailable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        H. Vault unavailable
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#metrics-and-logs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Metrics and logs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#load-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Load test
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#automated-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Automated tests
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#clean-up" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Clean up
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="ocsp-local-testing-guide">OCSP Local Testing Guide</h1>
+<p><strong>Repository:</strong> <code>management-node</code><br />
+<strong>Description:</strong> <code>Step-by-step manual verification of the OCSP endpoint against a local Keycloak and Vault</code><br />
+<strong>SPDX-License-Identifier:</strong> <code>Apache-2.0 AND OGL-UK-3.0</code>  </p>
+<hr />
+<h2 id="overview">Overview</h2>
+<p>This guide checks <code>POST /api/v1/certificate/ocsp</code> end to end on a local machine. It covers eight scenarios, the metrics, a load test and the automated tests. Keycloak, Vault and certificate setup is described in the <a href="../README.md">README</a> and is assumed to be working. The endpoint itself is specified in <a href="../OCSP/">OCSP Certificate Status API</a>.</p>
+<hr />
+<h2 id="prerequisites">Prerequisites</h2>
+<p>Run every command from the repository root. On Windows, use Git Bash. Check the following before you start:</p>
+<ul>
+<li>Keycloak and Vault containers are running and Vault is unsealed (<code>vault operator unseal</code>).</li>
+<li>The <code>management-node</code> client in realm <code>mng-node</code> defines the client role <code>check_certificate_status</code>. If the realm was imported before this role was added to <code>docker/keycloak/management-node.json</code>, add the role manually in the admin console. Re-importing does not update a running Keycloak.</li>
+<li>A federator client exists, for example <code>FEDERATOR_ENV</code>. The role <code>check_certificate_status</code> is assigned to the service account of that client. Federator clients are the consumer and producer nodes that call the OCSP endpoint in a real deployment. You can create the client in either of two ways:</li>
+<li><strong>OpenTofu</strong> (<code>docker/keycloak/tofu</code>): <code>terraform.tfvars</code> already maps the role to <code>FEDERATOR_ENV</code>, <code>FEDERATOR_BCC</code> and <code>FEDERATOR_HEG</code>. These clients authenticate with their mTLS certificate (<code>client-x509</code>) and have no secret.</li>
+<li><strong>Manually</strong>: follow "Testing further with a federator client" under <a href="../README.md#testing-api-endpoints">Testing API Endpoints</a> in the README, and in step 5 also assign <code>check_certificate_status</code>. Such a client authenticates with a client secret.</li>
+<li>The Vault role <code>default-role</code> accepts EC keys (<code>key_type=any</code>, as in the README). The Management Node issues its OCSP signer through this role.</li>
+<li><code>client.crt</code> and <code>client.key</code> are in the repository root.</li>
+</ul>
+<p>Session variables:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">MSYS_NO_PATHCONV</span><span class="o">=</span><span class="m">1</span><span class="w">                          </span><span class="c1"># Git Bash only: stops "/CN=..." being rewritten as a Windows path</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">VAULT_TOKEN</span><span class="o">=</span>&lt;vault<span class="w"> </span>token&gt;
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">FEDERATOR_CLIENT_ID</span><span class="o">=</span>FEDERATOR_ENV
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="nb">export</span><span class="w"> </span><span class="nv">FEDERATOR_CLIENT_SECRET</span><span class="o">=</span>&lt;client<span class="w"> </span>secret&gt;<span class="w">      </span><span class="c1"># only for a client created manually with client authentication</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">CURL</span><span class="o">=</span>curl<span class="w">                                   </span><span class="c1"># or the path to a curl build that uses OpenSSL</span>
+</span></code></pre></div>
+<p>Notes on <code>curl</code>:</p>
+<ul>
+<li><strong>curl built with OpenSSL</strong> (Linux, macOS, the official curl for Windows build) accepts <code>--cert client.crt --key client.key</code>, as used below.</li>
+<li><strong>curl built with Schannel</strong> (the one bundled with Git for Windows) usually needs a PKCS#12 bundle instead. Create it with <code>openssl pkcs12 -export -out client-test.p12 -inkey client.key -in client.crt -passout pass:changeit</code>, then replace <code>--cert client.crt --key client.key</code> with <code>--cert-type P12 --cert client-test.p12:changeit --ssl-no-revoke</code>.</li>
+<li><strong>Use <code>-sS</code>, not <code>-s</code>.</strong> With <code>-s</code> alone, curl fails silently, for example when a certificate file is missing, and no response file is written.</li>
+</ul>
+<hr />
+<h2 id="preparation">Preparation</h2>
+<p>Do these steps once. They issue a test certificate, start the application and get a token. The OCSP signer needs no preparation: the application issues it through <code>default-role</code> when it starts.</p>
+<ol>
+<li>Fetch the CA and issue a test certificate. The test certificate is the one that should come back as <code>good</code>:</li>
+</ol>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-e<span class="w"> </span><span class="nv">VAULT_TOKEN</span><span class="o">=</span><span class="nv">$VAULT_TOKEN</span><span class="w"> </span>vault<span class="w"> </span>vault<span class="w"> </span><span class="nb">read</span><span class="w"> </span>-field<span class="o">=</span>certificate<span class="w"> </span>pki-int/cert/ca<span class="w"> </span>&gt;<span class="w"> </span>ca.pem
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-e<span class="w"> </span><span class="nv">VAULT_TOKEN</span><span class="o">=</span><span class="nv">$VAULT_TOKEN</span><span class="w"> </span>vault<span class="w"> </span>vault<span class="w"> </span>write<span class="w"> </span>-field<span class="o">=</span>certificate<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span>pki-int/issue/default-role<span class="w"> </span><span class="nv">common_name</span><span class="o">=</span>ocsp-test.local<span class="w"> </span><span class="nv">ttl</span><span class="o">=</span>2h<span class="w"> </span>&gt;<span class="w"> </span>ocsp-test.pem
+</span></code></pre></div>
+<ol>
+<li>Start the application:</li>
+</ol>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>./mvnw<span class="w"> </span>spring-boot:run<span class="w"> </span>-Dspring-boot.run.profiles<span class="o">=</span><span class="nb">local</span>
+</span></code></pre></div>
+<p>The log should contain <code>Signing CSR with role: default-role</code> followed by <code>Issued OCSP signer CN=ocsp-signer.management-node ... valid until ...</code>. If it has <code>Failed to issue OCSP signer</code> instead, Vault was not reachable or <code>default-role</code> refused the CSR. The application tries again every 5 minutes.</p>
+<ol>
+<li>Get a token as the federator client. Every caller uses the token endpoint of realm <code>mng-node</code>, because that realm is the issuer the Management Node trusts (<code>spring.security.oauth2.resourceserver.jwt.issuer-uri</code>). Only the client and the way it authenticates differ.</li>
+</ol>
+<p>For a client created with OpenTofu, which authenticates with its mTLS certificate:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nv">TOKEN</span><span class="o">=</span><span class="k">$(</span><span class="s2">"</span><span class="nv">$CURL</span><span class="s2">"</span><span class="w"> </span>-sSk<span class="w"> </span>--cert<span class="w"> </span>client.crt<span class="w"> </span>--key<span class="w"> </span>client.key<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span>-d<span class="w"> </span><span class="nv">grant_type</span><span class="o">=</span>client_credentials<span class="w"> </span>-d<span class="w"> </span><span class="s2">"client_id=</span><span class="nv">$FEDERATOR_CLIENT_ID</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span>https://localhost:8443/realms/mng-node/protocol/openid-connect/token<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span>.access_token<span class="k">)</span>
+</span></code></pre></div>
+<p>For a client created manually with a client secret:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nv">TOKEN</span><span class="o">=</span><span class="k">$(</span><span class="s2">"</span><span class="nv">$CURL</span><span class="s2">"</span><span class="w"> </span>-sSk<span class="w"> </span>--cert<span class="w"> </span>client.crt<span class="w"> </span>--key<span class="w"> </span>client.key<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span>-d<span class="w"> </span><span class="nv">grant_type</span><span class="o">=</span>client_credentials<span class="w"> </span>-d<span class="w"> </span><span class="s2">"client_id=</span><span class="nv">$FEDERATOR_CLIENT_ID</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span>--data-urlencode<span class="w"> </span><span class="s2">"client_secret=</span><span class="nv">$FEDERATOR_CLIENT_SECRET</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span>https://localhost:8443/realms/mng-node/protocol/openid-connect/token<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span>.access_token<span class="k">)</span>
+</span></code></pre></div>
+<p>Check that the token belongs to the federator and carries the role:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">echo</span><span class="w"> </span><span class="nv">$TOKEN</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>cut<span class="w"> </span>-d.<span class="w"> </span>-f2<span class="w"> </span><span class="p">|</span><span class="w"> </span>base64<span class="w"> </span>-d<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-oE<span class="w"> </span><span class="s1">'"azp":"[^"]*"|check_certificate_status'</span>
+</span></code></pre></div>
+<p>The output should be <code>"azp":"FEDERATOR_ENV"</code> and <code>check_certificate_status</code>. Without <code>jq</code>, extract the token with <code>sed -E 's/.*"access_token":"([^"]+)".*/\1/'</code> instead. The token expires after the client's access token lifespan, so get a new one whenever you see <code>401</code>.</p>
+<p>For a quick check you can also request the token as the <code>management-node</code> client with its secret, as in the README's local setup. That client stands in for every caller locally and is not how nodes call the endpoint in a real deployment.</p>
+<p>The OCSP endpoint is under <code>/api/v1/certificate/**</code>, which <code>CertificateValidationInterceptor</code> skips. The federator therefore does not need an <code>organisation_certificate</code> row to check certificate status.</p>
+<ol>
+<li>Define two helper functions:</li>
+<li><code>ocsp [request file] [response file]</code> sends a request. The defaults are <code>req.der</code> and <code>resp.der</code>.</li>
+<li><code>verify</code> saves the signer certificate from the response, checks that the <code>pki-int</code> CA issued it, then checks the signature, the nonce and the statuses.</li>
+</ol>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>ocsp<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="s2">"</span><span class="nv">$CURL</span><span class="s2">"</span><span class="w"> </span>-sSk<span class="w"> </span>--cert<span class="w"> </span>client.crt<span class="w"> </span>--key<span class="w"> </span>client.key<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$TOKEN</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/ocsp-request"</span><span class="w"> </span>--data-binary<span class="w"> </span>@<span class="si">${</span><span class="nv">1</span><span class="k">:-</span><span class="nv">req</span><span class="p">.der</span><span class="si">}</span><span class="w"> </span>-o<span class="w"> </span><span class="si">${</span><span class="nv">2</span><span class="k">:-</span><span class="nv">resp</span><span class="p">.der</span><span class="si">}</span><span class="w"> </span>-D<span class="w"> </span>-<span class="w"> </span>https://localhost:8090/api/v1/certificate/ocsp<span class="p">;</span><span class="w"> </span><span class="o">}</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>verify<span class="o">()</span><span class="w"> </span><span class="o">{</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span>openssl<span class="w"> </span>ocsp<span class="w"> </span>-respin<span class="w"> </span>resp.der<span class="w"> </span>-resp_text<span class="w"> </span>-noverify<span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span>-n<span class="w"> </span><span class="s1">'/BEGIN CERTIFICATE/,/END CERTIFICATE/p'</span><span class="w"> </span>&gt;<span class="w"> </span>signer.pem
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span>openssl<span class="w"> </span>verify<span class="w"> </span>-CAfile<span class="w"> </span>ca.pem<span class="w"> </span>signer.pem<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>openssl<span class="w"> </span>ocsp<span class="w"> </span>-reqin<span class="w"> </span>req.der<span class="w"> </span>-respin<span class="w"> </span>resp.der<span class="w"> </span>-issuer<span class="w"> </span>ca.pem<span class="w"> </span>-VAfile<span class="w"> </span>signer.pem<span class="w"> </span>-resp_text
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="o">}</span>
+</span></code></pre></div>
+<p>The signer certificate has no <code>id-kp-OCSPSigning</code> EKU, so <code>-CAfile ca.pem</code> alone would fail with <code>missing ocspsigning usage</code>. <code>-VAfile</code> trusts the signer certificate explicitly instead.</p>
+<hr />
+<h2 id="test-scenarios">Test scenarios</h2>
+<p>Run the scenarios in order:
+- F permanently revokes <code>ocsp-test.pem</code>, so it comes after the scenarios that expect <code>good</code>.
+- H stops Vault, so it comes last.
+- Each <code>openssl ocsp ... -reqout</code> call generates a new nonce, so build a fresh request in every scenario.</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>What it checks</th>
+<th>HTTP / Cache-Control</th>
+<th>Expected OCSP result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>Certificate issued by Vault</td>
+<td>200 / <code>max-age≈300</code></td>
+<td><code>successful</code>, <code>good</code>, <code>Response verify OK</code></td>
+</tr>
+<tr>
+<td>B</td>
+<td>Certificate not known to Vault</td>
+<td>200 / <code>max-age≈300</code></td>
+<td><code>successful</code>, <code>unknown</code></td>
+</tr>
+<tr>
+<td>C</td>
+<td>Several certificates in one request</td>
+<td>200 / <code>max-age≈300</code></td>
+<td>one signature; <code>good</code> + <code>unknown</code> in request order</td>
+</tr>
+<tr>
+<td>D</td>
+<td>More than 10 entries</td>
+<td>200 / <code>no-store</code></td>
+<td><code>malformedRequest</code>, unsigned</td>
+</tr>
+<tr>
+<td>E</td>
+<td>Body that is not DER</td>
+<td>200 / <code>no-store</code></td>
+<td><code>malformedRequest</code>, unsigned</td>
+</tr>
+<tr>
+<td>F</td>
+<td>Revocation in Vault</td>
+<td>200 / <code>max-age≈300</code></td>
+<td><code>revoked</code> with Vault's time, no <code>Reason</code></td>
+</tr>
+<tr>
+<td>G</td>
+<td>Missing token</td>
+<td>401</td>
+<td>JSON <code>ErrorResponse</code>; the OCSP layer does not run</td>
+</tr>
+<tr>
+<td>H</td>
+<td>Vault unavailable</td>
+<td>200 / <code>no-store</code></td>
+<td><code>tryLater</code>, never <code>good</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="a-good">A. <code>good</code></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>openssl<span class="w"> </span>ocsp<span class="w"> </span>-issuer<span class="w"> </span>ca.pem<span class="w"> </span>-cert<span class="w"> </span>ocsp-test.pem<span class="w"> </span>-nonce<span class="w"> </span>-reqout<span class="w"> </span>req.der
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>ocsp<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>verify
+</span></code></pre></div>
+<p>Check in the output:</p>
+<ul>
+<li><code>signer.pem: OK</code> means the <code>pki-int</code> CA issued the signer certificate.</li>
+<li><code>Response verify OK</code> with no <code>Nonce Verify error</code> means the signature is valid and the nonce was echoed.</li>
+<li><code>Responder Id</code> equals the signer's <code>Subject Key Identifier</code>, so the responder ID is <code>byKey</code>.</li>
+<li><code>Next Update</code> is <code>This Update</code> + 5 minutes, and <code>Cache-Control: max-age</code> counts down to it.</li>
+<li><code>Signature Algorithm</code> is <code>ecdsa-with-SHA256</code>, because the signer key is EC P-256.</li>
+<li>The signer certificate <code>CN=ocsp-signer.management-node</code> is included in the response.</li>
+</ul>
+<p>Pass only <code>-reqin</code> when verifying. If you add <code>-cert</code> or <code>-serial</code>, OpenSSL builds a new request with a different nonce and reports <code>Nonce Verify error</code>.</p>
+<h3 id="b-unknown-certificate-not-known-to-vault">B. <code>unknown</code>: certificate not known to Vault</h3>
+<p><code>client.crt</code> has the same issuer, but <code>pki-int</code> does not hold it:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>openssl<span class="w"> </span>ocsp<span class="w"> </span>-issuer<span class="w"> </span>ca.pem<span class="w"> </span>-cert<span class="w"> </span>client.crt<span class="w"> </span>-nonce<span class="w"> </span>-reqout<span class="w"> </span>req.der
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>ocsp<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>verify
+</span></code></pre></div>
+<p>Expected:
+- <code>Cert Status: unknown</code> and <code>Response verify OK</code>.
+- The application log has <code>certStatus=unknown responseStatus=successful</code> and no stack trace.</p>
+<h3 id="c-several-certificates-in-one-request">C. Several certificates in one request</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>openssl<span class="w"> </span>ocsp<span class="w"> </span>-issuer<span class="w"> </span>ca.pem<span class="w"> </span>-cert<span class="w"> </span>ocsp-test.pem<span class="w"> </span>-cert<span class="w"> </span>client.crt<span class="w"> </span>-nonce<span class="w"> </span>-reqout<span class="w"> </span>req.der
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>ocsp<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>verify
+</span></code></pre></div>
+<p>Expected: two <code>Certificate ID</code> blocks in one signed response. <code>good</code> comes first, then <code>unknown</code>.</p>
+<h3 id="d-too-many-entries">D. Too many entries</h3>
+<p>The limit is <code>application.ocsp.max-request-entries</code> (default <code>10</code>):</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>openssl<span class="w"> </span>ocsp<span class="w"> </span>-issuer<span class="w"> </span>ca.pem<span class="w"> </span><span class="k">$(for</span><span class="w"> </span>i<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>seq<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">11</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span>-serial<span class="w"> </span>0x<span class="nv">$i</span><span class="p">;</span><span class="w"> </span><span class="k">done)</span><span class="w"> </span>-reqout<span class="w"> </span>big.der
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>ocsp<span class="w"> </span>big.der<span class="w"> </span>bad.der
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>openssl<span class="w"> </span>ocsp<span class="w"> </span>-respin<span class="w"> </span>bad.der<span class="w"> </span>-resp_text<span class="w"> </span>-noverify
+</span></code></pre></div>
+<p>Expected: <code>OCSP Response Status: malformedRequest (0x1)</code> and <code>Cache-Control: no-store</code>.</p>
+<h3 id="e-garbage-body">E. Garbage body</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">"garbage"</span><span class="w"> </span>&gt;<span class="w"> </span>garbage.bin
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>ocsp<span class="w"> </span>garbage.bin<span class="w"> </span>bad.der
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>openssl<span class="w"> </span>ocsp<span class="w"> </span>-respin<span class="w"> </span>bad.der<span class="w"> </span>-resp_text<span class="w"> </span>-noverify
+</span></code></pre></div>
+<p>Expected: the same as D.</p>
+<h3 id="f-revoked-visible-immediately">F. <code>revoked</code>, visible immediately</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-i<span class="w"> </span>-e<span class="w"> </span><span class="nv">VAULT_TOKEN</span><span class="o">=</span><span class="nv">$VAULT_TOKEN</span><span class="w"> </span>vault<span class="w"> </span>vault<span class="w"> </span>write<span class="w"> </span>pki-int/revoke<span class="w"> </span><span class="nv">certificate</span><span class="o">=</span>-<span class="w"> </span>&lt;<span class="w"> </span>ocsp-test.pem
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>openssl<span class="w"> </span>ocsp<span class="w"> </span>-issuer<span class="w"> </span>ca.pem<span class="w"> </span>-cert<span class="w"> </span>ocsp-test.pem<span class="w"> </span>-nonce<span class="w"> </span>-reqout<span class="w"> </span>req.der
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>ocsp<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>verify
+</span></code></pre></div>
+<p>Expected:</p>
+<ul>
+<li><code>Cert Status: revoked</code>, with a <code>Revocation Time</code> that matches <code>revocation_time</code> in Vault.</li>
+<li>No <code>Reason</code>, because Vault does not record a revocation reason.</li>
+<li>The status changes on the very next request, because status lookups are not cached.</li>
+</ul>
+<h3 id="g-missing-token">G. Missing token</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="s2">"</span><span class="nv">$CURL</span><span class="s2">"</span><span class="w"> </span>-sSk<span class="w"> </span>--cert<span class="w"> </span>client.crt<span class="w"> </span>--key<span class="w"> </span>client.key<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/ocsp-request"</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span>--data-binary<span class="w"> </span>@req.der<span class="w"> </span>-D<span class="w"> </span>-<span class="w"> </span>https://localhost:8090/api/v1/certificate/ocsp
+</span></code></pre></div>
+<p>Expected: HTTP <code>401</code> with a JSON body. For comparison, a token without the <code>check_certificate_status</code> role gets <code>403</code>.</p>
+<h3 id="h-vault-unavailable">H. Vault unavailable</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>docker<span class="w"> </span>stop<span class="w"> </span>vault
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>ocsp<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>openssl<span class="w"> </span>ocsp<span class="w"> </span>-respin<span class="w"> </span>resp.der<span class="w"> </span>-resp_text<span class="w"> </span>-noverify
+</span></code></pre></div>
+<p>Expected: <code>OCSP Response Status: tryLater (0x3)</code> and <code>Cache-Control: no-store</code>.</p>
+<p>Then bring Vault back:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>docker<span class="w"> </span>start<span class="w"> </span>vault
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>vault<span class="w"> </span>vault<span class="w"> </span>operator<span class="w"> </span>unseal<span class="w"> </span>&lt;unseal<span class="w"> </span>key&gt;
+</span></code></pre></div>
+<p>The signer is kept in memory, so once Vault is unsealed, responses go back to <code>successful</code> without restarting the application.</p>
+<hr />
+<h2 id="metrics-and-logs">Metrics and logs</h2>
+<p>After scenarios A–H, every OCSP metric should have a non-zero value. Metrics are served on the management port 8081 over plain HTTP, without mTLS:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:8081/actuator/metrics/ocsp.requests
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>curl<span class="w"> </span>-s<span class="w"> </span><span class="s2">"http://localhost:8081/actuator/metrics/ocsp.requests?tag=response_status:tryLater"</span>
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:8081/actuator/metrics/ocsp.cert.status
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:8081/actuator/metrics/ocsp.vault.errors
+</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:8081/actuator/metrics/ocsp.signer.expiry.seconds
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Expected after A–H</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ocsp.requests</code></td>
+<td>tag <code>response_status</code> has values <code>successful</code>, <code>malformedRequest</code> and <code>tryLater</code></td>
+</tr>
+<tr>
+<td><code>ocsp.cert.status</code></td>
+<td>tag <code>cert_status</code> has values <code>good</code>, <code>unknown</code> and <code>revoked</code></td>
+</tr>
+<tr>
+<td><code>ocsp.vault.errors</code></td>
+<td>≥ 1 (after H)</td>
+</tr>
+<tr>
+<td><code>ocsp.signer.expiry.seconds</code></td>
+<td>about 86400 minus the time since the signer was issued; <code>-1</code> means no signer is loaded</td>
+</tr>
+</tbody>
+</table>
+<p>Every response writes one log line per certificate ID. The <code>clientId</code> comes from the MDC, so the line is prefixed with <code>[FEDERATOR_ENV]</code> for the token above. A request that cannot be parsed (D, E) writes one line with <code>-</code> placeholders:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>ocsp_response serial=0567a4f9... issuerKeyHash=797bed38... certStatus=unknown responseStatus=successful latencyMs=4 requesterIp=127.0.0.1
+</span></code></pre></div>
+<hr />
+<h2 id="load-test">Load test</h2>
+<p><code>load-test/ocsp.js</code> is a <a href="https://k6.io">k6</a> script that sends the same DER request at a constant rate. Run it after scenario A, while <code>ocsp-test.pem</code> is still <code>good</code>. The request is built without a nonce, so the same body can be replayed:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>openssl<span class="w"> </span>ocsp<span class="w"> </span>-issuer<span class="w"> </span>ca.pem<span class="w"> </span>-cert<span class="w"> </span>ocsp-test.pem<span class="w"> </span>-reqout<span class="w"> </span>load-test/req.der
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>k6<span class="w"> </span>run<span class="w"> </span>-e<span class="w"> </span><span class="nv">TOKEN</span><span class="o">=</span><span class="s2">"</span><span class="nv">$TOKEN</span><span class="s2">"</span><span class="w"> </span>-e<span class="w"> </span><span class="nv">INSECURE</span><span class="o">=</span><span class="nb">true</span><span class="w"> </span>-e<span class="w"> </span><span class="nv">RATE</span><span class="o">=</span><span class="m">100</span><span class="w"> </span>-e<span class="w"> </span><span class="nv">DURATION</span><span class="o">=</span>1m<span class="w"> </span>load-test/ocsp.js
+</span></code></pre></div>
+<p>The run fails if p99 latency exceeds <code>P99_MS</code> (default 100 ms), or if any request fails or is not <code>successful</code>. The token must stay valid for the whole run, so get a fresh one first. See the header of the script for every option.</p>
+<hr />
+<h2 id="automated-tests">Automated tests</h2>
+<p>Run all OCSP tests with one command. With Docker running, the integration test also starts its own Vault through Testcontainers:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>./mvnw<span class="w"> </span><span class="nb">test</span><span class="w"> </span>-Dtest<span class="o">=</span><span class="s1">'Ocsp*,VaultCertificateStatusProviderTest'</span>
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>Covers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>OcspResponderServiceImplTest</code></td>
+<td>request parsing, certificate statuses, nonce, <code>tryLater</code> and <code>malformedRequest</code></td>
+</tr>
+<tr>
+<td><code>OcspSignerServiceImplTest</code></td>
+<td>signer issuance through the default role, validation (issuer, validity, key), renewal at 70% of lifetime</td>
+</tr>
+<tr>
+<td><code>VaultCertificateStatusProviderTest</code></td>
+<td>reading <code>pki-int/cert/:serial</code>, serial format, missing certificate → <code>unknown</code></td>
+</tr>
+<tr>
+<td><code>OcspControllerTest</code></td>
+<td>response headers, <code>Content-Type</code>, <code>Cache-Control</code></td>
+</tr>
+<tr>
+<td><code>OcspControllerSecurityTest</code></td>
+<td><code>@PreAuthorize</code> with the <code>check_certificate_status</code> role</td>
+</tr>
+<tr>
+<td><code>OcspPropertiesTest</code></td>
+<td><code>validity</code> must be &gt; 0 and ≤ <code>PT10M</code>; signer <code>ttl</code> at least four times <code>refresh-interval</code></td>
+</tr>
+<tr>
+<td><code>OcspVaultIntegrationTest</code></td>
+<td>the full flow against a real Vault; skipped without Docker</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="troubleshooting">Troubleshooting</h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Cause</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>curl</code> prints nothing and <code>resp.der</code> is not created</td>
+<td>a client certificate file is missing and <code>-s</code> hides the error</td>
+<td>use <code>-sS</code>, check <code>echo $?</code> and the file paths; run from the repository root</td>
+</tr>
+<tr>
+<td><code>401</code></td>
+<td>the token is empty or expired</td>
+<td>get a new token; <code>echo ${TOKEN:0:20}</code> should start with <code>eyJ</code></td>
+</tr>
+<tr>
+<td><code>403</code> with a JSON body</td>
+<td>the token lacks <code>check_certificate_status</code></td>
+<td>assign the role to the federator client's service account in Keycloak, then get a new token</td>
+</tr>
+<tr>
+<td>Keycloak returns <code>invalid_client</code> or <code>unauthorized_client</code></td>
+<td>the client's authentication type does not match the request</td>
+<td>send <code>client_secret</code> only to a client with client authentication by secret; a <code>client-x509</code> client needs a certificate whose subject DN matches its <code>x509.subjectdn</code></td>
+</tr>
+<tr>
+<td><code>tryLater</code> in A–C</td>
+<td>no signer issued, or Vault is sealed</td>
+<td>look for <code>Failed to issue OCSP signer</code> in the log; check <code>vault status</code> and that <code>default-role</code> accepts EC keys (<code>key_type=any</code>) and the signer's common name</td>
+</tr>
+<tr>
+<td><code>Nonce Verify error</code></td>
+<td><code>verify</code> was run with <code>-cert</code> or <code>-serial</code></td>
+<td>verify with <code>-reqin req.der</code> only</td>
+</tr>
+<tr>
+<td><code>Response Verify Failure</code> with <code>missing ocspsigning usage</code></td>
+<td>the response was verified with <code>-CAfile</code> only</td>
+<td>verify with <code>-VAfile signer.pem</code>, as <code>verify</code> does</td>
+</tr>
+<tr>
+<td><code>signer.pem</code> verification fails</td>
+<td><code>ca.pem</code> is not the <code>pki-int</code> CA</td>
+<td>fetch it again with <code>vault read -field=certificate pki-int/cert/ca</code></td>
+</tr>
+<tr>
+<td><code>curl: (35)</code> or <code>(56)</code></td>
+<td>the server rejected the client certificate during mTLS</td>
+<td>check that <code>client.crt</code> is signed by a CA in <code>truststore.jks</code></td>
+</tr>
+<tr>
+<td><code>-subj</code> becomes <code>C:/Program Files/Git/CN=...</code></td>
+<td>Git Bash path conversion</td>
+<td><code>export MSYS_NO_PATHCONV=1</code></td>
+</tr>
+<tr>
+<td><code>unknown</code> for a certificate issued by Vault</td>
+<td>the certificate was issued by a different CA or PKI mount</td>
+<td>compare <code>Issuer Key Hash</code> in the response with the subject key identifier of the <code>pki-int</code> CA</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="clean-up">Clean up</h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>rm<span class="w"> </span>-f<span class="w"> </span>req.der<span class="w"> </span>resp.der<span class="w"> </span>big.der<span class="w"> </span>bad.der<span class="w"> </span>garbage.bin<span class="w"> </span>ocsp-test.pem<span class="w"> </span>ca.pem<span class="w"> </span>signer.pem<span class="w"> </span>client-test.p12<span class="w"> </span>load-test/req.der
+</span></code></pre></div>
+<p>The signer lives only in the application's memory, so nothing about it needs cleaning up in Vault.</p>
+
+
+
+
+
+
+
+  
+    
+  
+  
+
+
+  <aside class="md-source-file">
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="Last update">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 19, 2026 08:16:34 UTC">November 19, 2026</span>
+  </span>
+
+    
+    
+    
+    
+  </aside>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      &copy;Crown Copyright 2026. This work has been developed by the National Digital Twin Programme and is legally attributed to the UK's Department for Business, Innovation, Science and Trade (BIST) as the governing entity.  
+
+    </div>
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.annotate", "content.code.copy", "content.code.select", "content.tooltips", "navigation.indexes", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "search.share", "navigation.instant", "navigation.instant.prefetch", "navigation.instant", "navigation.instant.progress", "navigation.path", "toc.follow"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>
