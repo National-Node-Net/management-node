@@ -33,18 +33,25 @@ public record RevocationProperties(
      *
      * @param enabled       whether requests are checked at all; when false the filter is not registered
      * @param failClosed    whether a request is refused when the status cannot be determined; false lets it through
-     * @param excludedPaths path patterns, within the application, that are never checked
+     * @param includedPaths path patterns, within the application, that are checked; each also covers what lies beneath
+     *                      it. Every other path is let through without a check
      * @param exemptIssuers issuer distinguished names outside the federation CA whose certificates are let through
      *                      without a check, for example a development root CA
      */
     public record Enforcement(
             @DefaultValue("true") boolean enabled,
             @DefaultValue("true") boolean failClosed,
-            @DefaultValue({"/api/v1/certificate/ocsp", "/actuator/health"}) List<String> excludedPaths,
+            @DefaultValue({"/api/v1/configuration/producer", "/api/v1/configuration/consumer"})
+                    List<String> includedPaths,
             @DefaultValue List<String> exemptIssuers) {
 
         public Enforcement {
-            excludedPaths = excludedPaths == null ? List.of() : List.copyOf(excludedPaths);
+            includedPaths = includedPaths == null ? List.of() : List.copyOf(includedPaths);
+            if (includedPaths.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "application.revocation.enforcement.included-paths must name at least one path; set"
+                                + " application.revocation.enforcement.enabled=false to check nothing");
+            }
             exemptIssuers = exemptIssuers == null ? List.of() : List.copyOf(exemptIssuers);
             for (String issuer : exemptIssuers) {
                 try {

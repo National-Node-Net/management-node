@@ -34,8 +34,8 @@ class RevocationPropertiesTest {
         assertTrue(properties.enforcement().enabled(), "the feature flag defaults to on");
         assertTrue(properties.enforcement().failClosed());
         assertEquals(
-                List.of("/api/v1/certificate/ocsp", "/actuator/health"),
-                properties.enforcement().excludedPaths());
+                List.of("/api/v1/configuration/producer", "/api/v1/configuration/consumer"),
+                properties.enforcement().includedPaths());
         assertThat(properties.enforcement().exemptIssuers()).isEmpty();
         assertEquals(Duration.ofMinutes(5), properties.cache().ttl());
     }
@@ -45,12 +45,12 @@ class RevocationPropertiesTest {
         RevocationProperties properties = bind(Map.of(
                 "application.revocation.enforcement.enabled", "false",
                 "application.revocation.enforcement.fail-closed", "false",
-                "application.revocation.enforcement.excluded-paths[0]", "/ocsp",
+                "application.revocation.enforcement.included-paths[0]", "/api/v1/configuration",
                 "application.revocation.enforcement.exempt-issuers[0]", "CN=Dev Root CA, O=Example, C=GB"));
 
         assertFalse(properties.enforcement().enabled());
         assertFalse(properties.enforcement().failClosed());
-        assertEquals(List.of("/ocsp"), properties.enforcement().excludedPaths());
+        assertEquals(List.of("/api/v1/configuration"), properties.enforcement().includedPaths());
         assertEquals(
                 List.of("CN=Dev Root CA, O=Example, C=GB"),
                 properties.enforcement().exemptIssuers());
@@ -58,13 +58,24 @@ class RevocationPropertiesTest {
 
     @Test
     void exemptIssuer_thatIsNotADistinguishedName_shouldBeRejected() {
-        List<String> paths = List.of();
+        List<String> paths = List.of("/api/v1/configuration/producer");
         List<String> issuers = List.of("not a distinguished name");
 
         IllegalArgumentException e = assertThrows(
                 IllegalArgumentException.class, () -> new RevocationProperties.Enforcement(true, true, paths, issuers));
 
         assertThat(e).hasMessageContaining("exempt-issuers").hasMessageContaining("not a distinguished name");
+    }
+
+    @Test
+    void includedPaths_thatAreEmpty_shouldBeRejected() {
+        List<String> paths = List.of();
+        List<String> issuers = List.of();
+
+        IllegalArgumentException e = assertThrows(
+                IllegalArgumentException.class, () -> new RevocationProperties.Enforcement(true, true, paths, issuers));
+
+        assertThat(e).hasMessageContaining("included-paths").hasMessageContaining("enabled=false");
     }
 
     @Test

@@ -16,7 +16,8 @@ public final class RevocationTestProperties {
     /** Attempts in total that {@link #fast()} makes against Vault. */
     public static final int MAX_ATTEMPTS = 3;
 
-    private static final List<String> EXCLUDED_PATHS = List.of("/api/v1/certificate/ocsp", "/actuator/health");
+    private static final List<String> INCLUDED_PATHS =
+            List.of("/api/v1/configuration/producer", "/api/v1/configuration/consumer");
 
     private RevocationTestProperties() {}
 
@@ -28,16 +29,16 @@ public final class RevocationTestProperties {
         return new RevocationProperties(
                 new RevocationProperties.RateLimit(maxRequests, window),
                 vaultRetry(),
-                new RevocationProperties.Enforcement(true, true, EXCLUDED_PATHS, List.of()),
+                new RevocationProperties.Enforcement(true, true, INCLUDED_PATHS, List.of()),
                 new RevocationProperties.Cache(Duration.ofMinutes(5)));
     }
 
-    /** The default excluded paths, with the given failure mode and exempt issuers. */
+    /** The default included paths, with the given failure mode and exempt issuers. */
     public static RevocationProperties withEnforcement(boolean failClosed, List<String> exemptIssuers) {
         return new RevocationProperties(
                 new RevocationProperties.RateLimit(10, Duration.ofMinutes(1)),
                 vaultRetry(),
-                new RevocationProperties.Enforcement(true, failClosed, EXCLUDED_PATHS, exemptIssuers),
+                new RevocationProperties.Enforcement(true, failClosed, INCLUDED_PATHS, exemptIssuers),
                 new RevocationProperties.Cache(Duration.ofMinutes(5)));
     }
 
