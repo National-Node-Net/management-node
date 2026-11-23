@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../assets/android-chrome-512x512-1-150x150.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.2">
     
     
       
@@ -1362,11 +1362,12 @@
 
 <h1 id="certificate-revocation-enforcement">Certificate Revocation Enforcement</h1>
 <p><strong>Repository:</strong> <code>management-node</code><br />
-<strong>Description:</strong> <code>Refusal of requests whose client certificate is revoked, on every Management Node API, with a certificate status cache and a feature flag</code><br />
+<strong>Description:</strong> <code>Refusal of requests whose client certificate is revoked, on the producer and consumer configuration APIs, with a certificate status cache and a feature flag</code><br />
 <strong>SPDX-License-Identifier:</strong> <code>Apache-2.0 AND OGL-UK-3.0</code></p>
 <hr />
 <h2 id="overview">Overview</h2>
-<p>Every request that presents a client certificate is checked for revocation before it reaches authentication or a controller. A revoked consumer, producer or Federator cannot use any Management Node API.</p>
+<p>A request to the producer or consumer configuration API (<code>/api/v1/configuration/producer</code>, <code>/api/v1/configuration/consumer</code>) that presents a client certificate is checked for revocation before it reaches authentication or a controller. A revoked consumer or producer Federator cannot fetch its configuration.</p>
+<p>Every other endpoint is not checked: the UI, bootstrap, key pair, CSR signing, OCSP and actuator endpoints work as before, because their callers (website backend, UI, onboarding scripts) present certificates of other authorities. The checked paths are <code>application.revocation.enforcement.included-paths</code>.</p>
 <ul>
 <li>The check is a Spring Security filter, <code>CertificateRevocationFilter</code>, placed before the bearer token is looked at. A revoked certificate is refused without a token introspection call to Keycloak.</li>
 <li>The status comes from <code>CertificateStatusService</code>, which reads Vault (<code>GET &lt;pki-mount&gt;/cert/:serial</code>) and caches the answer by issuer and serial. The cache serves this check only: the <a href="../OCSP/">OCSP API</a> reads Vault on every request, so an OCSP answer is never older than its <code>thisUpdate</code>.</li>
@@ -1380,7 +1381,7 @@
     participant Cache as certificate-status cache
     participant Vault as Vault PKI
     Client-&gt;&gt;Filter: request over mTLS
-    Filter-&gt;&gt;Filter: no certificate, excluded path or exempt issuer? continue
+    Filter-&gt;&gt;Filter: no certificate, path not included or exempt issuer? continue
     Filter-&gt;&gt;Status: getStatus(issuer, serial)
     Status-&gt;&gt;Cache: &lt;issuerKeyHash&gt;:&lt;serial&gt;
     alt cached
@@ -1415,14 +1416,14 @@
 <td><code>true</code></td>
 <td><code>need</code></td>
 <td><code>true</code></td>
-<td>every request (all present a certificate)</td>
+<td>every request to an included path (all present a certificate)</td>
 <td><code>MTLS_REQUIRED</code></td>
 </tr>
 <tr>
 <td><code>true</code></td>
 <td><code>want</code></td>
 <td><code>true</code></td>
-<td>only requests that present a certificate</td>
+<td>only requests to an included path that present a certificate</td>
 <td><code>MTLS_OPTIONAL</code></td>
 </tr>
 <tr>
@@ -1451,7 +1452,7 @@
 <p>When more than one reason applies, the mode names the first of feature flag, SSL and mTLS.</p>
 <p>In every inactive mode <code>CertificateRevocationFilter</code> is not registered: no request is checked, and nothing in the request path calls Vault or the status cache. The OCSP API and the revocation API work as usual.</p>
 <p>Both settings are read at startup. One line states the mode, at <code>INFO</code> when active and at <code>WARN</code> when not:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>INFO  Certificate revocation enforcement is ACTIVE: mTLS required (server.ssl.client-auth=need): every request presents a client certificate and is checked
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>INFO  Certificate revocation enforcement is ACTIVE: mTLS required (server.ssl.client-auth=need): every request presents a client certificate; those to included-paths are checked
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>WARN  Certificate revocation enforcement is DISABLED: mTLS disabled (server.ssl.client-auth is none or not set): HTTPS without client certificates, for local development only. Requests are not checked for revoked client certificates
 </span></code></pre></div>
 <p>The mode is also on <code>/actuator/info</code> (management port), so it can be confirmed per environment:</p>
@@ -1476,16 +1477,16 @@
 </thead>
 <tbody>
 <tr>
-<td>Presents a client certificate, any controller</td>
+<td>Presents a client certificate, path under <code>included-paths</code></td>
 <td>yes</td>
+</tr>
+<tr>
+<td>Any other path: UI (e.g. <code>/api/v1/product/**</code>), <code>/api/v1/certificate/**</code> (bootstrap, key pair, CSR signing, OCSP, revoke), actuator</td>
+<td>no, and no status is looked up</td>
 </tr>
 <tr>
 <td>No client certificate: an operator with only a Keycloak token, or <code>client-auth: want</code> without a certificate</td>
 <td>no, and no status is looked up; the existing authentication rules apply</td>
-</tr>
-<tr>
-<td>Path under <code>excluded-paths</code></td>
-<td>no, and no status is looked up</td>
 </tr>
 <tr>
 <td>Certificate issued by an authority listed in <code>exempt-issuers</code></td>
@@ -1498,7 +1499,7 @@
 </tbody>
 </table>
 <p>The client certificate is read from the servlet attribute <code>jakarta.servlet.request.X509Certificate</code>, which Tomcat sets when it terminates mTLS. A certificate forwarded in a header by a gateway is not read: if mTLS terminates in front of the Management Node, the filter sees no certificate and checks nothing.</p>
-<p>The default excluded paths are <code>/api/v1/certificate/ocsp</code>, so a node can ask for its own status when its certificate is broken or revoked, and <code>/actuator/health</code>. An excluded path covers the paths beneath it. The OCSP endpoint still requires a token with the <code>check_certificate_status</code> role.</p>
+<p>The default included paths are <code>/api/v1/configuration/producer</code> and <code>/api/v1/configuration/consumer</code>. An included path covers the paths beneath it, but not a path that only starts with the same characters (<code>/api/v1/configuration/producer-other</code> is not checked). The list must not be empty; set the feature flag to <code>false</code> to check nothing. Endpoints outside it keep their own checks: JWT and roles, and on <code>/api/**</code> outside <code>/api/v1/certificate/**</code> the organisation certificate check of <code>CertificateValidationInterceptor</code>.</p>
 <hr />
 <h2 id="decisions">Decisions</h2>
 <table>
@@ -1536,8 +1537,8 @@
 </span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="p">}</span>
 </span></code></pre></div>
 <h3 id="certificates-of-other-authorities">Certificates of other authorities</h3>
-<p>Only the CA of <code>application.vault.pki-mount</code> has a status in Vault. A certificate is treated as the federation's when its issuer name is that CA's subject and its signature verifies with that CA's key. Any other certificate is <code>UNKNOWN</code> and refused, even though the truststore accepted it in the TLS handshake.</p>
-<p>If clients legitimately present certificates of another authority, for example a development root CA or the CA of a website backend, list its distinguished name in <code>exempt-issuers</code>. Such certificates are let through without a check, and a <code>WARN</code> at startup names the exempt issuers. The federation CA cannot be exempted this way to any effect: an entry only matches certificates with that issuer name.</p>
+<p>Only the CA of <code>application.vault.pki-mount</code> has a status in Vault. A certificate is treated as the federation's when its issuer name is that CA's subject and its signature verifies with that CA's key. Any other certificate is <code>UNKNOWN</code> and refused on an included path, even though the truststore accepted it in the TLS handshake.</p>
+<p>If clients of an included path legitimately present certificates of another authority, for example a development root CA or the CA of a website backend, list its distinguished name in <code>exempt-issuers</code>. Such certificates are let through without a check, and a <code>WARN</code> at startup names the exempt issuers. The federation CA cannot be exempted this way to any effect: an entry only matches certificates with that issuer name.</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>openssl<span class="w"> </span>x509<span class="w"> </span>-in<span class="w"> </span>client.crt<span class="w"> </span>-noout<span class="w"> </span>-issuer<span class="w"> </span>-nameopt<span class="w"> </span>RFC2253
 </span></code></pre></div>
 <hr />
@@ -1660,9 +1661,9 @@
 </span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="w">    </span><span class="nt">enforcement</span><span class="p">:</span>
 </span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="w">      </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${REVOCATION_ENFORCEMENT_ENABLED:true}</span>
 </span><span id="__span-4-16"><a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="w">      </span><span class="nt">fail-closed</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-</span><span id="__span-4-17"><a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="w">      </span><span class="nt">excluded-paths</span><span class="p">:</span>
-</span><span id="__span-4-18"><a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/api/v1/certificate/ocsp</span>
-</span><span id="__span-4-19"><a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/actuator/health</span>
+</span><span id="__span-4-17"><a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="w">      </span><span class="nt">included-paths</span><span class="p">:</span><span class="w">                      </span><span class="c1"># the only paths checked</span>
+</span><span id="__span-4-18"><a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/api/v1/configuration/producer</span>
+</span><span id="__span-4-19"><a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/api/v1/configuration/consumer</span>
 </span><span id="__span-4-20"><a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a><span class="w">      </span><span class="nt">exempt-issuers</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span><span class="w">                   </span><span class="c1"># e.g. - "CN=Dev Root CA,O=Example,C=GB"</span>
 </span><span id="__span-4-21"><a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="w">    </span><span class="nt">cache</span><span class="p">:</span>
 </span><span id="__span-4-22"><a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a><span class="w">      </span><span class="nt">ttl</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${REVOCATION_CACHE_TTL:PT5M}</span><span class="w">    </span><span class="c1"># &gt; 0 and &lt;= PT10M, checked at startup</span>
@@ -1687,9 +1688,9 @@
 <td>answer <code>503</code> when the status cannot be determined; <code>false</code> lets the request through</td>
 </tr>
 <tr>
-<td><code>application.revocation.enforcement.excluded-paths</code></td>
-<td><code>/api/v1/certificate/ocsp</code>, <code>/actuator/health</code></td>
-<td>path patterns within the application that are never checked</td>
+<td><code>application.revocation.enforcement.included-paths</code></td>
+<td><code>/api/v1/configuration/producer</code>, <code>/api/v1/configuration/consumer</code></td>
+<td>path patterns within the application that are checked, each with the paths beneath it; every other path is not. Must not be empty</td>
 </tr>
 <tr>
 <td><code>application.revocation.enforcement.exempt-issuers</code></td>
@@ -1823,12 +1824,16 @@
 </thead>
 <tbody>
 <tr>
-<td>Call any API with the development <code>client.crt</code></td>
+<td>Call <code>/api/v1/configuration/producer</code> with the development <code>client.crt</code></td>
 <td><code>401</code>, <code>CERTIFICATE_STATUS_UNKNOWN</code></td>
 </tr>
 <tr>
+<td>Call <code>/api/v1/product/discover</code>, <code>/api/v1/certificate/keyPair</code> or <code>/api/v1/certificate/bootstrap</code> with the same certificate</td>
+<td>not refused by the filter; reaches the token check as before</td>
+</tr>
+<tr>
 <td>Add its issuer to <code>exempt-issuers</code> and restart</td>
-<td>the request reaches the token check as before</td>
+<td>the configuration request reaches the token check as before</td>
 </tr>
 <tr>
 <td>Call with a certificate and key issued by <code>pki-int</code></td>
@@ -1909,7 +1914,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 19, 2026 12:43:29 UTC">November 19, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 23, 2026 11:24:23 UTC">November 23, 2026</span>
   </span>
 
     
