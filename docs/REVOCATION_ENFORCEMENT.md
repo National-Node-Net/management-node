@@ -1,14 +1,16 @@
 # Certificate Revocation Enforcement
 
 **Repository:** `management-node`  
-**Description:** `Refusal of requests whose client certificate is revoked, on every Management Node API, with a certificate status cache and a feature flag`  
+**Description:** `Refusal of requests whose client certificate is revoked, on the producer and consumer configuration APIs, with a certificate status cache and a feature flag`  
 **SPDX-License-Identifier:** `Apache-2.0 AND OGL-UK-3.0`
 
 ---
 
 ## Overview
 
-Every request that presents a client certificate is checked for revocation before it reaches authentication or a controller. A revoked consumer, producer or Federator cannot use any Management Node API.
+A request to the producer or consumer configuration API (`/api/v1/configuration/producer`, `/api/v1/configuration/consumer`) that presents a client certificate is checked for revocation before it reaches authentication or a controller. A revoked consumer or producer Federator cannot fetch its configuration.
+
+Every other endpoint is not checked: the UI, bootstrap, key pair, CSR signing, OCSP and actuator endpoints work as before, because their callers (website backend, UI, onboarding scripts) present certificates of other authorities. The checked paths are `application.revocation.enforcement.included-paths`.
 
 - The check is a Spring Security filter, `CertificateRevocationFilter`, placed before the bearer token is looked at. A revoked certificate is refused without a token introspection call to Keycloak.
 - The status comes from `CertificateStatusService`, which reads Vault (`GET <pki-mount>/cert/:serial`) and caches the answer by issuer and serial. The cache serves this check only: the [OCSP API](OCSP.md) reads Vault on every request, so an OCSP answer is never older than its `thisUpdate`.
@@ -23,7 +25,7 @@ sequenceDiagram
     participant Cache as certificate-status cache
     participant Vault as Vault PKI
     Client->>Filter: request over mTLS
-    Filter->>Filter: no certificate, excluded path or exempt issuer? continue
+    Filter->>Filter: no certificate, path not included or exempt issuer? continue
     Filter->>Status: getStatus(issuer, serial)
     Status->>Cache: <issuerKeyHash>:<serial>
     alt cached
@@ -50,8 +52,8 @@ Without mTLS no client presents a certificate, so there is nothing to check.
 
 | `server.ssl.enabled` | `server.ssl.client-auth` | Feature flag | Revocation check | Mode |
 |---|---|---|---|---|
-| `true` | `need` | `true` | every request (all present a certificate) | `MTLS_REQUIRED` |
-| `true` | `want` | `true` | only requests that present a certificate | `MTLS_OPTIONAL` |
+| `true` | `need` | `true` | every request to an included path (all present a certificate) | `MTLS_REQUIRED` |
+| `true` | `want` | `true` | only requests to an included path that present a certificate | `MTLS_OPTIONAL` |
 | `true` | `none` or not set | any | not applied (HTTPS only) | `MTLS_DISABLED` |
 | `false` | any | any | not applied (plain HTTP, local development only) | `SSL_DISABLED` |
 | any | any | `false` | not applied (feature flag off) | `DISABLED_BY_FLAG` |
@@ -63,7 +65,7 @@ In every inactive mode `CertificateRevocationFilter` is not registered: no reque
 Both settings are read at startup. One line states the mode, at `INFO` when active and at `WARN` when not:
 
 ```
-INFO  Certificate revocation enforcement is ACTIVE: mTLS required (server.ssl.client-auth=need): every request presents a client certificate and is checked
+INFO  Certificate revocation enforcement is ACTIVE: mTLS required (server.ssl.client-auth=need): every request presents a client certificate; those to included-paths are checked
 WARN  Certificate revocation enforcement is DISABLED: mTLS disabled (server.ssl.client-auth is none or not set): HTTPS without client certificates, for local development only. Requests are not checked for revoked client certificates
 ```
 
@@ -89,15 +91,15 @@ These rows apply while enforcement is active.
 
 | Request | Checked |
 |---|---|
-| Presents a client certificate, any controller | yes |
+| Presents a client certificate, path under `included-paths` | yes |
+| Any other path: UI (e.g. `/api/v1/product/**`), `/api/v1/certificate/**` (bootstrap, key pair, CSR signing, OCSP, revoke), actuator | no, and no status is looked up |
 | No client certificate: an operator with only a Keycloak token, or `client-auth: want` without a certificate | no, and no status is looked up; the existing authentication rules apply |
-| Path under `excluded-paths` | no, and no status is looked up |
 | Certificate issued by an authority listed in `exempt-issuers` | no |
 | Actuator on the management port (no TLS, so no certificate) | no |
 
 The client certificate is read from the servlet attribute `jakarta.servlet.request.X509Certificate`, which Tomcat sets when it terminates mTLS. A certificate forwarded in a header by a gateway is not read: if mTLS terminates in front of the Management Node, the filter sees no certificate and checks nothing.
 
-The default excluded paths are `/api/v1/certificate/ocsp`, so a node can ask for its own status when its certificate is broken or revoked, and `/actuator/health`. An excluded path covers the paths beneath it. The OCSP endpoint still requires a token with the `check_certificate_status` role.
+The default included paths are `/api/v1/configuration/producer` and `/api/v1/configuration/consumer`. An included path covers the paths beneath it, but not a path that only starts with the same characters (`/api/v1/configuration/producer-other` is not checked). The list must not be empty; set the feature flag to `false` to check nothing. Endpoints outside it keep their own checks: JWT and roles, and on `/api/**` outside `/api/v1/certificate/**` the organisation certificate check of `CertificateValidationInterceptor`.
 
 ---
 
@@ -123,9 +125,9 @@ The body is the standard `ErrorResponse` with an additional `code`:
 
 ### Certificates of other authorities
 
-Only the CA of `application.vault.pki-mount` has a status in Vault. A certificate is treated as the federation's when its issuer name is that CA's subject and its signature verifies with that CA's key. Any other certificate is `UNKNOWN` and refused, even though the truststore accepted it in the TLS handshake.
+Only the CA of `application.vault.pki-mount` has a status in Vault. A certificate is treated as the federation's when its issuer name is that CA's subject and its signature verifies with that CA's key. Any other certificate is `UNKNOWN` and refused on an included path, even though the truststore accepted it in the TLS handshake.
 
-If clients legitimately present certificates of another authority, for example a development root CA or the CA of a website backend, list its distinguished name in `exempt-issuers`. Such certificates are let through without a check, and a `WARN` at startup names the exempt issuers. The federation CA cannot be exempted this way to any effect: an entry only matches certificates with that issuer name.
+If clients of an included path legitimately present certificates of another authority, for example a development root CA or the CA of a website backend, list its distinguished name in `exempt-issuers`. Such certificates are let through without a check, and a `WARN` at startup names the exempt issuers. The federation CA cannot be exempted this way to any effect: an entry only matches certificates with that issuer name.
 
 ```bash
 openssl x509 -in client.crt -noout -issuer -nameopt RFC2253
@@ -201,9 +203,9 @@ application:
     enforcement:
       enabled: ${REVOCATION_ENFORCEMENT_ENABLED:true}
       fail-closed: true
-      excluded-paths:
-        - /api/v1/certificate/ocsp
-        - /actuator/health
+      included-paths:                      # the only paths checked
+        - /api/v1/configuration/producer
+        - /api/v1/configuration/consumer
       exempt-issuers: []                   # e.g. - "CN=Dev Root CA,O=Example,C=GB"
     cache:
       ttl: ${REVOCATION_CACHE_TTL:PT5M}    # > 0 and <= PT10M, checked at startup
@@ -213,7 +215,7 @@ application:
 |---|---|---|
 | `application.revocation.enforcement.enabled` | `true` | the feature flag |
 | `application.revocation.enforcement.fail-closed` | `true` | answer `503` when the status cannot be determined; `false` lets the request through |
-| `application.revocation.enforcement.excluded-paths` | `/api/v1/certificate/ocsp`, `/actuator/health` | path patterns within the application that are never checked |
+| `application.revocation.enforcement.included-paths` | `/api/v1/configuration/producer`, `/api/v1/configuration/consumer` | path patterns within the application that are checked, each with the paths beneath it; every other path is not. Must not be empty |
 | `application.revocation.enforcement.exempt-issuers` | empty | issuer distinguished names whose certificates are not checked. From the environment: `APPLICATION_REVOCATION_ENFORCEMENT_EXEMPTISSUERS_0_`, `..._1_`, since a name contains commas. |
 | `application.revocation.cache.ttl` | `PT5M` | how long a status is reused; at most `PT10M` |
 | `spring.cache.type` | `caffeine` | `caffeine` or `redis` |
@@ -272,8 +274,9 @@ With the application, Keycloak and an unsealed Vault running as in the [OCSP Loc
 
 | Step | Expected |
 |---|---|
-| Call any API with the development `client.crt` | `401`, `CERTIFICATE_STATUS_UNKNOWN` |
-| Add its issuer to `exempt-issuers` and restart | the request reaches the token check as before |
+| Call `/api/v1/configuration/producer` with the development `client.crt` | `401`, `CERTIFICATE_STATUS_UNKNOWN` |
+| Call `/api/v1/product/discover`, `/api/v1/certificate/keyPair` or `/api/v1/certificate/bootstrap` with the same certificate | not refused by the filter; reaches the token check as before |
+| Add its issuer to `exempt-issuers` and restart | the configuration request reaches the token check as before |
 | Call with a certificate and key issued by `pki-int` | reaches the token check; `cache.gets{result=miss}` rises once, then `hit` |
 | Revoke that certificate through `POST /api/v1/certificate/revoke`, then call again | `401`, `CERTIFICATE_REVOKED`, at once |
 | Call `/api/v1/certificate/ocsp` with the revoked certificate | not refused by the filter |

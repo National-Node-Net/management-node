@@ -38,11 +38,16 @@ import uk.gov.dbt.ndtp.ia.node.management.utils.cryptography.CertificateSerials;
 import uk.gov.dbt.ndtp.ia.node.management.web.RequestRejectionSupport;
 
 /**
- * Refuses every request whose client certificate is revoked, before it reaches authentication or a controller.
+ * Refuses a request whose client certificate is revoked, before it reaches authentication or a controller.
  *
- * <p>A request is let through without a check when it presents no client certificate (an operator with only a
- * token, or mTLS switched off), when its path is excluded, or when its certificate was issued by an exempt
- * authority. Otherwise the certificate's status decides:
+ * <p>Only paths under {@code included-paths} are checked: by default the producer and consumer configuration
+ * endpoints, which federators call with their federation certificates. Every other endpoint (UI, bootstrap, key pair,
+ * CSR signing, OCSP, actuator) is let through without a check, because its callers may present certificates of
+ * other authorities.
+ *
+ * <p>On those paths, a request is let through without a check when it presents no client certificate (an operator
+ * with only a token, or mTLS switched off) or when its certificate was issued by an exempt authority. Otherwise the
+ * certificate's status decides:
  *
  * <ul>
  *   <li>{@code GOOD} - the request continues;
@@ -73,7 +78,7 @@ public class CertificateRevocationFilter extends OncePerRequestFilter {
     private final CertificateStatusService statusService;
     private final FederationCaService federationCa;
     private final boolean failClosed;
-    private final List<PathPattern> excludedPatterns;
+    private final List<PathPattern> includedPatterns;
     private final Set<X500Principal> exemptIssuers;
     private final ObjectMapper objectMapper;
     private final MeterRegistry meterRegistry;
@@ -90,8 +95,8 @@ public class CertificateRevocationFilter extends OncePerRequestFilter {
         this.statusService = statusService;
         this.federationCa = federationCa;
         this.failClosed = enforcement.failClosed();
-        // An excluded path covers what lies beneath it too, e.g. /actuator/health/liveness.
-        this.excludedPatterns = enforcement.excludedPaths().stream()
+        // An included path covers what lies beneath it too, e.g. /api/v1/configuration/producer/x.
+        this.includedPatterns = enforcement.includedPaths().stream()
                 .flatMap(path -> path.endsWith("/**") ? Stream.of(path) : Stream.of(path, path + "/**"))
                 .map(PathPatternParser.defaultInstance::parse)
                 .toList();
@@ -108,7 +113,7 @@ public class CertificateRevocationFilter extends OncePerRequestFilter {
             return true;
         }
         PathContainer path = PathContainer.parsePath(UrlPathHelper.defaultInstance.getPathWithinApplication(request));
-        return excludedPatterns.stream().anyMatch(pattern -> pattern.matches(path));
+        return includedPatterns.stream().noneMatch(pattern -> pattern.matches(path));
     }
 
     @Override

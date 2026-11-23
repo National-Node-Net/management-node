@@ -10,7 +10,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static uk.gov.dbt.ndtp.ia.node.management.service.providers.certificate.ocsp.OcspTestPki.CA;
@@ -126,6 +125,10 @@ class CertificateRevocationFilterTest {
     }
 
     private void assertRefused(int httpStatus, String code, String loggedStatus) throws Exception {
+        assertRefused(httpStatus, code, loggedStatus, CONFIGURATION_PATH);
+    }
+
+    private void assertRefused(int httpStatus, String code, String loggedStatus, String path) throws Exception {
         assertNull(chain.getRequest(), "a refused request must not reach authentication or a controller");
         assertEquals(httpStatus, response.getStatus());
         assertThat(response.getContentType()).startsWith("application/json");
@@ -148,7 +151,7 @@ class CertificateRevocationFilterTest {
         assertThat(lines.get(0).getFormattedMessage())
                 .contains("serial=39dd2e")
                 .contains("status=" + loggedStatus)
-                .contains("path=\"" + CONFIGURATION_PATH + "\"")
+                .contains("path=\"" + path + "\"")
                 .contains("clientIp=10.0.0.12")
                 .contains("timestamp=" + NOW)
                 .contains("errorId=" + body.get("errorId").asText());
@@ -263,22 +266,48 @@ class CertificateRevocationFilterTest {
         verifyNoInteractions(statusService, federationCa);
     }
 
+    /** UI, bootstrap, key pair, CSR signing, OCSP and actuator callers may present certificates of other CAs. */
     @ParameterizedTest
-    @ValueSource(strings = {"/api/v1/certificate/ocsp", "/actuator/health", "/actuator/health/liveness"})
-    void excludedPath_shouldNotBeCheckedEvenWithARevokedCertificate(String path) throws Exception {
-        filter().doFilter(request(path, FEDERATION_CERT), response, chain);
+    @ValueSource(
+            strings = {
+                "/api/v1/product/discover",
+                "/api/v1/product/discover/filter",
+                "/api/v1/certificate/bootstrap",
+                "/api/v1/certificate/keyPair",
+                "/api/v1/certificate/csr/sign",
+                "/api/v1/certificate/ocsp",
+                "/actuator/health",
+                "/api/v1/configuration/producer-other"
+            })
+    void pathNotIncluded_shouldNotBeCheckedEvenWithAForeignCertificate(String path) throws Exception {
+        filter().doFilter(request(path, FOREIGN_CERT), response, chain);
 
         assertPassed();
         verifyNoInteractions(statusService, federationCa);
     }
 
+    @ParameterizedTest
+    @ValueSource(
+            strings = {
+                "/api/v1/configuration/producer",
+                "/api/v1/configuration/consumer",
+                "/api/v1/configuration/consumer/sub"
+            })
+    void includedPath_shouldBeChecked(String path) throws Exception {
+        federationCertificateHasStatus(CertificateStatusDTO.revoked(NOW));
+
+        filter().doFilter(request(path, FEDERATION_CERT), response, chain);
+
+        assertRefused(401, "CERTIFICATE_REVOKED", "REVOKED", path);
+    }
+
     @Test
-    void pathThatOnlyStartsLikeAnExcludedOne_shouldBeChecked() throws Exception {
-        when(federationCa.issuerOf(any())).thenReturn(Optional.empty());
+    void foreignCertificateOnAnIncludedPath_shouldBeRefusedAsUnknown() throws Exception {
+        when(federationCa.issuerOf(FOREIGN_CERT)).thenReturn(Optional.empty());
 
-        filter().doFilter(request("/api/v1/certificate/ocsp-other", FEDERATION_CERT), response, chain);
+        filter().doFilter(request("/api/v1/configuration/consumer", FOREIGN_CERT), response, chain);
 
-        assertEquals(401, response.getStatus());
+        assertRefused(401, "CERTIFICATE_STATUS_UNKNOWN", "UNKNOWN", "/api/v1/configuration/consumer");
     }
 
     @Test
@@ -304,10 +333,10 @@ class CertificateRevocationFilterTest {
     void pathInTheLogLine_shouldBeEscaped() throws Exception {
         when(federationCa.issuerOf(FEDERATION_CERT)).thenReturn(Optional.empty());
 
-        filter().doFilter(request("/api/v1/x\"\nforged=1", FEDERATION_CERT), response, chain);
+        filter().doFilter(request("/api/v1/configuration/producer/x\"\nforged=1", FEDERATION_CERT), response, chain);
 
         assertThat(logs.list.get(0).getFormattedMessage())
-                .contains("path=\"/api/v1/x\\\"\\u000aforged=1\"")
+                .contains("path=\"/api/v1/configuration/producer/x\\\"\\u000aforged=1\"")
                 .doesNotContain("\n");
     }
 }

@@ -22,10 +22,12 @@ import org.springframework.core.env.Environment;
 public enum RevocationEnforcementMode {
     MTLS_REQUIRED(
             true,
-            "mTLS required (server.ssl.client-auth=need): every request presents a client certificate and is checked"),
+            "mTLS required (server.ssl.client-auth=need): every request presents a client certificate; those to included-paths are"
+                    + " checked"),
     MTLS_OPTIONAL(
             true,
-            "mTLS optional (server.ssl.client-auth=want): requests that present a client certificate are checked"),
+            "mTLS optional (server.ssl.client-auth=want): requests to included-paths that present a client"
+                    + " certificate are checked"),
     DISABLED_BY_FLAG(false, "feature flag off (" + RevocationEnforcementConfig.ENABLED_PROPERTY + "=false)"),
     SSL_DISABLED(false, "SSL disabled (server.ssl.enabled=false): plain HTTP, for local development only"),
     MTLS_DISABLED(
