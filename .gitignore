@@ -72,3 +72,6 @@ scripts/acm-export.json
 
 ### k6 load test request (generated locally)
 load-test/*.der
+
+### Revocation demo output (keys, certificates, logs)
+scripts/revocation-demo/work/
