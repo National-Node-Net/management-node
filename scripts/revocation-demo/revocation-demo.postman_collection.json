@@ -1,0 +1,830 @@
+{
+    "info": {
+        "name": "Management Node - revocation demo",
+        "description": "Generate -> sign -> status (OCSP) -> revoke -> status again. Full guide: scripts/revocation-demo/README.md. Before running: in Postman settings turn SSL certificate verification off, set the working directory to <repo>/scripts/revocation-demo/work, and add client certificates for localhost:8090 and localhost:8443 (<repo>/client.crt and client.key) and for 127.0.0.1:8090 (<repo>/scripts/revocation-demo/work/node.crt and node.key). Fill kcAdminUser / kcAdminPassword in the collection variables, then run folder 0.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "kcAdminUser",
+            "value": ""
+        },
+        {
+            "key": "kcAdminPassword",
+            "value": ""
+        },
+        {
+            "key": "kcAdminToken",
+            "value": ""
+        },
+        {
+            "key": "envClientUuid",
+            "value": ""
+        },
+        {
+            "key": "envSecret",
+            "value": ""
+        },
+        {
+            "key": "mnClientUuid",
+            "value": ""
+        },
+        {
+            "key": "mnSecret",
+            "value": ""
+        },
+        {
+            "key": "envToken",
+            "value": ""
+        },
+        {
+            "key": "mnToken",
+            "value": ""
+        },
+        {
+            "key": "serial",
+            "value": ""
+        }
+    ],
+    "event": [
+        {
+            "listen": "test",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    "// Every OCSP answer is binary DER: decode it here and show the result in Test Results and the Visualize tab.",
+                    "var contentType = pm.response.headers.get('Content-Type') || '';",
+                    "if (contentType.indexOf('application/ocsp-response') === 0) {",
+                    "    var s = ocspSummary(pm.response.stream);",
+                    "    console.log('OCSP', s);",
+                    "    pm.test('OCSP responseStatus = ' + s.responseStatus, function () { pm.expect(s.responseStatus).to.eql('successful'); });",
+                    "    pm.test('certStatus = ' + s.certStatus + (s.revocationReason ? ' (' + s.revocationReason + ')' : ''), function () {});",
+                    "    var expected = pm.collectionVariables.get('serial');",
+                    "    var norm = function (x) { return String(x || '').replace(/[:-]/g, '').toLowerCase().replace(/^0+/, ''); };",
+                    "    if (expected && s.serial) {",
+                    "        var same = norm(expected) === norm(s.serial);",
+                    "        pm.test(same ? 'asked about the certificate from 1.2 (serial ' + expected + ')'",
+                    "                     : 'ocsp-req.der is for serial ' + s.serial + ', not ' + expected + ' from 1.2: run node_files in the terminal',",
+                    "            function () { pm.expect(same).to.eql(true); });",
+                    "    }",
+                    "    var colour = s.certStatus === 'good' ? '#1a7f37' : (s.certStatus === 'revoked' ? '#cf222e' : '#9a6700');",
+                    "    pm.visualizer.set(",
+                    "        '<style>body{font-family:sans-serif} td{padding:4px 12px;border-bottom:1px solid #ddd} td:first-child{color:#666}</style>' +",
+                    "        '<p style=\"color:#666\">The raw body is binary DER (RFC 6960). Decoded by the collection test script:</p>' +",
+                    "        '<h2 style=\"color:{{colour}}\">certStatus: {{s.certStatus}}{{#if s.revocationReason}} ({{s.revocationReason}}){{/if}}</h2>' +",
+                    "        '<table>' +",
+                    "        '<tr><td>responseStatus</td><td>{{s.responseStatus}}</td></tr>' +",
+                    "        '<tr><td>serial</td><td>{{s.serial}}</td></tr>' +",
+                    "        '{{#if s.revocationTime}}<tr><td>revocationTime</td><td>{{s.revocationTime}}</td></tr>{{/if}}' +",
+                    "        '<tr><td>producedAt</td><td>{{s.producedAt}}</td></tr>' +",
+                    "        '<tr><td>thisUpdate</td><td>{{s.thisUpdate}}</td></tr>' +",
+                    "        '<tr><td>nextUpdate</td><td>{{s.nextUpdate}}</td></tr>' +",
+                    "        '</table>',",
+                    "        { s: s, colour: colour });",
+                    "}",
+                    "",
+                    "function ocspSummary(b) {",
+                    "    function tlv(o) {",
+                    "        var tag = b[o], len = b[o + 1], h = 2;",
+                    "        if (len & 0x80) { var n = len & 0x7f; len = 0; for (var i = 0; i < n; i++) len = len * 256 + b[o + 2 + i]; h = 2 + n; }",
+                    "        return { tag: tag, start: o + h, end: o + h + len };",
+                    "    }",
+                    "    function kids(t) { var r = [], o = t.start; while (o < t.end) { var c = tlv(o); r.push(c); o = c.end; } return r; }",
+                    "    function str(t) { var s = ''; for (var i = t.start; i < t.end; i++) s += String.fromCharCode(b[i]); return s; }",
+                    "    var REASONS = { 0: 'unspecified', 1: 'keyCompromise', 2: 'cACompromise', 3: 'affiliationChanged', 4: 'superseded', 5: 'cessationOfOperation', 6: 'certificateHold' };",
+                    "    var STATUS = { 0: 'successful', 1: 'malformedRequest', 2: 'internalError', 3: 'tryLater', 5: 'sigRequired', 6: 'unauthorized' };",
+                    "    var top = kids(tlv(0));",
+                    "    var result = { responseStatus: STATUS[b[top[0].start]] };",
+                    "    if (top.length < 2) return result;",
+                    "    var bytes = kids(kids(top[1])[0]);",
+                    "    var basic = kids(tlv(bytes[1].start));",
+                    "    var tbs = kids(basic[0]);",
+                    "    var i = tbs[0].tag === 0xa0 ? 1 : 0;",
+                    "    result.producedAt = str(tbs[i + 1]);",
+                    "    var single = kids(kids(tbs[i + 2])[0]);",
+                    "    var serial = '';",
+                    "    var certId = kids(single[0]);",
+                    "    for (var k = certId[3].start; k < certId[3].end; k++) serial += ('0' + b[k].toString(16)).slice(-2) + ':';",
+                    "    result.serial = serial.replace(/^00:/, '').slice(0, -1);",
+                    "    var st = single[1];",
+                    "    if (st.tag === 0x80) result.certStatus = 'good';",
+                    "    else if (st.tag === 0x82) result.certStatus = 'unknown';",
+                    "    else {",
+                    "        result.certStatus = 'revoked';",
+                    "        var rv = kids(st);",
+                    "        result.revocationTime = str(rv[0]);",
+                    "        if (rv[1]) result.revocationReason = REASONS[b[kids(rv[1])[0].start]];",
+                    "    }",
+                    "    result.thisUpdate = str(single[2]);",
+                    "    if (single[3] && single[3].tag === 0xa0) result.nextUpdate = str(kids(single[3])[0]);",
+                    "    return result;",
+                    "}"
+                ]
+            }
+        }
+    ],
+    "item": [
+        {
+            "name": "0. Setup (once, before the demo)",
+            "description": "Reads the client secrets of FEDERATOR_ENV and management-node from the local Keycloak admin API. Fill kcAdminUser / kcAdminPassword (collection variables, current value) from docker/keycloak/.env first.",
+            "item": [
+                {
+                    "name": "0.1 Keycloak admin token",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('200', function () { pm.response.to.have.status(200); });",
+                                    "pm.collectionVariables.set('kcAdminToken', pm.response.json().access_token);"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "urlencoded",
+                            "urlencoded": [
+                                {
+                                    "key": "grant_type",
+                                    "value": "password"
+                                },
+                                {
+                                    "key": "client_id",
+                                    "value": "admin-cli"
+                                },
+                                {
+                                    "key": "username",
+                                    "value": "{{kcAdminUser}}"
+                                },
+                                {
+                                    "key": "password",
+                                    "value": "{{kcAdminPassword}}"
+                                }
+                            ]
+                        },
+                        "url": "https://localhost:8443/realms/master/protocol/openid-connect/token"
+                    }
+                },
+                {
+                    "name": "0.2 Find client FEDERATOR_ENV",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('200', function () { pm.response.to.have.status(200); });",
+                                    "pm.collectionVariables.set('envClientUuid', pm.response.json()[0].id);"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{kcAdminToken}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "url": "https://localhost:8443/admin/realms/mng-node/clients?clientId=FEDERATOR_ENV"
+                    }
+                },
+                {
+                    "name": "0.3 FEDERATOR_ENV client secret",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('200', function () { pm.response.to.have.status(200); });",
+                                    "pm.collectionVariables.set('envSecret', pm.response.json().value);"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{kcAdminToken}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "url": "https://localhost:8443/admin/realms/mng-node/clients/{{envClientUuid}}/client-secret"
+                    }
+                },
+                {
+                    "name": "0.4 Find client management-node",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('200', function () { pm.response.to.have.status(200); });",
+                                    "pm.collectionVariables.set('mnClientUuid', pm.response.json()[0].id);"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{kcAdminToken}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "url": "https://localhost:8443/admin/realms/mng-node/clients?clientId=management-node"
+                    }
+                },
+                {
+                    "name": "0.5 management-node client secret",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('200', function () { pm.response.to.have.status(200); });",
+                                    "pm.collectionVariables.set('mnSecret', pm.response.json().value);"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{kcAdminToken}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "url": "https://localhost:8443/admin/realms/mng-node/clients/{{mnClientUuid}}/client-secret"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "1. Sign certificate",
+            "description": "Before this folder, in the terminal: node_csr (writes node.key, node.csr and sign.json to scripts/revocation-demo/work and copies the request body to the clipboard). Paste it into the body of 1.2 Sign CSR.",
+            "item": [
+                {
+                    "name": "1.1 Token FEDERATOR_ENV",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('envSecret is set (otherwise run folder 0. Setup)', function () { pm.expect(pm.collectionVariables.get('envSecret')).to.be.a('string').and.not.empty; });",
+                                    "pm.test('200', function () { pm.response.to.have.status(200); });",
+                                    "var token = pm.response.json().access_token;",
+                                    "pm.collectionVariables.set('envToken', token);",
+                                    "var p = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');",
+                                    "while (p.length % 4) p += '=';",
+                                    "var claims = JSON.parse(atob(p));",
+                                    "pm.test('roles: ' + claims.resource_access['management-node'].roles.join(', '), function () {});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "urlencoded",
+                            "urlencoded": [
+                                {
+                                    "key": "grant_type",
+                                    "value": "client_credentials"
+                                },
+                                {
+                                    "key": "client_id",
+                                    "value": "FEDERATOR_ENV"
+                                },
+                                {
+                                    "key": "client_secret",
+                                    "value": "{{envSecret}}"
+                                }
+                            ]
+                        },
+                        "url": "https://localhost:8443/realms/mng-node/protocol/openid-connect/token"
+                    }
+                },
+                {
+                    "name": "1.2 Sign CSR",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "if (pm.response.code === 401) { pm.test('401: token expired or empty, send 1.1 again right before this request', function () { pm.expect.fail(); }); return; }",
+                                    "if (pm.response.code === 400) { pm.test('400: paste the output of node_csr into the body', function () { pm.expect.fail(); }); return; }",
+                                    "pm.test('200 signed', function () { pm.response.to.have.status(200); });",
+                                    "var j = pm.response.json();",
+                                    "pm.collectionVariables.set('serial', j.serialNumber);",
+                                    "pm.test('serial = ' + j.serialNumber, function () {});",
+                                    "pm.test('NEXT: run node_files in the terminal (writes node.crt and ocsp-req.der for this serial)', function () {});",
+                                    "console.log(j.certificate);"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{envToken}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"csr\": \"Run node_csr in the terminal, then replace this whole body with the clipboard (Ctrl+A, Ctrl+V)\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "https://localhost:8090/api/v1/certificate/csr/sign"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "2. Certificate status",
+            "description": "Before this folder, in the terminal: node_files (writes node.crt and ocsp-req.der to scripts/revocation-demo/work).",
+            "item": [
+                {
+                    "name": "2.1 Token management-node",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('200', function () { pm.response.to.have.status(200); });",
+                                    "pm.collectionVariables.set('mnToken', pm.response.json().access_token);"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "urlencoded",
+                            "urlencoded": [
+                                {
+                                    "key": "grant_type",
+                                    "value": "client_credentials"
+                                },
+                                {
+                                    "key": "client_id",
+                                    "value": "management-node"
+                                },
+                                {
+                                    "key": "client_secret",
+                                    "value": "{{mnSecret}}"
+                                }
+                            ]
+                        },
+                        "url": "https://localhost:8443/realms/mng-node/protocol/openid-connect/token"
+                    }
+                },
+                {
+                    "name": "2.2 OCSP status (expected: good)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('200', function () { pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/ocsp-request"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/ocsp-response"
+                            }
+                        ],
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{mnToken}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "body": {
+                            "mode": "file",
+                            "file": {
+                                "src": "ocsp-req.der"
+                            }
+                        },
+                        "url": "https://localhost:8090/api/v1/certificate/ocsp"
+                    }
+                },
+                {
+                    "name": "2.3 Token FEDERATOR_ENV",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('200', function () { pm.response.to.have.status(200); });",
+                                    "pm.collectionVariables.set('envToken', pm.response.json().access_token);"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "urlencoded",
+                            "urlencoded": [
+                                {
+                                    "key": "grant_type",
+                                    "value": "client_credentials"
+                                },
+                                {
+                                    "key": "client_id",
+                                    "value": "FEDERATOR_ENV"
+                                },
+                                {
+                                    "key": "client_secret",
+                                    "value": "{{envSecret}}"
+                                }
+                            ]
+                        },
+                        "url": "https://localhost:8443/realms/mng-node/protocol/openid-connect/token"
+                    }
+                },
+                {
+                    "name": "2.4 Producer config as the node (expected: 200)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('200: the node with its new certificate gets its configuration', function () { pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{envToken}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "url": "https://127.0.0.1:8090/api/v1/configuration/producer"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "3. Revocation",
+            "item": [
+                {
+                    "name": "3.1 Token FEDERATOR_ENV",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('200', function () { pm.response.to.have.status(200); });",
+                                    "pm.collectionVariables.set('envToken', pm.response.json().access_token);"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "urlencoded",
+                            "urlencoded": [
+                                {
+                                    "key": "grant_type",
+                                    "value": "client_credentials"
+                                },
+                                {
+                                    "key": "client_id",
+                                    "value": "FEDERATOR_ENV"
+                                },
+                                {
+                                    "key": "client_secret",
+                                    "value": "{{envSecret}}"
+                                }
+                            ]
+                        },
+                        "url": "https://localhost:8443/realms/mng-node/protocol/openid-connect/token"
+                    }
+                },
+                {
+                    "name": "3.2 Revoke certificate",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('200', function () { pm.response.to.have.status(200); });",
+                                    "var j = pm.response.json();",
+                                    "pm.test('status = ' + j.status + ', reason = ' + j.reason, function () { pm.expect(j.status).to.eql('REVOKED'); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{envToken}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"serialNumber\": \"{{serial}}\",\n  \"reason\": \"KEY_COMPROMISE\",\n  \"comment\": \"Demo: private key exposed\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "https://localhost:8090/api/v1/certificate/revoke"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "4. Status after revocation",
+            "item": [
+                {
+                    "name": "4.1 Token management-node",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('200', function () { pm.response.to.have.status(200); });",
+                                    "pm.collectionVariables.set('mnToken', pm.response.json().access_token);"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "urlencoded",
+                            "urlencoded": [
+                                {
+                                    "key": "grant_type",
+                                    "value": "client_credentials"
+                                },
+                                {
+                                    "key": "client_id",
+                                    "value": "management-node"
+                                },
+                                {
+                                    "key": "client_secret",
+                                    "value": "{{mnSecret}}"
+                                }
+                            ]
+                        },
+                        "url": "https://localhost:8443/realms/mng-node/protocol/openid-connect/token"
+                    }
+                },
+                {
+                    "name": "4.2 OCSP status (expected: revoked, keyCompromise)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('200', function () { pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/ocsp-request"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/ocsp-response"
+                            }
+                        ],
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{mnToken}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "body": {
+                            "mode": "file",
+                            "file": {
+                                "src": "ocsp-req.der"
+                            }
+                        },
+                        "url": "https://localhost:8090/api/v1/certificate/ocsp"
+                    }
+                },
+                {
+                    "name": "4.3 Token FEDERATOR_ENV",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('200', function () { pm.response.to.have.status(200); });",
+                                    "pm.collectionVariables.set('envToken', pm.response.json().access_token);"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "urlencoded",
+                            "urlencoded": [
+                                {
+                                    "key": "grant_type",
+                                    "value": "client_credentials"
+                                },
+                                {
+                                    "key": "client_id",
+                                    "value": "FEDERATOR_ENV"
+                                },
+                                {
+                                    "key": "client_secret",
+                                    "value": "{{envSecret}}"
+                                }
+                            ]
+                        },
+                        "url": "https://localhost:8443/realms/mng-node/protocol/openid-connect/token"
+                    }
+                },
+                {
+                    "name": "4.4 Producer config as the node (expected: 401 CERTIFICATE_REVOKED)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('401', function () { pm.response.to.have.status(401); });",
+                                    "pm.test('code = CERTIFICATE_REVOKED', function () { pm.expect(pm.response.json().code).to.eql('CERTIFICATE_REVOKED'); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{envToken}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "url": "https://127.0.0.1:8090/api/v1/configuration/producer"
+                    }
+                },
+                {
+                    "name": "4.5 Revoke again (optional, expected: 409)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('409 already revoked', function () { pm.response.to.have.status(409); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{envToken}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"serialNumber\": \"{{serial}}\",\n  \"reason\": \"KEY_COMPROMISE\",\n  \"comment\": \"Demo: private key exposed\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "https://localhost:8090/api/v1/certificate/revoke"
+                    }
+                }
+            ]
+        }
+    ]
+}
